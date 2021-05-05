@@ -46,14 +46,6 @@ namespace PKISharp.WACS.Extensions
                     continue;
                 }
                 var commandLineInfo = property.CommandLineOptions();
-                if (commandLineInfo == null)
-                {
-                    commandLineInfo = new CommandLineAttribute();
-                }
-                if (string.IsNullOrEmpty(commandLineInfo.Name))
-                {
-                    commandLineInfo.Name = property.Name;
-                }
                 yield return (commandLineInfo, property);
             }
         }

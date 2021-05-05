@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -152,12 +153,22 @@ namespace PKISharp.WACS.Extensions
                 Replace(QuestionEscape, "\\?");
         }
 
-
         public static string SHA1(this string original)
         {
             using var sha1 = new SHA1Managed();
             var hash = sha1.ComputeHash(Encoding.UTF8.GetBytes(original));
             return string.Concat(hash.Select(b => b.ToString("x2")));
+        }
+
+        public static ProtectedString? Protect(this string? original) {
+            if (string.IsNullOrWhiteSpace(original))
+            {
+                return null;
+            }
+            else
+            {
+                return new ProtectedString(original);
+            }
         }
     }
 }

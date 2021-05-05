@@ -199,6 +199,7 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterType<RenewalValidator>().SingleInstance();
             _ = builder.RegisterType<RenewalManager>().SingleInstance();
             _ = builder.RegisterType<RenewalCreator>().SingleInstance();
+            _ = builder.RegisterType<ArgumentsInputService>().SingleInstance();
             _ = builder.Register(c => c.Resolve<IArgumentsService>().MainArguments).SingleInstance();
 
             _ = builder.RegisterType<Wacs>();

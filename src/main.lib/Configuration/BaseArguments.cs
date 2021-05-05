@@ -14,11 +14,6 @@ namespace PKISharp.WACS.Configuration.Arguments
         {
             foreach (var (_, prop) in GetType().CommandLineProperties())
             {
-                var isLocal = prop.GetGetMethod()?.GetBaseDefinition().DeclaringType == GetType();
-                if (!isLocal)
-                {
-                    continue;
-                }
                 if (prop.PropertyType == typeof(bool) && (bool)(prop.GetValue(this) ?? false) == true)
                 {
                     return true;
