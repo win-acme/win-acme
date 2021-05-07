@@ -114,7 +114,7 @@ namespace PKISharp.WACS.Services
         {
             _actions.Add(current =>
             {
-                if (_valid)
+                if (_valid && HasValue(current))
                 {
                     _valid = validator(current);
                     if (!_valid)

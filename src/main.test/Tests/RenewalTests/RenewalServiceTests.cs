@@ -20,7 +20,12 @@ namespace PKISharp.WACS.UnitTests.Tests.RenewalTests
         [TestMethod]
         public void Simple()
         {
-            var container = new MockContainer().TestScope();
+            var container = new MockContainer().TestScope(new List<string>()
+            {
+                "C", // Cancel command
+                "y", // Confirm cancel all
+                "Q" // Quit
+            });
             var renewalStore = container.Resolve<real.IRenewalStore>();
             var renewalValidator = container.Resolve<RenewalValidator>(
                 new TypedParameter(typeof(IContainer), container));

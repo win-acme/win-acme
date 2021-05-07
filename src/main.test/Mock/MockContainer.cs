@@ -13,24 +13,19 @@ namespace PKISharp.WACS.UnitTests.Mock
 {
     class MockContainer
     {
-        public ILifetimeScope TestScope()
+        public ILifetimeScope TestScope(List<string>? inputSequence = null, string commandLine = "")
         {
             var log = new mock.LogService(false);
             var pluginService = new real.PluginService(log);
-            var argumentsParser = new ArgumentsParser(log, pluginService, $"".Split(' '));
+            var argumentsParser = new ArgumentsParser(log, pluginService, commandLine.Split(' '));
             var argumentsService = new real.ArgumentsService(log, argumentsParser);
-            var input = new mock.InputService(new List<string>()
-            {
-                "C", // Cancel command
-                "y", // Confirm cancel all
-                "Q" // Quit
-            });
+            var input = new mock.InputService(inputSequence ?? new List<string>());
 
             var builder = new ContainerBuilder();
             _ = builder.RegisterInstance(log).As<real.ILogService>();
             _ = builder.RegisterInstance(argumentsParser).As<ArgumentsParser>();
             _ = builder.RegisterInstance(argumentsService).As<real.IArgumentsService>();
-            _ = builder.RegisterInstance(argumentsService).As<real.IArgumentsService>();
+            _ = builder.RegisterType<real.ArgumentsInputService>();
             _ = builder.RegisterInstance(pluginService).As<real.IPluginService>();
             _ = builder.RegisterInstance(input).As<real.IInputService>();
 

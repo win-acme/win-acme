@@ -48,6 +48,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             _ = builder.RegisterType<LookupClientProvider>();
             _ = builder.RegisterType<mock.ProxyService>().As<IProxyService>();
             _ = builder.RegisterType<DomainParseService>();
+            _ = builder.RegisterType<ArgumentsInputService>();
             _ = builder.RegisterType<IISHelper>();
             var input = new mock.InputService(new List<string>());
             _ = builder.RegisterInstance(input).As<IInputService>();

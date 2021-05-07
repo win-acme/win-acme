@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Services
         }
         public ArgumentResult<T, ProtectedString?> GetProtectedString<T>(Expression<Func<T, string?>> expression, bool allowEmtpy = false)
             where T : class, IArguments,
-            new() => new(GetArgument(expression).Protect(), GetMetaData(expression),
+            new() => new(GetArgument(expression).Protect(allowEmtpy), GetMetaData(expression),
                 async (label, value) => (await _secretService.GetSecret(label, value?.Value, allowEmtpy ? "" : null)).Protect(allowEmtpy));
 
         public ArgumentResult<T, string?> GetString<T>(Expression<Func<T, string?>> expression)
@@ -46,22 +46,6 @@ namespace PKISharp.WACS.Services
                 async (label, value) => {
                     var str = await _input.RequestString(label);
                     if (long.TryParse(str, out var ret))
-                    {
-                        return ret;
-                    }
-                    else
-                    {
-                        _log.Warning("Invalid number: {ret}", ret);
-                        return null;
-                    }
-                });
-
-        public ArgumentResult<T, int?> GetInt<T>(Expression<Func<T, int?>> expression)
-            where T : class, IArguments, 
-            new() => new(GetArgument(expression), GetMetaData(expression),
-                async (label, value) => {
-                    var str = await _input.RequestString(label);
-                    if (int.TryParse(str, out var ret))
                     {
                         return ret;
                     }
