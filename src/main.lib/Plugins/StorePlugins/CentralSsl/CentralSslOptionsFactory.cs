@@ -2,7 +2,6 @@
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
-using System;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
@@ -10,7 +9,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
     internal class CentralSslOptionsFactory : StorePluginOptionsFactory<CentralSsl, CentralSslOptions>
     {
         private readonly ILogService _log;
-        private readonly IArgumentsService _arguments;
         private readonly ArgumentsInputService _argumentInput;
         private readonly ISettingsService _settings;
         private readonly SecretServiceManager _secretServiceManager;
@@ -18,12 +16,10 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public CentralSslOptionsFactory(
             ILogService log, 
             ISettingsService settings,
-            IArgumentsService arguments,
             ArgumentsInputService argumentInput,
             SecretServiceManager secretServiceManager)
         {
             _log = log;
-            _arguments = arguments;
             _argumentInput = argumentInput;
             _settings = settings;
             _secretServiceManager = secretServiceManager;
@@ -33,23 +29,20 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         {
             var path = await _argumentInput.
                 GetString<CentralSslArguments>(args => args.CentralSslStore).
+                Interactive(input, "Store path").
                 WithDefault(CentralSsl.DefaultPath(_settings)).
-                Interactive("Store path", input, runLevel).
                 Required().
                 Validate(x => x.ValidPath(_log), "Invalid path").
+                DefaultAsNull().
                 GetValue();
 
-            // Get password from command line, default setting or user input
-            var args = _arguments.GetArguments<CentralSslArguments>();
-            var password = args?.PfxPassword;
-            if (string.IsNullOrWhiteSpace(password))
-            {
-                password = CentralSsl.DefaultPassword(_settings);
-            }
-            if (string.IsNullOrWhiteSpace(password))
-            {
-                password = await _secretServiceManager.GetSecret("Password to use for the .pfx files", password);
-            }
+            var password = await _argumentInput.
+                GetProtectedString<CentralSslArguments>(args => args.PfxPassword, true).
+                WithDefault(CentralSsl.DefaultPassword(_settings).Protect()).
+                Interactive(input, "Password to use for the .pfx files").
+                DefaultAsNull().
+                GetValue();
+
             return Create(path, password);
         }
 
@@ -60,30 +53,26 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 WithDefault(CentralSsl.DefaultPath(_settings)).
                 Required().
                 Validate(x => x.ValidPath(_log), "Invalid path").
+                DefaultAsNull().
                 GetValue();
 
             var password = await _argumentInput.
                 GetProtectedString<CentralSslArguments>(args => args.PfxPassword).
                 WithDefault(CentralSsl.DefaultPassword(_settings).Protect()).
+                DefaultAsNull().
                 GetValue();
            
-            return Create(path, password?.Value);
+            return Create(path, password);
         }
 
-        private CentralSslOptions Create(string? path, string? password)
+        private static CentralSslOptions Create(string? path, ProtectedString? password)
         {
             var ret = new CentralSslOptions
             {
-                KeepExisting = false
+                KeepExisting = false,
+                PfxPassword = password,
+                Path = path
             };
-            if (!string.IsNullOrWhiteSpace(password) && !string.Equals(password, CentralSsl.DefaultPassword(_settings)))
-            {
-                ret.PfxPassword = new ProtectedString(password);
-            }
-            if (!string.Equals(path, CentralSsl.DefaultPath(_settings), StringComparison.CurrentCultureIgnoreCase))
-            {
-                ret.Path = path;
-            }
             return ret;
         }
     }

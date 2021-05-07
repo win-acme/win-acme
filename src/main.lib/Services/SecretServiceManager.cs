@@ -28,7 +28,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="purpose"></param>
         /// <returns></returns>
-        public async Task<string?> GetSecret(string purpose, string? @default = null, bool? multiline = null)
+        public async Task<string?> GetSecret(string purpose, string? @default = null, string? none = null,  bool? multiline = null)
         {
             var stop = false;
             string? ret = null;
@@ -39,7 +39,7 @@ namespace PKISharp.WACS.Services
                     Choice.Create<Func<Task<string?>>>(
                         () => { 
                             stop = true;
-                            return Task.FromResult<string?>(null); 
+                            return Task.FromResult(none); 
                         },
                         description: "None"),
                     Choice.Create<Func<Task<string?>>>(
@@ -73,7 +73,7 @@ namespace PKISharp.WACS.Services
 
             if (stop || string.IsNullOrWhiteSpace(ret))
             {
-                return null;
+                return none;
             }
 
             // Offer to save in list
@@ -231,7 +231,7 @@ namespace PKISharp.WACS.Services
                 var secret = _secretService.GetSecret(key);
                 _inputService.CreateSpace();
                 _inputService.Show("Reference", key);
-                _inputService.Show("Secret", new string('*', secret?.Length ?? 0));
+                _inputService.Show("Secret", "********");
                 var choices = new List<Choice<Func<Task>>>
                 {
                     Choice.Create<Func<Task>>(() => ShowSecret(key), "Show secret", command: "S"),

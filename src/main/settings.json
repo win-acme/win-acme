@@ -83,8 +83,8 @@
       "DefaultStore": null
     },
     "CentralSsl": {
-      "DefaultPath": null,
-      "DefaultPassword": null
+      "DefaultPath": "I:",
+      "DefaultPassword": "1234"
     },
     "PemFiles": {
       "DefaultPath": null,

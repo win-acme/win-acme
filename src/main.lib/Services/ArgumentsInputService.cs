@@ -11,39 +11,47 @@ namespace PKISharp.WACS.Services
     {
         private readonly ILogService _log;
         private readonly IArgumentsService _arguments;
+        private readonly IInputService _input;
+        private readonly SecretServiceManager _secretService;
 
         public ArgumentsInputService(
             ILogService log,
-            IArgumentsService arguments)
+            IArgumentsService arguments,
+            IInputService input,
+            SecretServiceManager secretService)
         {
             _log = log;
             _arguments = arguments;
+            _input = input;
+            _secretService = secretService;
         }
-        public ArgumentResult<T, ProtectedString?> GetProtectedString<T>(Expression<Func<T, string?>> expression)
+        public ArgumentResult<T, ProtectedString?> GetProtectedString<T>(Expression<Func<T, string?>> expression, bool allowEmtpy = false)
             where T : class, IArguments,
             new() => new(GetArgument(expression).Protect(), GetMetaData(expression),
-                x => x.Protect());
+                async (label, value) => (await _secretService.GetSecret(label, value?.Value, allowEmtpy ? "" : null)).Protect(allowEmtpy));
 
         public ArgumentResult<T, string?> GetString<T>(Expression<Func<T, string?>> expression)
             where T : class, IArguments, new() =>
             new(GetArgument(expression), GetMetaData(expression),
-                x => x);
+                async (label, value) => await _input.RequestString(label));
 
         public ArgumentResult<T, bool?> GetBool<T>(Expression<Func<T, bool?>> expression)
             where T : class, IArguments, new() =>
             new(GetArgument(expression), GetMetaData(expression),
-                x => x == "1");
+                async (label, value) => await _input.PromptYesNo(label, value == true));
 
         public ArgumentResult<T, long?> GetLong<T>(Expression<Func<T, long?>> expression)
             where T : class, IArguments, new() =>
             new(GetArgument(expression), GetMetaData(expression),
-                x => { 
-                    if (long.TryParse(x, out var ret)) 
+                async (label, value) => {
+                    var str = await _input.RequestString(label);
+                    if (long.TryParse(str, out var ret))
                     {
                         return ret;
                     }
                     else
                     {
+                        _log.Warning("Invalid number: {ret}", ret);
                         return null;
                     }
                 });
@@ -51,13 +59,15 @@ namespace PKISharp.WACS.Services
         public ArgumentResult<T, int?> GetInt<T>(Expression<Func<T, int?>> expression)
             where T : class, IArguments, 
             new() => new(GetArgument(expression), GetMetaData(expression),
-                x => {
-                    if (int.TryParse(x, out var ret))
+                async (label, value) => {
+                    var str = await _input.RequestString(label);
+                    if (int.TryParse(str, out var ret))
                     {
                         return ret;
                     }
                     else
                     {
+                        _log.Warning("Invalid number: {ret}", ret);
                         return null;
                     }
                 });
@@ -117,7 +127,7 @@ namespace PKISharp.WACS.Services
                 var censor = ArgumentsParser.CensoredParameters.Any(c => optionName!.Contains(c));
                 _log.Debug("Parsed value for --{optionName}: {providedValue}",
                     optionName,
-                    censor ? new string('*', returnValue.ToString()?.Length ?? 1) : returnValue);
+                    censor ? "********" : returnValue);
             }
             return returnValue;
         }

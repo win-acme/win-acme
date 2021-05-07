@@ -160,15 +160,12 @@ namespace PKISharp.WACS.Extensions
             return string.Concat(hash.Select(b => b.ToString("x2")));
         }
 
-        public static ProtectedString? Protect(this string? original) {
-            if (string.IsNullOrWhiteSpace(original))
+        public static ProtectedString? Protect(this string? original, bool allowEmtpy = false) {
+            if (string.IsNullOrWhiteSpace(original) && !allowEmtpy)
             {
                 return null;
             }
-            else
-            {
-                return new ProtectedString(original);
-            }
+            return new ProtectedString(original);
         }
     }
 }

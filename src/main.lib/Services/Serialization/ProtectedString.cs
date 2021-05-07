@@ -12,7 +12,7 @@ namespace PKISharp.WACS.Services.Serialization
     /// - Base64 encoded, without any prefix
     /// - Base64 encoded *with* encryption, prefixed by EncryptedPrefix
     /// </summary>
-    public class ProtectedString
+    public class ProtectedString : IEquatable<ProtectedString>, IComparable, IComparable<ProtectedString>
     {
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace PKISharp.WACS.Services.Serialization
                 {
                     return Value;
                 }
-                return new string('*', Value?.Length ?? 0);
+                return "********";
             }
         }
 
@@ -211,5 +211,13 @@ namespace PKISharp.WACS.Services.Serialization
             var clearBytes = ProtectedData.Unprotect(encryptedBytes, entropyBytes, scope);
             return Encoding.UTF8.GetString(clearBytes);
         }
+
+        public override bool Equals(object? obj) => (obj as ProtectedString)?.Value == Value;
+        public override int GetHashCode() => Value?.GetHashCode() ?? 0;
+        public bool Equals(ProtectedString? other) => other?.Value == Value;
+        public int CompareTo(object? obj) => (obj as ProtectedString)?.Value?.CompareTo(Value) ?? -1;
+        public int CompareTo(ProtectedString? other) => other?.Value?.CompareTo(Value) ?? -1;
+        public static bool operator ==(ProtectedString a, ProtectedString b) => a.Value == b.Value;
+        public static bool operator !=(ProtectedString a, ProtectedString b) => a.Value != b.Value;
     }
 }

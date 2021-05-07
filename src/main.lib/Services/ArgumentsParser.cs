@@ -117,7 +117,7 @@ namespace PKISharp.WACS.Configuration
                     }
                     else
                     {
-                        censoredArgs.Add(new string('*', _args[i].Length));
+                        censoredArgs.Add("********");
                         censor = false;
                     }
                 }
