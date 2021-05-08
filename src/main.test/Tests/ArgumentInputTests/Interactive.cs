@@ -1,45 +1,39 @@
 ﻿using Autofac;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.UnitTests.Mock;
-using System.Threading.Tasks;
+using System.Linq;
 
 namespace PKISharp.WACS.UnitTests.Tests.ArgumentInputTests
 {
     [TestClass]
-    public class Unattended
+    public class Interactive
     {
         [TestMethod]
-        [DataRow("I:", "I:", DisplayName = "Base")]
-        [DataRow("I:\\", "I:\\", DisplayName = "WithSlash")]
-        [DataRow("\"I:\\\"", "I:\\", DisplayName = "WithDoubleQuotes")]
-        [DataRow("'I:\\'", "'I:\\'", DisplayName = "WithSingleQuotes")]
-        public void BasicString(string input, string output)
+        [DataRow("--centralsslstore I:", new[] { "" }, "I:", DisplayName = "ArgumentDefault")]
+        [DataRow("--centralsslstore I:", new[] { "C:\\" }, "C:\\", DisplayName = "OverrideArgument")]
+        [DataRow("", new[] { "C:\\" }, "C:\\", DisplayName = "NoArgument")]
+        [DataRow("--centralsslstore", new[] { "C:\\" }, "C:\\", DisplayName = "EmptyArgument")]
+        public void BasicString(
+            string argument, 
+            string[] userInput, 
+            string output)
         {
-            var container = new MockContainer().TestScope(commandLine: $"--centralsslstore {input}");
+            var container = new MockContainer().TestScope(
+                userInput.ToList(), 
+                commandLine: argument);
             var mock = container.Resolve<ArgumentsInputService>();
+            var input = container.Resolve<IInputService>();
             var basic = mock.
                 GetString<CentralSslArguments>(x => x.CentralSslStore).
+                Interactive(input, "Label").
                 GetValue().
                 Result;
             Assert.AreEqual(output, basic);
         }
 
-        [TestMethod]
-        [DataRow("4", 4)]
-        public void BasicLong(string input, long output)
-        {
-            var container = new MockContainer().TestScope(commandLine: $"--installationsiteid {input}");
-            var mock = container.Resolve<ArgumentsInputService>();
-            var basic = mock.
-                GetLong<IISWebArguments>(x => x.InstallationSiteId).
-                GetValue().
-                Result;
-            Assert.AreEqual(output, basic);
-        }
-
+        /*
         [TestMethod]
         [DataRow("--pfxpassword 1234", true, "1234", DisplayName = "Normal")]
         [DataRow("", false, null, DisplayName = "Nothing")]
@@ -121,7 +115,7 @@ namespace PKISharp.WACS.UnitTests.Tests.ArgumentInputTests
                     GetValue().
                     Result;
                 Assert.AreEqual(shouldThrow, false, "No exception thrown though it should have been");
-            } 
+            }
             catch
             {
                 Assert.AreEqual(shouldThrow, true, "Exception throw when it should not have been");
@@ -196,7 +190,7 @@ namespace PKISharp.WACS.UnitTests.Tests.ArgumentInputTests
             {
                 var result = mock.
                     GetString<CentralSslArguments>(x => x.CentralSslStore).
-                    Validate(x => Task.FromResult(x == "valid"), "not valid").
+                    Validate(x => x == "valid", "not valid").
                     GetValue().
                     Result;
                 Assert.AreEqual(shouldThrow, false, "No exception thrown though it should have been");
@@ -222,8 +216,8 @@ namespace PKISharp.WACS.UnitTests.Tests.ArgumentInputTests
             {
                 var result = mock.
                     GetString<CentralSslArguments>(x => x.CentralSslStore).
-                    Validate(x => Task.FromResult(x?.Contains("a") ?? false), "No A").
-                    Validate(x => Task.FromResult(x?.Contains("b") ?? false), "No B").
+                    Validate(x => x?.Contains("a") ?? false, "No A").
+                    Validate(x => x?.Contains("b") ?? false, "No B").
                     GetValue().
                     Result;
                 Assert.AreEqual(shouldThrow, false, "No exception thrown though it should have been");
@@ -232,6 +226,6 @@ namespace PKISharp.WACS.UnitTests.Tests.ArgumentInputTests
             {
                 Assert.AreEqual(shouldThrow, true, "Exception throw when it should not have been");
             }
-        }
+        }*/
     }
 }

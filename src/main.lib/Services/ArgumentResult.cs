@@ -8,46 +8,60 @@ namespace PKISharp.WACS.Services
     public class ArgumentResult<T, P> where T : class, IArguments, new()
     {
         /// <summary>
-        /// Starting value from command line parser
-        /// </summary>
-        protected readonly P? _baseValue;
-
-        /// <summary>
         /// Metadata obtained through reflection
         /// </summary>
         private readonly CommandLineAttribute _metaData;
 
         /// <summary>
-        /// Have be produced a valid value?
+        /// Starting value from command line parser
         /// </summary>
-        private bool _valid = true;
-
-        /// <summary>
-        /// Feedback on why we are not valid
-        /// </summary>
-        private string? _validationMessage = null;
-
-        /// <summary>
-        /// Action to run based on the fluently defined chain
-        /// </summary>
-        private readonly List<Func<P?, Task<P?>>> _actions = new();
-
-        /// <summary>
-        /// Copy of the interactive action because we might
-        /// want to jump back to that one in some cases
-        /// </summary>
-        private Func<P?, Task<P?>>? _userInput;
-
-        /// <summary>
-        /// Ask the user for input
-        /// </summary>
-        private readonly Func<string, P?, Task<P?>> _input;
+        protected readonly P? _argumentValue;
 
         /// <summary>
         /// Default value set at some point during the chain
         /// </summary>
         protected P? _defaultValue;
 
+        /// <summary>
+        /// User input set at some point during the chain
+        /// </summary>
+        protected P? _inputValue;
+
+        /// <summary>
+        /// Label to show to the user in interactive mode
+        /// </summary>
+        protected string? _inputLabel;
+
+        /// <summary>
+        /// Inputservice available (e.g. interactive mode)
+        /// </summary>
+        protected IInputService? _inputService;
+
+        /// <summary>
+        /// Ask the user for input
+        /// </summary>
+        private readonly Func<string, P?, Task<P?>> _inputFunction;
+
+        /// <summary>
+        /// Validator to run
+        /// </summary>
+        private readonly List<Tuple<Func<P?, Task<bool>>, string>> _validators = new();
+
+        /// <summary>
+        /// Do not emit default value
+        /// </summary>
+        private bool _defaultAsNull = false;
+
+        /// <summary>
+        /// Required value
+        /// </summary>
+        private bool _required = false;
+
+        /// <summary>
+        /// Test if we currently have a value
+        /// </summary>
+        /// <param name="current"></param>
+        /// <returns></returns>
         private static bool HasValue(P? current)
         {
             if (current == null)
@@ -63,42 +77,21 @@ namespace PKISharp.WACS.Services
 
         internal ArgumentResult(P baseValue, CommandLineAttribute metaData, Func<string, P?, Task<P?>> input)
         {
-            _baseValue = baseValue;
+            _argumentValue = baseValue;
             _metaData = metaData;
-            _input = input;
+            _inputFunction = input;
         }
 
         /// <summary>
-        /// Test the value using the validator parameter,
-        /// throwing an exception with errorReason if the
-        /// validator returns false
+        /// Allow interactive input
         /// </summary>
-        /// <param name="validator"></param>
-        /// <param name="errorReason"></param>
+        /// <param name="input"></param>
+        /// <param name="label"></param>
         /// <returns></returns>
         internal ArgumentResult<T, P> Interactive(IInputService input, string label)
         {
-            _userInput = async current =>
-            {
-                // Will need revalidation after new input in any case
-                _valid = true;
-                input.CreateSpace();
-                input.Show("Description", _metaData.Description);
-                if (HasValue(_defaultValue))
-                {
-                    if (_metaData.Secret)
-                    {
-                        input.Show("Default", "********");
-                    } 
-                    else
-                    {
-                        input.Show("Default", _defaultValue?.ToString());
-                    }
-                }
-                var userInput = await _input(label, current);
-                return userInput;
-            };
-            _actions.Add(_userInput);
+            _inputService = input;
+            _inputLabel = label;
             return this;
         }
 
@@ -110,20 +103,9 @@ namespace PKISharp.WACS.Services
         /// <param name="validator"></param>
         /// <param name="errorReason"></param>
         /// <returns></returns>
-        internal ArgumentResult<T, P> Validate(Func<P?, bool> validator, string errorReason)
+        internal ArgumentResult<T, P> Validate(Func<P?, Task<bool>> validator, string errorReason)
         {
-            _actions.Add(current =>
-            {
-                if (_valid && HasValue(current))
-                {
-                    _valid = validator(current);
-                    if (!_valid)
-                    {
-                        _validationMessage = errorReason;
-                    }
-                }
-                return Task.FromResult(current);
-            });
+            _validators.Add(new Tuple<Func<P?, Task<bool>>, string>(validator, errorReason));
             return this;
         }
 
@@ -131,7 +113,11 @@ namespace PKISharp.WACS.Services
         /// Shortcut for required input validation
         /// </summary>
         /// <returns></returns>
-        internal ArgumentResult<T, P> Required(bool orDefault = false) => Validate(current => ArgumentResult<T, P>.HasValue(current), "Missing");
+        internal ArgumentResult<T, P> Required()
+        {
+            _required = true;
+            return this;
+        }
 
         /// <summary>
         /// Set a default value if not value was
@@ -142,9 +128,6 @@ namespace PKISharp.WACS.Services
         internal ArgumentResult<T, P> WithDefault(P value)
         {
             _defaultValue = value;
-            _actions.Add(current => {
-                return Task.FromResult(ArgumentResult<T, P>.HasValue(current) ? current : value);
-            });
             return this;
         }
 
@@ -156,11 +139,60 @@ namespace PKISharp.WACS.Services
         /// <returns></returns>
         internal ArgumentResult<T, P> DefaultAsNull()
         {
-            _actions.Add(current => {
-                var currentIsDefault = Comparer<P>.Default.Compare(current, _defaultValue) == 0;
-                return Task.FromResult(currentIsDefault ? default : current);
-            });
+            _defaultAsNull = true;
             return this;
+        }
+
+        private async Task<P?> GetInput(IInputService input, P? current)
+        {
+            input.CreateSpace();
+            input.Show("Description", _metaData.Description);
+            if (HasValue(_defaultValue))
+            {
+                var showValue = _metaData.Secret ? "********" : _defaultValue?.ToString();
+                input.Show("Default", showValue);
+            }
+            if (HasValue(_argumentValue))
+            {
+                var showValue = _metaData.Secret ? "********" : _argumentValue?.ToString();
+                input.Show("Argument", showValue);
+            }
+            return await _inputFunction(_inputLabel ?? "Input", current);
+        }
+
+        private async Task<(bool, string?)> IsValid(P? returnValue)
+        {
+            // Validate
+            if (_required && !HasValue(returnValue))
+            {
+                if (!string.IsNullOrWhiteSpace(_inputLabel))
+                {
+                    return (false, "This is a required value");
+                } 
+                else
+                {
+                    return (false, "Missing value --{_metaData.Name}");
+                }
+            }
+            if (HasValue(returnValue))
+            {
+                foreach (var validator in _validators)
+                {
+                    var validationResult = await validator.Item1(returnValue);
+                    if (!validationResult)
+                    {
+                        if (!string.IsNullOrWhiteSpace(_inputLabel))
+                        {
+                            return (false, $"Invalid value: {validator.Item2}");
+                        }
+                        else
+                        {
+                            return (false, $"Invalid --{_metaData.Name}: {validator.Item2}");
+                        }
+                    }
+                }
+            }
+            return (true, null);
         }
 
         /// <summary>
@@ -170,33 +202,40 @@ namespace PKISharp.WACS.Services
         /// <returns></returns>
         public async Task<P?> GetValue()
         {
-            var returnValue = _baseValue;
-            var actionIndex = 0;
-            var userInputIndex = _userInput != null ? _actions.IndexOf(_userInput) : -1;
-            var valueBeforeUserInput = _baseValue;
-            while (actionIndex < _actions.Count)
+            var returnValue = _argumentValue;
+            if (!HasValue(returnValue))
             {
-                var action = _actions[actionIndex];
-                if (actionIndex == userInputIndex)
+                returnValue = _defaultValue;
+            }
+            while (true)
+            {
+                if (_inputService != null)
                 {
-                    valueBeforeUserInput = returnValue;
-                }
-                returnValue = await action(returnValue);
-                if (!_valid)
-                {   
-                    if (_userInput == null)
+                    _inputValue = await GetInput(_inputService, returnValue);
+                    if (HasValue(_inputValue))
                     {
-                        throw new Exception($"Invalid argument --{_metaData.Name?.ToLower()}: {_validationMessage}");
-                    } 
-                    else
-                    {
-                        // Go back to the user input stage
-                        returnValue = valueBeforeUserInput;
-                        actionIndex = _actions.IndexOf(_userInput);
-                        continue;
+                        returnValue = _inputValue;
                     }
                 }
-                actionIndex++;
+                var (valid, validationError) = await IsValid(returnValue);
+                if (!valid)
+                {
+                    if (_inputService == null)
+                    {
+                        throw new Exception(validationError);
+                    }
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            // Sometime we don't want to store the default result
+            // even when it comes straight from the user
+            if (_defaultAsNull && Comparer<P>.Default.Compare(returnValue, _defaultValue) == 0)
+            {
+                return default;
             }
             return returnValue;
         }

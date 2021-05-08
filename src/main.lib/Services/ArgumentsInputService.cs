@@ -33,7 +33,11 @@ namespace PKISharp.WACS.Services
         public ArgumentResult<T, string?> GetString<T>(Expression<Func<T, string?>> expression)
             where T : class, IArguments, new() =>
             new(GetArgument(expression), GetMetaData(expression),
-                async (label, value) => await _input.RequestString(label));
+                async (label, value) =>
+                {
+                    var raw = await _input.RequestString(label);
+                    return string.IsNullOrWhiteSpace(raw) ? null : raw;
+                });
 
         public ArgumentResult<T, bool?> GetBool<T>(Expression<Func<T, bool?>> expression)
             where T : class, IArguments, new() =>

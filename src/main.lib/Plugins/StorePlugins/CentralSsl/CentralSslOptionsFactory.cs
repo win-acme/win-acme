@@ -32,7 +32,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 Interactive(input, "Store path").
                 WithDefault(CentralSsl.DefaultPath(_settings)).
                 Required().
-                Validate(x => x.ValidPath(_log), "Invalid path").
+                Validate(x => Task.FromResult(x.ValidPath(_log)), "Invalid path").
                 DefaultAsNull().
                 GetValue();
 
@@ -52,7 +52,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 GetString<CentralSslArguments>(args => args.CentralSslStore).
                 WithDefault(CentralSsl.DefaultPath(_settings)).
                 Required().
-                Validate(x => x.ValidPath(_log), "Invalid path").
+                Validate(x => Task.FromResult(x.ValidPath(_log)), "Invalid path").
                 DefaultAsNull().
                 GetValue();
 
