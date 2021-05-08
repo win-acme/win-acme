@@ -22,6 +22,8 @@ namespace PKISharp.WACS.UnitTests.Mock
             var input = new mock.InputService(inputSequence ?? new List<string>());
 
             var builder = new ContainerBuilder();
+            _ = builder.RegisterType<mock.SecretService>().As<real.ISecretService>();
+            _ = builder.RegisterType<real.SecretServiceManager>();
             _ = builder.RegisterInstance(log).As<real.ILogService>();
             _ = builder.RegisterInstance(argumentsParser).As<ArgumentsParser>();
             _ = builder.RegisterInstance(argumentsService).As<real.IArgumentsService>();

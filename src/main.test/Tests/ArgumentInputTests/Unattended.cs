@@ -157,33 +157,6 @@ namespace PKISharp.WACS.UnitTests.Tests.ArgumentInputTests
         }
 
         [TestMethod]
-        [DataRow(null, null, true, null, DisplayName = "EmptyInputAndDefault")]
-        [DataRow(null, "a", false, "a", DisplayName = "NormalDefault")]
-        [DataRow("--centralsslstore a", "b", false, "a", DisplayName = "CommandlineOverruleDefault")]
-        [DataRow("--centralsslstore a", null, false, "a", DisplayName = "NullDefault")]
-        [DataRow("--centralsslstore a", "", false, "a", DisplayName = "EmtpyDefault")]
-        public void RequiredWithDefaultReordered(string? commandLine, string @default, bool shouldThrow, string expectedValue)
-        {
-            var container = new MockContainer().TestScope(commandLine: commandLine ?? "");
-            var mock = container.Resolve<ArgumentsInputService>();
-            try
-            {
-                var result = mock.
-                    GetString<CentralSslArguments>(x => x.CentralSslStore).
-                    Required().
-                    WithDefault(@default).
-                    GetValue().
-                    Result;
-                Assert.AreEqual(shouldThrow, false, "No exception thrown though it should have been");
-                Assert.AreEqual(expectedValue, result);
-            }
-            catch
-            {
-                Assert.AreEqual(shouldThrow, true, "Exception throw when it should not have been");
-            }
-        }
-
-        [TestMethod]
         [DataRow("--centralsslstore valid", false, DisplayName = "Valid")]
         [DataRow("--centralsslstore invalid", true, DisplayName = "Invalid")]
         [DataRow("--centralsslstore \"\"", false, DisplayName = "Empty")]

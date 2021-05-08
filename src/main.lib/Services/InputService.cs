@@ -434,7 +434,7 @@ namespace PKISharp.WACS.Services
             var currentIndex = 0;
             var currentPage = 0;
             CreateSpace();
-            if (listItems.Count() == 0)
+            if (!listItems.Any())
             {
                 Console.WriteLine($" [empty] ");
                 Console.WriteLine();

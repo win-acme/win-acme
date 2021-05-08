@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -33,6 +34,11 @@ namespace PKISharp.WACS.Services
         protected string? _inputLabel;
 
         /// <summary>
+        /// Allow null input from interactive mode
+        /// </summary>
+        protected bool _allowEmpty;
+
+        /// <summary>
         /// Inputservice available (e.g. interactive mode)
         /// </summary>
         protected IInputService? _inputService;
@@ -62,7 +68,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="current"></param>
         /// <returns></returns>
-        private static bool HasValue(P? current)
+        private bool HasValue(P? current)
         {
             if (current == null)
             {
@@ -70,16 +76,39 @@ namespace PKISharp.WACS.Services
             }
             else if (current is string currentString)
             {
-                return !string.IsNullOrWhiteSpace(currentString);
+                if (_allowEmpty)
+                {
+                    return true;
+                } 
+                else
+                {
+                    return !string.IsNullOrWhiteSpace(currentString);
+                }
+            }
+            else if (current is ProtectedString protectedString)
+            {
+                if (protectedString.Value == null)
+                {
+                    return false;
+                }
+                else if (_allowEmpty)
+                {
+                    return true;
+                }
+                else
+                {
+                    return !string.IsNullOrWhiteSpace(protectedString.Value);
+                }
             }
             return true;
         }
 
-        internal ArgumentResult(P baseValue, CommandLineAttribute metaData, Func<string, P?, Task<P?>> input)
+        internal ArgumentResult(P baseValue, CommandLineAttribute metaData, Func<string, P?, Task<P?>> input, bool allowEmtpy = false)
         {
             _argumentValue = baseValue;
             _metaData = metaData;
             _inputFunction = input;
+            _allowEmpty = allowEmtpy;
         }
 
         /// <summary>
@@ -88,8 +117,16 @@ namespace PKISharp.WACS.Services
         /// <param name="input"></param>
         /// <param name="label"></param>
         /// <returns></returns>
-        internal ArgumentResult<T, P> Interactive(IInputService input, string label)
+        internal ArgumentResult<T, P> Interactive(IInputService input, string label, bool? allowEmtpy = null)
         {
+            if (allowEmtpy == true)
+            {
+                if (_required)
+                {
+                    throw new InvalidOperationException("Required cannot be combined with AllowNull");
+                }
+                _allowEmpty = true;
+            }
             _inputService = input;
             _inputLabel = label;
             return this;
@@ -115,6 +152,10 @@ namespace PKISharp.WACS.Services
         /// <returns></returns>
         internal ArgumentResult<T, P> Required()
         {
+            if (_allowEmpty)
+            {
+                throw new InvalidOperationException("Required cannot be combined with AllowNull");
+            }
             _required = true;
             return this;
         }
@@ -211,7 +252,7 @@ namespace PKISharp.WACS.Services
             {
                 if (_inputService != null)
                 {
-                    _inputValue = await GetInput(_inputService, returnValue);
+                    _inputValue = await GetInput(_inputService, _defaultValue);
                     if (HasValue(_inputValue))
                     {
                         returnValue = _inputValue;

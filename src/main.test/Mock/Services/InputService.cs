@@ -56,6 +56,13 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         public Task<TResult> ChooseFromMenu<TResult>(string what, List<Choice<TResult>> choices, Func<string, Choice<TResult>>? unexpected = null)
         {
             var input = GetNextInput();
+            foreach (var c in choices)
+            {
+                if (c.Command == null)
+                {
+                    c.Command = (choices.IndexOf(c) + 1).ToString();
+                }
+            }
             var choice = choices.FirstOrDefault(c => string.Equals(c.Command, input, StringComparison.InvariantCultureIgnoreCase));
             if (choice == null && unexpected != null)
             {

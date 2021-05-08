@@ -71,13 +71,17 @@ namespace PKISharp.WACS.Services
                 ret = await chosen.Invoke();
             }
 
-            if (stop || string.IsNullOrWhiteSpace(ret))
+            if (ret == none)
             {
                 return none;
             }
+            if (ret == @default || ret == null)
+            {
+                return @default;
+            }
 
             // Offer to save in list
-            if (ret != @default && !ret.StartsWith(VaultPrefix))
+            if (!ret.StartsWith(VaultPrefix))
             {
                 var save = await _inputService.PromptYesNo($"Save to vault for future reuse?", false);
                 if (save)
