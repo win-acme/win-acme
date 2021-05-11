@@ -24,6 +24,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             await common.Aquire(options);
             options.ResourceGroupName = await _arguments.TryGetArgument(az.AzureResourceGroupName, input, "DNS resource group name");
             options.SubscriptionId = await _arguments.TryGetArgument(az.AzureSubscriptionId, input, "Subscription id");
+            options.HostedZone = await _arguments.TryGetArgument(az.AzureHostedZone, input, "Hosted Zone (blank to find best match)");
             return options;
         }
 
@@ -35,6 +36,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             await common.Default(options);
             options.ResourceGroupName = _arguments.TryGetRequiredArgument(nameof(az.AzureResourceGroupName), az.AzureResourceGroupName);
             options.SubscriptionId = _arguments.TryGetRequiredArgument(nameof(az.AzureSubscriptionId), az.AzureSubscriptionId);
+            options.HostedZone = _arguments.TryGetRequiredArgument(nameof(az.AzureHostedZone), az.AzureHostedZone);
             return options;
         }
 
