@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Services
 {
-    public class ArgumentResult<T, P> where T : class, IArguments, new()
+    public class ArgumentResult<TArguments, TResult> where TArguments : class, IArguments, new()
     {
         /// <summary>
         /// Metadata obtained through reflection
@@ -16,22 +16,28 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// Starting value from command line parser
         /// </summary>
-        protected readonly P? _argumentValue;
+        protected readonly TResult? _argumentValue;
 
         /// <summary>
         /// Default value set at some point during the chain
         /// </summary>
-        protected P? _defaultValue;
+        protected TResult? _defaultValue;
 
         /// <summary>
         /// User input set at some point during the chain
         /// </summary>
-        protected P? _inputValue;
+        protected TResult? _inputValue;
 
         /// <summary>
         /// Label to show to the user in interactive mode
         /// </summary>
         protected string? _inputLabel;
+
+        /// <summary>
+        /// Required value
+        /// </summary>
+        private bool _inputMultiline = false;
+
 
         /// <summary>
         /// Allow null input from interactive mode
@@ -46,12 +52,12 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// Ask the user for input
         /// </summary>
-        private readonly Func<string, P?, bool, Task<P?>> _inputFunction;
+        private readonly Func<ArgumentResultInputArguments<TResult>, Task<TResult?>> _inputFunction;
 
         /// <summary>
         /// Validator to run
         /// </summary>
-        private readonly List<Tuple<Func<P?, Task<bool>>, string>> _validators = new();
+        private readonly List<Tuple<Func<TResult?, Task<bool>>, string>> _validators = new();
 
         /// <summary>
         /// Do not emit default value
@@ -68,7 +74,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="current"></param>
         /// <returns></returns>
-        private bool HasValue(P? current)
+        private bool HasValue(TResult? current)
         {
             if (current == null)
             {
@@ -103,12 +109,20 @@ namespace PKISharp.WACS.Services
             return true;
         }
 
-        internal ArgumentResult(P baseValue, CommandLineAttribute metaData, Func<string, P?, bool, Task<P?>> input, bool allowEmtpy = false)
+        internal ArgumentResult(TResult baseValue, CommandLineAttribute metaData, Func<ArgumentResultInputArguments<TResult>, Task<TResult?>> input, bool allowEmtpy = false)
         {
             _argumentValue = baseValue;
             _metaData = metaData;
             _inputFunction = input;
             _allowEmpty = allowEmtpy;
+        }
+
+        internal class ArgumentResultInputArguments<TDefault>
+        {
+            public string Label { get; set; } = "Input";
+            public TDefault? Default { get; set; }
+            public bool Required { get; set; } = false;
+            public bool Multiline { get; set; } = false;
         }
 
         /// <summary>
@@ -117,18 +131,12 @@ namespace PKISharp.WACS.Services
         /// <param name="input"></param>
         /// <param name="label"></param>
         /// <returns></returns>
-        public ArgumentResult<T, P> Interactive(IInputService input, string? label = null, bool? allowEmtpy = null)
+        public ArgumentResult<TArguments, TResult> Interactive(IInputService input, string? label = null, bool allowEmtpy = false, bool multiline = false)
         {
-            if (allowEmtpy == true)
-            {
-                if (_required)
-                {
-                    throw new InvalidOperationException("Required cannot be combined with AllowNull");
-                }
-                _allowEmpty = true;
-            }
+            _allowEmpty = allowEmtpy;
             _inputService = input;
             _inputLabel = label;
+            _inputMultiline = multiline;
             return this;
         }
 
@@ -140,9 +148,9 @@ namespace PKISharp.WACS.Services
         /// <param name="validator"></param>
         /// <param name="errorReason"></param>
         /// <returns></returns>
-        public ArgumentResult<T, P> Validate(Func<P?, Task<bool>> validator, string errorReason)
+        public ArgumentResult<TArguments, TResult> Validate(Func<TResult?, Task<bool>> validator, string errorReason)
         {
-            _validators.Add(new Tuple<Func<P?, Task<bool>>, string>(validator, errorReason));
+            _validators.Add(new Tuple<Func<TResult?, Task<bool>>, string>(validator, errorReason));
             return this;
         }
 
@@ -150,7 +158,7 @@ namespace PKISharp.WACS.Services
         /// Shortcut for required input validation
         /// </summary>
         /// <returns></returns>
-        public ArgumentResult<T, P> Required()
+        public ArgumentResult<TArguments, TResult> Required()
         {
             _required = true;
             return this;
@@ -162,7 +170,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public ArgumentResult<T, P> WithDefault(P value)
+        public ArgumentResult<TArguments, TResult> WithDefault(TResult value)
         {
             _defaultValue = value;
             return this;
@@ -174,13 +182,13 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public ArgumentResult<T, P> DefaultAsNull()
+        public ArgumentResult<TArguments, TResult> DefaultAsNull()
         {
             _defaultAsNull = true;
             return this;
         }
 
-        private async Task<P?> GetInput(IInputService input, P? current)
+        private async Task<TResult?> GetInput(IInputService input, TResult? current)
         {
             input.CreateSpace();
             input.Show("Description", _metaData.Description);
@@ -194,10 +202,17 @@ namespace PKISharp.WACS.Services
                 var showValue = _metaData.Secret ? "********" : _argumentValue?.ToString();
                 input.Show("Argument", showValue);
             }
-            return await _inputFunction(_inputLabel ?? _metaData.Name, current, _required);
+            var args = new ArgumentResultInputArguments<TResult>()
+            {
+                Label = _inputLabel ?? _metaData.Name,
+                Default = current,
+                Required = _required,
+                Multiline = _inputMultiline
+            };
+            return await _inputFunction(args);
         }
 
-        private async Task<(bool, string?)> IsValid(P? returnValue)
+        private async Task<(bool, string?)> IsValid(TResult? returnValue)
         {
             // Validate
             if (_required && !HasValue(returnValue))
@@ -237,7 +252,7 @@ namespace PKISharp.WACS.Services
         /// get the final value
         /// </summary>
         /// <returns></returns>
-        public async Task<P?> GetValue()
+        public async Task<TResult?> GetValue()
         {
             var returnValue = _argumentValue;
             if (!HasValue(returnValue))
@@ -270,7 +285,7 @@ namespace PKISharp.WACS.Services
 
             // Sometime we don't want to store the default result
             // even when it comes straight from the user
-            if (_defaultAsNull && Comparer<P>.Default.Compare(returnValue, _defaultValue) == 0)
+            if (_defaultAsNull && Comparer<TResult>.Default.Compare(returnValue, _defaultValue) == 0)
             {
                 return default;
             }
