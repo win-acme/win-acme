@@ -22,19 +22,17 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public override async Task<DreamhostOptions> Aquire(Target target, IInputService input, RunLevel runLevel)
         {
-            var apiKey = await ApiKey.Interactive(input).GetValue();
             return new DreamhostOptions()
             {
-                ApiKey = apiKey
+                ApiKey = await ApiKey.Interactive(input).GetValue()
             };
         }
 
         public override async Task<DreamhostOptions> Default(Target target)
         {
-            var apiKey = await ApiKey.GetValue();
             return new DreamhostOptions()
             {
-                ApiKey = apiKey
+                ApiKey = await ApiKey.GetValue()
             };
         }
 
