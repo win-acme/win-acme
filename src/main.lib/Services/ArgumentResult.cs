@@ -131,9 +131,9 @@ namespace PKISharp.WACS.Services
         /// <param name="input"></param>
         /// <param name="label"></param>
         /// <returns></returns>
-        public ArgumentResult<TArguments, TResult> Interactive(IInputService input, string? label = null, bool allowEmtpy = false, bool multiline = false)
+        public ArgumentResult<TArguments, TResult> Interactive(IInputService input, string? label = null, bool allowEmpty = false, bool multiline = false)
         {
-            _allowEmpty = allowEmtpy;
+            _allowEmpty = allowEmpty;
             _inputService = input;
             _inputLabel = label;
             _inputMultiline = multiline;

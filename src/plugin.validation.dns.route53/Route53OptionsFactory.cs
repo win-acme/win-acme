@@ -9,45 +9,49 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     internal sealed class Route53OptionsFactory : ValidationPluginOptionsFactory<Route53, Route53Options>
     {
-        private readonly IArgumentsService _arguments;
+        private readonly ArgumentsInputService _arguments;
 
-        public Route53OptionsFactory(IArgumentsService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
+        public Route53OptionsFactory(ArgumentsInputService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
+
+        private ArgumentResult<Route53Arguments, ProtectedString> AccessKey => _arguments.
+            GetProtectedString<Route53Arguments>(a => a.Route53SecretAccessKey).
+            Required();
+
+        private ArgumentResult<Route53Arguments, string> AccessKeyId => _arguments.
+            GetString<Route53Arguments>(a => a.Route53AccessKeyId).
+            Required();
+
+        private ArgumentResult<Route53Arguments, string> IamRole => _arguments.
+            GetString<Route53Arguments>(a => a.Route53IAMRole);
 
         public override async Task<Route53Options> Aquire(Target target, IInputService input, RunLevel runLevel)
         {
-            var args = _arguments.GetArguments<Route53Arguments>();
             var options = new Route53Options
             {
-                IAMRole = await _arguments.TryGetArgument(args.Route53IAMRole, input, "AWS IAM role for current EC2 instance (blank for default)")
+                IAMRole = await IamRole.Interactive(input, "AWS IAM role for current EC2 instance (blank for default)").GetValue()
             };
-
             if (!string.IsNullOrWhiteSpace(options.IAMRole))
             {
                 return options;
             }
-
-            options.AccessKeyId = await _arguments.TryGetArgument(args.Route53AccessKeyId, input, "AWS access key ID");
-            options.SecretAccessKey = new ProtectedString(await _arguments.TryGetArgument(args.Route53SecretAccessKey, input, "AWS secret access key", true));
-
+            options.AccessKeyId = await AccessKeyId.Interactive(input, "AWS access key ID").GetValue();
+            options.SecretAccessKey = await AccessKey.Interactive(input, "AWS secret access key").GetValue();
             return options;
         }
 
-        public override Task<Route53Options> Default(Target target)
+        public override async Task<Route53Options> Default(Target target)
         {
-            var args = _arguments.GetArguments<Route53Arguments>();
-            if (!string.IsNullOrEmpty(args.Route53IAMRole))
+            var options = new Route53Options
             {
-                return Task.FromResult(new Route53Options
-                {
-                    IAMRole = args.Route53IAMRole
-                });
+                IAMRole = await IamRole.GetValue()
+            };
+            if (!string.IsNullOrWhiteSpace(options.IAMRole))
+            {
+                return options;
             }
-
-            return Task.FromResult(new Route53Options
-            {
-                AccessKeyId = _arguments.TryGetRequiredArgument(nameof(args.Route53AccessKeyId), args.Route53AccessKeyId),
-                SecretAccessKey = new ProtectedString(_arguments.TryGetRequiredArgument(nameof(args.Route53SecretAccessKey), args.Route53SecretAccessKey))
-            });
+            options.AccessKeyId = await AccessKeyId.GetValue();
+            options.SecretAccessKey = await AccessKey.GetValue();
+            return options;
         }
 
         public override bool CanValidate(Target target) => true;
