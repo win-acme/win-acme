@@ -3,6 +3,7 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -26,19 +27,21 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _proxy = proxy;
         }
 
+        private ArgumentResult<TransIpArguments, string> Login => _arguments.
+            GetString<TransIpArguments>(a => a.Login).
+            Required();
+
+        private ArgumentResult<TransIpArguments, ProtectedString> PrivateKey => _arguments.
+            GetProtectedString<TransIpArguments>(a => a.PrivateKey).
+            Validate(x => Task.FromResult(CheckKey(x.Value)), "invalid private key").
+            Required();
+
         public override async Task<TransIpOptions> Aquire(Target target, IInputService input, RunLevel runLevel)
         {
-            var login = await _arguments.
-                GetString<TransIpArguments>(a => a.Login).
-                Interactive(input, "User name for the control panel").
-                Required().
-                GetValue();
+            var login = await Login.Interactive(input, "User name for the control panel").GetValue();
 
-            var key = await _arguments.
-                GetProtectedString<TransIpArguments>(a => a.PrivateKey).
+            var key = await PrivateKey.
                 Interactive(input, "Private key for the API, generated in the control panel", multiline: true).
-                Required().
-                Validate(x => Task.FromResult(CheckKey(x.Value)), "invalid private key").
                 GetValue();
 
             return new TransIpOptions()
@@ -50,10 +53,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public override async Task<TransIpOptions> Default(Target target)
         {
-            var login = await _arguments.
-                GetString<TransIpArguments>(a => a.Login).
-                Required().
-                GetValue();
+            var login = await Login.GetValue();
 
             var keyFile = await _arguments.
                 GetString<TransIpArguments>(a => a.PrivateKeyFile).
@@ -63,11 +63,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
             var key = keyFile != null
                 ? (await File.ReadAllTextAsync(keyFile)).Protect()
-                : await _arguments.
-                    GetProtectedString<TransIpArguments>(a => a.PrivateKey).
-                    Required().
-                    Validate(x => Task.FromResult(CheckKey(x.Value)), "invalid key").
-                    GetValue();
+                : await PrivateKey.GetValue();
 
             return new TransIpOptions()
             {

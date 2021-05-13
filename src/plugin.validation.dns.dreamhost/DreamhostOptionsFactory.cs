@@ -2,6 +2,7 @@
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
@@ -15,12 +16,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public DreamhostOptionsFactory(ArgumentsInputService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
 
+        private ArgumentResult<DreamhostArguments, ProtectedString> ApiKey => _arguments.
+            GetProtectedString<DreamhostArguments>(a => a.ApiKey).
+            Required();
+
         public override async Task<DreamhostOptions> Aquire(Target target, IInputService input, RunLevel runLevel)
         {
-            var apiKey = await _arguments.GetProtectedString<DreamhostArguments>(x => x.ApiKey).
-                Interactive(input).
-                Required().
-                GetValue();
+            var apiKey = await ApiKey.Interactive(input).GetValue();
             return new DreamhostOptions()
             {
                 ApiKey = apiKey
@@ -29,9 +31,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public override async Task<DreamhostOptions> Default(Target target)
         {
-            var apiKey = await _arguments.GetProtectedString<DreamhostArguments>(x => x.ApiKey).
-                Required().
-                GetValue();
+            var apiKey = await ApiKey.GetValue();
             return new DreamhostOptions()
             {
                 ApiKey = apiKey
