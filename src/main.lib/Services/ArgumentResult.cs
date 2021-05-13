@@ -46,7 +46,7 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// Ask the user for input
         /// </summary>
-        private readonly Func<string, P?, Task<P?>> _inputFunction;
+        private readonly Func<string, P?, bool, Task<P?>> _inputFunction;
 
         /// <summary>
         /// Validator to run
@@ -103,7 +103,7 @@ namespace PKISharp.WACS.Services
             return true;
         }
 
-        internal ArgumentResult(P baseValue, CommandLineAttribute metaData, Func<string, P?, Task<P?>> input, bool allowEmtpy = false)
+        internal ArgumentResult(P baseValue, CommandLineAttribute metaData, Func<string, P?, bool, Task<P?>> input, bool allowEmtpy = false)
         {
             _argumentValue = baseValue;
             _metaData = metaData;
@@ -117,7 +117,7 @@ namespace PKISharp.WACS.Services
         /// <param name="input"></param>
         /// <param name="label"></param>
         /// <returns></returns>
-        internal ArgumentResult<T, P> Interactive(IInputService input, string label, bool? allowEmtpy = null)
+        public ArgumentResult<T, P> Interactive(IInputService input, string? label = null, bool? allowEmtpy = null)
         {
             if (allowEmtpy == true)
             {
@@ -140,7 +140,7 @@ namespace PKISharp.WACS.Services
         /// <param name="validator"></param>
         /// <param name="errorReason"></param>
         /// <returns></returns>
-        internal ArgumentResult<T, P> Validate(Func<P?, Task<bool>> validator, string errorReason)
+        public ArgumentResult<T, P> Validate(Func<P?, Task<bool>> validator, string errorReason)
         {
             _validators.Add(new Tuple<Func<P?, Task<bool>>, string>(validator, errorReason));
             return this;
@@ -150,12 +150,8 @@ namespace PKISharp.WACS.Services
         /// Shortcut for required input validation
         /// </summary>
         /// <returns></returns>
-        internal ArgumentResult<T, P> Required()
+        public ArgumentResult<T, P> Required()
         {
-            if (_allowEmpty)
-            {
-                throw new InvalidOperationException("Required cannot be combined with AllowNull");
-            }
             _required = true;
             return this;
         }
@@ -166,7 +162,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        internal ArgumentResult<T, P> WithDefault(P value)
+        public ArgumentResult<T, P> WithDefault(P value)
         {
             _defaultValue = value;
             return this;
@@ -178,7 +174,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        internal ArgumentResult<T, P> DefaultAsNull()
+        public ArgumentResult<T, P> DefaultAsNull()
         {
             _defaultAsNull = true;
             return this;
@@ -198,7 +194,7 @@ namespace PKISharp.WACS.Services
                 var showValue = _metaData.Secret ? "********" : _argumentValue?.ToString();
                 input.Show("Argument", showValue);
             }
-            return await _inputFunction(_inputLabel ?? "Input", current);
+            return await _inputFunction(_inputLabel ?? _metaData.Name, current, _required);
         }
 
         private async Task<(bool, string?)> IsValid(P? returnValue)
@@ -208,11 +204,11 @@ namespace PKISharp.WACS.Services
             {
                 if (!string.IsNullOrWhiteSpace(_inputLabel))
                 {
-                    return (false, "This is a required value");
+                    return (false, "this is a required value");
                 } 
                 else
                 {
-                    return (false, "Missing value --{_metaData.Name}");
+                    return (false, $"missing --{_metaData.ArgumentName}");
                 }
             }
             if (HasValue(returnValue))
@@ -224,11 +220,11 @@ namespace PKISharp.WACS.Services
                     {
                         if (!string.IsNullOrWhiteSpace(_inputLabel))
                         {
-                            return (false, $"Invalid value: {validator.Item2}");
+                            return (false, $"invalid value: {validator.Item2}");
                         }
                         else
                         {
-                            return (false, $"Invalid --{_metaData.Name}: {validator.Item2}");
+                            return (false, $"invalid --{_metaData.ArgumentName}: {validator.Item2}");
                         }
                     }
                 }

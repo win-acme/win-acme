@@ -2,7 +2,6 @@
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
-using PKISharp.WACS.Services.Serialization;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
@@ -12,26 +11,31 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     /// </summary>
     internal class DreamhostOptionsFactory : ValidationPluginOptionsFactory<DreamhostDnsValidation, DreamhostOptions>
     {
-        private readonly IArgumentsService _arguments;
+        private readonly ArgumentsInputService _arguments;
 
-        public DreamhostOptionsFactory(IArgumentsService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
+        public DreamhostOptionsFactory(ArgumentsInputService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
 
         public override async Task<DreamhostOptions> Aquire(Target target, IInputService input, RunLevel runLevel)
         {
-            var args = _arguments.GetArguments<DreamhostArguments>();
+            var apiKey = await _arguments.GetProtectedString<DreamhostArguments>(x => x.ApiKey).
+                Interactive(input).
+                Required().
+                GetValue();
             return new DreamhostOptions()
             {
-                ApiKey = new ProtectedString(await _arguments.TryGetArgument(args.ApiKey, input, "ApiKey", true)),
+                ApiKey = apiKey
             };
         }
 
-        public override Task<DreamhostOptions> Default(Target target)
+        public override async Task<DreamhostOptions> Default(Target target)
         {
-            var az = _arguments.GetArguments<DreamhostArguments>();
-            return Task.FromResult(new DreamhostOptions()
+            var apiKey = await _arguments.GetProtectedString<DreamhostArguments>(x => x.ApiKey).
+                Required().
+                GetValue();
+            return new DreamhostOptions()
             {
-                ApiKey = new ProtectedString(_arguments.TryGetRequiredArgument(nameof(az.ApiKey), az.ApiKey)),
-            });
+                ApiKey = apiKey
+            };
         }
 
         public override bool CanValidate(Target target) => true;

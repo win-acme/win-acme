@@ -28,27 +28,23 @@ namespace PKISharp.WACS.Services
         public ArgumentResult<T, ProtectedString?> GetProtectedString<T>(Expression<Func<T, string?>> expression, bool allowEmtpy = false)
             where T : class, IArguments,
             new() => new(GetArgument(expression).Protect(allowEmtpy), GetMetaData(expression),
-                async (label, value) => (await _secretService.GetSecret(label, value?.Value, allowEmtpy ? "" : null)).Protect(allowEmtpy), 
+                async (label, value, required) => (await _secretService.GetSecret(label, value?.Value, allowEmtpy ? "" : null, required)).Protect(allowEmtpy), 
                 allowEmtpy);
 
         public ArgumentResult<T, string?> GetString<T>(Expression<Func<T, string?>> expression)
             where T : class, IArguments, new() =>
             new(GetArgument(expression), GetMetaData(expression),
-                async (label, value) =>
-                {
-                    var raw = await _input.RequestString(label);
-                    return string.IsNullOrWhiteSpace(raw) ? null : raw;
-                });
+                async (label, value, required) => await _input.RequestString(label));
 
         public ArgumentResult<T, bool?> GetBool<T>(Expression<Func<T, bool?>> expression)
             where T : class, IArguments, new() =>
             new(GetArgument(expression), GetMetaData(expression),
-                async (label, value) => await _input.PromptYesNo(label, value == true));
+                async (label, value, required) => await _input.PromptYesNo(label, value == true));
 
         public ArgumentResult<T, long?> GetLong<T>(Expression<Func<T, long?>> expression)
             where T : class, IArguments, new() =>
             new(GetArgument(expression), GetMetaData(expression),
-                async (label, value) => {
+                async (label, value, required) => {
                     var str = await _input.RequestString(label);
                     if (long.TryParse(str, out var ret))
                     {
@@ -61,7 +57,7 @@ namespace PKISharp.WACS.Services
                     }
                 });
 
-        protected CommandLineAttribute GetMetaData(LambdaExpression action)
+        protected static CommandLineAttribute GetMetaData(LambdaExpression action)
         {
             if (action.Body is MemberExpression expression)
             {
@@ -93,7 +89,7 @@ namespace PKISharp.WACS.Services
                 {
                     var property = expression.Member;
                     var commandLineOptions = property.CommandLineOptions();
-                    optionName = (commandLineOptions.Name ?? property.Name).ToLower();
+                    optionName = commandLineOptions.ArgumentName;
                     var func = action.Compile();
                     returnValue = func(args);
                 }
@@ -114,9 +110,14 @@ namespace PKISharp.WACS.Services
             else
             {
                 var censor = ArgumentsParser.CensoredParameters.Any(c => optionName!.Contains(c));
-                _log.Debug("Parsed value for --{optionName}: {providedValue}",
-                    optionName,
-                    censor ? "********" : returnValue);
+                if (returnValue is string returnString && string.IsNullOrWhiteSpace(returnString)) 
+                {
+                    _log.Debug("Parsed emtpy value for --{optionName}", optionName);
+                } 
+                else
+                {
+                    _log.Debug("Parsed value for --{optionName}: {providedValue}", optionName, censor ? "********" : returnValue);
+                }
             }
             return returnValue;
         }

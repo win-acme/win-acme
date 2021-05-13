@@ -14,9 +14,9 @@ namespace PKISharp.WACS.Extensions
             {
                 found = new CommandLineAttribute();
             }
-            if (string.IsNullOrWhiteSpace(found.Name))
+            if (string.IsNullOrWhiteSpace(found.MetaName))
             {
-                found.Name = memberInfo.Name;
+                found.MetaName = memberInfo.Name;
             }
             if (string.IsNullOrWhiteSpace(found.Description))
             {
