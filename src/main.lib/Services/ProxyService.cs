@@ -27,6 +27,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         public bool UseSystemProxy => string.Equals(_settings.Proxy.Url, "[System]", StringComparison.OrdinalIgnoreCase);
 
+        public HttpClientHandler GetHttpClientHandler() => GetHttpClientHandler(true);
         public HttpClientHandler GetHttpClientHandler(bool checkSsl = true)
         {
             var httpClientHandler = new LoggingHttpClientHandler(_log)
@@ -129,6 +130,5 @@ namespace PKISharp.WACS.Services
             }
             return _proxy;
         }
-
     }
 }
