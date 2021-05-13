@@ -11,7 +11,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private readonly ILogService _log;
         private readonly ArgumentsInputService _argumentInput;
         private readonly ISettingsService _settings;
-        private readonly SecretServiceManager _secretServiceManager;
 
         public CentralSslOptionsFactory(
             ILogService log, 
@@ -25,43 +24,29 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             _secretServiceManager = secretServiceManager;
         }
 
+        private ArgumentResult<CentralSslArguments, ProtectedString?> PfxPassword => _argumentInput.
+            GetProtectedString<CentralSslArguments>(args => args.PfxPassword, true).
+            WithDefault(CentralSsl.DefaultPassword(_settings).Protect()).
+            DefaultAsNull();
+
+        private ArgumentResult<CentralSslArguments, string?> Path => _argumentInput.
+            GetString<CentralSslArguments>(args => args.CentralSslStore).
+            WithDefault(CentralSsl.DefaultPath(_settings)).
+            Required().
+            Validate(x => Task.FromResult(x.ValidPath(_log)), "Invalid path").
+            DefaultAsNull();
+
         public override async Task<CentralSslOptions?> Aquire(IInputService input, RunLevel runLevel)
         {
-            var path = await _argumentInput.
-                GetString<CentralSslArguments>(args => args.CentralSslStore).
-                Interactive(input, "Store path").
-                WithDefault(CentralSsl.DefaultPath(_settings)).
-                Required().
-                Validate(x => Task.FromResult(x.ValidPath(_log)), "Invalid path").
-                DefaultAsNull().
-                GetValue();
-
-            var password = await _argumentInput.
-                GetProtectedString<CentralSslArguments>(args => args.PfxPassword, true).
-                WithDefault(CentralSsl.DefaultPassword(_settings).Protect()).
-                Interactive(input, "Password to use for the .pfx files").
-                DefaultAsNull().
-                GetValue();
-
+            var path = await Path.Interactive(input, "Store path").GetValue();
+            var password = await PfxPassword.Interactive(input, "Password for the .pfx file").GetValue();
             return Create(path, password);
         }
 
         public override async Task<CentralSslOptions?> Default()
         {
-            var path = await _argumentInput.
-                GetString<CentralSslArguments>(args => args.CentralSslStore).
-                WithDefault(CentralSsl.DefaultPath(_settings)).
-                Required().
-                Validate(x => Task.FromResult(x.ValidPath(_log)), "Invalid path").
-                DefaultAsNull().
-                GetValue();
-
-            var password = await _argumentInput.
-                GetProtectedString<CentralSslArguments>(args => args.PfxPassword).
-                WithDefault(CentralSsl.DefaultPassword(_settings).Protect()).
-                DefaultAsNull().
-                GetValue();
-           
+            var path = await Path.GetValue();
+            var password = await PfxPassword.GetValue();
             return Create(path, password);
         }
 
