@@ -19,14 +19,15 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
             string nullChoiceLabel) where TResult : class
         {
             var input = GetNextInput();
+            var choices = options.Select(o => creator(o)).ToList();
+            NumberChoices(choices.OfType<Choice>().ToList());
             if (string.Equals(nullChoiceLabel, input))
             {
                 return Task.FromResult(default(TResult));
             }
             else
             {
-                return Task.
-                    FromResult(options.Select(o => creator(o)).
+                return Task.FromResult(choices.
                     FirstOrDefault(c => string.Equals(c.Command, input, StringComparison.InvariantCultureIgnoreCase))?.
                     Item);
             }
@@ -56,13 +57,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         public Task<TResult> ChooseFromMenu<TResult>(string what, List<Choice<TResult>> choices, Func<string, Choice<TResult>>? unexpected = null)
         {
             var input = GetNextInput();
-            foreach (var c in choices)
-            {
-                if (c.Command == null)
-                {
-                    c.Command = (choices.IndexOf(c) + 1).ToString();
-                }
-            }
+            NumberChoices(choices.OfType<Choice>().ToList());
             var choice = choices.FirstOrDefault(c => string.Equals(c.Command, input, StringComparison.InvariantCultureIgnoreCase));
             if (choice == null && unexpected != null)
             {
@@ -73,6 +68,16 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
                 return Task.FromResult(choice.Item);
             }
             throw new Exception();
+        }
+        internal void NumberChoices(List<Choice> choices)
+        {
+            foreach (var c in choices)
+            {
+                if (c.Command == null)
+                {
+                    c.Command = (choices.IndexOf(c) + 1).ToString();
+                }
+            }
         }
 
         public void CreateSpace() { }

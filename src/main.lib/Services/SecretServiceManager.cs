@@ -32,6 +32,10 @@ namespace PKISharp.WACS.Services
         {
             var stop = false;
             string? ret = null;
+            // While loop allows the "Find in vault" option
+            // to be cancelled so that the user can still
+            // input a new password if it's not found yet
+            // without having to restart the process.
             while (!stop && string.IsNullOrEmpty(ret))
             {
                 var options = new List<Choice<Func<Task<string?>>>>
@@ -44,6 +48,7 @@ namespace PKISharp.WACS.Services
                         description: "None"),
                     Choice.Create<Func<Task<string?>>>(
                         async () => {
+                            stop = true;
                             if (multiline == true)
                             {
                                 return await _inputService.RequestString("New secret", true);

@@ -22,7 +22,7 @@ namespace PKISharp.WACS.UnitTests.Mock
             var input = new mock.InputService(inputSequence ?? new List<string>());
 
             var builder = new ContainerBuilder();
-            _ = builder.RegisterType<mock.SecretService>().As<real.ISecretService>();
+            _ = builder.RegisterType<mock.SecretService>().As<real.ISecretService>().SingleInstance();
             _ = builder.RegisterType<real.SecretServiceManager>();
             _ = builder.RegisterInstance(log).As<real.ILogService>();
             _ = builder.RegisterInstance(argumentsParser).As<ArgumentsParser>();
@@ -36,7 +36,6 @@ namespace PKISharp.WACS.UnitTests.Mock
             _ = builder.RegisterType<mock.UserRoleService>().As<real.IUserRoleService>().SingleInstance();
             _ = builder.RegisterType<mock.ProxyService>().As<real.IProxyService>().SingleInstance();
             _ = builder.RegisterType<real.PasswordGenerator>().SingleInstance();
-            _ = builder.RegisterType<real.JsonSecretService>().As<real.ISecretService>();
             _ = builder.RegisterType<real.SecretServiceManager>();
 
             pluginService.Configure(builder);
