@@ -1,12 +1,14 @@
 ﻿using Google.Apis.Auth.OAuth2;
 using Google.Apis.Dns.v1;
 using Google.Apis.Dns.v1.Data;
+using Google.Apis.Http;
 using Google.Apis.Services;
 using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Services;
 using System;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Runtime.Versioning;
 using System.Threading.Tasks;
 
@@ -30,10 +32,20 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             _options = options;
             _proxy = proxy;
-            _client = CreateDnsService(log);
+            _client = CreateDnsService();
         }
 
-        private CloudDnsService CreateDnsService(ILogService log)
+        private class ProxyFactory : HttpClientFactory
+        {
+            private readonly IProxyService _proxy;
+            public ProxyFactory(IProxyService proxy) => _proxy = proxy;
+            protected override HttpClientHandler CreateClientHandler()
+            {
+                return _proxy.GetHttpClientHandler();
+            }
+        }
+
+        private CloudDnsService CreateDnsService()
         {
             GoogleCredential credential;
             using (var stream = new FileStream(_options.ServiceAccountKeyPath, FileMode.Open, FileAccess.Read))
@@ -44,7 +56,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var dnsService = new DnsService(new BaseClientService.Initializer()
             {
                 HttpClientInitializer = credential,
-                ApplicationName = "Win ACME",
+                HttpClientFactory = new ProxyFactory(_proxy),
+                ApplicationName = $"win-acme {VersionService.SoftwareVersion}",
             });
 
             return new CloudDnsService(dnsService);

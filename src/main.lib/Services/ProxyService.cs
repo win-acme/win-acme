@@ -27,11 +27,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         public bool UseSystemProxy => string.Equals(_settings.Proxy.Url, "[System]", StringComparison.OrdinalIgnoreCase);
 
-        /// <summary>
-        /// Get prepared HttpClient with correct system proxy settings
-        /// </summary>
-        /// <returns></returns>
-        public HttpClient GetHttpClient(bool checkSsl = true)
+        public HttpClientHandler GetHttpClientHandler(bool checkSsl = true)
         {
             var httpClientHandler = new LoggingHttpClientHandler(_log)
             {
@@ -46,6 +42,16 @@ namespace PKISharp.WACS.Services
             {
                 httpClientHandler.DefaultProxyCredentials = CredentialCache.DefaultCredentials;
             }
+            return httpClientHandler;
+        }
+
+        /// <summary>
+        /// Get prepared HttpClient with correct system proxy settings
+        /// </summary>
+        /// <returns></returns>
+        public HttpClient GetHttpClient(bool checkSsl = true)
+        {
+            var httpClientHandler = GetHttpClientHandler(checkSsl);
             var httpClient = new HttpClient(httpClientHandler);
             httpClient.DefaultRequestHeaders.Add("User-Agent", $"win-acme/{VersionService.SoftwareVersion} (+https://github.com/win-acme/win-acme)");
             return httpClient;
