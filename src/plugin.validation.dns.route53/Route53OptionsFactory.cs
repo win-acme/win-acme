@@ -28,14 +28,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             var options = new Route53Options
             {
-                IAMRole = await IamRole.Interactive(input, "AWS IAM role for current EC2 instance (blank for default)").GetValue()
+                IAMRole = await IamRole.Interactive(input, "IAM role (blank for default)").GetValue()
             };
             if (!string.IsNullOrWhiteSpace(options.IAMRole))
             {
                 return options;
             }
-            options.AccessKeyId = await AccessKeyId.Interactive(input, "AWS access key ID").GetValue();
-            options.SecretAccessKey = await AccessKey.Interactive(input, "AWS secret access key").GetValue();
+            options.AccessKeyId = await AccessKeyId.Interactive(input, "Access key ID").GetValue();
+            options.SecretAccessKey = await AccessKey.Interactive(input, "Secret access key").GetValue();
             return options;
         }
 
