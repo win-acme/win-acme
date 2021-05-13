@@ -144,7 +144,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             var ret = default(T);
             if (allowAbort)
             {
-                ret = (T)await _input.ChooseOptional(
+                ret = (T?)await _input.ChooseOptional(
                     shortDescription,
                     localOptions,
                     x => creator(x.plugin, x.type, x.disabled),
@@ -152,7 +152,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             } 
             else
             {
-                ret = (T)await _input.ChooseRequired(
+                ret = (T?)await _input.ChooseRequired(
                     shortDescription,
                     localOptions,
                     x => creator(x.plugin, x.type, x.disabled));
