@@ -18,6 +18,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         private readonly CloudflareOptions _options;
         private readonly DomainParseService _domainParser;
+        private readonly SecretServiceManager _ssm;
         private readonly HttpClient _hc;
 
         public Cloudflare(
@@ -25,17 +26,19 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             DomainParseService domainParser,
             IProxyService proxyService,
             LookupClientProvider dnsClient,
+            SecretServiceManager ssm,
             ILogService log,
             ISettingsService settings) : base(dnsClient, log, settings)
         {
             _options = options;
             _hc = proxyService.GetHttpClient();
             _domainParser = domainParser;
+            _ssm = ssm;
         }
 
         private IAuthorizedSyntax GetContext() =>
             // avoid name collision with this class
-            FluentCloudflare.Cloudflare.WithToken(_options.ApiToken.Value);
+            FluentCloudflare.Cloudflare.WithToken(_ssm.EvaluateSecret(_options.ApiToken));
 
         private async Task<Zone> GetHostedZone(IAuthorizedSyntax context, string recordName)
         {

@@ -18,9 +18,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             LookupClientProvider dnsClient, 
             ILogService logService, 
             ISettingsService settings,
+            SecretServiceManager ssm,
             DreamhostOptions options)
             : base(dnsClient, logService, settings) 
-            => _client = new DnsManagementClient(options.ApiKey.Value, logService);
+            => _client = new DnsManagementClient(ssm.EvaluateSecret(options.ApiKey), logService);
 
         public override async Task<bool> CreateRecord(DnsValidationRecord record)
         {

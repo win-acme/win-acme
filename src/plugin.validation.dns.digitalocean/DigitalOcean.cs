@@ -17,8 +17,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         private long? _recordId;
         private string _zone;
 
-        public DigitalOcean(DigitalOceanOptions options, LookupClientProvider dnsClient, ILogService log, ISettingsService settings) : base(dnsClient, log, settings) 
-            => _doClient = new DigitalOceanClient(options.ApiToken.Value);
+        public DigitalOcean(
+            DigitalOceanOptions options, LookupClientProvider dnsClient,
+            SecretServiceManager ssm, ILogService log, 
+            ISettingsService settings) : 
+            base(dnsClient, log, settings) 
+            => _doClient = new DigitalOceanClient(ssm.EvaluateSecret(options.ApiToken));
 
         public override async Task DeleteRecord(DnsValidationRecord record)
         {

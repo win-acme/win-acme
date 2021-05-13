@@ -38,16 +38,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public override async Task<TransIpOptions> Aquire(Target target, IInputService input, RunLevel runLevel)
         {
-            var login = await Login.Interactive(input, "Username").GetValue();
-
-            var key = await PrivateKey.
-                Interactive(input, "Private key", multiline: true).
-                GetValue();
-
             return new TransIpOptions()
             {
-                Login = login,
-                PrivateKey = key
+                Login = await Login.Interactive(input, "Username").GetValue(),
+                PrivateKey = await PrivateKey.Interactive(input, "Private key", multiline: true).GetValue()
             };
         }
 

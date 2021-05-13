@@ -20,10 +20,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             ISettingsService settings,
             DomainParseService domainParser,
             GodaddyOptions options,
+            SecretServiceManager ssm,
             IProxyService proxyService)
             : base(dnsClient, logService, settings)
         {
-            _client = new DnsManagementClient(options.ApiKey.Value, options.ApiSecret?.Value ?? "", logService, proxyService);
+            _client = new DnsManagementClient(
+                ssm.EvaluateSecret(options.ApiKey), 
+                ssm.EvaluateSecret(options.ApiSecret), 
+                logService, proxyService);
             _domainParser = domainParser;
         }
 

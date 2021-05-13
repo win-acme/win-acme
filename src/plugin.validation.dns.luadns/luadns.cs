@@ -60,11 +60,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             IProxyService proxy,
             ILogService log,
             ISettingsService settings,
+            SecretServiceManager ssm,
             LuaDnsOptions options): base(dnsClient, log, settings)
         {
             _proxyService = proxy;
             _userName = options.Username;
-            _apiKey = options.APIKey.Value;
+            _apiKey = ssm.EvaluateSecret(options.APIKey);
         }
 
         public override async Task<bool> CreateRecord(DnsValidationRecord record)
