@@ -9,27 +9,29 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     public class CloudflareOptionsFactory : ValidationPluginOptionsFactory<Cloudflare, CloudflareOptions>
     {
-        private readonly IArgumentsService _arguments;
-        public CloudflareOptionsFactory(IArgumentsService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
+        private readonly ArgumentsInputService _arguments;
+        public CloudflareOptionsFactory(ArgumentsInputService arguments) : 
+            base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => 
+            _arguments = arguments;
+
+        private ArgumentResult<CloudflareArguments, ProtectedString> ApiKey => _arguments.
+            GetProtectedString<CloudflareArguments>(a => a.CloudflareApiToken).
+            Required();
 
         public override async Task<CloudflareOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
-            var arg = _arguments.GetArguments<CloudflareArguments>();
-            var opts = new CloudflareOptions
+            return new CloudflareOptions
             {
-                ApiToken = new ProtectedString(await _arguments.TryGetArgument(arg.CloudflareApiToken, inputService, "Cloudflare API Token", true))
+                ApiToken = await ApiKey.Interactive(inputService, "Cloudflare API Token").GetValue()
             };
-            return opts;
         }
 
-        public override Task<CloudflareOptions> Default(Target target)
+        public override async Task<CloudflareOptions> Default(Target target)
         {
-            var arg = _arguments.GetArguments<CloudflareArguments>();
-            var opts = new CloudflareOptions
+            return new CloudflareOptions
             {
-                ApiToken = new ProtectedString(_arguments.TryGetRequiredArgument(nameof(arg.CloudflareApiToken), arg.CloudflareApiToken))
+                ApiToken = await ApiKey.GetValue()
             };
-            return Task.FromResult(opts);
         }
 
         public override bool CanValidate(Target target) => true;

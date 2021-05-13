@@ -9,30 +9,30 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     internal class DigitalOceanOptionsFactory : ValidationPluginOptionsFactory<DigitalOcean, DigitalOceanOptions>
     {
-        private readonly IArgumentsService _arguments;
+        private readonly ArgumentsInputService _arguments;
 
-        public DigitalOceanOptionsFactory(IArgumentsService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType)
+        public DigitalOceanOptionsFactory(ArgumentsInputService arguments) : 
+            base(Dns01ChallengeValidationDetails.Dns01ChallengeType)
+            => _arguments = arguments;
+
+        private ArgumentResult<DigitalOceanArguments, ProtectedString> ApiKey => _arguments.
+            GetProtectedString<DigitalOceanArguments>(a => a.ApiToken).
+            Required();
+
+        public override async Task<DigitalOceanOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
-            _arguments = arguments;
+            return new DigitalOceanOptions
+            {
+                ApiToken = await ApiKey.Interactive(inputService).GetValue()
+            };
         }
 
-        public override Task<DigitalOceanOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
+        public override async Task<DigitalOceanOptions> Default(Target target)
         {
-            var arguments = _arguments.GetArguments<DigitalOceanArguments>();
-            return Task.FromResult(new DigitalOceanOptions
+            return new DigitalOceanOptions
             {
-                ApiToken = new ProtectedString(arguments.ApiToken)
-            });
-        }
-
-        public override Task<DigitalOceanOptions> Default(Target target)
-        {
-            var arguments = _arguments.GetArguments<DigitalOceanArguments>();
-            return Task.FromResult(new DigitalOceanOptions
-            {
-                ApiToken = new ProtectedString(
-                    _arguments.TryGetRequiredArgument(nameof(arguments.ApiToken), arguments.ApiToken))
-            });
+                ApiToken = await ApiKey.GetValue()
+            };
         }
 
         public override bool CanValidate(Target target) => true;
