@@ -14,7 +14,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => 
             _arguments = arguments;
 
-        private ArgumentResult<CloudflareArguments, ProtectedString> ApiKey => _arguments.
+        private ArgumentResult<ProtectedString> ApiKey => _arguments.
             GetProtectedString<CloudflareArguments>(a => a.CloudflareApiToken).
             Required();
 

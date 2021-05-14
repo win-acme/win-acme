@@ -13,15 +13,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public Route53OptionsFactory(ArgumentsInputService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
 
-        private ArgumentResult<Route53Arguments, ProtectedString> AccessKey => _arguments.
+        private ArgumentResult<ProtectedString> AccessKey => _arguments.
             GetProtectedString<Route53Arguments>(a => a.Route53SecretAccessKey).
             Required();
 
-        private ArgumentResult<Route53Arguments, string> AccessKeyId => _arguments.
+        private ArgumentResult<string> AccessKeyId => _arguments.
             GetString<Route53Arguments>(a => a.Route53AccessKeyId).
             Required();
 
-        private ArgumentResult<Route53Arguments, string> IamRole => _arguments.
+        private ArgumentResult<string> IamRole => _arguments.
             GetString<Route53Arguments>(a => a.Route53IAMRole);
 
         public override async Task<Route53Options> Aquire(Target target, IInputService input, RunLevel runLevel)

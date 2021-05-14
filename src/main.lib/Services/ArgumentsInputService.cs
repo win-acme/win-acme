@@ -25,24 +25,24 @@ namespace PKISharp.WACS.Services
             _input = input;
             _secretService = secretService;
         }
-        public ArgumentResult<T, ProtectedString?> GetProtectedString<T>(Expression<Func<T, string?>> expression, bool allowEmtpy = false)
+        public ArgumentResult<ProtectedString?> GetProtectedString<T>(Expression<Func<T, string?>> expression, bool allowEmtpy = false)
             where T : class, IArguments,
             new() => new(GetArgument(expression).Protect(allowEmtpy), GetMetaData(expression),
                 async (args) => (await _secretService.GetSecret(args.Label, args.Default?.Value, allowEmtpy ? "" : null, args.Required, args.Multiline)).Protect(allowEmtpy), 
                 allowEmtpy);
 
-        public ArgumentResult<T, string?> GetString<T>(Expression<Func<T, string?>> expression)
+        public ArgumentResult<string?> GetString<T>(Expression<Func<T, string?>> expression)
             where T : class, IArguments, new() =>
             new(GetArgument(expression), GetMetaData(expression),
                 async (args) => await _input.RequestString(args.Label));
 
-        public ArgumentResult<T, bool?> GetBool<T>(Expression<Func<T, bool?>> expression)
+        public ArgumentResult<bool?> GetBool<T>(Expression<Func<T, bool?>> expression)
             where T : class, IArguments, new() =>
             new(GetArgument(expression), GetMetaData(expression),
                 async (args) => await _input.PromptYesNo(args.Label, args.Default == true));
 
-        public ArgumentResult<T, long?> GetLong<T>(Expression<Func<T, long?>> expression)
-            where T : class, IArguments, new() =>
+        public ArgumentResult<long?> GetLong<T>(Expression<Func<T, long?>> expression)
+            where T : class, IArguments, new() => 
             new(GetArgument(expression), GetMetaData(expression),
                 async (args) => {
                     var str = await _input.RequestString(args.Label);
@@ -59,15 +59,19 @@ namespace PKISharp.WACS.Services
 
         protected static CommandLineAttribute GetMetaData(LambdaExpression action)
         {
-            if (action.Body is MemberExpression expression)
+            if (action.Body is MemberExpression member)
             {
-                var property = expression.Member;
+                var property = member.Member;
                 return property.CommandLineOptions();
             }
-            else
+            else if (action.Body is UnaryExpression unary)
             {
-                throw new NotImplementedException("Unsupported expression");
+                if (unary.Operand is MemberExpression unaryMember)
+                {
+                    return unaryMember.Member.CommandLineOptions();
+                }
             }
+            throw new NotImplementedException("Unsupported expression");
         }
 
         /// <summary>
@@ -82,27 +86,16 @@ namespace PKISharp.WACS.Services
         {
             var returnValue = default(P);
             var args = _arguments.GetArguments<T>();
-            string? optionName;
             if (args != null)
             {
-                if (action.Body is MemberExpression expression)
-                {
-                    var property = expression.Member;
-                    var commandLineOptions = property.CommandLineOptions();
-                    optionName = commandLineOptions.ArgumentName;
-                    var func = action.Compile();
-                    returnValue = func(args);
-                }
-                else
-                {
-                    throw new NotImplementedException("Unsupported expression");
-                }
+                var func = action.Compile();
+                returnValue = func(args);
             }
             else
             {
                 throw new InvalidOperationException($"Missing argumentprovider for type {typeof(T).Name}");
             }
-
+            var optionName = GetMetaData(action).ArgumentName;
             if (returnValue == null)
             {
                 _log.Debug("No value provided for {optionName}", $"--{optionName}");

@@ -137,30 +137,34 @@ namespace PKISharp.WACS.Services
             _dirty = true;
         }
 
-        private void WriteMultiline(int startPos, string value)
+        private static void WriteMultiline(int startPos, string value)
         {
             var step = 79 - startPos;
-            var pos = 0;
-            var words = value.Split(' ');
-            while (pos < words.Length)
+            var sentences = value.Split('\n');
+            foreach (var sentence in sentences)
             {
-                var line = "";
-                if (words[pos].Length + 1 >= step)
+                var pos = 0;
+                var words = sentence.Split(' ');
+                while (pos < words.Length)
                 {
-                    line = words[pos++];
-                }
-                else
-                {
-                    while (pos < words.Length && line.Length + words[pos].Length + 1 < step)
+                    var line = "";
+                    if (words[pos].Length + 1 >= step)
                     {
-                        line += " " + words[pos++];
+                        line = words[pos++];
                     }
+                    else
+                    {
+                        while (pos < words.Length && line.Length + words[pos].Length + 1 < step)
+                        {
+                            line += " " + words[pos++];
+                        }
+                    }
+                    if (!Console.IsOutputRedirected)
+                    {
+                        Console.SetCursorPosition(startPos, Console.CursorTop);
+                    }
+                    Console.WriteLine($" {line}");
                 }
-                if (!Console.IsOutputRedirected)
-                {
-                    Console.SetCursorPosition(startPos, Console.CursorTop);
-                }
-                Console.WriteLine($" {line}");
             }
         }
 

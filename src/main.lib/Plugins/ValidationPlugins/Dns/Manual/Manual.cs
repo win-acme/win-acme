@@ -16,14 +16,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             LookupClientProvider dnsClient, 
             ILogService log, 
             IInputService input,
-            ISettingsService settings) : base(dnsClient, log, settings)
-        {
+            ISettingsService settings) : 
+            base(dnsClient, log, settings)
             // Usually it's a big no-no to rely on user input in validation plugin
             // because this should be able to run unattended. This plugin is for testing
             // only and therefor we will allow it. Future versions might be more advanced,
             // e.g. shoot an email to an admin and complete the order later.
-            _input = input;
-        }
+            => _input = input;
 
         public override async Task<bool> CreateRecord(DnsValidationRecord record)
         {

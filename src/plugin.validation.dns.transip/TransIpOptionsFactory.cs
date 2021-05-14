@@ -27,11 +27,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _proxy = proxy;
         }
 
-        private ArgumentResult<TransIpArguments, string> Login => _arguments.
+        private ArgumentResult<string> Login => _arguments.
             GetString<TransIpArguments>(a => a.Login).
             Required();
 
-        private ArgumentResult<TransIpArguments, ProtectedString> PrivateKey => _arguments.
+        private ArgumentResult<ProtectedString> PrivateKey => _arguments.
             GetProtectedString<TransIpArguments>(a => a.PrivateKey).
             Validate(x => Task.FromResult(CheckKey(x.Value)), "invalid private key").
             Required();

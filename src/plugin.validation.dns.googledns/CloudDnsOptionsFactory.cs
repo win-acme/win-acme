@@ -12,11 +12,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public CloudDnsOptionsFactory(ArgumentsInputService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
 
-        private ArgumentResult<CloudDnsArguments, string> ServiceAccountKey => _arguments.
+        private ArgumentResult<string> ServiceAccountKey => _arguments.
             GetString<CloudDnsArguments>(a => a.ServiceAccountKey).
             Required();
 
-        private ArgumentResult<CloudDnsArguments, string> ProjectId => _arguments.
+        private ArgumentResult<string> ProjectId => _arguments.
             GetString<CloudDnsArguments>(a => a.ProjectId).
             Required();
 

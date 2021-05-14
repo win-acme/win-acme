@@ -16,7 +16,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public DreamhostOptionsFactory(ArgumentsInputService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
 
-        private ArgumentResult<DreamhostArguments, ProtectedString> ApiKey => _arguments.
+        private ArgumentResult<ProtectedString> ApiKey => _arguments.
             GetProtectedString<DreamhostArguments>(a => a.ApiKey).
             Required();
 

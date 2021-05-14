@@ -22,12 +22,12 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             _settings = settings;
         }
 
-        private ArgumentResult<CentralSslArguments, ProtectedString?> PfxPassword => _argumentInput.
+        private ArgumentResult<ProtectedString?> PfxPassword => _argumentInput.
             GetProtectedString<CentralSslArguments>(args => args.PfxPassword, true).
             WithDefault(CentralSsl.DefaultPassword(_settings).Protect()).
             DefaultAsNull();
 
-        private ArgumentResult<CentralSslArguments, string?> Path => _argumentInput.
+        private ArgumentResult<string?> Path => _argumentInput.
             GetString<CentralSslArguments>(args => args.CentralSslStore).
             WithDefault(CentralSsl.DefaultPath(_settings)).
             Required().

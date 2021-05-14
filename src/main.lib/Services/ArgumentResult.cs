@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Services
 {
-    public class ArgumentResult<TArguments, TResult> where TArguments : class, IArguments, new()
+    public class ArgumentResult<TResult>
     {
         /// <summary>
         /// Metadata obtained through reflection
@@ -34,6 +34,11 @@ namespace PKISharp.WACS.Services
         protected string? _inputLabel;
 
         /// <summary>
+        /// Description to show to the user in interactive mode
+        /// </summary>
+        protected string? _inputDescription;
+
+        /// <summary>
         /// Required value
         /// </summary>
         private bool _inputMultiline = false;
@@ -57,7 +62,7 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// Validator to run
         /// </summary>
-        private readonly List<Tuple<Func<TResult?, Task<bool>>, string>> _validators = new();
+        private readonly List<Tuple<Func<TResult, Task<bool>>, string>> _validators = new();
 
         /// <summary>
         /// Do not emit default value
@@ -131,12 +136,16 @@ namespace PKISharp.WACS.Services
         /// <param name="input"></param>
         /// <param name="label"></param>
         /// <returns></returns>
-        public ArgumentResult<TArguments, TResult> Interactive(IInputService input, string? label = null, bool allowEmpty = false, bool multiline = false)
+        public ArgumentResult<TResult> Interactive(
+            IInputService input, 
+            string? label = null, 
+            string? description = null,
+            bool multiline = false)
         {
-            _allowEmpty = allowEmpty;
             _inputService = input;
             _inputLabel = label;
             _inputMultiline = multiline;
+            _inputDescription = description;
             return this;
         }
 
@@ -148,9 +157,9 @@ namespace PKISharp.WACS.Services
         /// <param name="validator"></param>
         /// <param name="errorReason"></param>
         /// <returns></returns>
-        public ArgumentResult<TArguments, TResult> Validate(Func<TResult?, Task<bool>> validator, string errorReason)
+        public ArgumentResult<TResult> Validate(Func<TResult, Task<bool>> validator, string errorReason)
         {
-            _validators.Add(new Tuple<Func<TResult?, Task<bool>>, string>(validator, errorReason));
+            _validators.Add(new Tuple<Func<TResult, Task<bool>>, string>(validator, errorReason));
             return this;
         }
 
@@ -158,7 +167,7 @@ namespace PKISharp.WACS.Services
         /// Shortcut for required input validation
         /// </summary>
         /// <returns></returns>
-        public ArgumentResult<TArguments, TResult> Required()
+        public ArgumentResult<TResult> Required()
         {
             _required = true;
             return this;
@@ -170,7 +179,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public ArgumentResult<TArguments, TResult> WithDefault(TResult value)
+        public ArgumentResult<TResult> WithDefault(TResult value)
         {
             _defaultValue = value;
             return this;
@@ -182,7 +191,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public ArgumentResult<TArguments, TResult> DefaultAsNull()
+        public ArgumentResult<TResult> DefaultAsNull()
         {
             _defaultAsNull = true;
             return this;
@@ -191,7 +200,7 @@ namespace PKISharp.WACS.Services
         private async Task<TResult?> GetInput(IInputService input, TResult? current)
         {
             input.CreateSpace();
-            input.Show("Description", _metaData.Description);
+            input.Show("Description", _inputDescription ?? _metaData.Description);
             if (HasValue(_defaultValue))
             {
                 var showValue = _metaData.Secret ? "********" : _defaultValue?.ToString();
@@ -230,12 +239,20 @@ namespace PKISharp.WACS.Services
             {
                 foreach (var validator in _validators)
                 {
-                    var validationResult = await validator.Item1(returnValue);
+                    var validationResult = false;
+                    try
+                    {
+                        validationResult = await validator.Item1(returnValue!);
+                    } 
+                    catch 
+                    {
+                        return (false, $"failed --{_metaData.ArgumentName}: {validator.Item2}");
+                    }
                     if (!validationResult)
                     {
                         if (!string.IsNullOrWhiteSpace(_inputLabel))
                         {
-                            return (false, $"invalid value: {validator.Item2}");
+                            return (false, $"invalid input: {validator.Item2}");
                         }
                         else
                         {

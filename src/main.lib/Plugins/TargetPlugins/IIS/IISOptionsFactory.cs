@@ -156,9 +156,9 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var askExclude = true;
             var filters = new List<Choice<Func<Task>>>
             {
-                Choice.Create<Func<Task>>(() => {
-                    return InputPattern(input, options); 
-                }, "Pick bindings based on a search pattern", command: "P"),
+                Choice.Create<Func<Task>>(
+                    () => InputPattern(input, options), 
+                    "Pick bindings based on a search pattern", command: "P"),
                 Choice.Create<Func<Task>>(() => { 
                     askExclude = false; 
                     return Task.CompletedTask; 
