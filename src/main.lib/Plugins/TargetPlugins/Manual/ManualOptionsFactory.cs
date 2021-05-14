@@ -8,30 +8,26 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     internal class ManualOptionsFactory : TargetPluginOptionsFactory<Manual, ManualOptions>
     {
-        private readonly IArgumentsService _arguments;
-        public ManualOptionsFactory(IArgumentsService arguments) => _arguments = arguments;
+        private readonly ArgumentsInputService _arguments;
+        public ManualOptionsFactory(ArgumentsInputService arguments) => _arguments = arguments;
         public override int Order => 5;
-        public override async Task<ManualOptions?> Aquire(IInputService inputService, RunLevel runLevel)
-        {
-            var input = await inputService.RequestString("Enter comma-separated list of host names, starting with the common name");
-            if (string.IsNullOrEmpty(input))
-            {
-                return null;
-            }
-            else
-            {
-                return Create(input);
-            }
-        }
+
+        private ArgumentResult<string?> Host => _arguments.
+            GetString<ManualArguments>(x => x.Host).
+            Required();
+
+        private ArgumentResult<string?> Common => _arguments.
+            GetString<ManualArguments>(x => x.CommonName);
+
+        public override async Task<ManualOptions?> Aquire(IInputService inputService, RunLevel runLevel) => 
+            Create(await Host.Interactive(inputService).GetValue());
 
         public override async Task<ManualOptions?> Default()
         {
-            var args = _arguments.GetArguments<ManualArguments>();
-            var input = _arguments.TryGetRequiredArgument(nameof(args.Host), args?.Host);
-            var ret = Create(input);
+            var ret = Create(await Host.GetValue());
             if (ret != null)
             {
-                var commonName = args?.CommonName;
+                var commonName = await Common.GetValue();
                 if (!string.IsNullOrWhiteSpace(commonName))
                 {
                     commonName = commonName.ToLower().Trim().ConvertPunycode();
