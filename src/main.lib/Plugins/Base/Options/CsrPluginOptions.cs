@@ -10,16 +10,14 @@ namespace PKISharp.WACS.Plugins.Base.Options
         public override string Name => throw new NotImplementedException();
         public override string Description => throw new NotImplementedException();
         public override Type Instance => throw new NotImplementedException();
+        public bool? OcspMustStaple { get; set; }
+        public bool? ReusePrivateKey { get; set; }
     }
 
     public abstract class CsrPluginOptions<TPlugin> : CsrPluginOptions where TPlugin : ICsrPlugin
     {
         public abstract override string Name { get; }
         public abstract override string Description { get; }
-
-        public bool? OcspMustStaple { get; set; }
-        public bool? ReusePrivateKey { get; set; }
-
         public override void Show(IInputService input)
         {
             input.Show("CSR");

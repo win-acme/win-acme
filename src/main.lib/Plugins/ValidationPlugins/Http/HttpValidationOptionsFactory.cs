@@ -33,6 +33,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         {
             var pathArg = _arguments.
                 GetBool<HttpValidationArguments>(x => x.ManualTargetIsIIS).
+                DefaultAsNull().
                 WithDefault(false);
             return pathArg;
         }

@@ -148,7 +148,7 @@ namespace PKISharp.WACS.Host
             var versionService = new VersionService(logger);
             var pluginService = new PluginService(logger);
             var argumentsParser = new ArgumentsParser(logger, pluginService, args);
-            var argumentsService = new ArgumentsService(logger, argumentsParser);
+            var argumentsService = new ArgumentsService(argumentsParser);
             if (!argumentsService.Valid)
             {
                 return null;
