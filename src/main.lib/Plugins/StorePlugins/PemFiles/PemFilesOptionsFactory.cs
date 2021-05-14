@@ -2,7 +2,6 @@
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
-using System;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
@@ -10,86 +9,52 @@ namespace PKISharp.WACS.Plugins.StorePlugins
     internal class PemFilesOptionsFactory : StorePluginOptionsFactory<PemFiles, PemFilesOptions>
     {
         private readonly ILogService _log;
-        private readonly IArgumentsService _arguments;
+        private readonly ArgumentsInputService _arguments;
         private readonly ISettingsService _settings;
-        private readonly SecretServiceManager _secretServiceManager;
 
         public PemFilesOptionsFactory(
             ILogService log, 
-            ISettingsService settings, 
-            IArgumentsService arguments,
-            SecretServiceManager secretServiceManager)
+            ISettingsService settings,
+            ArgumentsInputService arguments)
         {
             _log = log;
             _arguments = arguments;
             _settings = settings;
-            _secretServiceManager = secretServiceManager;
         }
+
+        private ArgumentResult<ProtectedString?> Password => _arguments.
+            GetProtectedString<PemFilesArguments>(args => args.PemPassword, true).
+            WithDefault(PemFiles.DefaultPassword(_settings).Protect()).
+            DefaultAsNull();
+
+        private ArgumentResult<string?> Path => _arguments.
+            GetString<PemFilesArguments>(args => args.PemFilesPath).
+            WithDefault(PemFiles.DefaultPath(_settings)).
+            Required().
+            Validate(x => Task.FromResult(x.ValidPath(_log)), "invalid path").
+            DefaultAsNull();
 
         public override async Task<PemFilesOptions?> Aquire(IInputService input, RunLevel runLevel)
         {
-            var args = _arguments.GetArguments<PemFilesArguments>();
-            var path = args?.PemFilesPath;
-            if (string.IsNullOrWhiteSpace(path))
-            {
-                path = PemFiles.DefaultPath(_settings);
-            }
-            while (string.IsNullOrWhiteSpace(path) || !path.ValidPath(_log))
-            {
-                path = await input.RequestString("Path to folder where .pem files are stored");
-            }
-
-            // Get password from command line, default setting or user input
-            var password = args?.PemPassword;
-            if (string.IsNullOrWhiteSpace(password))
-            {
-                password = _settings.Store.PemFiles?.DefaultPassword;
-            }
-            if (string.IsNullOrWhiteSpace(password))
-            {
-                password = await _secretServiceManager.GetSecret("Password to use for the .pfx files", password);
-            }
+            var path = await Path.Interactive(input, "File path").GetValue();
+            var password = await Password.Interactive(input).GetValue();
             return Create(path, password);
         }
 
         public override async Task<PemFilesOptions?> Default()
         {
-            var args = _arguments.GetArguments<PemFilesArguments>();
-
-            var password = _settings.Store.PemFiles?.DefaultPassword;
-            if (!string.IsNullOrWhiteSpace(args?.PemPassword))
-            {
-                password = args.PemPassword;
-            }
-
-            var path = PemFiles.DefaultPath(_settings);
-            if (string.IsNullOrWhiteSpace(path))
-            {
-                path = _arguments.TryGetRequiredArgument(nameof(args.PemFilesPath), args?.PemFilesPath);
-            }
-            if (path.ValidPath(_log))
-            {
-                return Create(path, password);
-            }
-            else
-            {
-                throw new Exception("Invalid path specified");
-            }
+            var path = await Path.GetValue();
+            var password = await Password.GetValue();
+            return Create(path, password);
         }
 
-        private PemFilesOptions Create(string path, string? password)
+        private static PemFilesOptions Create(string? path, ProtectedString? password)
         {
-            var ret = new PemFilesOptions();
-            if (!string.IsNullOrWhiteSpace(password) &&
-                !string.Equals(password, _settings.Store.PemFiles?.DefaultPassword))
+            return new PemFilesOptions
             {
-                ret.PemPassword = new ProtectedString(password);
-            }
-            if (!string.Equals(path, PemFiles.DefaultPath(_settings), StringComparison.CurrentCultureIgnoreCase))
-            {
-                ret.Path = path;
-            }
-            return ret;
+                PemPassword = password,
+                Path = path
+            };
         }
     }
 

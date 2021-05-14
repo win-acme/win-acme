@@ -2,7 +2,6 @@
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
-using System;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
@@ -10,89 +9,53 @@ namespace PKISharp.WACS.Plugins.StorePlugins
     internal class PfxFileOptionsFactory : StorePluginOptionsFactory<PfxFile, PfxFileOptions>
     {
         private readonly ILogService _log;
-        private readonly IArgumentsService _arguments;
+        private readonly ArgumentsInputService _arguments;
         private readonly ISettingsService _settings;
-        private readonly SecretServiceManager _secretServiceManager;
 
         public PfxFileOptionsFactory(
             ILogService log,
-            ISettingsService settings, 
-            IArgumentsService arguments,
-            SecretServiceManager secretServiceManager)
+            ISettingsService settings,
+            ArgumentsInputService arguments)
         {
             _log = log;
             _arguments = arguments;
             _settings = settings;
-            _secretServiceManager = secretServiceManager;
         }
+
+        private ArgumentResult<ProtectedString?> Password => _arguments.
+            GetProtectedString<PfxFileArguments>(args => args.PfxPassword, true).
+            WithDefault(PfxFile.DefaultPassword(_settings).Protect()).
+            DefaultAsNull();
+
+        private ArgumentResult<string?> Path => _arguments.
+            GetString<PfxFileArguments>(args => args.PfxFilePath).
+            WithDefault(PfxFile.DefaultPath(_settings)).
+            Required().
+            Validate(x => Task.FromResult(x.ValidPath(_log)), "invalid path").
+            DefaultAsNull();
 
         public override async Task<PfxFileOptions?> Aquire(IInputService input, RunLevel runLevel)
         {
-            var args = _arguments.GetArguments<PfxFileArguments>();
-
-            // Get path from command line, default setting or user input
-            var path = args?.PfxFilePath;
-            if (string.IsNullOrWhiteSpace(path))
-            {
-                path = _settings.Store.PfxFile?.DefaultPath;
-            }
-            while (string.IsNullOrWhiteSpace(path) || !path.ValidPath(_log))
-            {
-                path = await input.RequestString("Path to folder to store the .pfx file");
-            }
-
-            // Get password from command line, default setting or user input
-            var password = args?.PfxPassword;
-            if (string.IsNullOrWhiteSpace(password))
-            {
-                password = _settings.Store.PfxFile?.DefaultPassword;
-            }
-            if (string.IsNullOrWhiteSpace(password))
-            {
-                // Get password from command line, default setting or user input
-                password = await _secretServiceManager.GetSecret("Password to use for the .pfx files", password);
-            }
+            var path = await Path.Interactive(input, "File path").GetValue();
+            var password = await Password.Interactive(input).GetValue();
             return Create(path, password);
         }
 
         public override async Task<PfxFileOptions?> Default()
         {
-            var args = _arguments.GetArguments<PfxFileArguments>();
-            var path = _settings.Store.PfxFile?.DefaultPath;
-            if (string.IsNullOrWhiteSpace(path))
-            {
-                path = _arguments.TryGetRequiredArgument(nameof(args.PfxFilePath), args?.PfxFilePath);
-            }
-
-            var password = _settings.Store.PfxFile?.DefaultPassword;
-            if (!string.IsNullOrWhiteSpace(args?.PfxPassword))
-            {
-                password = args.PfxPassword;
-            }
-
-            if (path != null && path.ValidPath(_log))
-            {
-                return Create(path, password);
-            }
-            else
-            {
-                throw new Exception("Invalid path specified");
-            }
+            var path = await Path.GetValue();
+            var password = await Password.GetValue();
+            return Create(path, password);
         }
 
-        private PfxFileOptions Create(string path, string? password)
+        private static PfxFileOptions Create(string? path, ProtectedString? password)
         {
-            var ret = new PfxFileOptions();
-            if (!string.IsNullOrWhiteSpace(password) && 
-                !string.Equals(password, _settings.Store.PfxFile?.DefaultPassword))
+            return new PfxFileOptions
             {
-                ret.PfxPassword = new ProtectedString(password);
-            }
-            if (!string.Equals(path, _settings.Store.PfxFile?.DefaultPath, StringComparison.CurrentCultureIgnoreCase))
-            {
-                ret.Path = path;
-            }
-            return ret;
+                PfxPassword = password,
+                Path = path
+            };
         }
     }
+
 }

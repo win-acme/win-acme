@@ -15,6 +15,12 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private readonly string _path;
         private readonly string? _password;
 
+        public static string? DefaultPath(ISettingsService settings) => 
+            settings.Store.PfxFile?.DefaultPath;
+
+        public static string? DefaultPassword(ISettingsService settings)
+            => settings.Store.PfxFile?.DefaultPassword;
+
         public PfxFile(
             ILogService log, 
             ISettingsService settings, 

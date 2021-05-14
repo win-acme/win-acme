@@ -28,6 +28,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             return ret;
         }
 
+        public static string? DefaultPassword(ISettingsService settings) 
+            => settings.Store.PemFiles?.DefaultPassword;
+
         public PemFiles(
             ILogService log, ISettingsService settings,
             PemService pemService, PemFilesOptions options,

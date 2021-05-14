@@ -31,7 +31,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             GetString<CentralSslArguments>(args => args.CentralSslStore).
             WithDefault(CentralSsl.DefaultPath(_settings)).
             Required().
-            Validate(x => Task.FromResult(x.ValidPath(_log)), "Invalid path").
+            Validate(x => Task.FromResult(x.ValidPath(_log)), "invalid path").
             DefaultAsNull();
 
         public override async Task<CentralSslOptions?> Aquire(IInputService input, RunLevel runLevel)
