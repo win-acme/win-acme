@@ -27,7 +27,10 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         {
             var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
             var arguments = new ArgumentsService(log, optionsParser);
-            var x = new ManualOptionsFactory(arguments);
+            var input = new Mock.Services.InputService(new());
+            var secretService = new SecretServiceManager(new SecretService(), input, log);
+            var argsInput = new ArgumentsInputService(log, arguments, input, secretService);
+            var x = new ManualOptionsFactory(argsInput);
             return x.Default().Result;
         }
 
