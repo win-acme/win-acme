@@ -57,6 +57,22 @@ namespace PKISharp.WACS.Services
                     }
                 }, _log);
 
+        public ArgumentResult<int?> GetInt<T>(Expression<Func<T, int?>> expression)
+            where T : class, IArguments, new() =>
+            new(GetArgument(expression), GetMetaData(expression),
+                async (args) => {
+                    var str = await _input.RequestString(args.Label);
+                    if (int.TryParse(str, out var ret))
+                    {
+                        return ret;
+                    }
+                    else
+                    {
+                        _log.Warning("Invalid number: {ret}", ret);
+                        return null;
+                    }
+                }, _log);
+
         protected static CommandLineAttribute GetMetaData(LambdaExpression action)
         {
             if (action.Body is MemberExpression member)
