@@ -12,18 +12,35 @@ namespace PKISharp.WACS.Plugins.Azure.Common
     /// </summary>
     public class AzureOptionsFactoryCommon<T> where T: AzureArgumentsCommon, new()
     {
-        private readonly IArgumentsService _arguments;
+        private readonly ArgumentsInputService _arguments;
         private readonly IInputService _input;
 
-        public AzureOptionsFactoryCommon(IArgumentsService arguments, IInputService input)
+        public AzureOptionsFactoryCommon(ArgumentsInputService arguments, IInputService input)
         {
             _arguments = arguments;
             _input = input;
         }
+        private ArgumentResult<string> Environment => _arguments.
+            GetString<T>(a => a.AzureEnvironment);
+
+        private ArgumentResult<bool?> UseMsi => _arguments.
+            GetBool<T>(a => a.AzureUseMsi);
+
+        private ArgumentResult<string> TenantId => _arguments.
+            GetString<T>(a => a.AzureTenantId).
+            Required();
+
+        private ArgumentResult<string> ClientId => _arguments.
+            GetString<T>(a => a.AzureClientId).
+            Required();
+
+        private ArgumentResult<ProtectedString> ClientSecret => _arguments.
+            GetProtectedString<T>(a => a.AzureSecret).
+            Required();
 
         public async Task Aquire(IAzureOptionsCommon options)
         {
-            var az = _arguments.GetArguments<T>();
+            var defaultEnvironment = (await Environment.GetValue()) ?? AzureEnvironments.AzureCloud;
             var environments = new List<Choice<Func<Task>>>(
                 AzureEnvironments.ResourceManagerUrls
                     .OrderBy(kvp => kvp.Key)
@@ -34,36 +51,37 @@ namespace PKISharp.WACS.Plugins.Azure.Common
                             return Task.CompletedTask;
                         },
                     description: kvp.Key,
-                    @default: kvp.Key == AzureEnvironments.AzureCloud)))
+                    @default: kvp.Key == defaultEnvironment)))
             {
                 Choice.Create<Func<Task>>(async () => await InputUrl(_input, options), "Use a custom resource manager url")
             };
-
             var chosen = await _input.ChooseFromMenu("Which Azure environment are you using?", environments);
             await chosen.Invoke();
-            options.UseMsi = az.AzureUseMsi || await _input.PromptYesNo("Do you want to use a managed service identity?", true);
+
+            options.UseMsi = 
+                await UseMsi.GetValue() == true || 
+                await _input.PromptYesNo("Do you want to use a managed service identity?", false);
+
             if (!options.UseMsi)
             {
                 // These options are only necessary for client id/secret authentication.
-                options.TenantId = await _arguments.TryGetArgument(az.AzureTenantId, _input, "Directory/tenant id");
-                options.ClientId = await _arguments.TryGetArgument(az.AzureClientId, _input, "Application client id");
-                options.Secret = new ProtectedString(await _arguments.TryGetArgument(az.AzureSecret, _input, "Application client secret", true));
+                options.TenantId = await TenantId.Interactive(_input, "Directory/tenant id").GetValue();
+                options.ClientId = await ClientId.Interactive(_input, "Application client id").GetValue();
+                options.Secret = await ClientSecret.Interactive(_input, "Application client secret").GetValue();
             }
         }
 
-        public Task Default(IAzureOptionsCommon options)
+        public async Task Default(IAzureOptionsCommon options)
         {
-            var az = _arguments.GetArguments<T>();
-            options.UseMsi = az.AzureUseMsi;
-            options.AzureEnvironment = az.AzureEnvironment;
+            options.UseMsi = await UseMsi.GetValue() == true;
+            options.AzureEnvironment = await Environment.GetValue();
             if (!options.UseMsi)
             {
                 // These options are only necessary for client id/secret authentication.
-                options.TenantId = _arguments.TryGetRequiredArgument(nameof(az.AzureTenantId), az.AzureTenantId);
-                options.ClientId = _arguments.TryGetRequiredArgument(nameof(az.AzureClientId), az.AzureClientId);
-                options.Secret = new ProtectedString(_arguments.TryGetRequiredArgument(nameof(az.AzureSecret), az.AzureSecret));
+                options.TenantId = await TenantId.GetValue();
+                options.ClientId = await ClientId.GetValue();
+                options.Secret = await ClientSecret.GetValue();
             }
-            return Task.CompletedTask;
         }
 
         private async Task InputUrl(IInputService input, IAzureOptionsCommon options)
@@ -76,7 +94,7 @@ namespace PKISharp.WACS.Plugins.Azure.Common
             while (!ParseUrl(raw, options));
         }
 
-        private bool ParseUrl(string url, IAzureOptionsCommon options)
+        private static bool ParseUrl(string url, IAzureOptionsCommon options)
         {
             if (string.IsNullOrWhiteSpace(url))
             {
