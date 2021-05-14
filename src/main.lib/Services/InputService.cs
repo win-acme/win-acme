@@ -156,14 +156,14 @@ namespace PKISharp.WACS.Services
                     {
                         while (pos < words.Length && line.Length + words[pos].Length + 1 < step)
                         {
-                            line += " " + words[pos++];
+                            line += words[pos++] + " ";
                         }
                     }
                     if (!Console.IsOutputRedirected)
                     {
                         Console.SetCursorPosition(startPos, Console.CursorTop);
                     }
-                    Console.WriteLine($" {line}");
+                    Console.WriteLine($" {line.TrimEnd()}");
                 }
             }
         }

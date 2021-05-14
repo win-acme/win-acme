@@ -28,18 +28,18 @@ namespace PKISharp.WACS.Services
         public ArgumentResult<ProtectedString?> GetProtectedString<T>(Expression<Func<T, string?>> expression, bool allowEmtpy = false)
             where T : class, IArguments,
             new() => new(GetArgument(expression).Protect(allowEmtpy), GetMetaData(expression),
-                async (args) => (await _secretService.GetSecret(args.Label, args.Default?.Value, allowEmtpy ? "" : null, args.Required, args.Multiline)).Protect(allowEmtpy), 
-                allowEmtpy);
+                async (args) => (await _secretService.GetSecret(args.Label, args.Default?.Value, allowEmtpy ? "" : null, args.Required, args.Multiline)).Protect(allowEmtpy),
+                _log, allowEmtpy);
 
         public ArgumentResult<string?> GetString<T>(Expression<Func<T, string?>> expression)
             where T : class, IArguments, new() =>
             new(GetArgument(expression), GetMetaData(expression),
-                async (args) => await _input.RequestString(args.Label));
+                async (args) => await _input.RequestString(args.Label), _log);
 
         public ArgumentResult<bool?> GetBool<T>(Expression<Func<T, bool?>> expression)
             where T : class, IArguments, new() =>
             new(GetArgument(expression), GetMetaData(expression),
-                async (args) => await _input.PromptYesNo(args.Label, args.Default == true));
+                async (args) => await _input.PromptYesNo(args.Label, args.Default == true), _log);
 
         public ArgumentResult<long?> GetLong<T>(Expression<Func<T, long?>> expression)
             where T : class, IArguments, new() => 
@@ -55,7 +55,7 @@ namespace PKISharp.WACS.Services
                         _log.Warning("Invalid number: {ret}", ret);
                         return null;
                     }
-                });
+                }, _log);
 
         protected static CommandLineAttribute GetMetaData(LambdaExpression action)
         {

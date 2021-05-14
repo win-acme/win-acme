@@ -50,6 +50,11 @@ namespace PKISharp.WACS.Services
         protected bool _allowEmpty;
 
         /// <summary>
+        /// Logservice
+        /// </summary>
+        protected ILogService _log;
+
+        /// <summary>
         /// Inputservice available (e.g. interactive mode)
         /// </summary>
         protected IInputService? _inputService;
@@ -114,12 +119,18 @@ namespace PKISharp.WACS.Services
             return true;
         }
 
-        internal ArgumentResult(TResult baseValue, CommandLineAttribute metaData, Func<ArgumentResultInputArguments<TResult>, Task<TResult?>> input, bool allowEmtpy = false)
+        internal ArgumentResult(
+            TResult baseValue, 
+            CommandLineAttribute metaData, 
+            Func<ArgumentResultInputArguments<TResult>, Task<TResult?>> input, 
+            ILogService log,
+            bool allowEmtpy = false)
         {
             _argumentValue = baseValue;
             _metaData = metaData;
             _inputFunction = input;
             _allowEmpty = allowEmtpy;
+            _log = log;
         }
 
         internal class ArgumentResultInputArguments<TDefault>
@@ -252,7 +263,7 @@ namespace PKISharp.WACS.Services
                     {
                         if (!string.IsNullOrWhiteSpace(_inputLabel))
                         {
-                            return (false, $"invalid input: {validator.Item2}");
+                            return (false, $"Invalid input: {validator.Item2}");
                         }
                         else
                         {
@@ -292,6 +303,10 @@ namespace PKISharp.WACS.Services
                     if (_inputService == null)
                     {
                         throw new Exception(validationError);
+                    } 
+                    else
+                    {
+                        _log.Error(validationError ?? "Error");
                     }
                 }
                 else
