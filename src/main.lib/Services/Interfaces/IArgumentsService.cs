@@ -11,14 +11,6 @@ namespace PKISharp.WACS.Services
         bool Active { get; }
         bool Valid { get; }
         bool HasFilter();
-        [Obsolete]
-        Task<string?> TryGetArgument(string? providedValue, IInputService input, string what, bool secret = false, bool multiline = false);
-
-        [Obsolete]
-        Task<string?> TryGetArgument(string? providedValue, IInputService input, string[] what, bool secret = false, bool multiline = false);
-
-        [Obsolete]
-        string TryGetRequiredArgument(string optionName, string? providedValue);
         void ShowHelp();
         void ShowCommandLine();
     }

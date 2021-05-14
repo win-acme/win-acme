@@ -84,22 +84,6 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        public async Task<string> RequestString(string[] what, bool multiline = false)
-        {
-            if (what != null)
-            {
-                CreateSpace();
-                Console.ForegroundColor = ConsoleColor.Green;
-                for (var i = 0; i < what.Length - 1; i++)
-                {
-                    Console.WriteLine($" {what[i]}");
-                }
-                Console.ResetColor();
-                return await RequestString(what[^1], multiline);
-            }
-            return "";
-        }
-
         public void Show(string? label, string? value, int level = 0)
         {
             var hasLabel = !string.IsNullOrEmpty(label);

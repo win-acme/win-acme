@@ -12,7 +12,6 @@ namespace PKISharp.WACS.Services
         Task<bool> PromptYesNo(string message, bool defaultOption);
         Task<string?> ReadPassword(string what);
         Task<string> RequestString(string what, bool multiline = false);
-        Task<string> RequestString(string[] what, bool multiline = false);
         void CreateSpace();
         void Show(string? label, string? value = null, int level = 0);
         Task<bool> Wait(string message = "Press <Enter> to continue");
