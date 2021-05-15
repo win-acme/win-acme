@@ -3,6 +3,7 @@ using ACMESharp.Authorizations;
 using ACMESharp.Protocol;
 using ACMESharp.Protocol.Resources;
 using Newtonsoft.Json;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
@@ -42,7 +43,7 @@ namespace PKISharp.WACS.Clients.Acme
         private readonly ILogService _log;
         private readonly IInputService _input;
         private readonly ISettingsService _settings;
-        private readonly IArgumentsService _arguments;
+        private readonly ArgumentsParser _arguments;
         private readonly IProxyService _proxyService;
         private readonly ZeroSsl _zeroSsl;
         private readonly AccountArguments _accountArguments;
@@ -53,7 +54,7 @@ namespace PKISharp.WACS.Clients.Acme
 
         public AcmeClient(
             IInputService inputService,
-            IArgumentsService arguments,
+            ArgumentsParser arguments,
             ILogService log,
             ISettingsService settings,
             AccountManager accountManager,
