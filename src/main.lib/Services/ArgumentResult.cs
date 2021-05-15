@@ -178,9 +178,9 @@ namespace PKISharp.WACS.Services
         /// Shortcut for required input validation
         /// </summary>
         /// <returns></returns>
-        public ArgumentResult<TResult> Required()
+        public ArgumentResult<TResult> Required(bool required = true)
         {
-            _required = true;
+            _required = required;
             return this;
         }
 

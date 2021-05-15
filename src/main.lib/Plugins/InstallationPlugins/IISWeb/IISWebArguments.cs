@@ -19,38 +19,9 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         public long? InstallationSiteId { get; set; }
 
         [CommandLine(Name = SslPortParameterName, Description = "Port number to use for newly created HTTPS bindings. Defaults to " + IISClient.DefaultBindingPortFormat + ".")]
-        public string? SSLPort { get; set; }
+        public int? SSLPort { get; set; }
 
         [CommandLine(Name = SslIpParameterName, Description = "IP address to use for newly created HTTPS bindings. Defaults to " + IISClient.DefaultBindingIp + ".")]
         public string? SSLIPAddress { get; set; }
-
-        public override bool Validate(ILogService log)
-        {
-            if (!string.IsNullOrEmpty(SSLPort))
-            {
-                if (int.TryParse(SSLPort, out var port))
-                {
-                    if (port < 1 || port > 65535)
-                    {
-                        log.Error("Invalid --{param}, value should be between 1 and 65535", SslPortParameterName);
-                        return false;
-                    }
-                }
-                else
-                {
-                    log.Error("Invalid --{param}, value should be a number", SslPortParameterName);
-                    return false;
-                }
-            }
-            if (!string.IsNullOrEmpty(SSLIPAddress))
-            {
-                if (!IPAddress.TryParse(SSLIPAddress, out _))
-                {
-                    log.Error("Invalid --{sslipaddress}", SslIpParameterName);
-                    return false;
-                }
-            }
-            return true;
-        }
     }
 }
