@@ -114,18 +114,29 @@ namespace PKISharp.WACS.Services
             var optionName = GetMetaData(action).ArgumentName;
             if (returnValue == null)
             {
-                _log.Debug("No value provided for {optionName}", $"--{optionName}");
+                _log.Verbose("No value provided for {optionName}", $"--{optionName}");
             }
             else
             {
                 var censor = ArgumentsParser.CensoredParameters.Any(c => optionName!.Contains(c));
                 if (returnValue is string returnString && string.IsNullOrWhiteSpace(returnString)) 
                 {
-                    _log.Debug("Parsed emtpy value for {optionName}", $"--{optionName}");
+                    _log.Verbose("Parsed emtpy value for {optionName}", $"--{optionName}");
                 } 
+                else if (returnValue is bool boolValue)
+                {
+                    if (boolValue)
+                    {
+                        _log.Verbose("Flag {optionName} is present", $"--{optionName}");
+                    } 
+                    else
+                    {
+                        _log.Verbose("Flag {optionName} not present", $"--{optionName}");
+                    }
+                }
                 else
                 {
-                    _log.Debug("Parsed value for {optionName}: {providedValue}", $"--{optionName}", censor ? "********" : returnValue);
+                    _log.Verbose("Parsed value for {optionName}: {providedValue}", $"--{optionName}", censor ? "********" : returnValue);
                 }
             }
             return returnValue;

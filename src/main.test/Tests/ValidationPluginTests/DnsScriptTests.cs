@@ -35,10 +35,9 @@ namespace PKISharp.WACS.UnitTests.Tests.ValidationPluginTests
         private ScriptOptions? Options(string commandLine)
         {
             var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
-            var arguments = new ArgumentsService(optionsParser);
             var input = new Mock.Services.InputService(new());
             var secretService = new SecretServiceManager(new SecretService(), input, log);
-            var argsInput = new ArgumentsInputService(log, arguments, input, secretService);
+            var argsInput = new ArgumentsInputService(log, optionsParser, input, secretService);
             var x = new ScriptOptionsFactory(log, argsInput);
             var target = new Target("", "", new List<TargetPart>());
             return x.Default(target).Result;

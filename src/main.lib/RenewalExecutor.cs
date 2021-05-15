@@ -313,7 +313,7 @@ namespace PKISharp.WACS
                 // Delete the old certificate if not forbidden, found and not re-used
                 for (var i = 0; i < storePluginOptions.Count; i++)
                 {
-                    if (!storePluginOptions[i].KeepExisting &&
+                    if (storePluginOptions[i].KeepExisting == false &&
                         oldCertificate != null &&
                         newCertificate.Certificate.Thumbprint != oldCertificate.Certificate.Thumbprint)
                     {
