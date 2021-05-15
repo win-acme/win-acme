@@ -1,4 +1,5 @@
-﻿using System;
+﻿using PKISharp.WACS.Configuration.Arguments;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -9,13 +10,13 @@ namespace PKISharp.WACS.Services
 {
     public class InputService : IInputService
     {
-        private readonly IArgumentsService _arguments;
+        private readonly MainArguments _arguments;
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
         private const string _cancelCommand = "C";
         private bool _dirty;
 
-        public InputService(IArgumentsService arguments, ISettingsService settings, ILogService log)
+        public InputService(MainArguments arguments, ISettingsService settings, ILogService log)
         {
             _log = log;
             _arguments = arguments;
@@ -24,7 +25,7 @@ namespace PKISharp.WACS.Services
 
         private void Validate(string what)
         {
-            if (_arguments.MainArguments.Renew && !_arguments.MainArguments.Test)
+            if (_arguments.Renew && !_arguments.Test)
             {
                 throw new Exception($"User input '{what}' should not be needed in --renew mode.");
             }

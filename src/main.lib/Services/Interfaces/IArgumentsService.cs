@@ -6,6 +6,5 @@ namespace PKISharp.WACS.Services
     {
         MainArguments MainArguments { get; }
         T? GetArguments<T>() where T : class, new();
-        bool Active { get; }
     }
 }
