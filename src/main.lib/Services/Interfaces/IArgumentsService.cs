@@ -1,6 +1,4 @@
 ﻿using PKISharp.WACS.Configuration.Arguments;
-using System;
-using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Services
 {
@@ -9,9 +7,5 @@ namespace PKISharp.WACS.Services
         MainArguments MainArguments { get; }
         T? GetArguments<T>() where T : class, new();
         bool Active { get; }
-        bool Valid { get; }
-        bool HasFilter();
-        void ShowHelp();
-        void ShowCommandLine();
     }
 }

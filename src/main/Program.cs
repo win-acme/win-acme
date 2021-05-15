@@ -4,6 +4,7 @@ using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Services;
 using System;
@@ -145,23 +146,24 @@ namespace PKISharp.WACS.Host
             // checks if we're not running as dotnet.exe and also
             // prints some verbose messages that are interesting
             // to know very early in the start up process
-            var versionService = new VersionService(logger);
+            _ = new VersionService(logger);
             var pluginService = new PluginService(logger);
             var argumentsParser = new ArgumentsParser(logger, pluginService, args);
             var argumentsService = new ArgumentsService(argumentsParser);
-            if (!argumentsService.Valid)
+            if (!argumentsParser.Validate())
             {
                 return null;
             }
-            var settingsService = new SettingsService(logger, argumentsService);
+            var mainArguments = argumentsParser.GetArguments<MainArguments>();
+            var settingsService = new SettingsService(logger, mainArguments);
             if (!settingsService.Valid)
             {
                 return null;
             }
             logger.SetDiskLoggingPath(settingsService.Client.LogPath);
 
-            _ = builder.RegisterInstance(argumentsService);
             _ = builder.RegisterInstance(argumentsParser);
+            _ = builder.RegisterInstance(mainArguments);
             _ = builder.RegisterInstance(logger).As<ILogService>();
             _ = builder.RegisterInstance(settingsService).As<ISettingsService>();
             _ = builder.RegisterInstance(argumentsService).As<IArgumentsService>();
@@ -200,7 +202,6 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterType<RenewalManager>().SingleInstance();
             _ = builder.RegisterType<RenewalCreator>().SingleInstance();
             _ = builder.RegisterType<ArgumentsInputService>().SingleInstance();
-            _ = builder.Register(c => c.Resolve<IArgumentsService>().MainArguments).SingleInstance();
 
             _ = builder.RegisterType<Wacs>();
 

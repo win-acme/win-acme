@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Configuration.Settings;
 using PKISharp.WACS.Extensions;
 using System;
@@ -9,7 +10,7 @@ namespace PKISharp.WACS.Services
     public class SettingsService : ISettingsService
     {
         private readonly ILogService _log;
-        private readonly IArgumentsService _arguments;
+        private readonly MainArguments _arguments;
 
         public bool Valid { get; private set; } = false;
         public ClientSettings Client { get; private set; } = new ClientSettings();
@@ -29,7 +30,7 @@ namespace PKISharp.WACS.Services
         public InstallationSettings Installation { get; private set; } = new InstallationSettings();
         public SecretsSettings Secrets { get; private set; } = new SecretsSettings();
 
-        public SettingsService(ILogService log, IArgumentsService arguments)
+        public SettingsService(ILogService log, MainArguments arguments)
         {
             _log = log;
             _arguments = arguments;
@@ -98,11 +99,11 @@ namespace PKISharp.WACS.Services
             get
             {
                 Uri? ret;
-                if (!string.IsNullOrEmpty(_arguments.MainArguments.BaseUri))
+                if (!string.IsNullOrEmpty(_arguments.BaseUri))
                 {
-                    ret = new Uri(_arguments.MainArguments.BaseUri);
+                    ret = new Uri(_arguments.BaseUri);
                 }
-                else if (_arguments.MainArguments.Test)
+                else if (_arguments.Test)
                 {
                     ret = Acme.DefaultBaseUriTest;
                 }

@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
@@ -17,7 +18,7 @@ namespace PKISharp.WACS
         private readonly IInputService _input;
         private readonly ILogService _log;
         private readonly IRenewalStore _renewalStore;
-        private readonly IArgumentsService _arguments;
+        private readonly ArgumentsParser _arguments;
         private readonly MainArguments _args;
         private readonly IContainer _container;
         private readonly IAutofacBuilder _scopeBuilder;
@@ -26,7 +27,7 @@ namespace PKISharp.WACS
         private readonly ISettingsService _settings;
 
         public RenewalManager(
-            IArgumentsService arguments, MainArguments args,
+            ArgumentsParser arguments, MainArguments args,
             IRenewalStore renewalStore, IContainer container,
             IInputService input, ILogService log,
             ISettingsService settings,
@@ -417,12 +418,12 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private async Task<IEnumerable<Renewal>> FilterRenewalsByCommandLine(string command)
         {
-            if (_arguments.HasFilter())
+            if (_args.HasFilter)
             {
                 var targets = _renewalStore.FindByArguments(
-                    _arguments.MainArguments.Id,
-                    _arguments.MainArguments.FriendlyName);
-                if (targets.Count() == 0)
+                    _args.Id,
+                    _args.FriendlyName);
+                if (!targets.Any())
                 {
                     _log.Error("No renewals matched.");
                 }
@@ -442,7 +443,7 @@ namespace PKISharp.WACS
         internal async Task CheckRenewals(RunLevel runLevel)
         {
             IEnumerable<Renewal> renewals;
-            if (_arguments.HasFilter())
+            if (_args.HasFilter)
             {
                 renewals = _renewalStore.FindByArguments(_args.Id, _args.FriendlyName);
                 if (renewals.Count() == 0)
@@ -527,7 +528,7 @@ namespace PKISharp.WACS
         /// </summary>
         internal void WarnAboutRenewalArguments()
         {
-            if (_arguments.Active)
+            if (_arguments.Active())
             {
                 _log.Warning("You have specified command line options for plugins. " +
                     "Note that these only affect new certificates, but NOT existing renewals. " +

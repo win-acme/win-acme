@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories.Null;
@@ -27,7 +28,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             ILogService log,
             IInputService inputService,
             ISettingsService settings,
-            IArgumentsService arguments,
+            MainArguments arguments,
             IPluginService pluginService,
             RunLevel runLevel)
             : base(log, settings, arguments, pluginService)
@@ -187,13 +188,13 @@ namespace PKISharp.WACS.Plugins.Resolvers
         {
             var defaultParam1 = _settings.Validation.DefaultValidation;
             var defaultParam2 = _settings.Validation.DefaultValidationMode ?? Constants.Http01ChallengeType;
-            if (!string.IsNullOrWhiteSpace(_arguments.MainArguments.Validation))
+            if (!string.IsNullOrWhiteSpace(_arguments.Validation))
             {
-                defaultParam1 = _arguments.MainArguments.Validation;
+                defaultParam1 = _arguments.Validation;
             }
-            if (!string.IsNullOrWhiteSpace(_arguments.MainArguments.ValidationMode))
+            if (!string.IsNullOrWhiteSpace(_arguments.ValidationMode))
             {
-                defaultParam2 = _arguments.MainArguments.ValidationMode;
+                defaultParam2 = _arguments.ValidationMode;
             }
             return await GetPlugin<IValidationPluginOptionsFactory>(
                 scope,
@@ -260,9 +261,9 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 defaultType = typeof(NullStoreOptionsFactory);
             }
             var defaultParam1 = _settings.Store.DefaultStore;
-            if (!string.IsNullOrWhiteSpace(_arguments.MainArguments.Store))
+            if (!string.IsNullOrWhiteSpace(_arguments.Store))
             {
-                defaultParam1 = _arguments.MainArguments.Store;
+                defaultParam1 = _arguments.Store;
             }
             var csv = defaultParam1.ParseCsv();
             defaultParam1 = csv?.Count > chosen.Count() ? 
@@ -306,9 +307,9 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 defaultType = typeof(NullInstallationOptionsFactory);
             }
             var defaultParam1 = _settings.Installation.DefaultInstallation;
-            if (!string.IsNullOrWhiteSpace(_arguments.MainArguments.Installation))
+            if (!string.IsNullOrWhiteSpace(_arguments.Installation))
             {
-                defaultParam1 = _arguments.MainArguments.Installation;
+                defaultParam1 = _arguments.Installation;
             }
             var csv = defaultParam1.ParseCsv();
             defaultParam1 = csv?.Count > chosen.Count() ?

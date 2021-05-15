@@ -2,6 +2,7 @@
 using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Clients.IIS;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
@@ -18,7 +19,7 @@ namespace PKISharp.WACS.Host
     {
         private readonly ILogService _log;
         private readonly IInputService _input;
-        private readonly IArgumentsService _arguments;
+        private readonly ArgumentsParser _arguments;
         private readonly IRenewalStore _renewalStore;
         private readonly ISettingsService _settings;
         private readonly ILifetimeScope _container;
@@ -63,9 +64,9 @@ namespace PKISharp.WACS.Host
                 }
             }
 
-            _arguments = _container.Resolve<IArgumentsService>();
+            _arguments = _container.Resolve<ArgumentsParser>();
             _arguments.ShowCommandLine();
-            _args = _arguments.MainArguments;
+            _args = _arguments.GetArguments<MainArguments>()!;
             _input = _container.Resolve<IInputService>();
             _renewalStore = _container.Resolve<IRenewalStore>();
 
@@ -100,7 +101,7 @@ namespace PKISharp.WACS.Host
             // Help function
             if (_args.Help)
             {
-                _arguments.ShowHelp();
+                _arguments.ShowArguments();
                 await CloseDefault();
                 if (_args.CloseOnFinish)
                 {
@@ -321,8 +322,8 @@ namespace PKISharp.WACS.Host
         /// </summary>
         private async Task Import(RunLevel runLevel)
         {
-            var importUri = !string.IsNullOrEmpty(_arguments.MainArguments.ImportBaseUri) ? 
-                new Uri(_arguments.MainArguments.ImportBaseUri) : 
+            var importUri = !string.IsNullOrEmpty(_args.ImportBaseUri) ? 
+                new Uri(_args.ImportBaseUri) : 
                 _settings.Acme.DefaultBaseUriImport;
             if (runLevel.HasFlag(RunLevel.Interactive))
             {

@@ -17,6 +17,10 @@ namespace PKISharp.WACS.Configuration.Arguments
                 !string.IsNullOrEmpty(Validation);
         }
 
+        public bool HasFilter =>
+            !string.IsNullOrEmpty(Id) ||
+            !string.IsNullOrEmpty(FriendlyName);
+
         // Basic options
 
         [CommandLine(Description = "Address of the ACMEv2 server to use. The default endpoint can be modified in settings.json.")]
