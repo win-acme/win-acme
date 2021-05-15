@@ -18,7 +18,7 @@ namespace PKISharp.WACS.UnitTests.Mock
             var log = new mock.LogService(false);
             var pluginService = new real.PluginService(log);
             var argumentsParser = new ArgumentsParser(log, pluginService, commandLine.Split(' '));
-            var argumentsService = new real.ArgumentsService(log, argumentsParser);
+            var argumentsService = new real.ArgumentsService(argumentsParser);
             var input = new mock.InputService(inputSequence ?? new List<string>());
 
             var builder = new ContainerBuilder();

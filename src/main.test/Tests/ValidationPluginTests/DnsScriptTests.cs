@@ -4,6 +4,7 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.ValidationPlugins.Dns;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.UnitTests.Mock.Services;
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -34,8 +35,11 @@ namespace PKISharp.WACS.UnitTests.Tests.ValidationPluginTests
         private ScriptOptions? Options(string commandLine)
         {
             var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
-            var arguments = new ArgumentsService(log, optionsParser);
-            var x = new ScriptOptionsFactory(log, arguments);
+            var arguments = new ArgumentsService(optionsParser);
+            var input = new Mock.Services.InputService(new());
+            var secretService = new SecretServiceManager(new SecretService(), input, log);
+            var argsInput = new ArgumentsInputService(log, arguments, input, secretService);
+            var x = new ScriptOptionsFactory(log, argsInput);
             var target = new Target("", "", new List<TargetPart>());
             return x.Default(target).Result;
         }
@@ -94,8 +98,16 @@ namespace PKISharp.WACS.UnitTests.Tests.ValidationPluginTests
         [TestMethod]
         public void WrongPath()
         {
-            var options = Options($"--dnscreatescript {createScript.FullName}error");
-            Assert.IsNull(options);
+            try
+            {
+                var options = Options($"--dnscreatescript {createScript.FullName}error");
+                Assert.Fail("Should have thrown exception");
+            }
+            catch
+            {
+
+            }
+
         }
     }
 }

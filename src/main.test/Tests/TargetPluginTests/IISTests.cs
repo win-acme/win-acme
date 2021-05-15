@@ -35,7 +35,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         private IISOptions? Options(string commandLine)
         {
             var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
-            var arguments = new ArgumentsService(log, optionsParser);
+            var arguments = new ArgumentsService(optionsParser);
             var x = new IISOptionsFactory(log, helper, arguments, userRoleService);
             return x.Default().Result;
         }
