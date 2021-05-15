@@ -4,6 +4,7 @@ using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Plugins.Resolvers;
 using System.Collections.Generic;
 using mock = PKISharp.WACS.UnitTests.Mock.Services;
@@ -18,7 +19,6 @@ namespace PKISharp.WACS.UnitTests.Mock
             var log = new mock.LogService(false);
             var pluginService = new real.PluginService(log);
             var argumentsParser = new ArgumentsParser(log, pluginService, commandLine.Split(' '));
-            var argumentsService = new real.ArgumentsService(argumentsParser);
             var input = new mock.InputService(inputSequence ?? new List<string>());
 
             var builder = new ContainerBuilder();
@@ -26,10 +26,10 @@ namespace PKISharp.WACS.UnitTests.Mock
             _ = builder.RegisterType<real.SecretServiceManager>();
             _ = builder.RegisterInstance(log).As<real.ILogService>();
             _ = builder.RegisterInstance(argumentsParser).As<ArgumentsParser>();
-            _ = builder.RegisterInstance(argumentsService).As<real.IArgumentsService>();
             _ = builder.RegisterType<real.ArgumentsInputService>();
             _ = builder.RegisterInstance(pluginService).As<real.IPluginService>();
             _ = builder.RegisterInstance(input).As<real.IInputService>();
+            _ = builder.RegisterInstance(argumentsParser.GetArguments<MainArguments>()!).SingleInstance();
 
             _ = builder.RegisterType<mock.MockRenewalStore>().As<real.IRenewalStore>().SingleInstance();
             _ = builder.RegisterType<mock.MockSettingsService>().As<real.ISettingsService>().SingleInstance(); ;

@@ -149,7 +149,6 @@ namespace PKISharp.WACS.Host
             _ = new VersionService(logger);
             var pluginService = new PluginService(logger);
             var argumentsParser = new ArgumentsParser(logger, pluginService, args);
-            var argumentsService = new ArgumentsService(argumentsParser);
             if (!argumentsParser.Validate())
             {
                 return null;
@@ -166,7 +165,6 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterInstance(mainArguments);
             _ = builder.RegisterInstance(logger).As<ILogService>();
             _ = builder.RegisterInstance(settingsService).As<ISettingsService>();
-            _ = builder.RegisterInstance(argumentsService).As<IArgumentsService>();
             _ = builder.RegisterInstance(pluginService).As<IPluginService>();
             _ = builder.RegisterType<UserRoleService>().As<IUserRoleService>().SingleInstance();
             _ = builder.RegisterType<InputService>().As<IInputService>().SingleInstance();
