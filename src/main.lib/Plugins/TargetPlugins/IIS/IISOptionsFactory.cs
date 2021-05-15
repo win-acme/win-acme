@@ -432,7 +432,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 // of that can be so high, we want the user to
                 // be explicit about it.
                 _log.Error("You have not specified any filters. If you are sure that you want " +
-                    "to create a certificate for *all* bindings on the server, please specific " +
+                    "to create a certificate for *all* bindings on the server, please specify " +
                     "--siteid s");
                 return null;
             }
