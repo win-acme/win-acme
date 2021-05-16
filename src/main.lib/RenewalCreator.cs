@@ -74,11 +74,11 @@ namespace PKISharp.WACS
 
             // Match found with existing certificate, determine if we want to overwrite
             // it or create it side by side with the current one.
-            if (runLevel.HasFlag(RunLevel.Interactive))
+            if (runLevel.HasFlag(RunLevel.Interactive) && (temp.Id != existing.Id))
             {
                 _input.CreateSpace();
                 _input.Show("Existing renewal", existing.ToString(_input));
-                if (!await _input.PromptYesNo($"Overwrite?", true))
+                if (!await _input.PromptYesNo($"Overwrite settings?", true))
                 {
                     return temp;
                 }
