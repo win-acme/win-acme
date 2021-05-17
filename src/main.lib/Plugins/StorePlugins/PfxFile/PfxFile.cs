@@ -54,7 +54,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public async Task Save(CertificateInfo input)
         {
             _log.Information("Copying certificate to the pfx folder");
-            var dest = PathForIdentifier(input.CommonName);
+            var dest = PathForIdentifier(input.CommonName.Value);
             try
             {
                 var collection = new X509Certificate2Collection

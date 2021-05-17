@@ -19,13 +19,13 @@ namespace PKISharp.WACS.Plugins.OrderPlugins
             var parts = new Dictionary<string, List<TargetPart>>();
             foreach (var part in target.Parts)
             {
-                foreach (var host in part.GetHosts(true))
+                foreach (var host in part.GetIdentifiers(true))
                 {
-                    var domain = _domainParseService.GetRegisterableDomain(host.TrimStart('.', '*'));
-                    var sourceParts = target.Parts.Where(p => p.GetHosts(true).Contains(host));
+                    var domain = _domainParseService.GetRegisterableDomain(host.Value.TrimStart('.', '*'));
+                    var sourceParts = target.Parts.Where(p => p.GetIdentifiers(true).Contains(host));
                     if (!ret.ContainsKey(domain))
                     {
-                        var filteredParts = sourceParts.Select(p => new TargetPart(new List<string> { host }) { SiteId = p.SiteId }).ToList();
+                        var filteredParts = sourceParts.Select(p => new TargetPart(new List<Identifier> { host }) { SiteId = p.SiteId }).ToList();
                         var newTarget = new Target(
                             target.FriendlyName ?? "",
                             target.CommonName,

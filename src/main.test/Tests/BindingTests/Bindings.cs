@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PKISharp.WACS.Clients.IIS;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.UnitTests.Mock.Clients;
 using System;
@@ -89,7 +90,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 WithThumbprint(newCert);
 
             var httpOnlySite = iis.GetWebSite(httpOnlyId);
-            iis.AddOrUpdateBindings(new[] { testHost }, bindingOptions, oldCert1);
+            iis.AddOrUpdateBindings(new[] { new DnsIdentifier(testHost) }, bindingOptions, oldCert1);
             Assert.AreEqual(2, httpOnlySite.Bindings.Count);
 
             var newBinding = httpOnlySite.Bindings[1];
@@ -166,7 +167,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 expectedNew = 1;
             }
        
-            iis.AddOrUpdateBindings(new[] { newHost }, bindingOptions, oldCert1);
+            iis.AddOrUpdateBindings(new[] { new DnsIdentifier(newHost) }, bindingOptions, oldCert1);
         
             Assert.AreEqual(existingBindings.Count() + expectedNew, httpOnlySite.Bindings.Count);
 
@@ -240,7 +241,10 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 WithFlags(inputFlags).
                 WithThumbprint(newCert);
 
-            iis.AddOrUpdateBindings(new[] { "site1.example.com", "site2.example.com" }, bindingOptions, oldCert1);
+            iis.AddOrUpdateBindings(new[] { 
+                new DnsIdentifier("site1.example.com"), 
+                new DnsIdentifier("site2.example.com")
+            }, bindingOptions, oldCert1);
             Assert.AreEqual(4, site.Bindings.Count);
             foreach (var newBinding in site.Bindings.Except(originalBindings))
             {
@@ -291,7 +295,10 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 WithFlags(inputFlags).
                 WithThumbprint(newCert);
 
-            iis.AddOrUpdateBindings(new[] { "site1.example.com", "site2.example.com" }, bindingOptions, oldCert1);
+            iis.AddOrUpdateBindings(new[] { 
+                new DnsIdentifier("site1.example.com"), 
+                new DnsIdentifier("site2.example.com") 
+            }, bindingOptions, oldCert1);
 
             var expectedBindings = inputFlags.HasFlag(SSLFlags.CentralSsl) ? 3 : 2;
             Assert.AreEqual(expectedBindings, site.Bindings.Count);
@@ -345,7 +352,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 WithFlags(inputFlags).
                 WithThumbprint(newCert);
 
-            iis.AddOrUpdateBindings(new[] { "*.example.com" }, bindingOptions, oldCert1);
+            iis.AddOrUpdateBindings(new[] { new DnsIdentifier("*.example.com") }, bindingOptions, oldCert1);
 
             var expectedBindings = inputFlags.HasFlag(SSLFlags.CentralSsl) ? 2 : 1;
             Assert.AreEqual(expectedBindings, site.Bindings.Count);
@@ -398,7 +405,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 WithFlags(inputFlags).
                 WithThumbprint(newCert);
 
-            iis.AddOrUpdateBindings(new[] { "*.example.com" }, bindingOptions, oldCert1);
+            iis.AddOrUpdateBindings(new[] { new DnsIdentifier("*.example.com") }, bindingOptions, oldCert1);
 
             var expectedBindings = 2;
             Assert.AreEqual(expectedBindings, site.Bindings.Count);
@@ -461,7 +468,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 WithThumbprint(newCert);
 
             var regularSite = iis.GetWebSite(regularId);
-            iis.AddOrUpdateBindings(new[] { regularHost }, bindingOptions, oldCert1);
+            iis.AddOrUpdateBindings(new[] { new DnsIdentifier(regularHost) }, bindingOptions, oldCert1);
             Assert.AreEqual(2, regularSite.Bindings.Count);
 
             var updatedBinding = regularSite.Bindings[1];
@@ -530,7 +537,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 WithThumbprint(newCert);
 
             var regularSite = iis.GetWebSite(regularId);
-            iis.AddOrUpdateBindings(new[] { "host.nl" }, bindingOptions, oldCert1);
+            iis.AddOrUpdateBindings(new[] { new DnsIdentifier("host.nl") }, bindingOptions, oldCert1);
             Assert.AreEqual(1, regularSite.Bindings.Count);
 
             var updatedBinding = regularSite.Bindings.FirstOrDefault();
@@ -585,7 +592,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 WithThumbprint(newCert);
 
             var outofScopeSite = iis.GetWebSite(outofscopeId);
-            iis.AddOrUpdateBindings(new[] { regularHost }, bindingOptions, scopeCert);
+            iis.AddOrUpdateBindings(new[] { new DnsIdentifier(regularHost) }, bindingOptions, scopeCert);
             Assert.AreEqual(outofScopeSite.Bindings.Count, 1);
 
             var updatedBinding = outofScopeSite.Bindings[0];
@@ -638,7 +645,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 WithThumbprint(newCert);
 
             var outofScopeSite = iis.GetWebSite(outofscopeId);
-            iis.AddOrUpdateBindings(new[] { regularHost }, bindingOptions, scopeCert);
+            iis.AddOrUpdateBindings(new[] { new DnsIdentifier(regularHost) }, bindingOptions, scopeCert);
             Assert.AreEqual(outofScopeSite.Bindings.Count, 1);
 
             var updatedBinding = outofScopeSite.Bindings[0];
@@ -725,7 +732,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
             var piramidSite = iis.GetWebSite(piramidId);
             var originalSet = piramidSite.Bindings.Where(x => !ignoreBindings.Contains(x.Host)).ToList();
             piramidSite.Bindings = originalSet.ToList().OrderBy(x => Guid.NewGuid()).ToList();
-            iis.AddOrUpdateBindings(new[] { certificateHost }, bindingOptions, scopeCert);
+            iis.AddOrUpdateBindings(new[] { new DnsIdentifier(certificateHost) }, bindingOptions, scopeCert);
 
             var newBindings = piramidSite.Bindings.Except(originalSet);
             Assert.AreEqual(1, newBindings.Count());
@@ -764,7 +771,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 WithStore(DefaultStore).
                 WithThumbprint(newCert);
 
-            iis.AddOrUpdateBindings(new[] { "*.b.c.com" }, bindingOptions, scopeCert);
+            iis.AddOrUpdateBindings(new[] { new DnsIdentifier("*.b.c.com") }, bindingOptions, scopeCert);
 
             Assert.AreEqual(expectedBindings, site.Bindings.Count());
         }
@@ -819,7 +826,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 WithThumbprint(newCert);
 
             var sniTrap1Site = iis.GetWebSite(sniTrap1);
-            iis.AddOrUpdateBindings(new[] { sniTrapHost }, bindingOptions, scopeCert);
+            iis.AddOrUpdateBindings(new[] { new DnsIdentifier(sniTrapHost) }, bindingOptions, scopeCert);
 
             var updatedBinding = sniTrap1Site.Bindings[0];
             Assert.AreEqual(SSLFlags.SNI, updatedBinding.SSLFlags);
@@ -875,7 +882,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 WithThumbprint(newCert);
 
             var sniTrap2Site = iis.GetWebSite(sniTrap2);
-            iis.AddOrUpdateBindings(new[] { sniTrapHost }, bindingOptions, scopeCert);
+            iis.AddOrUpdateBindings(new[] { new DnsIdentifier(sniTrapHost) }, bindingOptions, scopeCert);
 
             var untouchedBinding = sniTrap2Site.Bindings[0];
             Assert.AreEqual(SSLFlags.None, untouchedBinding.SSLFlags);
@@ -932,7 +939,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 WithThumbprint(newCert);
 
             var sniTrap2Site = iis.GetWebSite(sniTrap2);
-            iis.AddOrUpdateBindings(new[] { "example.com" }, bindingOptions, scopeCert);
+            iis.AddOrUpdateBindings(new[] { new DnsIdentifier("example.com") }, bindingOptions, scopeCert);
 
             var untouchedBinding = sniTrap2Site.Bindings[0];
             Assert.AreEqual(SSLFlags.None, untouchedBinding.SSLFlags);
@@ -974,7 +981,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 WithPort(DefaultPort).
                 WithFlags(SSLFlags.CentralSsl);
 
-            iis.AddOrUpdateBindings(new[] { "mail.example.com" }, bindingOptions, null);
+            iis.AddOrUpdateBindings(new[] { new DnsIdentifier("mail.example.com") }, bindingOptions, null);
 
             Assert.IsTrue(true);
         }
@@ -1023,7 +1030,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 WithStore(DefaultStore).
                 WithThumbprint(newCert);
 
-            iis.AddOrUpdateBindings(new[] { "exists.example.com" }, bindingOptions, scopeCert);
+            iis.AddOrUpdateBindings(new[] { new DnsIdentifier("exists.example.com") }, bindingOptions, scopeCert);
             Assert.AreEqual(1, dup2.Bindings.Count);
         }
 
@@ -1073,7 +1080,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 WithStore(DefaultStore).
                 WithThumbprint(newCert);
 
-            iis.AddOrUpdateBindings(new[] { "new.example.com" }, bindingOptions, scopeCert);
+            iis.AddOrUpdateBindings(new[] { new DnsIdentifier("new.example.com") }, bindingOptions, scopeCert);
             Assert.AreEqual(expectedBindings, dup2.Bindings.Count);
         }
 
@@ -1119,7 +1126,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 WithStore(DefaultStore).
                 WithThumbprint(newCert);
 
-            iis.AddOrUpdateBindings(new[] { "exists.example.com" }, bindingOptions, oldCert1);
+            iis.AddOrUpdateBindings(new[] { new DnsIdentifier("exists.example.com") }, bindingOptions, oldCert1);
             Assert.AreEqual(iis.WebSites.First().Bindings.First().CertificateHash , newCert);
             Assert.AreEqual(iis.WebSites.First().Bindings.Last().CertificateHash, newCert);
         }
@@ -1171,7 +1178,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 WithStore(DefaultStore).
                 WithThumbprint(newCert);
 
-            iis.AddOrUpdateBindings(new[] { host, newHost }, bindingOptions, null);
+            iis.AddOrUpdateBindings(new[] { new DnsIdentifier(host), new DnsIdentifier(newHost) }, bindingOptions, null);
             Assert.AreEqual(2, iis.WebSites.First().Bindings.Count());
         }
     }

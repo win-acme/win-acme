@@ -1,6 +1,7 @@
 ﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
@@ -17,7 +18,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 $"[{nameof(Manual)}] {_options.CommonName}",
                 _options.CommonName ?? "",
                 new List<TargetPart> {
-                    new TargetPart(_options.AlternativeNames)
+                    new TargetPart(_options.AlternativeNames.Select(x => new DnsIdentifier(x)))
                 });
         }
 

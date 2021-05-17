@@ -46,7 +46,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var identifiers = target.Parts.SelectMany(x => x.Identifiers).Distinct();
             foreach (var identifier in identifiers)
             {
-                var registrationResult = await acmeDnsClient.EnsureRegistration(identifier.Replace("*.", ""), true);
+                var registrationResult = await acmeDnsClient.EnsureRegistration(identifier.Value.Replace("*.", ""), true);
                 if (!registrationResult)
                 {
                     return null;
@@ -66,7 +66,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var valid = true;
             foreach (var identifier in identifiers)
             {
-                if (!await acmeDnsClient.EnsureRegistration(identifier.Replace("*.", ""), false))
+                if (!await acmeDnsClient.EnsureRegistration(identifier.Value.Replace("*.", ""), false))
                 {
                     _log.Warning("No (valid) acme-dns registration could be found for {identifier}.", identifier);
                     valid = false;
@@ -79,6 +79,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return ret;
         }
 
-        public override bool CanValidate(Target target) => true;
+        public override bool CanValidate(Target target) => target.Parts.SelectMany(x => x.Identifiers).All(x => x.Type == IdentifierType.DnsName);
     }
 }

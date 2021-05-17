@@ -233,7 +233,7 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private async Task<IEnumerable<Renewal>> Analyze(IEnumerable<Renewal> selectedRenewals)
         {
-            var foundHosts = new Dictionary<string, List<Renewal>>();
+            var foundHosts = new Dictionary<Identifier, List<Renewal>>();
             var foundSites = new Dictionary<long, List<Renewal>>();
 
             foreach (var renewal in selectedRenewals)
@@ -251,7 +251,7 @@ namespace PKISharp.WACS
                         }
                         foundSites[siteId].Add(renewal);
                     }
-                    foreach (var host in targetPart.GetHosts(true))
+                    foreach (var host in targetPart.GetIdentifiers(true))
                     {
                         if (!foundHosts.ContainsKey(host))
                         {

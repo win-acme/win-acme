@@ -7,7 +7,6 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -47,8 +46,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
 
             // Parse CSR
-            List<string> alternativeNames;
-            string commonName;
+            List<Identifier> alternativeNames;
+            Identifier commonName;
             byte[] csrBytes;
             try
             {
@@ -125,7 +124,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         /// </summary>
         /// <param name="info"></param>
         /// <returns></returns>
-        private string ParseCn(CertificationRequestInfo info)
+        private Identifier ParseCn(CertificationRequestInfo info)
         {
             var subject = info.Subject;
             var cnValue = subject.GetValueList(new DerObjectIdentifier("2.5.4.3"));
@@ -145,11 +144,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        private string ProcessName(string name)
-        {
-            var idn = new IdnMapping();
-            return idn.GetUnicode(name.ToLower());
-        }
+        private static Identifier ProcessName(string name) => 
+            new DnsIdentifier(name).Unicode(true);
 
         /// <summary>
         /// Parse the SAN names.
@@ -157,9 +153,9 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         /// </summary>
         /// <param name="info"></param>
         /// <returns></returns>
-        private IEnumerable<string> ParseSan(CertificationRequestInfo info)
+        private IEnumerable<Identifier> ParseSan(CertificationRequestInfo info)
         {
-            var ret = new List<string>();
+            var ret = new List<Identifier>();
             var extensionSequence = info.Attributes.OfType<DerSequence>()
                 .Where(o => o.OfType<DerObjectIdentifier>().Any(oo => oo.Id == "1.2.840.113549.1.9.14"))
                 .FirstOrDefault();

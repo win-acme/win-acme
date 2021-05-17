@@ -67,7 +67,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             try
             {
                 // Determine name
-                var name = input.CommonName.Replace("*", "_");
+                var name = input.CommonName.Value.Replace("*", "_");
 
                 // Base certificate
                 var certificateExport = input.Certificate.Export(X509ContentType.Cert);

@@ -13,7 +13,7 @@ namespace PKISharp.WACS.Clients.IIS
         Version Version { get; }
         IEnumerable<IIISSite> WebSites { get; }
 
-        void AddOrUpdateBindings(IEnumerable<string> identifiers, BindingOptions bindingOptions, byte[]? oldThumbprint);
+        void AddOrUpdateBindings(IEnumerable<Identifier> identifiers, BindingOptions bindingOptions, byte[]? oldThumbprint);
 
         IIISSite GetFtpSite(long id);
         IIISSite GetWebSite(long id);
@@ -24,7 +24,7 @@ namespace PKISharp.WACS.Clients.IIS
         where TSite : IIISSite<TBinding>
         where TBinding : IIISBinding
     {
-        void AddBinding(TSite site, BindingOptions bindingOptions);
+        IIISBinding AddBinding(TSite site, BindingOptions bindingOptions);
         void UpdateBinding(TSite site, TBinding binding, BindingOptions bindingOptions);
         new IEnumerable<TSite> FtpSites { get; }
         new IEnumerable<TSite> WebSites { get; }

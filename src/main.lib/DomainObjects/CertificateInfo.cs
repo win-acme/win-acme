@@ -23,7 +23,17 @@ namespace PKISharp.WACS.DomainObjects
         public List<X509Certificate2> Chain { get; set; } = new List<X509Certificate2>();
         public FileInfo? CacheFile { get; set; }
         public string? CacheFilePassword { get; set; }
-        public string CommonName => Split(Certificate.Subject) ?? SanNames.First();
+        public Identifier CommonName {
+            get
+            {
+                var str = Split(Certificate.Subject);
+                if (string.IsNullOrWhiteSpace(str))
+                {
+                    return SanNames.First();
+                }
+                return new DnsIdentifier(str);
+            }
+        }
         public string Issuer => Split(Certificate.Issuer) ?? "??";
 
         /// <summary>
@@ -50,20 +60,19 @@ namespace PKISharp.WACS.DomainObjects
 
         public Dictionary<Type, StoreInfo> StoreInfo { get; set; } = new Dictionary<Type, StoreInfo>();
 
-        public List<string> SanNames
+        public List<Identifier> SanNames
         {
             get
             {
-                var ret = new List<string>();
                 foreach (var x in Certificate.Extensions)
                 {
                     if ((x.Oid?.Value ?? "").Equals(SAN_OID))
                     {
                         var result = ParseSubjectAlternativeNames(x.RawData);
-                        return result.Select(x => x.Value).ToList();
+                        return result.ToList();
                     }
                 }
-                return ret;
+                return new List<Identifier>();
             }
         }
 
@@ -107,7 +116,7 @@ namespace PKISharp.WACS.DomainObjects
                 var partLength = ReadLength(ref data);
                 if (type == 135) // ip
                 {
-                    result.Add(new Identifier(new IPAddress(data[0..partLength]).ToString(), IdentifierType.IpAddress));
+                    result.Add(new IpIdentifier(new IPAddress(data[0..partLength]).ToString()));
                 }
                 else if (type == 160) // upn
                 {
@@ -115,7 +124,7 @@ namespace PKISharp.WACS.DomainObjects
                     var index = data.IndexOf((byte)'\f') + 1;
                     var upnData = data[index..];
                     var upnLength = ReadLength(ref upnData);
-                    result.Add(new Identifier(Encoding.UTF8.GetString(upnData[0..upnLength]), IdentifierType.UpnName));
+                    result.Add(new UpnIdentifier(Encoding.UTF8.GetString(upnData[0..upnLength])));
                 }
                 else if (type == 130) // dns
                 {
@@ -126,11 +135,11 @@ namespace PKISharp.WACS.DomainObjects
                     {
                         domainString = domainString.Substring(0, idnIndex).Trim();
                     }
-                    result.Add(new Identifier(domainString, IdentifierType.DnsName));
+                    result.Add(new DnsIdentifier(domainString));
                 }
                 else // all other
                 {
-                    result.Add(new Identifier(Encoding.UTF8.GetString(data[0..partLength])));
+                    result.Add(new UnknownIdentifier(Encoding.UTF8.GetString(data[0..partLength])));
                 }
                 data = data[partLength..];
             }

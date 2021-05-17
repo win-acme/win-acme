@@ -243,8 +243,8 @@ namespace PKISharp.WACS
 
             // Find a targetPart that matches the challenge
             var targetPart = context.Target.Parts.
-                FirstOrDefault(tp => tp.GetHosts(false).
-                Any(h => authorization.Identifier.Value == h.Replace("*.", "")));
+                FirstOrDefault(tp => tp.GetIdentifiers(false).
+                Any(h => authorization.Identifier.Value == h.Value.Replace("*.", "")));
 
             if (targetPart == null)
             {

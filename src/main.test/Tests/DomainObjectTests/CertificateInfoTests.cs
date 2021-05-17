@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PKISharp.WACS.DomainObjects;
 using System;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 
 namespace PKISharp.WACS.UnitTests.Tests.CertificateInfoTests
@@ -21,7 +22,7 @@ namespace PKISharp.WACS.UnitTests.Tests.CertificateInfoTests
                 X509KeyStorageFlags.Exportable);
             var certinfo = new CertificateInfo(tempPfx[0]);
             Assert.IsNotNull(certinfo);
-            Assert.IsTrue(certinfo.SanNames.Contains("1.1.1.1"));
+            Assert.IsTrue(certinfo.SanNames.Any(x => x.Value == "1.1.1.1"));
         }
     }
 }

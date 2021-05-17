@@ -41,7 +41,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             return Regex.Replace(input, "{.+?}", (m) => {
                 return m.Value switch
                 {
-                    "{0}" or "{CertCommonName}" => newCertificate.CommonName,
+                    "{0}" or "{CertCommonName}" => newCertificate.CommonName.Value,
                     "{1}" or "{CachePassword}" => (censor ? _renewal.PfxPassword?.Value : _renewal.PfxPassword?.DisplayValue) ?? "",
                     "{2}" or "{CacheFile}" => newCertificate.CacheFile?.FullName ?? "",
                     "{3}" or "{StorePath}" => defaultStoreInfo.Path ?? "",
@@ -50,7 +50,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                     "{6}" or "{CacheFolder}" => newCertificate.CacheFile?.Directory?.FullName ?? "",
                     "{7}" or "{RenewalId}" => _renewal.Id,
                     "{StoreType}" => defaultStoreInfo.Name ?? "",
-                    "{OldCertCommonName}" => oldCertificate?.CommonName ?? "",
+                    "{OldCertCommonName}" => oldCertificate?.CommonName?.Value ?? "",
                     "{OldCertFriendlyName}" => oldCertificate?.Certificate.FriendlyName ?? "",
                     "{OldCertThumbprint}" => oldCertificate?.Certificate.Thumbprint ?? "",
                     _ => m.Value
