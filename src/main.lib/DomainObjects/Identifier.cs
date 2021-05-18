@@ -67,17 +67,24 @@ namespace PKISharp.WACS.DomainObjects
 
         public IpIdentifier(string value) : base(value, IdentifierType.IpAddress)
         {
-            var hex = value.TrimStart('#');
-            try
+            if (IPAddress.TryParse(value, out var parsed))
             {
-                var bytes = Enumerable.Range(0, hex.Length / 2).Select(x => Convert.ToByte(hex.Substring(x * 2, 2), 16)).ToArray();
-                var ip = new IPAddress(bytes);
-                Value = ip.ToString();
-            } 
-            catch
-            {
-                throw new ArgumentException("Value is not recognized as a valid IP address");
+                Value = parsed.ToString();
+                return;
             }
+            if (value.StartsWith("#"))
+            {
+                var hex = value.TrimStart('#');
+                try
+                {
+                    var bytes = Enumerable.Range(0, hex.Length / 2).Select(x => Convert.ToByte(hex.Substring(x * 2, 2), 16)).ToArray();
+                    var ip = new IPAddress(bytes);
+                    Value = ip.ToString();
+                    return;
+                }
+                catch {}
+            }
+            throw new ArgumentException("Value is not recognized as a valid IP address");
         }
     }
     public class EmailIdentifier : Identifier
