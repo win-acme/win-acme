@@ -74,7 +74,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             foreach (var part in target.Parts)
             {
                 _iisClient.AddOrUpdateBindings(
-                    part.Identifiers,
+                    part.Identifiers.OfType<DnsIdentifier>(),
                     bindingOptions.WithSiteId(_options.SiteId ?? part.SiteId),
                     oldThumb);
             }
