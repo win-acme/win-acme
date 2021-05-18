@@ -124,6 +124,19 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         }
 
         [TestMethod]
+        public void IpAddress()
+        {
+            var options = Options($"--host abc.com,1.2.3.4");
+            Assert.IsNotNull(options);
+            if (options != null)
+            {
+                var tar = Target(options);
+                Assert.AreEqual(tar.IsValid(log), true);
+                Assert.IsTrue(tar.Parts.First().Identifiers.OfType<IpIdentifier>().First().Value == "1.2.3.4");
+            }
+        }
+
+        [TestMethod]
         public void CommonNameUni()
         {
             var options = Options($"--commonname common.example.com --host a.example.com,b.example.com,c.example.com");

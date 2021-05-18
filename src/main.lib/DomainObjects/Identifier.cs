@@ -63,6 +63,8 @@ namespace PKISharp.WACS.DomainObjects
 
     public class IpIdentifier : Identifier
     {
+        public IpIdentifier(IPAddress value) : base(value.ToString(), IdentifierType.IpAddress) {}
+
         public IpIdentifier(string value) : base(value, IdentifierType.IpAddress)
         {
             var hex = value.TrimStart('#');
