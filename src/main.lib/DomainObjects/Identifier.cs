@@ -34,8 +34,8 @@ namespace PKISharp.WACS.DomainObjects
         public override bool Equals(object? obj) => (obj as Identifier) == this;
         public override int GetHashCode() => ToString().GetHashCode();
         public bool Equals(Identifier? other) => other == this;
-        public int CompareTo(object? obj) => (obj as Identifier)?.ToString()?.CompareTo(ToString()) ?? -1;
-        public int CompareTo(Identifier? other) => other?.ToString()?.CompareTo(ToString()) ?? -1;
+        public int CompareTo(object? obj) => ToString().CompareTo((obj as Identifier)?.ToString());
+        public int CompareTo(Identifier? other) => ToString().CompareTo(other?.ToString());
         public static bool operator ==(Identifier? a, Identifier? b) => string.Equals(a?.ToString(), b?.ToString(), StringComparison.OrdinalIgnoreCase);
         public static bool operator !=(Identifier? a, Identifier? b) => !(a == b);
     }
