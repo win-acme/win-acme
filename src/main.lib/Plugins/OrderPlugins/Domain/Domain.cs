@@ -10,8 +10,13 @@ namespace PKISharp.WACS.Plugins.OrderPlugins
     class Domain : IOrderPlugin
     {
         private readonly DomainParseService _domainParseService;
+        private readonly ILogService _log;
 
-        public Domain(DomainParseService domainParseService) => _domainParseService = domainParseService;
+        public Domain(DomainParseService domainParseService, ILogService log) 
+        {
+            _domainParseService = domainParseService;
+            _log = log;
+        }
 
         public IEnumerable<Order> Split(Renewal renewal, Target target) 
         {
@@ -21,7 +26,16 @@ namespace PKISharp.WACS.Plugins.OrderPlugins
             {
                 foreach (var host in part.GetIdentifiers(true))
                 {
-                    var domain = _domainParseService.GetRegisterableDomain(host.Value.TrimStart('.', '*'));
+                    var domain = host.Value;
+                    switch (host)
+                    {
+                        case DnsIdentifier dns:
+                            domain = _domainParseService.GetRegisterableDomain(host.Value.TrimStart('.', '*'));
+                            break;
+                        default:
+                            _log.Warning("Unsupported identifier type {type}", host.Type);
+                            break;
+                    }
                     var sourceParts = target.Parts.Where(p => p.GetIdentifiers(true).Contains(host));
                     if (!ret.ContainsKey(domain))
                     {
