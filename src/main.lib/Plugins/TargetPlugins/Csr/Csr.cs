@@ -131,21 +131,13 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             if (cnValue.Count > 0)
             {
                 var name = cnValue.Cast<string>().ElementAt(0);
-                return ProcessName(name);
+                return new DnsIdentifier(name).Unicode(true);
             } 
             else
             {
                 throw new Exception("Unable to parse common name");
             }
         }
-
-        /// <summary>
-        /// Convert puny-code to unicode
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        private static Identifier ProcessName(string name) => 
-            new DnsIdentifier(name).Unicode(true);
 
         /// <summary>
         /// Parse the SAN names.
@@ -180,7 +172,12 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
             var asn1object = Asn1Object.FromByteArray(derOctetString.GetOctets());
             var names = Org.BouncyCastle.Asn1.X509.GeneralNames.GetInstance(asn1object);
-            return names.GetNames().Select(x => x.Name.ToString()!).Select(x => ProcessName(x));
+            return names.GetNames().Select(x => x.TagNo switch {
+                1 => new EmailIdentifier(x.Name.ToString()!),
+                2 => new DnsIdentifier(x.Name.ToString()!).Unicode(true),
+                7 => new IpIdentifier(x.Name.ToString()!),
+                _ => new UnknownIdentifier(x.Name.ToString()!)
+            });
         }
 
         private T? GetAsn1ObjectRecursive<T>(DerSequence sequence, string id) where T : Asn1Object

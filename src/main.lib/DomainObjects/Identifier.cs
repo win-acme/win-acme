@@ -1,7 +1,10 @@
-﻿using PKISharp.WACS.Extensions;
+﻿using MimeKit;
+using PKISharp.WACS.Extensions;
 using System;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
+using System.Net;
 
 namespace PKISharp.WACS.DomainObjects
 {
@@ -10,7 +13,8 @@ namespace PKISharp.WACS.DomainObjects
         Unknown,
         IpAddress,
         DnsName,
-        UpnName
+        UpnName,
+        Email
     }
 
     [DebuggerDisplay("{Type}: {Value}")]
@@ -61,7 +65,31 @@ namespace PKISharp.WACS.DomainObjects
     {
         public IpIdentifier(string value) : base(value, IdentifierType.IpAddress)
         {
-
+            var hex = value.TrimStart('#');
+            try
+            {
+                var bytes = Enumerable.Range(0, hex.Length / 2).Select(x => Convert.ToByte(hex.Substring(x * 2, 2), 16)).ToArray();
+                var ip = new IPAddress(bytes);
+                Value = ip.ToString();
+            } 
+            catch
+            {
+                throw new ArgumentException("Value is not recognized as a valid IP address");
+            }
+        }
+    }
+    public class EmailIdentifier : Identifier
+    {
+        public EmailIdentifier(string value) : base(value, IdentifierType.Email)
+        {
+            try
+            {
+                var sender = new MailboxAddress("Test", value);
+            } 
+            catch
+            {
+                throw new ArgumentException("Value is not recognized as a valid email address");
+            }
         }
     }
 
