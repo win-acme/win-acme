@@ -74,7 +74,7 @@ namespace PKISharp.WACS
 
             // Match found with existing certificate, determine if we want to overwrite
             // it or create it side by side with the current one.
-            if (runLevel.HasFlag(RunLevel.Interactive) && (temp.Id != existing.Id))
+            if (runLevel.HasFlag(RunLevel.Interactive) && (temp.Id != existing.Id) && temp.New)
             {
                 _input.CreateSpace();
                 _input.Show("Existing renewal", existing.ToString(_input));
@@ -100,7 +100,7 @@ namespace PKISharp.WACS
         /// Setup a new scheduled renewal
         /// </summary>
         /// <param name="runLevel"></param>
-        internal async Task SetupRenewal(RunLevel runLevel)
+        internal async Task SetupRenewal(RunLevel runLevel, Renewal? tempRenewal = null)
         {
             if (_args.Test)
             {
@@ -111,7 +111,10 @@ namespace PKISharp.WACS
                 runLevel |= RunLevel.IgnoreCache;
             }
             _log.Information(LogType.All, "Running in mode: {runLevel}", runLevel);
-            var tempRenewal = Renewal.Create(_args.Id, _settings.ScheduledTask.RenewalDays, _passwordGenerator);
+            if (tempRenewal == null)
+            {
+                tempRenewal = Renewal.Create(_args.Id, _settings.ScheduledTask.RenewalDays, _passwordGenerator);
+            }
             using var configScope = _scopeBuilder.Configuration(_container, tempRenewal, runLevel);
             // Choose target plugin
             var targetPluginOptionsFactory = configScope.Resolve<ITargetPluginOptionsFactory>();
@@ -362,6 +365,11 @@ namespace PKISharp.WACS
                     await _input.PromptYesNo("Create certificate failed, retry?", false))
                 {
                     goto retry;
+                }
+                if (!renewal.New && 
+                    await _input.PromptYesNo("Save these new settings anyway?", false))
+                {
+                    _renewalStore.Save(renewal, result);
                 }
                 _exceptionHandler.HandleException(message: $"Create certificate failed: {string.Join("\n\t- ", result.ErrorMessages)}");
             }

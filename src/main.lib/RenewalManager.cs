@@ -24,6 +24,7 @@ namespace PKISharp.WACS
         private readonly IAutofacBuilder _scopeBuilder;
         private readonly ExceptionHandler _exceptionHandler;
         private readonly RenewalExecutor _renewalExecutor;
+        private readonly RenewalCreator _renewalCreator;
         private readonly ISettingsService _settings;
 
         public RenewalManager(
@@ -32,6 +33,7 @@ namespace PKISharp.WACS
             IInputService input, ILogService log,
             ISettingsService settings,
             IAutofacBuilder autofacBuilder, ExceptionHandler exceptionHandler,
+            RenewalCreator renewalCreator,
             RenewalExecutor renewalExecutor)
         {
             _renewalStore = renewalStore;
@@ -44,6 +46,7 @@ namespace PKISharp.WACS
             _scopeBuilder = autofacBuilder;
             _exceptionHandler = exceptionHandler;
             _renewalExecutor = renewalExecutor;
+            _renewalCreator = renewalCreator;
         }
 
         /// <summary>
@@ -108,7 +111,11 @@ namespace PKISharp.WACS
                             () => { displayAll = true; return Task.CompletedTask; },
                             "List all selected renewals", "A"));
                 }
-              
+                options.Add(
+                    Choice.Create<Func<Task>>(
+                        async () => { quit = true; await EditRenewal(selectedRenewals.First()); },
+                        "Edit renewal", "E",
+                        @disabled: (selectedRenewals.Count() != 1, none ? "No renewals selected." : "Multiple renewals selected.")));
                 if (selectedRenewals.Count() > 1)
                 {
                     options.Add(
@@ -535,6 +542,12 @@ namespace PKISharp.WACS
                     "To change settings, re-create (overwrite) the renewal.");
             }
         }
+
+        /// <summary>
+        /// "Edit" renewal
+        /// </summary>
+        private async Task EditRenewal(Renewal renewal) => 
+            await _renewalCreator.SetupRenewal(RunLevel.Interactive | RunLevel.Advanced, renewal);
 
         /// <summary>
         /// Show certificate details

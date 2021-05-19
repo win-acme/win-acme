@@ -72,12 +72,13 @@ namespace PKISharp.WACS.Host
 
             var renewalExecutor = container.Resolve<RenewalExecutor>(
                 new TypedParameter(typeof(IContainer), _container));
-            _renewalManager = container.Resolve<RenewalManager>(
-                new TypedParameter(typeof(IContainer), _container),
-                new TypedParameter(typeof(RenewalExecutor), renewalExecutor));
             _renewalCreator = container.Resolve<RenewalCreator>(
                 new TypedParameter(typeof(IContainer), _container),
                 new TypedParameter(typeof(RenewalExecutor), renewalExecutor));
+            _renewalManager = container.Resolve<RenewalManager>(
+                new TypedParameter(typeof(IContainer), _container),
+                new TypedParameter(typeof(RenewalExecutor), renewalExecutor),
+                new TypedParameter(typeof(RenewalCreator), _renewalCreator));
         }
 
         /// <summary>
