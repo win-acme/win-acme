@@ -163,7 +163,7 @@ namespace PKISharp.WACS.Configuration
                         }
                     }
                     Console.WriteLine("```");
-                    foreach (var x in provider.Configuration)
+                    foreach (var x in provider.Configuration.Where(x => !x.Obsolete))
                     {
                         Console.ForegroundColor = ConsoleColor.White;
                         Console.Write($"   --{x.Name}");
