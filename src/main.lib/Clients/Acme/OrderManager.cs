@@ -100,7 +100,7 @@ namespace PKISharp.WACS.Clients.Acme
             {
                 // TODO: modify AcmeSharp to understand
                 // different types of identifier
-                var order = await _client.CreateOrder(identifiers.Select(x => x.Value));
+                var order = await _client.CreateOrder(identifiers);
                 if (order.Payload.Error != null)
                 {
                     _log.Error("Failed to create order {url}: {detail}", order.OrderUrl, order.Payload.Error.Detail);

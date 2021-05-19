@@ -1,7 +1,7 @@
 ﻿using ACMESharp;
 using ACMESharp.Authorizations;
 using ACMESharp.Protocol;
-using ACMESharp.Protocol.Resources;
+using acme = ACMESharp.Protocol.Resources;
 using Newtonsoft.Json;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
@@ -16,6 +16,7 @@ using System.Net.Mail;
 using System.Security.Authentication;
 using System.Threading;
 using System.Threading.Tasks;
+using ACMESharp.Protocol.Resources;
 
 namespace PKISharp.WACS.Clients.Acme
 {
@@ -254,7 +255,7 @@ namespace PKISharp.WACS.Clients.Acme
             {
                 // Some non-ACME compliant server may not support ES256 or other
                 // algorithms, so attempt fallback to RS256
-                if (apex.ProblemType == ProblemType.BadSignatureAlgorithm && 
+                if (apex.ProblemType == acme.ProblemType.BadSignatureAlgorithm && 
                     signer.KeyType != "RS256")
                 {
                     signer = _accountManager.NewSigner("RS256");
@@ -430,13 +431,13 @@ namespace PKISharp.WACS.Clients.Acme
             return newEmails.Select(x => $"{prefix}{x}").ToArray();
         }
 
-        internal async Task<IChallengeValidationDetails> DecodeChallengeValidation(Authorization auth, Challenge challenge)
+        internal async Task<IChallengeValidationDetails> DecodeChallengeValidation(acme.Authorization auth, acme.Challenge challenge)
         {
             var client = await GetClient();
             return AuthorizationDecoder.DecodeChallengeValidation(auth, challenge.Type, client.Signer);
         }
 
-        internal async Task<Challenge> AnswerChallenge(Challenge challenge)
+        internal async Task<acme.Challenge> AnswerChallenge(acme.Challenge challenge)
         {
             // Have to loop to wait for server to stop being pending
             var client = await GetClient();
@@ -458,7 +459,7 @@ namespace PKISharp.WACS.Clients.Acme
             return challenge;
         }
 
-        internal async Task<OrderDetails> CreateOrder(IEnumerable<string> identifiers)
+        internal async Task<OrderDetails> CreateOrder(IEnumerable<Identifier> identifiers)
         {
             var client = await GetClient();
             return await Retry(client, () => client.CreateOrderAsync(identifiers));
