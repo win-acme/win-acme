@@ -7,7 +7,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
     {
         public override string Name => "CSR plugin";
         public override string Group => "Target";
-        public override string Condition => "--target csr";
+        public override string Condition => "--source csr";
 
         [CommandLine(Description = "Specify the location of a CSR file to make a certificate for")]
         public string? CsrFile { get; set; }

@@ -114,12 +114,12 @@ namespace PKISharp.WACS.Plugins.Resolvers
         public virtual async Task<ITargetPluginOptionsFactory> GetTargetPlugin(ILifetimeScope scope)
         {
             // NOTE: checking the default option here doesn't make 
-            // sense because MainArguments.Target is what triggers
+            // sense because MainArguments.Source is what triggers
             // unattended mode in the first place. We woudn't even 
             // get into this code unless it was specified.
             return await GetPlugin<ITargetPluginOptionsFactory>(
                 scope,
-                defaultParam1: _arguments.Target,
+                defaultParam1: string.IsNullOrWhiteSpace(_arguments.Source) ? _arguments.Target : _arguments.Source,
                 defaultType: typeof(ManualOptionsFactory),
                 nullResult: new NullTargetFactory(),
                 className: "target");

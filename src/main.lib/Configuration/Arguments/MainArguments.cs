@@ -14,6 +14,7 @@ namespace PKISharp.WACS.Configuration.Arguments
                 !string.IsNullOrEmpty(Order) ||
                 !string.IsNullOrEmpty(Csr) ||
                 !string.IsNullOrEmpty(Target) ||
+                !string.IsNullOrEmpty(Source) ||
                 !string.IsNullOrEmpty(Validation);
         }
 
@@ -68,14 +69,17 @@ namespace PKISharp.WACS.Configuration.Arguments
 
         // Targeting
 
-        [CommandLine(Description = "[--target|--cancel|--renew|--revoke] Id of a new or existing renewal, can be used to override the default when creating a new renewal or to specify a specific renewal for other commands.")]
+        [CommandLine(Description = "[--source|--cancel|--renew|--revoke] Id of a new or existing renewal, can be used to override the default when creating a new renewal or to specify a specific renewal for other commands.")]
         public string? Id { get; set; }
 
-        [CommandLine(Description = "[--target|--cancel|--renew|--revoke] Friendly name of a new or existing renewal, can be used to override the default when creating a new renewal or to specify a specific renewal for other commands. In the latter case a pattern might be used. " + IISArguments.PatternExamples)]
+        [CommandLine(Description = "[--source|--cancel|--renew|--revoke] Friendly name of a new or existing renewal, can be used to override the default when creating a new renewal or to specify a specific renewal for other commands. In the latter case a pattern might be used. " + IISArguments.PatternExamples)]
         public string? FriendlyName { get; set; }
 
         [CommandLine(Description = "Specify which target plugin to run, bypassing the main menu and triggering unattended mode.", Obsolete = true)]
         public string? Target { get; set; }
+
+        [CommandLine(Description = "Specify which source plugin to run, bypassing the main menu and triggering unattended mode.")]
+        public string? Source { get; set; }
 
         [CommandLine(Description = "Specify which validation plugin to run. If none is specified, SelfHosting validation will be chosen as the default.")]
         public string? Validation { get; set; }

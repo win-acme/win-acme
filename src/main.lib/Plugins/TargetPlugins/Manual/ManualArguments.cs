@@ -7,7 +7,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
     {
         public override string Name => "Manual plugin";
         public override string Group => "Target";
-        public override string Condition => "--target manual";
+        public override string Condition => "--source manual";
 
         [CommandLine(Description = "Specify the common name of the certificate. If not provided the first host name will be used.")]
         public string? CommonName { get; set; }

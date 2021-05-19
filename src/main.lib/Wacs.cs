@@ -144,7 +144,7 @@ namespace PKISharp.WACS.Host
                         await _renewalManager.CheckRenewals(runLevel);
                         await CloseDefault();
                     }
-                    else if (!string.IsNullOrEmpty(_args.Target))
+                    else if (!string.IsNullOrEmpty(_args.Target) || !string.IsNullOrEmpty(_args.Source))
                     {
                         await _renewalCreator.SetupRenewal(RunLevel.Unattended);
                         await CloseDefault();
