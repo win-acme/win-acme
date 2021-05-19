@@ -16,7 +16,7 @@ using System.Net.Mail;
 using System.Security.Authentication;
 using System.Threading;
 using System.Threading.Tasks;
-using ACMESharp.Protocol.Resources;
+using PKISharp.WACS.DomainObjects;
 
 namespace PKISharp.WACS.Clients.Acme
 {
@@ -462,16 +462,25 @@ namespace PKISharp.WACS.Clients.Acme
         internal async Task<OrderDetails> CreateOrder(IEnumerable<Identifier> identifiers)
         {
             var client = await GetClient();
-            return await Retry(client, () => client.CreateOrderAsync(identifiers));
+            var acmeIdentifiers = identifiers.Select(i => new acme.Identifier() { 
+                Type = i.Type switch
+                {
+                    IdentifierType.DnsName => "dns", // rfc8555
+                    IdentifierType.IpAddress => "ip", // rfc8738
+                    _ => throw new NotImplementedException($"Identifier {i.Type} is not supported")
+                }, 
+                Value = i.Value 
+            });
+            return await Retry(client, () => client.CreateOrderAsync(acmeIdentifiers));
         }
 
-        internal async Task<Challenge> GetChallengeDetails(string url)
+        internal async Task<acme.Challenge> GetChallengeDetails(string url)
         {
             var client = await GetClient();
             return await Retry(client, () => client.GetChallengeDetailsAsync(url));
         }
 
-        internal async Task<Authorization> GetAuthorizationDetails(string url)
+        internal async Task<acme.Authorization> GetAuthorizationDetails(string url)
         {
             var client = await GetClient();
             return await Retry(client, () => client.GetAuthorizationDetailsAsync(url));
@@ -570,7 +579,7 @@ namespace PKISharp.WACS.Clients.Acme
         internal async Task RevokeCertificate(byte[] crt)
         {
             var client = await GetClient();
-            _ = await Retry(client, async () => client.RevokeCertificateAsync(crt, RevokeReason.Unspecified));
+            _ = await Retry(client, async () => client.RevokeCertificateAsync(crt, acme.RevokeReason.Unspecified));
         }
 
         /// <summary>
@@ -597,13 +606,13 @@ namespace PKISharp.WACS.Clients.Acme
             }
             catch (AcmeProtocolException apex)
             {
-                if (attempt < 3 && apex.ProblemType == ProblemType.BadNonce)
+                if (attempt < 3 && apex.ProblemType == acme.ProblemType.BadNonce)
                 {
                     _log.Warning("First chance error calling into ACME server, retrying with new nonce...");
                     await client.GetNonceAsync();
                     return await Retry(client, executor, attempt + 1);
                 }
-                else if (apex.ProblemType == ProblemType.UserActionRequired)
+                else if (apex.ProblemType == acme.ProblemType.UserActionRequired)
                 {
                     _log.Error("{detail}: {instance}", apex.ProblemDetail, apex.ProblemInstance);
                     throw;
