@@ -15,5 +15,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
 
         [CommandLine(Description = "The name of the resource group within Microsoft Azure DNS.")]
         public string AzureResourceGroupName { get; set; }
+
+        [CommandLine(Description = "Hosted zone (blank to find best match)")]
+        public string AzureHostedZone { get; set; }
     }
 }

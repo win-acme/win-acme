@@ -27,6 +27,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             GetString<AzureArguments>(a => a.AzureSubscriptionId).
             Required();
 
+        private ArgumentResult<string> HostedZone => _arguments.
+             GetString<AzureArguments>(a => a.AzureHostedZone);
+
         public override async Task<AzureOptions> Aquire(Target target, IInputService input, RunLevel runLevel)
         {
             var options = new AzureOptions();
@@ -34,6 +37,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             await common.Aquire(options);
             options.ResourceGroupName = await ResourceGroupName.Interactive(input).GetValue();
             options.SubscriptionId = await SubscriptionId.Interactive(input).GetValue();
+            options.HostedZone = await HostedZone.Interactive(input).GetValue();
             return options;
         }
 
@@ -44,6 +48,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             await common.Default(options);
             options.ResourceGroupName = await ResourceGroupName.GetValue();
             options.SubscriptionId = await SubscriptionId.GetValue();
+            options.HostedZone = await HostedZone.GetValue();
             return options;
         }
 
