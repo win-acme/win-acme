@@ -111,32 +111,32 @@ namespace PKISharp.WACS.Services
             {
                 throw new InvalidOperationException($"Missing argumentprovider for type {typeof(T).Name}");
             }
-            var optionName = GetMetaData(action).ArgumentName;
+            var argumentName = GetMetaData(action).ArgumentName;
             if (returnValue == null)
             {
-                _log.Verbose("No value provided for {optionName}", $"--{optionName}");
+                _log.Verbose("No value provided for {optionName}", $"--{argumentName}");
             }
             else
             {
-                var censor = ArgumentsParser.CensoredParameters.Any(c => optionName!.Contains(c));
+                var censor = _arguments.SecretArguments.Contains(argumentName);
                 if (returnValue is string returnString && string.IsNullOrWhiteSpace(returnString)) 
                 {
-                    _log.Verbose("Parsed emtpy value for {optionName}", $"--{optionName}");
+                    _log.Verbose("Parsed emtpy value for {optionName}", $"--{argumentName}");
                 } 
                 else if (returnValue is bool boolValue)
                 {
                     if (boolValue)
                     {
-                        _log.Verbose("Flag {optionName} is present", $"--{optionName}");
+                        _log.Verbose("Flag {optionName} is present", $"--{argumentName}");
                     } 
                     else
                     {
-                        _log.Verbose("Flag {optionName} not present", $"--{optionName}");
+                        _log.Verbose("Flag {optionName} not present", $"--{argumentName}");
                     }
                 }
                 else
                 {
-                    _log.Verbose("Parsed value for {optionName}: {providedValue}", $"--{optionName}", censor ? "********" : returnValue);
+                    _log.Verbose("Parsed value for {optionName}: {providedValue}", $"--{argumentName}", censor ? "********" : returnValue);
                 }
             }
             return returnValue;

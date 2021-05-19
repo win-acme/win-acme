@@ -15,7 +15,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         [CommandLine(Description = "Access key ID to login into Amazon Route 53.")]
         public string Route53AccessKeyId { get; set; }
 
-        [CommandLine(Description = "Secret access key to login into Amazon Route 53.")]
+        [CommandLine(Description = "Secret access key to login into Amazon Route 53.", Secret = true)]
         public string Route53SecretAccessKey { get; set; }
     }
 }

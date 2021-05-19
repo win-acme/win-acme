@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public override string Group => "Validation";
         public override string Condition => "--validationmode dns-01 --validation dreamhost";
 
-        [CommandLine(Description = "Dreamhost API key.")]
+        [CommandLine(Description = "Dreamhost API key.", Secret = true)]
         public string ApiKey { get; set; }
     }
 }
