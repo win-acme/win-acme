@@ -29,7 +29,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         public string? Regex { get; set; }
 
         [CommandLine(Description = "Specify the common name of the certificate that should be requested " +
-            "for the target. By default this will be the first binding that is enumerated.")]
+            "for the source. By default this will be the first binding that is enumerated.")]
         public string? CommonName { get; set; }
 
         [CommandLine(Description = "Exclude host names from the certificate. This may be a comma-separated list.")]

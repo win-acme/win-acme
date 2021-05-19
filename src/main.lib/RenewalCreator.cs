@@ -117,13 +117,13 @@ namespace PKISharp.WACS
             var targetPluginOptionsFactory = configScope.Resolve<ITargetPluginOptionsFactory>();
             if (targetPluginOptionsFactory is INull)
             {
-                _exceptionHandler.HandleException(message: $"No target plugin could be selected");
+                _exceptionHandler.HandleException(message: $"No source plugin could be selected");
                 return;
             }
             var (targetPluginDisabled, targetPluginDisabledReason) = targetPluginOptionsFactory.Disabled;
             if (targetPluginDisabled)
             {
-                _exceptionHandler.HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} is not available. {targetPluginDisabledReason}");
+                _exceptionHandler.HandleException(message: $"Source plugin {targetPluginOptionsFactory.Name} is not available. {targetPluginDisabledReason}");
                 return;
             }
             var targetPluginOptions = runLevel.HasFlag(RunLevel.Unattended) ?
@@ -131,7 +131,7 @@ namespace PKISharp.WACS
                 await targetPluginOptionsFactory.Aquire(_input, runLevel);
             if (targetPluginOptions == null)
             {
-                _exceptionHandler.HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} aborted or failed");
+                _exceptionHandler.HandleException(message: $"Source plugin {targetPluginOptionsFactory.Name} aborted or failed");
                 return;
             }
             tempRenewal.TargetPluginOptions = targetPluginOptions;
@@ -141,15 +141,15 @@ namespace PKISharp.WACS
             var initialTarget = targetScope.Resolve<Target>();
             if (initialTarget is INull)
             {
-                _exceptionHandler.HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} was unable to generate a target");
+                _exceptionHandler.HandleException(message: $"Source plugin {targetPluginOptionsFactory.Name} was unable to generate a target");
                 return;
             }
             if (!initialTarget.IsValid(_log))
             {
-                _exceptionHandler.HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} generated an invalid target");
+                _exceptionHandler.HandleException(message: $"Source plugin {targetPluginOptionsFactory.Name} generated an invalid target");
                 return;
             }
-            _log.Information("Target generated using plugin {name}: {target}", targetPluginOptions.Name, initialTarget);
+            _log.Information("Source generated using plugin {name}: {target}", targetPluginOptions.Name, initialTarget);
 
             // Choose FriendlyName
             if (!string.IsNullOrEmpty(_args.FriendlyName))
