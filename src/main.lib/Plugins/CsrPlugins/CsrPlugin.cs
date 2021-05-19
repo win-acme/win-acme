@@ -224,7 +224,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             var finalCommonName = commonName ?? identifiers.FirstOrDefault();
             IDictionary attrs = new Hashtable
             {
-                [X509Name.CN] = finalCommonName
+                [X509Name.CN] = finalCommonName?.Value
             };
             IList ord = new ArrayList
             {
