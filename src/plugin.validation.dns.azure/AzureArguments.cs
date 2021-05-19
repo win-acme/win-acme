@@ -7,5 +7,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     {
         public string AzureResourceGroupName { get; set; }
         public string AzureSubscriptionId { get; set; }
+        public string AzureHostedZone { get; set; }
     }
 }
