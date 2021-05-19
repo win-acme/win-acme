@@ -207,7 +207,7 @@ namespace PKISharp.WACS
                     Choice.Create<Func<Task>>(
                         () => { quit = true; return Task.CompletedTask; },
                         "Back", "Q",
-                        @default: originalSelection.Count() == 0));
+                        @default: !originalSelection.Any()));
 
                 if (selectedRenewals.Count() > 1)
                 {
@@ -266,22 +266,22 @@ namespace PKISharp.WACS
             var options = new List<Choice<List<Renewal>>>();
             foreach (var site in foundSites)
             {
-                if (site.Value.Count() > 1)
+                if (site.Value.Count > 1)
                 {
                     options.Add(
                       Choice.Create(
                           site.Value,
-                          $"Select {site.Value.Count()} renewals covering IIS site {site.Key}"));
+                          $"Select {site.Value.Count} renewals covering IIS site {site.Key}"));
                 }
             }
             foreach (var host in foundHosts)
             {
-                if (host.Value.Count() > 1)
+                if (host.Value.Count > 1)
                 {
                     options.Add(
                       Choice.Create(
                           host.Value,
-                          $"Select {host.Value.Count()} renewals covering host {host.Key}"));
+                          $"Select {host.Value.Count} renewals covering host {host.Key}"));
                 }
             }
             _input.CreateSpace();
@@ -446,7 +446,7 @@ namespace PKISharp.WACS
             if (_args.HasFilter)
             {
                 renewals = _renewalStore.FindByArguments(_args.Id, _args.FriendlyName);
-                if (renewals.Count() == 0)
+                if (!renewals.Any())
                 {
                     _log.Error("No renewals found that match the filter parameters --id and/or --friendlyname.");
                 }
@@ -455,13 +455,13 @@ namespace PKISharp.WACS
             {
                 _log.Verbose("Checking renewals");
                 renewals = _renewalStore.Renewals;
-                if (renewals.Count() == 0)
+                if (!renewals.Any())
                 {
                     _log.Warning("No scheduled renewals found.");
                 }
             }
 
-            if (renewals.Count() > 0)
+            if (renewals.Any())
             {
                 WarnAboutRenewalArguments();
                 foreach (var renewal in renewals)
