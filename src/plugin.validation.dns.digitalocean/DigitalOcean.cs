@@ -15,7 +15,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         private readonly IDigitalOceanClient _doClient;
         private long? _recordId;
-        private string _zone;
+        private string? _zone;
 
         public DigitalOcean(
             DigitalOceanOptions options, LookupClientProvider dnsClient,

@@ -16,11 +16,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             base(Dns01ChallengeValidationDetails.Dns01ChallengeType)
             => _arguments = arguments;
 
-        private ArgumentResult<ProtectedString> ApiKey => _arguments.
+        private ArgumentResult<ProtectedString?> ApiKey => _arguments.
             GetProtectedString<DigitalOceanArguments>(a => a.ApiToken).
             Required();
 
-        public override async Task<DigitalOceanOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
+        public override async Task<DigitalOceanOptions?> Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
             return new DigitalOceanOptions
             {
@@ -28,7 +28,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             };
         }
 
-        public override async Task<DigitalOceanOptions> Default(Target target)
+        public override async Task<DigitalOceanOptions?> Default(Target target)
         {
             return new DigitalOceanOptions
             {
