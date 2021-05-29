@@ -16,26 +16,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private readonly string _path;
         private readonly string? _password;
 
-        public static string? DefaultPath(ISettingsService settings)
-        {
-            var ret = settings.Store.CentralSsl?.DefaultPath;
-            if (string.IsNullOrWhiteSpace(ret))
-            {
-                ret = settings.Store.DefaultCentralSslStore;
-            }
-            return ret;
-        }
-
-        public static string? DefaultPassword(ISettingsService settings)
-        {
-            var ret = settings.Store.CentralSsl?.DefaultPassword;
-            if (string.IsNullOrWhiteSpace(ret))
-            {
-                ret = settings.Store.DefaultCentralSslPfxPassword;
-            }
-            return ret;
-        }
-
         public CentralSsl(
             ILogService log,
             ISettingsService settings,
@@ -46,12 +26,12 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
             var passwordRaw = !string.IsNullOrWhiteSpace(options.PfxPassword?.Value) ?
                           options.PfxPassword.Value :
-                          DefaultPassword(settings);
+                          settings.Store.CentralSsl.DefaultPassword;
             _password = secretServiceManager.EvaluateSecret(passwordRaw);
 
             var path = !string.IsNullOrWhiteSpace(options.Path) ?
                 options.Path :
-                DefaultPath(settings);
+                settings.Store.CentralSsl.DefaultPath;
 
             if (path != null && path.ValidPath(log))
             {

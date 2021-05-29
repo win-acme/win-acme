@@ -24,12 +24,12 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         private ArgumentResult<ProtectedString?> Password => _arguments.
             GetProtectedString<PemFilesArguments>(args => args.PemPassword, true).
-            WithDefault(PemFiles.DefaultPassword(_settings).Protect()).
+            WithDefault(_settings.Store.PemFiles.DefaultPassword.Protect()).
             DefaultAsNull();
 
         private ArgumentResult<string?> Path => _arguments.
             GetString<PemFilesArguments>(args => args.PemFilesPath).
-            WithDefault(PemFiles.DefaultPath(_settings)).
+            WithDefault(_settings.Store.PemFiles.DefaultPath).
             Required().
             Validate(x => Task.FromResult(x.ValidPath(_log)), "invalid path").
             DefaultAsNull();

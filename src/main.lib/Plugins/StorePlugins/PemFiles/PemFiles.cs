@@ -18,19 +18,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private readonly string _path;
         private readonly string? _password;
 
-        public static string? DefaultPath(ISettingsService settings)
-        {
-            var ret = settings.Store.PemFiles?.DefaultPath;
-            if (string.IsNullOrWhiteSpace(ret))
-            {
-                ret = settings.Store.DefaultPemFilesPath;
-            }
-            return ret;
-        }
-
-        public static string? DefaultPassword(ISettingsService settings) 
-            => settings.Store.PemFiles?.DefaultPassword;
-
         public PemFiles(
             ILogService log, ISettingsService settings,
             PemService pemService, PemFilesOptions options,
@@ -41,13 +28,13 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
             var passwordRaw = !string.IsNullOrWhiteSpace(options.PemPassword?.Value) ?
                 options.PemPassword.Value :
-                settings.Store.PemFiles?.DefaultPassword;
+                settings.Store.PemFiles.DefaultPassword;
             _password = secretServiceManager.EvaluateSecret(passwordRaw);
 
             var path = options.Path;
             if (string.IsNullOrWhiteSpace(path))
             {
-                path = DefaultPath(settings);
+                path = settings.Store.PemFiles.DefaultPath;
             }
             if (!string.IsNullOrWhiteSpace(path) && path.ValidPath(log))
             {

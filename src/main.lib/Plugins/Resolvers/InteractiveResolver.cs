@@ -169,7 +169,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         {
             return await GetPlugin<ITargetPluginOptionsFactory>(
                 scope,
-                defaultParam1: _settings.Target.DefaultTarget,
+                defaultParam1: _settings.Source.DefaultSource,
                 defaultType: typeof(IISOptionsFactory),
                 defaultTypeFallback: typeof(ManualOptionsFactory),
                 nullResult: new NullTargetFactory(),

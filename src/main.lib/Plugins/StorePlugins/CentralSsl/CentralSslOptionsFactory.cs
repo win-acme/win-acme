@@ -24,12 +24,12 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         private ArgumentResult<ProtectedString?> PfxPassword => _argumentInput.
             GetProtectedString<CentralSslArguments>(args => args.PfxPassword, true).
-            WithDefault(CentralSsl.DefaultPassword(_settings).Protect()).
+            WithDefault(_settings.Store.CentralSsl.DefaultPassword.Protect()).
             DefaultAsNull();
 
         private ArgumentResult<string?> Path => _argumentInput.
             GetString<CentralSslArguments>(args => args.CentralSslStore).
-            WithDefault(CentralSsl.DefaultPath(_settings)).
+            WithDefault(_settings.Store.CentralSsl.DefaultPath).
             Required().
             Validate(x => Task.FromResult(x.ValidPath(_log)), "invalid path").
             DefaultAsNull();

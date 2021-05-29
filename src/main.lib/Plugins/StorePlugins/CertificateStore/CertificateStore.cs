@@ -62,11 +62,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             string? storeName;
             try
             {
-                storeName = settings.Store.CertificateStore?.DefaultStore;
-                if (string.IsNullOrWhiteSpace(storeName))
-                {
-                    storeName = settings.Store.DefaultCertificateStore;
-                }
+                storeName = settings.Store.CertificateStore.DefaultStore;
                 // Second priority: defaults
                 if (string.IsNullOrWhiteSpace(storeName))
                 {

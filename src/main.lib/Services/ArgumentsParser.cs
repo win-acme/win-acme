@@ -167,7 +167,7 @@ namespace PKISharp.WACS.Configuration
                     foreach (var x in provider.Configuration.Where(x => !x.Obsolete))
                     {
                         Console.ForegroundColor = ConsoleColor.White;
-                        Console.Write($"   --{x.Name}");
+                        Console.Write($"   --{x.ArgumentName}");
                         Console.WriteLine();
                         Console.ResetColor();
                         var step = 60;
