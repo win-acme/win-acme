@@ -19,12 +19,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     /// </summary>
     internal class Azure : DnsValidation<Azure>
     {
-        private DnsManagementClient _azureDnsClient;
+        private DnsManagementClient? _azureDnsClient;
         private readonly IProxyService _proxyService;
         private readonly AzureOptions _options;
         private readonly AzureHelpers _helpers;
-        private readonly Dictionary<string, Dictionary<string, RecordSet>> _recordSets;
-        private IEnumerable<Zone> _hostedZones;
+        private readonly Dictionary<string, Dictionary<string, RecordSet?>> _recordSets;
+        private IEnumerable<Zone>? _hostedZones;
         
         public Azure(AzureOptions options,
             LookupClientProvider dnsClient, 
@@ -34,7 +34,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             _options = options;
             _proxyService = proxyService;
-            _recordSets = new Dictionary<string, Dictionary<string, RecordSet>>();
+            _recordSets = new Dictionary<string, Dictionary<string, RecordSet?>>();
             _helpers = new AzureHelpers(_options, log);
         }
 
@@ -62,7 +62,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var txtRecord = new TxtRecord(new[] { record.Value });
             if (!_recordSets.ContainsKey(zone))
             {
-                _recordSets.Add(zone, new Dictionary<string, RecordSet>());
+                _recordSets.Add(zone, new Dictionary<string, RecordSet?>());
             }
             var zoneRecords = _recordSets[zone];
             var relativeKey = RelativeRecordName(zone, record.Authority.Domain);
@@ -76,9 +76,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                         TxtRecords = new List<TxtRecord> { txtRecord }
                     });
             } 
-            else
+            else if (zoneRecords[relativeKey] != null)
             {
-                zoneRecords[relativeKey].TxtRecords.Add(txtRecord);
+                zoneRecords[relativeKey]!.TxtRecords.Add(txtRecord);
             }
             return true;
         }
@@ -167,7 +167,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         /// </summary>
         /// <param name="recordName"></param>
         /// <returns></returns>
-        private async Task<string> GetHostedZone(string recordName)
+        private async Task<string?> GetHostedZone(string recordName)
         {
             if (!string.IsNullOrEmpty(_options.HostedZone))
             {

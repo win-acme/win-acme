@@ -9,6 +9,10 @@
     <FileVersion>2.1.0.0</FileVersion>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.Management.Dns" Version="3.0.1" />
     <PackageReference Include="Microsoft.Azure.Services.AppAuthentication" Version="1.6.1" />
