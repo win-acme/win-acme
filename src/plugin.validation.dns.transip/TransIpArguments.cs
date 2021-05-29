@@ -7,7 +7,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         public override string Name { get; } = "TransIp";
         public override string Group { get; } = "Validation";
-        public override string Condition { get; } = "--validationmode dns-01 --validation transip";
+        public override string Condition { get; } = "--validation transip";
 
         [CommandLine(Name = "transip-login", Description = "Login name at TransIp.")]
         public string Login { get; set; }

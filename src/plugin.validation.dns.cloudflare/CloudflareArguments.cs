@@ -7,7 +7,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     {
         public override string Name => "Cloudflare";
         public override string Group => "Validation";
-        public override string Condition => "--validationmode dns-01 --validation cloudflare";
+        public override string Condition => "--validation cloudflare";
 
         [CommandLine(Description = "API Token for Cloudflare.", Secret = true)]
         public string CloudflareApiToken { get; set; }

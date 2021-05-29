@@ -7,7 +7,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         public override string Name { get; } = "Route53";
         public override string Group { get; } = "Validation";
-        public override string Condition { get; } = "--validationmode dns-01 --validation route53";
+        public override string Condition { get; } = "--validation route53";
 
         [CommandLine(Description = "AWS IAM role for the current EC2 instance to login into Amazon Route 53.")]
         public string Route53IAMRole { get; set; }

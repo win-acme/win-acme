@@ -8,7 +8,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     {
         public override string Name => "Azure";
         public override string Group => "Validation";
-        public override string Condition => "--validationmode dns-01 --validation azure";
+        public override string Condition => "--validation azure";
 
         [CommandLine(Description = "Subscription ID to login into Microsoft Azure DNS.")]
         public string AzureSubscriptionId { get; set; }

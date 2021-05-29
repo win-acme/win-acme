@@ -82,11 +82,12 @@ namespace PKISharp.WACS.Services
                 // This code specifically deals with backwards compatibility 
                 // so it is allowed to use obsolete properties
 #pragma warning disable CS0612
-                Source.DefaultSource = string.IsNullOrWhiteSpace(Source.DefaultSource) ? Target.DefaultTarget : Source.DefaultSource;
-                Store.PemFiles.DefaultPath = string.IsNullOrWhiteSpace(Store.PemFiles.DefaultPath) ? Target.DefaultTarget : Source.DefaultSource; ??= Store.DefaultPemFilesPath;
-                Store.CentralSsl.DefaultPath = string.IsNullOrWhiteSpace(Store.CentralSsl.DefaultPath) ? Target.DefaultTarget : Source.DefaultSource; ??= Store.DefaultCentralSslStore;
-                Store.CentralSsl.DefaultPassword = string.IsNullOrWhiteSpace(Source.DefaultSource) ? Target.DefaultTarget : Source.DefaultSource; ??= Store.DefaultCentralSslPfxPassword;
-                Store.CertificateStore.DefaultStore = string.IsNullOrWhiteSpace(Source.DefaultSource) ? Target.DefaultTarget : Source.DefaultSource; ??= Store.DefaultCertificateStore;
+                static string? Fallback(string? x, string? y) => string.IsNullOrWhiteSpace(x) ? y : x;
+                Source.DefaultSource = Fallback(Source.DefaultSource, Target.DefaultTarget);
+                Store.PemFiles.DefaultPath = Fallback(Store.PemFiles.DefaultPath, Store.DefaultPemFilesPath);
+                Store.CentralSsl.DefaultPath = Fallback(Store.CentralSsl.DefaultPath, Store.DefaultCentralSslStore);
+                Store.CentralSsl.DefaultPassword = Fallback(Store.CentralSsl.DefaultPassword, Store.DefaultCentralSslPfxPassword);
+                Store.CertificateStore.DefaultStore = Fallback(Store.CertificateStore.DefaultStore, Store.DefaultCertificateStore);
 #pragma warning restore CS0612 
             }
             catch (Exception ex)

@@ -7,7 +7,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         public override string Name { get; } = "Google Cloud DNS";
         public override string Group { get; } = "Validation";
-        public override string Condition { get; } = "--validationmode dns-01 --validation gcpdns";
+        public override string Condition { get; } = "--validation gcpdns";
 
         [CommandLine(Description = "Service Account Key to authenticate with GCP")]
         public string ServiceAccountKey { get; set; }
