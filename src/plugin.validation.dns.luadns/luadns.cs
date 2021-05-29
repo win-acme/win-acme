@@ -23,7 +23,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             public int Id { get; set; }
 
             [JsonPropertyName("name")]
-            public string Name { get; set; }
+            public string? Name { get; set; }
         }
 
         private class RecordData
@@ -35,13 +35,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             public int ZoneId { get; set; }
 
             [JsonPropertyName("name")]
-            public string Name { get; set; }
+            public string? Name { get; set; }
 
             [JsonPropertyName("type")]
-            public string Type { get; set; }
+            public string? Type { get; set; }
 
             [JsonPropertyName("content")]
-            public string Content { get; set; }
+            public string? Content { get; set; }
 
             [JsonPropertyName("ttl")]
             public int TTL { get; set; }
@@ -52,8 +52,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         private readonly IProxyService _proxyService;
 
-        private readonly string _userName;
-        private readonly string _apiKey;
+        private readonly string? _userName;
+        private readonly string? _apiKey;
 
         public LuaDns(
             LookupClientProvider dnsClient,
@@ -82,7 +82,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
             var payload = await response.Content.ReadAsStringAsync();
             var zones = JsonSerializer.Deserialize<ZoneData[]>(payload);
-            var targetZone = FindBestMatch(zones.ToDictionary(x => x.Name), record.Authority.Domain);
+            if (zones == null || zones.Any(x => x.Name == null))
+            {
+                _log.Error("Empty or invalid response. Aborting");
+                return false;
+            }
+            var targetZone = FindBestMatch(zones.ToDictionary(x => x.Name!), record.Authority.Domain);
             if (targetZone == null)
             {
                 _log.Error("No matching zone found in LuaDNS account. Aborting");
@@ -101,6 +106,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
             payload = await response.Content.ReadAsStringAsync();
             newRecord = JsonSerializer.Deserialize<RecordData>(payload);
+            if (newRecord == null)
+            {
+                _log.Error("Empty or invalid response");
+                return false;
+            }
             _recordsMap[record.Authority.Domain] = newRecord;
             return true;
         }

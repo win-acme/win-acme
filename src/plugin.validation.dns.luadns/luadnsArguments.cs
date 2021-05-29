@@ -10,9 +10,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public override string Condition { get; } = "--validation luadns";
 
         [CommandLine(Description = "LuaDNS account username (email address).")]
-        public string LuaDnsUsername { get; set; }
+        public string? LuaDnsUsername { get; set; }
 
         [CommandLine(Description = "LuaDNS API key.", Secret = true)]
-        public string LuaDnsAPIKey { get; set; }
+        public string? LuaDnsAPIKey { get; set; }
     }
 }
