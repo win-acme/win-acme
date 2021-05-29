@@ -13,15 +13,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public CloudDnsOptionsFactory(ArgumentsInputService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
 
-        private ArgumentResult<string> ServiceAccountKey => _arguments.
+        private ArgumentResult<string?> ServiceAccountKey => _arguments.
             GetString<CloudDnsArguments>(a => a.ServiceAccountKey).
             Required();
 
-        private ArgumentResult<string> ProjectId => _arguments.
+        private ArgumentResult<string?> ProjectId => _arguments.
             GetString<CloudDnsArguments>(a => a.ProjectId).
             Required();
 
-        public override async Task<CloudDnsOptions> Aquire(Target target, IInputService input, RunLevel runLevel)
+        public override async Task<CloudDnsOptions?> Aquire(Target target, IInputService input, RunLevel runLevel)
         {
             return new CloudDnsOptions
             {
@@ -31,7 +31,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         }
 
 
-        public override async Task<CloudDnsOptions> Default(Target target)
+        public override async Task<CloudDnsOptions?> Default(Target target)
         {
             return new CloudDnsOptions
             {

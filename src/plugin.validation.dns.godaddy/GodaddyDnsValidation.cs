@@ -25,8 +25,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             : base(dnsClient, logService, settings)
         {
             _client = new DnsManagementClient(
-                ssm.EvaluateSecret(options.ApiKey), 
-                ssm.EvaluateSecret(options.ApiSecret), 
+                ssm.EvaluateSecret(options.ApiKey) ?? "", 
+                ssm.EvaluateSecret(options.ApiSecret) ?? "", 
                 logService, proxyService);
             _domainParser = domainParser;
         }

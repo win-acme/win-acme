@@ -17,14 +17,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public GodaddyOptionsFactory(ArgumentsInputService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
 
-        private ArgumentResult<ProtectedString> ApiKey => _arguments.
+        private ArgumentResult<ProtectedString?> ApiKey => _arguments.
             GetProtectedString<GodaddyArguments>(a => a.ApiKey).
             Required();
 
-        private ArgumentResult<ProtectedString> ApiSecret => _arguments.
+        private ArgumentResult<ProtectedString?> ApiSecret => _arguments.
             GetProtectedString<GodaddyArguments>(a => a.ApiSecret);
 
-        public override async Task<GodaddyOptions> Aquire(Target target, IInputService input, RunLevel runLevel)
+        public override async Task<GodaddyOptions?> Aquire(Target target, IInputService input, RunLevel runLevel)
         {
             return new GodaddyOptions()
             {
@@ -33,7 +33,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             };
         }
 
-        public override async Task<GodaddyOptions> Default(Target target)
+        public override async Task<GodaddyOptions?> Default(Target target)
         {
             return new GodaddyOptions()
             {

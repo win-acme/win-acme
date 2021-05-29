@@ -10,9 +10,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public override string Condition { get; } = "--validation gcpdns";
 
         [CommandLine(Description = "Service Account Key to authenticate with GCP")]
-        public string ServiceAccountKey { get; set; }
+        public string? ServiceAccountKey { get; set; }
 
         [CommandLine(Description = "Project ID that is hosting Cloud DNS.")]
-        public string ProjectId { get; set; }
+        public string? ProjectId { get; set; }
     }
 }

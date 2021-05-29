@@ -10,6 +10,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public override string Condition => "--validation dreamhost";
 
         [CommandLine(Description = "Dreamhost API key.", Secret = true)]
-        public string ApiKey { get; set; }
+        public string? ApiKey { get; set; }
     }
 }

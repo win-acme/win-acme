@@ -17,11 +17,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public DreamhostOptionsFactory(ArgumentsInputService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
 
-        private ArgumentResult<ProtectedString> ApiKey => _arguments.
+        private ArgumentResult<ProtectedString?> ApiKey => _arguments.
             GetProtectedString<DreamhostArguments>(a => a.ApiKey).
             Required();
 
-        public override async Task<DreamhostOptions> Aquire(Target target, IInputService input, RunLevel runLevel)
+        public override async Task<DreamhostOptions?> Aquire(Target target, IInputService input, RunLevel runLevel)
         {
             return new DreamhostOptions()
             {
@@ -29,7 +29,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             };
         }
 
-        public override async Task<DreamhostOptions> Default(Target target)
+        public override async Task<DreamhostOptions?> Default(Target target)
         {
             return new DreamhostOptions()
             {

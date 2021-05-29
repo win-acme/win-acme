@@ -10,9 +10,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public override string Condition => "--validation godaddy";
 
         [CommandLine(Description = "GoDaddy API key.")]
-        public string ApiKey { get; set; }
+        public string? ApiKey { get; set; }
 
         [CommandLine(Description = "GoDaddy API secret.", Secret = true)]
-        public string ApiSecret { get; set; }
+        public string? ApiSecret { get; set; }
     }
 }

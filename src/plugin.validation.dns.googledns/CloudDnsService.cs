@@ -22,7 +22,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return response.ManagedZones.ToList();
         }
 
-        public async Task<ManagedZone> FindZone(string projectId, string dnsName)
+        public async Task<ManagedZone?> FindZone(string projectId, string dnsName)
         {
             var zones = await GetManagedZones(projectId);
             return zones.FirstOrDefault(z => z.DnsName.StartsWith(dnsName));
