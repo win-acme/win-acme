@@ -82,7 +82,6 @@
     "CertificateStore": {
       "DefaultStore": null
     },
-    "DefaultCentralSslStore": "I:",
     "CentralSsl": {
       "DefaultPath": null,
       "DefaultPassword": null,
