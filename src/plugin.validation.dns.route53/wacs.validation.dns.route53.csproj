@@ -9,6 +9,10 @@
     <FileVersion>2.1.0.0</FileVersion>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  
   <ItemGroup>
     <PackageReference Include="AWSSDK.Route53" Version="3.7.0.30" />
   </ItemGroup>

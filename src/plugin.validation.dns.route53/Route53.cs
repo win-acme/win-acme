@@ -87,6 +87,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var recordName = record.Authority.Domain;
             var token = record.Value;
             var hostedZoneIds = await GetHostedZoneIds(recordName);
+            if (hostedZoneIds == null)
+            {
+                return;
+            }
             _log.Information($"Deleting TXT record {recordName} with value {token}");
             var deleteTasks = hostedZoneIds.Select(hostedZoneId => 
                 _route53Client.ChangeResourceRecordSetsAsync(
@@ -99,7 +103,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _ = await Task.WhenAll(deleteTasks);
         }
 
-        private async Task<IEnumerable<string>> GetHostedZoneIds(string recordName)
+        private async Task<IEnumerable<string>?> GetHostedZoneIds(string recordName)
         {
             var hostedZones = new List<HostedZone>();
             var response = await _route53Client.ListHostedZonesAsync();
