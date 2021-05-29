@@ -14,15 +14,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public KeyVaultOptionsFactory(ArgumentsInputService arguments) : base() => _arguments = arguments;
 
-        private ArgumentResult<string> VaultName => _arguments.
+        private ArgumentResult<string?> VaultName => _arguments.
             GetString<KeyVaultArguments>(a => a.VaultName).
             Required();
 
-        private ArgumentResult<string> CertificateName => _arguments.
+        private ArgumentResult<string?> CertificateName => _arguments.
             GetString<KeyVaultArguments>(a => a.CertificateName).
             Required();
 
-        public override async Task<KeyVaultOptions> Aquire(IInputService input, RunLevel runLevel)
+        public override async Task<KeyVaultOptions?> Aquire(IInputService input, RunLevel runLevel)
         {
             var options = new KeyVaultOptions();
             var common = new AzureOptionsFactoryCommon<KeyVaultArguments>(_arguments);
@@ -32,7 +32,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return options;
         }
 
-        public override async Task<KeyVaultOptions> Default()
+        public override async Task<KeyVaultOptions?> Default()
         {
             var options = new KeyVaultOptions();
             var common = new AzureOptionsFactoryCommon<KeyVaultArguments>(_arguments);
