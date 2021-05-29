@@ -19,18 +19,18 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             base(Dns01ChallengeValidationDetails.Dns01ChallengeType) 
             => _arguments = arguments;
 
-        private ArgumentResult<string> ResourceGroupName => _arguments.
+        private ArgumentResult<string?> ResourceGroupName => _arguments.
             GetString<AzureArguments>(a => a.AzureResourceGroupName).
             Required();
 
-        private ArgumentResult<string> SubscriptionId => _arguments.
+        private ArgumentResult<string?> SubscriptionId => _arguments.
             GetString<AzureArguments>(a => a.AzureSubscriptionId).
             Required();
 
-        private ArgumentResult<string> HostedZone => _arguments.
+        private ArgumentResult<string?> HostedZone => _arguments.
              GetString<AzureArguments>(a => a.AzureHostedZone);
 
-        public override async Task<AzureOptions> Aquire(Target target, IInputService input, RunLevel runLevel)
+        public override async Task<AzureOptions?> Aquire(Target target, IInputService input, RunLevel runLevel)
         {
             var options = new AzureOptions();
             var common = new AzureOptionsFactoryCommon<AzureArguments>(_arguments);
@@ -41,7 +41,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return options;
         }
 
-        public override async Task<AzureOptions> Default(Target target)
+        public override async Task<AzureOptions?> Default(Target target)
         {
             var options = new AzureOptions();
             var common = new AzureOptionsFactoryCommon<AzureArguments>(_arguments);
