@@ -25,8 +25,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public override async Task<KeyVaultOptions> Aquire(IInputService input, RunLevel runLevel)
         {
             var options = new KeyVaultOptions();
-            var common = new AzureOptionsFactoryCommon<KeyVaultArguments>(_arguments, input);
-            await common.Aquire(options);
+            var common = new AzureOptionsFactoryCommon<KeyVaultArguments>(_arguments);
+            await common.Aquire(options, input);
             options.VaultName = await VaultName.Interactive(input).GetValue();
             options.CertificateName = await CertificateName.Interactive(input).GetValue();
             return options;
@@ -35,7 +35,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public override async Task<KeyVaultOptions> Default()
         {
             var options = new KeyVaultOptions();
-            var common = new AzureOptionsFactoryCommon<KeyVaultArguments>(_arguments, null);
+            var common = new AzureOptionsFactoryCommon<KeyVaultArguments>(_arguments);
             await common.Default(options);
             options.VaultName = await VaultName.GetValue();
             options.CertificateName = await CertificateName.GetValue();

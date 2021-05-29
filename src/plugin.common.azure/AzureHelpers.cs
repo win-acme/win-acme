@@ -66,7 +66,7 @@ namespace PKISharp.WACS.Plugins.Azure.Common
                 credentials = await ApplicationTokenProvider.LoginSilentAsync(
                     _options.TenantId,
                     _options.ClientId,
-                    _options.Secret.Value,
+                    _options.Secret?.Value,
                     GetActiveDirectorySettingsForAzureEnvironment());
             }
             return credentials;

@@ -33,8 +33,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public override async Task<AzureOptions> Aquire(Target target, IInputService input, RunLevel runLevel)
         {
             var options = new AzureOptions();
-            var common = new AzureOptionsFactoryCommon<AzureArguments>(_arguments, input);
-            await common.Aquire(options);
+            var common = new AzureOptionsFactoryCommon<AzureArguments>(_arguments);
+            await common.Aquire(options, input);
             options.ResourceGroupName = await ResourceGroupName.Interactive(input).GetValue();
             options.SubscriptionId = await SubscriptionId.Interactive(input).GetValue();
             options.HostedZone = await HostedZone.Interactive(input).GetValue();
@@ -44,7 +44,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public override async Task<AzureOptions> Default(Target target)
         {
             var options = new AzureOptions();
-            var common = new AzureOptionsFactoryCommon<AzureArguments>(_arguments, null);
+            var common = new AzureOptionsFactoryCommon<AzureArguments>(_arguments);
             await common.Default(options);
             options.ResourceGroupName = await ResourceGroupName.GetValue();
             options.SubscriptionId = await SubscriptionId.GetValue();

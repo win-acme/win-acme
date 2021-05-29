@@ -13,32 +13,30 @@ namespace PKISharp.WACS.Plugins.Azure.Common
     public class AzureOptionsFactoryCommon<T> where T: AzureArgumentsCommon, new()
     {
         private readonly ArgumentsInputService _arguments;
-        private readonly IInputService _input;
 
-        public AzureOptionsFactoryCommon(ArgumentsInputService arguments, IInputService input)
+        public AzureOptionsFactoryCommon(ArgumentsInputService arguments)
         {
             _arguments = arguments;
-            _input = input;
         }
-        private ArgumentResult<string> Environment => _arguments.
+        private ArgumentResult<string?> Environment => _arguments.
             GetString<T>(a => a.AzureEnvironment);
 
         private ArgumentResult<bool?> UseMsi => _arguments.
             GetBool<T>(a => a.AzureUseMsi);
 
-        private ArgumentResult<string> TenantId => _arguments.
+        private ArgumentResult<string?> TenantId => _arguments.
             GetString<T>(a => a.AzureTenantId).
             Required();
 
-        private ArgumentResult<string> ClientId => _arguments.
+        private ArgumentResult<string?> ClientId => _arguments.
             GetString<T>(a => a.AzureClientId).
             Required();
 
-        private ArgumentResult<ProtectedString> ClientSecret => _arguments.
+        private ArgumentResult<ProtectedString?> ClientSecret => _arguments.
             GetProtectedString<T>(a => a.AzureSecret).
             Required();
 
-        public async Task Aquire(IAzureOptionsCommon options)
+        public async Task Aquire(IAzureOptionsCommon options, IInputService _input)
         {
             var defaultEnvironment = (await Environment.GetValue()) ?? AzureEnvironments.AzureCloud;
             var environments = new List<Choice<Func<Task>>>(
