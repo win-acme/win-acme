@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.Extensions;
+﻿using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using System.Linq;
@@ -43,13 +44,14 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         private static ManualOptions? Create(string? input)
         {
-            var sanList = input.ParseCsv()?.Select(x => x.ConvertPunycode());
+            var sanList = input.ParseCsv()?.Select(x => x.ConvertPunycode()).Select(x => Manual.ParseIdentifier(x));
             if (sanList != null)
             {
+                var commonName = sanList.OfType<DnsIdentifier>().FirstOrDefault();
                 return new ManualOptions()
                 {
-                    CommonName = sanList.First(),
-                    AlternativeNames = sanList.ToList()
+                    CommonName = commonName?.Value,
+                    AlternativeNames = sanList.Select(x => x.Value).ToList()
                 };
             }
             else

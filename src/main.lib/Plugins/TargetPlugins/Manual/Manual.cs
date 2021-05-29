@@ -23,7 +23,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 });
         }
 
-        private static Identifier ParseIdentifier(string identifier)
+        public static Identifier ParseIdentifier(string identifier)
         {
             if (IPAddress.TryParse(identifier, out var address))
             {
