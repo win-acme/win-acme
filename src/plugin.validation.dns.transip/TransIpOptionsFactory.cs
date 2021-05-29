@@ -28,16 +28,16 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _proxy = proxy;
         }
 
-        private ArgumentResult<string> Login => _arguments.
+        private ArgumentResult<string?> Login => _arguments.
             GetString<TransIpArguments>(a => a.Login).
             Required();
 
-        private ArgumentResult<ProtectedString> PrivateKey => _arguments.
+        private ArgumentResult<ProtectedString?> PrivateKey => _arguments.
             GetProtectedString<TransIpArguments>(a => a.PrivateKey).
-            Validate(x => Task.FromResult(CheckKey(x.Value)), "invalid private key").
+            Validate(x => Task.FromResult(CheckKey(x?.Value)), "invalid private key").
             Required();
 
-        public override async Task<TransIpOptions> Aquire(Target target, IInputService input, RunLevel runLevel)
+        public override async Task<TransIpOptions?> Aquire(Target target, IInputService input, RunLevel runLevel)
         {
             return new TransIpOptions()
             {
@@ -46,14 +46,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             };
         }
 
-        public override async Task<TransIpOptions> Default(Target target)
+        public override async Task<TransIpOptions?> Default(Target target)
         {
             var login = await Login.GetValue();
 
             var keyFile = await _arguments.
                 GetString<TransIpArguments>(a => a.PrivateKeyFile).
-                Validate(x => Task.FromResult(File.Exists(x)), "file doesn't exist").
-                Validate(async x => CheckKey(await File.ReadAllTextAsync(x)), "invalid key").
+                Validate(x => Task.FromResult(x.ValidFile(_log)), "file doesn't exist").
+                Validate(async x => CheckKey(await File.ReadAllTextAsync(x!)), "invalid key").
                 GetValue();
 
             var key = keyFile != null
@@ -67,8 +67,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             };
         }
 
-        private bool CheckKey(string privateKey)
+        private bool CheckKey(string? privateKey)
         {
+            if (privateKey == null)
+            {
+                return false;
+            }
             try
             {
                 _ = new AuthenticationService("", privateKey, _proxy);

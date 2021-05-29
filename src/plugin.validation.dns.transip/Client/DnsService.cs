@@ -10,16 +10,16 @@ namespace TransIp.Library
         public DnsService(AuthenticationService authenticationService, IProxyService proxyService) : 
             base(authenticationService, proxyService) { }
        
-        public async Task<IEnumerable<Domain>> ListDomains()
+        public async Task<IEnumerable<Domain>?> ListDomains()
         {
             var response = await Get<DomainList>($"domains");
-            return response.PayloadTyped.Domains;
+            return response.PayloadTyped?.Domains;
         }
 
-        public async Task<IEnumerable<DnsEntry>> ListDnsEntries(string domainName)
+        public async Task<IEnumerable<DnsEntry>?> ListDnsEntries(string domainName)
         {
             var response = await Get<DnsEntryList>($"domains/{domainName}/dns");
-            return response.PayloadTyped.DnsEntries;
+            return response.PayloadTyped?.DnsEntries;
         }
 
         public async Task CreateDnsEntry(string domainName, DnsEntry entry) => 

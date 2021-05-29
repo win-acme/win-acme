@@ -9,10 +9,10 @@ namespace TransIp.Library.Dto
     public class Domain
     {
         [JsonProperty("name")]
-        public string Name { get; set; }
+        public string? Name { get; set; }
             
         [JsonProperty("authCode")]
-        public string AuthorizationCode { get; set; }
+        public string? AuthorizationCode { get; set; }
             
         [JsonProperty("isTransferLocked")]
         public bool TransferLocked { get; set; }
@@ -30,18 +30,18 @@ namespace TransIp.Library.Dto
         public DateTime? CancellationDate { get; set; } 
         
         [JsonProperty("cancellationStatus")]
-        public string CancellationStatus { get; set; }
+        public string? CancellationStatus { get; set; }
         
         [JsonProperty("isDnsOnly")]
         public bool DnsOnly { get; set; } 
         
         [JsonProperty("tags")]
-        public IEnumerable<string> Tags { get; set; }     
+        public IEnumerable<string>? Tags { get; set; }     
     }
 
     public class DomainList
     {
         [JsonProperty("domains")]
-        public IEnumerable<Domain> Domains { get; set; } 
+        public IEnumerable<Domain>? Domains { get; set; } 
     }
 }
