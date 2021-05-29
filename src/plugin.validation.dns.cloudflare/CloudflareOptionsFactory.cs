@@ -15,11 +15,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => 
             _arguments = arguments;
 
-        private ArgumentResult<ProtectedString> ApiKey => _arguments.
+        private ArgumentResult<ProtectedString?> ApiKey => _arguments.
             GetProtectedString<CloudflareArguments>(a => a.CloudflareApiToken).
             Required();
 
-        public override async Task<CloudflareOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
+        public override async Task<CloudflareOptions?> Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
             return new CloudflareOptions
             {
@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             };
         }
 
-        public override async Task<CloudflareOptions> Default(Target target)
+        public override async Task<CloudflareOptions?> Default(Target target)
         {
             return new CloudflareOptions
             {
