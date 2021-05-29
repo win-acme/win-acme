@@ -22,7 +22,7 @@ namespace PKISharp.WACS.Host
         /// <summary>
         /// Prevent starting program twice at the same time
         /// </summary>
-        private static Mutex _globalMutex;
+        private static Mutex? _globalMutex;
 
         private static bool Verbose { get; set; }
 
@@ -134,7 +134,7 @@ namespace PKISharp.WACS.Host
         /// </summary>
         /// <param name="args"></param>
         /// <returns></returns>
-        internal static IContainer GlobalScope(string[] args)
+        internal static IContainer? GlobalScope(string[] args)
         {
             var builder = new ContainerBuilder();
             var logger = new LogService();
@@ -154,12 +154,16 @@ namespace PKISharp.WACS.Host
                 return null;
             }
             var mainArguments = argumentsParser.GetArguments<MainArguments>();
+            if (mainArguments == null)
+            {
+                return null;
+            }
             var settingsService = new SettingsService(logger, mainArguments);
             if (!settingsService.Valid)
             {
                 return null;
             }
-            logger.SetDiskLoggingPath(settingsService.Client.LogPath);
+            logger.SetDiskLoggingPath(settingsService.Client.LogPath!);
 
             _ = builder.RegisterInstance(argumentsParser);
             _ = builder.RegisterInstance(mainArguments);

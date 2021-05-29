@@ -59,7 +59,7 @@ namespace PKISharp.WACS.Services.Legacy
         /// <returns></returns>
         private LegacyScheduledRenewal? Load(string renewal)
         {
-            LegacyScheduledRenewal result;
+            LegacyScheduledRenewal? result;
             try
             {
                 result = JsonConvert.DeserializeObject<LegacyScheduledRenewal>(renewal);
