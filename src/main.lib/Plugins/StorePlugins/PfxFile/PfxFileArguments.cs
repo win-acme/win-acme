@@ -12,7 +12,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         [CommandLine(Description = "Path to write the .pfx file to.")]
         public string? PfxFilePath { get; set; }
 
-        [CommandLine(Description = "Password to set for .pfx files exported to the folder.")]
+        [CommandLine(Description = "Password to set for .pfx files exported to the folder.", Secret = true)]
         public string? PfxPassword { get; set; }
     }
 }

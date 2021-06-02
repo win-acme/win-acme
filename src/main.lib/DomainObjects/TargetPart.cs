@@ -8,7 +8,7 @@ namespace PKISharp.WACS.DomainObjects
     [DebuggerDisplay("TargetPart: ({Identifiers.Count} host(s) - IIS: {IIS})")]
     public class TargetPart
     {
-        public TargetPart(IEnumerable<string>? identifiers)
+        public TargetPart(IEnumerable<Identifier>? identifiers)
         {
             if (identifiers == null)
             {
@@ -30,6 +30,6 @@ namespace PKISharp.WACS.DomainObjects
         /// <summary>
         /// Different parts that make up this target
         /// </summary>
-        public List<string> Identifiers { get; }
+        public List<Identifier> Identifiers { get; }
     }
 }

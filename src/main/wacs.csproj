@@ -34,6 +34,10 @@
     <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  
   <ItemGroup>
     <Compile Remove="nupkg\**" />
     <EmbeddedResource Remove="nupkg\**" />
@@ -51,16 +55,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\main.lib\wacs.lib.csproj" />
-    <ProjectReference Include="..\plugin.store.keyvault\wacs.store.keyvault.csproj" />
-    <ProjectReference Include="..\plugin.validation.dns.azure\wacs.validation.dns.azure.csproj" />
-    <ProjectReference Include="..\plugin.validation.dns.cloudflare\wacs.validation.dns.cloudflare.csproj" />
-    <ProjectReference Include="..\plugin.validation.dns.digitalocean\wacs.validation.dns.digitalocean.csproj" />
-    <ProjectReference Include="..\plugin.validation.dns.dreamhost\wacs.validation.dns.dreamhost.csproj" />
-    <ProjectReference Include="..\plugin.validation.dns.godaddy\wacs.validation.dns.godaddy.csproj" />
-    <ProjectReference Include="..\plugin.validation.dns.googledns\wacs.validation.dns.googledns.csproj" />
-    <ProjectReference Include="..\plugin.validation.dns.luadns\wacs.validation.dns.luadns.csproj" />
-    <ProjectReference Include="..\plugin.validation.dns.route53\wacs.validation.dns.route53.csproj" />
-    <ProjectReference Include="..\plugin.validation.dns.transip\wacs.validation.dns.transip.csproj" />
   </ItemGroup>
 
   <ItemGroup>

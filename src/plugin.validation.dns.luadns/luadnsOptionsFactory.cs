@@ -3,37 +3,42 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     internal sealed class LuaDnsOptionsFactory : ValidationPluginOptionsFactory<LuaDns, LuaDnsOptions>
     {
-        private readonly IArgumentsService _arguments;
-        public LuaDnsOptionsFactory(IArgumentsService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
+        private readonly ArgumentsInputService _arguments;
+        public LuaDnsOptionsFactory(ArgumentsInputService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
 
-        public override async Task<LuaDnsOptions> Aquire(Target target, IInputService input, RunLevel runLevel)
+        private ArgumentResult<ProtectedString?> ApiKey => _arguments.
+            GetProtectedString<LuaDnsArguments>(a => a.LuaDnsAPIKey).
+            Required();
+
+        private ArgumentResult<string?> Username => _arguments.
+            GetString<LuaDnsArguments>(a => a.LuaDnsUsername).
+            Required();
+
+        public override async Task<LuaDnsOptions?> Aquire(Target target, IInputService input, RunLevel runLevel)
         {
-            var args = _arguments.GetArguments<LuaDnsArguments>();
-            var opts = new LuaDnsOptions
+            return new LuaDnsOptions
             {
-                Username = await _arguments.TryGetArgument(args.LuaDnsUsername, input, "LuaDns Account username"),
-                APIKey = new ProtectedString(await _arguments.TryGetArgument(args.LuaDnsAPIKey, input, "LuaDns API key", true))
+                Username = await Username.Interactive(input, "Username").GetValue(),
+                APIKey = await ApiKey.Interactive(input, "API key").GetValue()
             };
-            return opts;
         }
 
-        public override Task<LuaDnsOptions> Default(Target target)
+        public override async Task<LuaDnsOptions?> Default(Target target)
         {
-            var args = _arguments.GetArguments<LuaDnsArguments>();
-            var opts = new LuaDnsOptions
+            return new LuaDnsOptions
             {
-                Username = _arguments.TryGetRequiredArgument(nameof(args.LuaDnsUsername), args.LuaDnsUsername),
-                APIKey = new ProtectedString(_arguments.TryGetRequiredArgument(nameof(args.LuaDnsAPIKey), args.LuaDnsAPIKey))
+                Username = await Username.GetValue(),
+                APIKey = await ApiKey.GetValue()
             };
-            return Task.FromResult(opts);
         }
 
-        public override bool CanValidate(Target target) => true;
+        public override bool CanValidate(Target target) => target.Parts.SelectMany(x => x.Identifiers).All(x => x.Type == IdentifierType.DnsName);
     }
 }

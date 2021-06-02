@@ -97,7 +97,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
         public bool HasFtpSites => FtpSites.Count() > 0;
         public bool HasWebSites => WebSites.Count() > 0;
 
-        public void AddOrUpdateBindings(IEnumerable<string> identifiers, BindingOptions bindingOptions, byte[]? oldThumbprint)
+        public void AddOrUpdateBindings(IEnumerable<Identifier> identifiers, BindingOptions bindingOptions, byte[]? oldThumbprint)
         {
             var updater = new IISHttpBindingUpdater<MockSite, MockBinding>(this, _log);
             var updated = updater.AddOrUpdateBindings(identifiers, bindingOptions, oldThumbprint);
@@ -117,7 +117,11 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
         IIISSite IIISClient.GetFtpSite(long id) => GetFtpSite(id);
         IIISSite IIISClient.GetWebSite(long id) => GetWebSite(id);
 
-        public void AddBinding(MockSite site, BindingOptions bindingOptions) => site.Bindings.Add(new MockBinding(bindingOptions));
+        public IIISBinding AddBinding(MockSite site, BindingOptions bindingOptions) {
+            var newBinding = new MockBinding(bindingOptions);
+            site.Bindings.Add(newBinding);
+            return newBinding;
+        } 
 
         public void UpdateBinding(MockSite site, MockBinding binding, BindingOptions bindingOptions)
         {

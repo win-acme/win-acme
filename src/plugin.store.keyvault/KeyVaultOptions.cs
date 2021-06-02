@@ -12,17 +12,17 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public override string Name => "KeyVault";
         public override string Description => "Store certificate in Azure Key Vault";
 
-        public string AzureEnvironment { get; set; }
+        public string? AzureEnvironment { get; set; }
         public bool UseMsi { get; set; }
-        public string ClientId { get; set; }
-        public string ResourceGroupName { get; set; }
+        public string? ClientId { get; set; }
+        public string? ResourceGroupName { get; set; }
 
         [JsonProperty(propertyName: "SecretSafe")]
-        public ProtectedString Secret { get; set; }
+        public ProtectedString? Secret { get; set; }
 
-        public string SubscriptionId { get; set; }
-        public string TenantId { get; set; }
-        public string VaultName { get; set; }
-        public string CertificateName { get; set; }
+        public string? SubscriptionId { get; set; }
+        public string? TenantId { get; set; }
+        public string? VaultName { get; set; } = "";
+        public string? CertificateName { get; set; } = ""; 
     }
 }

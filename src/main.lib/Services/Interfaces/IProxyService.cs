@@ -8,6 +8,7 @@ namespace PKISharp.WACS.Services
     {
         SslProtocols SslProtocols { get; set; }
         WindowsProxyUsePolicy ProxyType { get; }
+        HttpMessageHandler GetHttpMessageHandler();
         HttpClient GetHttpClient(bool checkSsl = true);
         IWebProxy? GetWebProxy();
     }

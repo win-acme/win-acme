@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Configuration.Settings;
 using PKISharp.WACS.Extensions;
 using System;
@@ -9,7 +10,7 @@ namespace PKISharp.WACS.Services
     public class SettingsService : ISettingsService
     {
         private readonly ILogService _log;
-        private readonly IArgumentsService _arguments;
+        private readonly MainArguments _arguments;
 
         public bool Valid { get; private set; } = false;
         public ClientSettings Client { get; private set; } = new ClientSettings();
@@ -21,7 +22,9 @@ namespace PKISharp.WACS.Services
         public NotificationSettings Notification { get; private set; } = new NotificationSettings();
         public SecuritySettings Security { get; private set; } = new SecuritySettings();
         public ScriptSettings Script { get; private set; } = new ScriptSettings();
-        public TargetSettings Target { get; private set; } = new TargetSettings();
+        [Obsolete]
+        public SourceSettings Target { get; private set; } = new SourceSettings();
+        public SourceSettings Source { get; private set; } = new SourceSettings();
         public ValidationSettings Validation { get; private set; } = new ValidationSettings();
         public OrderSettings Order { get; private set; } = new OrderSettings();
         public CsrSettings Csr { get; private set; } = new CsrSettings();
@@ -29,7 +32,7 @@ namespace PKISharp.WACS.Services
         public InstallationSettings Installation { get; private set; } = new InstallationSettings();
         public SecretsSettings Secrets { get; private set; } = new SecretsSettings();
 
-        public SettingsService(ILogService log, IArgumentsService arguments)
+        public SettingsService(ILogService log, MainArguments arguments)
         {
             _log = log;
             _arguments = arguments;
@@ -75,6 +78,17 @@ namespace PKISharp.WACS.Services
                     .AddJsonFile(useFile.FullName, true, true)
                     .Build()
                     .Bind(this);
+
+                // This code specifically deals with backwards compatibility 
+                // so it is allowed to use obsolete properties
+#pragma warning disable CS0612
+                static string? Fallback(string? x, string? y) => string.IsNullOrWhiteSpace(x) ? y : x;
+                Source.DefaultSource = Fallback(Source.DefaultSource, Target.DefaultTarget);
+                Store.PemFiles.DefaultPath = Fallback(Store.PemFiles.DefaultPath, Store.DefaultPemFilesPath);
+                Store.CentralSsl.DefaultPath = Fallback(Store.CentralSsl.DefaultPath, Store.DefaultCentralSslStore);
+                Store.CentralSsl.DefaultPassword = Fallback(Store.CentralSsl.DefaultPassword, Store.DefaultCentralSslPfxPassword);
+                Store.CertificateStore.DefaultStore = Fallback(Store.CertificateStore.DefaultStore, Store.DefaultCertificateStore);
+#pragma warning restore CS0612 
             }
             catch (Exception ex)
             {
@@ -98,11 +112,11 @@ namespace PKISharp.WACS.Services
             get
             {
                 Uri? ret;
-                if (!string.IsNullOrEmpty(_arguments.MainArguments.BaseUri))
+                if (!string.IsNullOrEmpty(_arguments.BaseUri))
                 {
-                    ret = new Uri(_arguments.MainArguments.BaseUri);
+                    ret = new Uri(_arguments.BaseUri);
                 }
-                else if (_arguments.MainArguments.Test)
+                else if (_arguments.Test)
                 {
                     ret = Acme.DefaultBaseUriTest;
                 }

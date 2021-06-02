@@ -11,23 +11,23 @@ namespace PKISharp.WACS.Plugins.OrderPlugins
         public IEnumerable<Order> Split(Renewal renewal, Target target) 
         {
             var ret = new List<Order>();
-            var seen = new List<string>();
+            var seen = new List<Identifier>();
             foreach (var part in target.Parts)
             {
-                foreach (var host in part.GetHosts(true))
+                foreach (var host in part.GetIdentifiers(true))
                 {
                     if (!seen.Contains(host))
                     {
-                        var parts = target.Parts.Where(p => p.GetHosts(true).Contains(host));
+                        var parts = target.Parts.Where(p => p.GetIdentifiers(true).Contains(host));
                         var newTarget = new Target(
                             target.FriendlyName ?? "",
                             host,
-                            parts.Select(p => new TargetPart(new List<string> { host }) { SiteId = p.SiteId }));
+                            parts.Select(p => new TargetPart(new List<Identifier> { host }) { SiteId = p.SiteId }));
                         var newOrder = new Order(
                             renewal, 
                             newTarget, 
-                            friendlyNamePart: host,
-                            cacheKeyPart: host);
+                            friendlyNamePart: host.Value,
+                            cacheKeyPart: host.Value);
                         ret.Add(newOrder);
                         seen.Add(host);
                     }

@@ -12,8 +12,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public override string Description { get; } = "Create verification records in LuaDns";
         public override string ChallengeType { get; } = Constants.Dns01ChallengeType;
 
-        public string Username { get; set; }
+        public string? Username { get; set; }
         [JsonProperty(propertyName: "APIKeySafe")]
-        public ProtectedString APIKey { get; set; }
+        public ProtectedString? APIKey { get; set; }
     }
 }

@@ -41,7 +41,7 @@ namespace TransIp.Library
             return await SendContent(url, method, content);
         }
 
-        protected async Task<TransIpResponse> SendContent(string url, HttpMethod method, HttpContent content = null)
+        protected async Task<TransIpResponse> SendContent(string url, HttpMethod method, HttpContent? content = null)
         {
             var client = await GetClient();
             var request = new HttpRequestMessage
@@ -59,7 +59,7 @@ namespace TransIp.Library
             return parsed;
         } 
 
-        protected async Task<TransIpResponse> ParseResponse(HttpResponseMessage response, TransIpResponse output = null)
+        protected async Task<TransIpResponse> ParseResponse(HttpResponseMessage response, TransIpResponse? output = null)
         {
             if (output == null)
             {
@@ -72,30 +72,30 @@ namespace TransIp.Library
                 try
                 {
                     var error = JsonConvert.DeserializeObject<TransIpError>(output.Payload);
-                    output.Payload = error.Error;
+                    output.Payload = error?.Error;
                 } 
                 catch { }
             }
             if (response.Headers.Contains("X-Rate-Limit-Remaining"))
             {
-                output.RateLimitRemaining = int.Parse(response.Headers.GetValues("X-Rate-Limit-Remaining").FirstOrDefault());
+                output.RateLimitRemaining = int.Parse(response.Headers.GetValues("X-Rate-Limit-Remaining").FirstOrDefault() ?? "0");
             } 
             if (response.Headers.Contains("X-Rate-Limit-Reset"))
             {
-                output.RateLimitReset = _epoch.AddSeconds(double.Parse(response.Headers.GetValues("X-Rate-Limit-Reset").FirstOrDefault()));
+                output.RateLimitReset = _epoch.AddSeconds(double.Parse(response.Headers.GetValues("X-Rate-Limit-Reset").FirstOrDefault() ?? "0"));
             }
             return output;
         }
 
         public class TransIpError
         {
-            public string Error { get; set; }
+            public string? Error { get; set; }
         }
 
         public class TransIpResponse
         {
             public bool Success { get; set; }
-            public string Payload { get; set; }
+            public string? Payload { get; set; }
             public int RateLimitRemaining { get; set; }
             public DateTime RateLimitReset { get; set; }
         }
@@ -108,10 +108,10 @@ namespace TransIp.Library
                 Payload = original.Payload;
                 RateLimitRemaining = original.RateLimitRemaining;
                 RateLimitReset = original.RateLimitReset;
-                PayloadTyped = JsonConvert.DeserializeObject<T>(Payload);
+                PayloadTyped = JsonConvert.DeserializeObject<T>(original.Payload ?? "");
             }
 
-            public T PayloadTyped { get; set; }
+            public T? PayloadTyped { get; set; }
         }
     }
 }

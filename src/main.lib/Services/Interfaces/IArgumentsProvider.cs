@@ -30,14 +30,6 @@ namespace PKISharp.WACS.Services
     public interface IArguments : IArgumentsGroup
     {
         /// <summary>
-        /// Validate against the main arguments
-        /// </summary>
-        /// <param name="current"></param>
-        /// <param name="main"></param>
-        /// <returns></returns>
-        bool Validate(ILogService log);
-
-        /// <summary>
         /// Are the arguments provided?
         /// </summary>
         /// <param name="current"></param>

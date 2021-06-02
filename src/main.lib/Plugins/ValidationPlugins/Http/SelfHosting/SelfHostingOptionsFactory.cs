@@ -1,17 +1,16 @@
 ﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
-using System;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
     internal class SelfHostingOptionsFactory : ValidationPluginOptionsFactory<SelfHosting, SelfHostingOptions>
     {
-        private readonly IArgumentsService _arguments;
+        private readonly ArgumentsInputService _arguments;
         private readonly IUserRoleService _userRoleService;
 
-        public SelfHostingOptionsFactory(IArgumentsService arguments, IUserRoleService userRoleService)
+        public SelfHostingOptionsFactory(ArgumentsInputService arguments, IUserRoleService userRoleService)
         {
             _arguments = arguments;
             _userRoleService = userRoleService;
@@ -23,11 +22,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 
         public override async Task<SelfHostingOptions?> Default(Target target)
         {
-            var args = _arguments.GetArguments<SelfHostingArguments>();
             return new SelfHostingOptions()
             {
-                Port = args?.ValidationPort,
-                Https = string.Equals(args?.ValidationProtocol, "https", StringComparison.OrdinalIgnoreCase) ? true : (bool?)null
+                Port = await _arguments.GetInt<SelfHostingArguments>(x => x.ValidationPort).GetValue(),
+                Https = (await _arguments.GetString<SelfHostingArguments>(x => x.ValidationProtocol).GetValue())?.ToLower() == "https" ? true : null
             };
         }
     }

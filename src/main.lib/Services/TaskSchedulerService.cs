@@ -17,11 +17,11 @@ namespace PKISharp.WACS.Services
 
         public TaskSchedulerService(
             ISettingsService settings,
-            IArgumentsService arguments,
+            MainArguments arguments,
             IInputService input,
             ILogService log)
         {
-            _arguments = arguments.MainArguments;
+            _arguments = arguments;
             _settings = settings;
             _input = input;
             _log = log;

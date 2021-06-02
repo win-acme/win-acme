@@ -3,6 +3,7 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
@@ -12,30 +13,35 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     /// </summary>
     internal class GodaddyOptionsFactory : ValidationPluginOptionsFactory<GodaddyDnsValidation, GodaddyOptions>
     {
-        private readonly IArgumentsService _arguments;
+        private readonly ArgumentsInputService _arguments;
 
-        public GodaddyOptionsFactory(IArgumentsService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
+        public GodaddyOptionsFactory(ArgumentsInputService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
 
-        public override async Task<GodaddyOptions> Aquire(Target target, IInputService input, RunLevel runLevel)
+        private ArgumentResult<ProtectedString?> ApiKey => _arguments.
+            GetProtectedString<GodaddyArguments>(a => a.ApiKey).
+            Required();
+
+        private ArgumentResult<ProtectedString?> ApiSecret => _arguments.
+            GetProtectedString<GodaddyArguments>(a => a.ApiSecret);
+
+        public override async Task<GodaddyOptions?> Aquire(Target target, IInputService input, RunLevel runLevel)
         {
-            var args = _arguments.GetArguments<GodaddyArguments>();
             return new GodaddyOptions()
             {
-                ApiKey = new ProtectedString(await _arguments.TryGetArgument(args.ApiKey, input, nameof(args.ApiKey))),
-                ApiSecret = new ProtectedString(await _arguments.TryGetArgument(args.ApiSecret, input, nameof(args.ApiSecret), true)),
+                ApiKey = await ApiKey.Interactive(input).GetValue(),
+                ApiSecret = await ApiSecret.Interactive(input).GetValue(),
             };
         }
 
-        public override Task<GodaddyOptions> Default(Target target)
+        public override async Task<GodaddyOptions?> Default(Target target)
         {
-            var az = _arguments.GetArguments<GodaddyArguments>();
-            return Task.FromResult(new GodaddyOptions()
+            return new GodaddyOptions()
             {
-                ApiKey = new ProtectedString(_arguments.TryGetRequiredArgument(nameof(az.ApiKey), az.ApiKey)),
-                ApiSecret = new ProtectedString(az.ApiSecret)
-            });
+                ApiKey = await ApiKey.GetValue(),
+                ApiSecret = await ApiSecret.GetValue(),
+            };
         }
 
-        public override bool CanValidate(Target target) => true;
+        public override bool CanValidate(Target target) => target.Parts.SelectMany(x => x.Identifiers).All(x => x.Type == IdentifierType.DnsName);
     }
 }

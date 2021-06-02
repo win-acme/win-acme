@@ -1,6 +1,5 @@
 ﻿using ACMESharp.Protocol;
 using Newtonsoft.Json;
-using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
@@ -8,6 +7,7 @@ using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Clients.Acme
@@ -76,7 +76,7 @@ namespace PKISharp.WACS.Clients.Acme
                     _log.Warning("Unable to refresh cached order: {ex}", ex.Message);
                 }
             }
-            var identifiers = order.Target.GetHosts(false);
+            var identifiers = order.Target.GetIdentifiers(false);
             return await CreateOrder(identifiers, cacheKey);
         }
 
@@ -93,11 +93,13 @@ namespace PKISharp.WACS.Clients.Acme
             return order;
         }
 
-        private async Task<OrderDetails?> CreateOrder(IEnumerable<string> identifiers, string cacheKey)
+        private async Task<OrderDetails?> CreateOrder(IEnumerable<Identifier> identifiers, string cacheKey)
         {
             _log.Verbose("Creating order for hosts: {identifiers}", identifiers);
             try
             {
+                // TODO: modify AcmeSharp to understand
+                // different types of identifier
                 var order = await _client.CreateOrder(identifiers);
                 if (order.Payload.Error != null)
                 {

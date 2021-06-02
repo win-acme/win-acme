@@ -15,6 +15,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public override string ChallengeType => Constants.Dns01ChallengeType;
 
         [JsonProperty(propertyName: "SecretSafe")]
-        public ProtectedString ApiKey { get; set; }
+        public ProtectedString? ApiKey { get; set; }
     }
 }

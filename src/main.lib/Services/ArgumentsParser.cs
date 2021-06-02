@@ -11,6 +11,7 @@ namespace PKISharp.WACS.Configuration
         private readonly ILogService _log;
         private readonly string[] _args;
         private readonly IEnumerable<IArgumentsProvider> _providers;
+        private readonly IEnumerable<CommandLineAttribute> _arguments;
 
         public T? GetArguments<T>() where T : class, new()
         {
@@ -29,16 +30,16 @@ namespace PKISharp.WACS.Configuration
             _log = log;
             _args = args;
             _providers = plugins.ArgumentsProviders();
+            _arguments = _providers.SelectMany(x => x.Configuration).ToList();
         }
 
         internal bool Validate()
         {
             // Test if the arguments can be resolved by any of the known providers
-            var superset = _providers.SelectMany(x => x.Configuration);
             var extraOptions = _providers.First().GetExtraArguments(_args);
             foreach (var extraOption in extraOptions)
             {
-                var super = superset.FirstOrDefault(x => string.Equals(x.Name, extraOption, StringComparison.InvariantCultureIgnoreCase));
+                var super = _arguments.FirstOrDefault(x => string.Equals(x.Name, extraOption, StringComparison.InvariantCultureIgnoreCase));
                 if (super == null)
                 {
                     _log.Error("Unknown argument --{0}, use --help to get a list of possible arguments", extraOption);
@@ -97,7 +98,7 @@ namespace PKISharp.WACS.Configuration
             return false;
         }
 
-        internal static List<string> CensoredParameters = new() { "key", "password", "secret", "token" };
+        internal IEnumerable<string> SecretArguments => _arguments.Where(x => x.Secret).Select(x => x.ArgumentName);
 
         /// <summary>
         /// Show current command line
@@ -113,7 +114,7 @@ namespace PKISharp.WACS.Configuration
                     if (!censor)
                     {
                         censoredArgs.Add(_args[i]);
-                        censor = CensoredParameters.Any(c => _args[i].ToLower().StartsWith("--") && _args[i].ToLower().Contains(c));
+                        censor = SecretArguments.Any(c => _args[i].ToLower() == $"--{c}");
                     }
                     else
                     {
@@ -163,10 +164,10 @@ namespace PKISharp.WACS.Configuration
                         }
                     }
                     Console.WriteLine("```");
-                    foreach (var x in provider.Configuration)
+                    foreach (var x in provider.Configuration.Where(x => !x.Obsolete))
                     {
                         Console.ForegroundColor = ConsoleColor.White;
-                        Console.Write($"   --{x.Name}");
+                        Console.Write($"   --{x.ArgumentName}");
                         Console.WriteLine();
                         Console.ResetColor();
                         var step = 60;

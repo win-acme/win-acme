@@ -114,7 +114,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var commonName = cnValid ? cn : filteredBindings.First().HostUnicode;
             var parts = filteredBindings.
                 GroupBy(x => x.SiteId).
-                Select(group => new TargetPart(group.Select(x => x.HostUnicode))
+                Select(group => new TargetPart(group.Select(x => new DnsIdentifier(x.HostUnicode)))
                 {
                     SiteId = group.Key
                 });

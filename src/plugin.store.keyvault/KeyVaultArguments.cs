@@ -10,9 +10,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public override string Condition => "--store keyvault";
 
         [CommandLine(Description = "The name of the vault")]
-        public string VaultName { get; set; }
+        public string? VaultName { get; set; }
 
         [CommandLine(Description = "The name of the certificate")]
-        public string CertificateName { get; set; }
+        public string? CertificateName { get; set; }
     }
 }

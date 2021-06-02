@@ -270,12 +270,17 @@ namespace PKISharp.WACS.Configuration.Settings
         public int Timeout { get; set; } = 600;
     }
 
-    public class TargetSettings
+    public class SourceSettings
     {
         /// <summary>
         /// Default plugin to select in the Advanced menu
         /// in the menu.
+        [Obsolete]
         public string? DefaultTarget { get; set; }
+        /// <summary>
+        /// Default plugin to select in the Advanced menu
+        /// in the menu.
+        public string? DefaultSource { get; set; }
     }
 
     public class ValidationSettings
@@ -377,22 +382,22 @@ namespace PKISharp.WACS.Configuration.Settings
         /// <summary>
         /// Settings for the CentralSsl plugin
         /// </summary>
-        public CertificateStoreSettings? CertificateStore { get; set; }
+        public CertificateStoreSettings CertificateStore { get; set; } = new CertificateStoreSettings();
 
         /// <summary>
         /// Settings for the CentralSsl plugin
         /// </summary>
-        public CentralSslSettings? CentralSsl { get; set; }
+        public CentralSslSettings CentralSsl { get; set; } = new CentralSslSettings();
 
         /// <summary>
         /// Settings for the PemFiles plugin
         /// </summary>
-        public PemFilesSettings? PemFiles { get; set; }
+        public PemFilesSettings PemFiles { get; set; } = new PemFilesSettings();
 
         /// <summary>
         /// Settings for the PfxFile plugin
         /// </summary>
-        public PfxFileSettings? PfxFile { get; set; }
+        public PfxFileSettings PfxFile { get; set; } = new PfxFileSettings();
 
     }
 

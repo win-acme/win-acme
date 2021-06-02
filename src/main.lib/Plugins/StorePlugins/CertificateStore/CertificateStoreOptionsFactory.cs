@@ -9,13 +9,13 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 {
     internal class CertificateStoreOptionsFactory : StorePluginOptionsFactory<CertificateStore, CertificateStoreOptions>
     {
-        private readonly IArgumentsService _arguments;
+        private readonly ArgumentsInputService _arguments;
         private readonly IIISClient _iisClient;
         private readonly ISettingsService _settingsService;
 
         public CertificateStoreOptionsFactory(
-            IUserRoleService userRoleService, 
-            IArgumentsService arguments,
+            IUserRoleService userRoleService,
+            ArgumentsInputService arguments,
             ISettingsService settings,
             IIISClient iisClient)
         {
@@ -29,7 +29,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         {
             var ret = await Default();
             if (ret != null &&
-                string.IsNullOrEmpty(ret.StoreName) &&
+                (await _arguments.GetString<CertificateStoreArguments>(x => x.CertificateStore).GetValue()) == null &&
                 runLevel.HasFlag(RunLevel.Advanced))
             {
                 var currentDefault = CertificateStore.DefaultStore(_settingsService, _iisClient);
@@ -60,13 +60,22 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         public override async Task<CertificateStoreOptions?> Default()
         {
-            var args = _arguments.GetArguments<CertificateStoreArguments>();
-            var ret = new CertificateStoreOptions {
-                StoreName = args?.CertificateStore,
-                KeepExisting = args?.KeepExisting ?? false,
-                AclFullControl = args?.AclFullControl.ParseCsv()
+            return new CertificateStoreOptions
+            {
+                StoreName = await _arguments.
+                    GetString<CertificateStoreArguments>(x => x.CertificateStore).
+                    WithDefault(CertificateStore.DefaultStore(_settingsService, _iisClient)).
+                    DefaultAsNull().
+                    GetValue(),
+                KeepExisting = await _arguments.
+                    GetBool<CertificateStoreArguments>(x => x.KeepExisting).
+                    WithDefault(false).
+                    DefaultAsNull().
+                    GetValue(),
+                AclFullControl = (await _arguments.
+                    GetString<CertificateStoreArguments>(x => x.AclFullControl).
+                    GetValue()).ParseCsv()
             };
-            return ret;
         }
     }
 }

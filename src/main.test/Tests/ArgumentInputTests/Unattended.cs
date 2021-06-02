@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
@@ -51,6 +52,25 @@ namespace PKISharp.WACS.UnitTests.Tests.ArgumentInputTests
             var container = new MockContainer().TestScope(commandLine: commandLine);
             var mock = container.Resolve<ArgumentsInputService>();
             var result = mock.GetProtectedString<CentralSslArguments>(x => x.PfxPassword, allowEmpty).
+                GetValue().
+                Result;
+            Assert.AreEqual(output, result?.Value);
+        }
+
+        [TestMethod]
+        [DataRow("--pfxpassword 1234", true, "default", "1234", DisplayName = "Normal")]
+        [DataRow("", false, "default", "default", DisplayName = "Nothing")]
+        [DataRow("", true, "default", "default", DisplayName = "AllowEmptyMissing")]
+        [DataRow("--pfxpassword", true, "default", "", DisplayName = "AllowEmptyNull")]
+        [DataRow("--pfxpassword \"\"", true, "default", "", DisplayName = "AllowEmptyEmpty")]
+        [DataRow("--pfxpassword", false, "default", "default", DisplayName = "AllowEmptyNull")]
+        [DataRow("--pfxpassword \"\"", false, "default", "default", DisplayName = "AllowEmptyEmpty")]
+        public void SecretWithDefault(string commandLine, bool allowEmpty, string defaultValue, string? output)
+        {
+            var container = new MockContainer().TestScope(commandLine: commandLine);
+            var mock = container.Resolve<ArgumentsInputService>();
+            var result = mock.GetProtectedString<CentralSslArguments>(x => x.PfxPassword, allowEmpty).
+                WithDefault(defaultValue.Protect(allowEmpty)).
                 GetValue().
                 Result;
             Assert.AreEqual(output, result?.Value);

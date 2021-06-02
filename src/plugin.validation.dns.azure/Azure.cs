@@ -19,12 +19,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     /// </summary>
     internal class Azure : DnsValidation<Azure>
     {
-        private DnsManagementClient _azureDnsClient;
+        private DnsManagementClient? _azureDnsClient;
         private readonly IProxyService _proxyService;
         private readonly AzureOptions _options;
         private readonly AzureHelpers _helpers;
-        private readonly Dictionary<string, Dictionary<string, RecordSet>> _recordSets;
-        private IEnumerable<Zone> _hostedZones;
+        private readonly Dictionary<string, Dictionary<string, RecordSet?>> _recordSets;
+        private IEnumerable<Zone>? _hostedZones;
         
         public Azure(AzureOptions options,
             LookupClientProvider dnsClient, 
@@ -34,7 +34,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             _options = options;
             _proxyService = proxyService;
-            _recordSets = new Dictionary<string, Dictionary<string, RecordSet>>();
+            _recordSets = new Dictionary<string, Dictionary<string, RecordSet?>>();
             _helpers = new AzureHelpers(_options, log);
         }
 
@@ -42,16 +42,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         /// Allow this plugin to process multiple validations at the same time.
         /// They will still be prepared and cleaned in serial order though not
         /// to overwhelm the DnsManagementClient or risk threads overwriting 
-        /// eachothers changes.
+        /// each others changes.
         /// </summary>
         public override ParallelOperations Parallelism => ParallelOperations.Answer;
 
         /// <summary>
         /// Create record in Azure DNS
         /// </summary>
-        /// <param name="context"></param>
-        /// <param name="recordName"></param>
-        /// <param name="token"></param>
+        /// <param name="record"></param>
         /// <returns></returns>
         public override async Task<bool> CreateRecord(DnsValidationRecord record)
         {
@@ -64,7 +62,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var txtRecord = new TxtRecord(new[] { record.Value });
             if (!_recordSets.ContainsKey(zone))
             {
-                _recordSets.Add(zone, new Dictionary<string, RecordSet>());
+                _recordSets.Add(zone, new Dictionary<string, RecordSet?>());
             }
             var zoneRecords = _recordSets[zone];
             var relativeKey = RelativeRecordName(zone, record.Authority.Domain);
@@ -78,9 +76,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                         TxtRecords = new List<TxtRecord> { txtRecord }
                     });
             } 
-            else
+            else if (zoneRecords[relativeKey] != null)
             {
-                zoneRecords[relativeKey].TxtRecords.Add(txtRecord);
+                zoneRecords[relativeKey]!.TxtRecords.Add(txtRecord);
             }
             return true;
         }
@@ -107,7 +105,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         /// </summary>
         /// <param name="zone"></param>
         /// <param name="domain"></param>
-        /// <param name="recordSet"></param>
         /// <returns></returns>
         private async Task CreateOrUpdateRecordSet(string zone, string domain)
         {
@@ -166,12 +163,17 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         }
 
         /// <summary>
-        /// Find the approriate hosting zone to use for record updates
+        /// Find the appropriate hosting zone to use for record updates
         /// </summary>
         /// <param name="recordName"></param>
         /// <returns></returns>
-        private async Task<string> GetHostedZone(string recordName)
+        private async Task<string?> GetHostedZone(string recordName)
         {
+            if (!string.IsNullOrEmpty(_options.HostedZone))
+            {
+                return _options.HostedZone;
+            }
+
             // Cache so we don't have to repeat this more than once for each renewal
             if (_hostedZones == null)
             {
@@ -207,7 +209,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public override Task DeleteRecord(DnsValidationRecord record) => Task.CompletedTask;
 
         /// <summary>
-        /// Clear created createds
+        /// Clear created
         /// </summary>
         /// <returns></returns>
         public override async Task Finalize() =>

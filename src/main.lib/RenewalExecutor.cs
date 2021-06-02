@@ -60,23 +60,23 @@ namespace PKISharp.WACS
             var (disabled, disabledReason) = targetPlugin.Disabled;
             if (disabled)
             {
-                return new RenewResult($"Target plugin is not available. {disabledReason}");
+                return new RenewResult($"Source plugin is not available. {disabledReason}");
             }
             var target = await targetPlugin.Generate();
             if (target is INull)
             {
-                return new RenewResult($"Target plugin did not generate a target");
+                return new RenewResult($"Source plugin did not generate source");
             }
             if (!target.IsValid(_log)) 
             { 
-                return new RenewResult($"Target plugin generated an invalid target");
+                return new RenewResult($"Source plugin generated invalid source");
             }
 
             // Check if our validation plugin is (still) up to the task
             var validationPlugin = es.Resolve<IValidationPluginOptionsFactory>();
             if (!validationPlugin.CanValidate(target))
             {
-                return new RenewResult($"Validation plugin is unable to validate the target. A wildcard host was introduced into a HTTP validated renewal.");
+                return new RenewResult($"Validation plugin is unable to validate the source. A wildcard host was introduced into a HTTP validated renewal.");
             }
 
             // Create one or more orders based on the target
@@ -313,7 +313,7 @@ namespace PKISharp.WACS
                 // Delete the old certificate if not forbidden, found and not re-used
                 for (var i = 0; i < storePluginOptions.Count; i++)
                 {
-                    if (!storePluginOptions[i].KeepExisting &&
+                    if (storePluginOptions[i].KeepExisting == false &&
                         oldCertificate != null &&
                         newCertificate.Certificate.Thumbprint != oldCertificate.Certificate.Thumbprint)
                     {

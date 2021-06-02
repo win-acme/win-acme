@@ -10,7 +10,10 @@ namespace PKISharp.WACS.DomainObjects
     [DebuggerDisplay("Target: {CommonName} ({Parts.Count} part(s) - IIS: {IIS})")]
     public class Target
     {
-        public Target(string friendlyName, string commonName, IEnumerable<TargetPart> parts)
+        public Target(string friendlyName, string commonName, IEnumerable<TargetPart> parts) : 
+            this(friendlyName, new DnsIdentifier(commonName), parts) { }
+
+        public Target(string friendlyName, Identifier commonName, IEnumerable<TargetPart> parts)
         {
             FriendlyName = friendlyName;
             CommonName = commonName;
@@ -26,7 +29,7 @@ namespace PKISharp.WACS.DomainObjects
         /// <summary>
         /// CommonName for the certificate
         /// </summary>
-        public string CommonName { get; private set; }
+        public Identifier CommonName { get; private set; }
 
         /// <summary>
         /// Different parts that make up this target

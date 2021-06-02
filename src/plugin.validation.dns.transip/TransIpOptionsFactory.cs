@@ -1,10 +1,12 @@
 ﻿using ACMESharp.Authorizations;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using TransIp.Library;
 
@@ -12,74 +14,65 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     internal sealed class TransIpOptionsFactory : ValidationPluginOptionsFactory<TransIp, TransIpOptions>
     {
-        private readonly IArgumentsService _arguments;
+        private readonly ArgumentsInputService _arguments;
         private readonly ILogService _log;
         private readonly IProxyService _proxy;
-        private readonly SecretServiceManager _secretServiceManager;
 
         public TransIpOptionsFactory(
-            IArgumentsService arguments,
+            ArgumentsInputService arguments,
             ILogService log,
-            IProxyService proxy,
-            SecretServiceManager secretServiceManager) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) 
+            IProxyService proxy) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) 
         {
             _arguments = arguments;
             _log = log;
             _proxy = proxy;
-            _secretServiceManager = secretServiceManager;
         }
 
-        public override async Task<TransIpOptions> Aquire(Target target, IInputService input, RunLevel runLevel)
+        private ArgumentResult<string?> Login => _arguments.
+            GetString<TransIpArguments>(a => a.Login).
+            Required();
+
+        private ArgumentResult<ProtectedString?> PrivateKey => _arguments.
+            GetProtectedString<TransIpArguments>(a => a.PrivateKey).
+            Validate(x => Task.FromResult(CheckKey(x?.Value)), "invalid private key").
+            Required();
+
+        public override async Task<TransIpOptions?> Aquire(Target target, IInputService input, RunLevel runLevel)
         {
-            var args = _arguments.GetArguments<TransIpArguments>();
-            var login = await _arguments.TryGetArgument(args.Login, input, "User name for the control panel");
-            string key;
-            do
+            return new TransIpOptions()
             {
-                key = await _arguments.TryGetArgument(args.PrivateKey, input, "Private key for the API, generated in the control panel", multiline: true);
-            } while (!CheckKey(key));
-            var options = new TransIpOptions()
+                Login = await Login.Interactive(input, "Username").GetValue(),
+                PrivateKey = await PrivateKey.Interactive(input, "Private key", multiline: true).GetValue()
+            };
+        }
+
+        public override async Task<TransIpOptions?> Default(Target target)
+        {
+            var login = await Login.GetValue();
+
+            var keyFile = await _arguments.
+                GetString<TransIpArguments>(a => a.PrivateKeyFile).
+                Validate(x => Task.FromResult(x.ValidFile(_log)), "file doesn't exist").
+                Validate(async x => CheckKey(await File.ReadAllTextAsync(x!)), "invalid key").
+                GetValue();
+
+            var key = keyFile != null
+                ? (await File.ReadAllTextAsync(keyFile)).Protect()
+                : await PrivateKey.GetValue();
+
+            return new TransIpOptions()
             {
                 Login = login,
-                PrivateKey = new ProtectedString(key)
+                PrivateKey = key
             };
-            return options;
         }
 
-        public override async Task<TransIpOptions> Default(Target target)
+        private bool CheckKey(string? privateKey)
         {
-            var args = _arguments.GetArguments<TransIpArguments>();
-            var keyFile = args.PrivateKeyFile;
-            var key = "";
-            if (!string.IsNullOrEmpty(keyFile))
+            if (privateKey == null)
             {
-                if (!File.Exists(keyFile))
-                {
-                    _log.Error("File {key} does not exist", keyFile);
-                }
-                else
-                {
-                    key = await File.ReadAllTextAsync(keyFile);
-                }
+                return false;
             }
-            if (string.IsNullOrEmpty(key))
-            {
-                key = _arguments.TryGetRequiredArgument("transip-privatekey", args.PrivateKey);
-            }
-            if (!CheckKey(key))
-            {
-                throw new Exception("Invalid key");
-            }
-            var ret = new TransIpOptions
-            {
-                PrivateKey = new ProtectedString(key),
-                Login = _arguments.TryGetRequiredArgument("transip-login", args.Login)
-            };
-            return ret;
-        }
-
-        private bool CheckKey(string privateKey)
-        {
             try
             {
                 _ = new AuthenticationService("", privateKey, _proxy);
@@ -92,6 +85,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return false;
         }
 
-        public override bool CanValidate(Target target) => true;
+        public override bool CanValidate(Target target) => target.Parts.SelectMany(x => x.Identifiers).All(x => x.Type == IdentifierType.DnsName);
     }
 }

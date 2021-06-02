@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories.Null;
@@ -19,11 +20,11 @@ namespace PKISharp.WACS.Plugins.Resolvers
     public class UnattendedResolver : IResolver
     {
         private readonly IPluginService _plugins;
-        protected readonly IArgumentsService _arguments;
+        protected readonly MainArguments _arguments;
         protected readonly ISettingsService _settings;
         private readonly ILogService _log;
 
-        public UnattendedResolver(ILogService log, ISettingsService settings, IArgumentsService arguments, IPluginService pluginService)
+        public UnattendedResolver(ILogService log, ISettingsService settings, MainArguments arguments, IPluginService pluginService)
         {
             _log = log;
             _plugins = pluginService;
@@ -113,12 +114,12 @@ namespace PKISharp.WACS.Plugins.Resolvers
         public virtual async Task<ITargetPluginOptionsFactory> GetTargetPlugin(ILifetimeScope scope)
         {
             // NOTE: checking the default option here doesn't make 
-            // sense because MainArguments.Target is what triggers
+            // sense because MainArguments.Source is what triggers
             // unattended mode in the first place. We woudn't even 
             // get into this code unless it was specified.
             return await GetPlugin<ITargetPluginOptionsFactory>(
                 scope,
-                defaultParam1: _arguments.MainArguments.Target,
+                defaultParam1: string.IsNullOrWhiteSpace(_arguments.Source) ? _arguments.Target : _arguments.Source,
                 defaultType: typeof(ManualOptionsFactory),
                 nullResult: new NullTargetFactory(),
                 className: "target");
@@ -133,9 +134,9 @@ namespace PKISharp.WACS.Plugins.Resolvers
         {
             return await GetPlugin<IValidationPluginOptionsFactory>(
                 scope,
-                defaultParam1: _arguments.MainArguments.Validation ?? 
+                defaultParam1: _arguments.Validation ?? 
                     _settings.Validation.DefaultValidation,
-                defaultParam2: _arguments.MainArguments.ValidationMode ?? 
+                defaultParam2: _arguments.ValidationMode ?? 
                     _settings.Validation.DefaultValidationMode ?? 
                     Constants.Http01ChallengeType,
                 defaultType: typeof(SelfHostingOptionsFactory),
@@ -153,7 +154,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         {
             return await GetPlugin<IOrderPluginOptionsFactory>(
                 scope,
-                defaultParam1: _arguments.MainArguments.Order,
+                defaultParam1: _arguments.Order,
                 defaultType: typeof(SingleOptionsFactory),
                 nullResult: new NullOrderOptionsFactory(),
                 className: "order");
@@ -168,7 +169,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         {
             return await GetPlugin<ICsrPluginOptionsFactory>(
                 scope,
-                defaultParam1: _arguments.MainArguments.Csr,
+                defaultParam1: _arguments.Csr,
                 defaultType: typeof(RsaOptionsFactory),
                 nullResult: new NullCsrFactory(),
                 className: "csr");
@@ -180,7 +181,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <returns></returns>
         public virtual async Task<IStorePluginOptionsFactory?> GetStorePlugin(ILifetimeScope scope, IEnumerable<IStorePluginOptionsFactory> chosen)
         {
-            var cmd = _arguments.MainArguments.Store ?? _settings.Store.DefaultStore;
+            var cmd = _arguments.Store ?? _settings.Store.DefaultStore;
             if (string.IsNullOrEmpty(cmd))
             {
                 cmd = CertificateStoreOptions.PluginName;
@@ -213,7 +214,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <returns></returns>
         public virtual async Task<IInstallationPluginOptionsFactory?> GetInstallationPlugin(ILifetimeScope scope, IEnumerable<Type> storeTypes, IEnumerable<IInstallationPluginOptionsFactory> chosen)
         {
-            var cmd = _arguments.MainArguments.Installation ?? _settings.Installation.DefaultInstallation;
+            var cmd = _arguments.Installation ?? _settings.Installation.DefaultInstallation;
             var parts = cmd.ParseCsv();
             if (parts == null)
             {

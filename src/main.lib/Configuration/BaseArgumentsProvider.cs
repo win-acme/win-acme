@@ -120,10 +120,6 @@ namespace PKISharp.WACS.Configuration
                     return false;
                 }
             }
-            if (current is IArguments standalone)
-            {
-                return standalone.Validate(Log!);
-            }
             return true;
         }
         bool IArgumentsProvider.Validate(object current, MainArguments main) => _typedThis.Validate((T)current, main);

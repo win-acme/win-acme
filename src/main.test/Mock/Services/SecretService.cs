@@ -20,7 +20,16 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         public void DeleteSecret(string key) => _secrets.RemoveAll(x => x.Item1 == key);
         public string? GetSecret(string? identifier) => _secrets.FirstOrDefault(x => x.Item1 == identifier)?.Item2;
         public IEnumerable<string> ListKeys() => _secrets.Select(x => x.Item1);
-        public void PutSecret(string identifier, string secret) => _secrets.Add(new Tuple<string, string>(identifier, secret));
+        public void PutSecret(string identifier, string secret)
+        {
+            var existing = _secrets.FirstOrDefault(x => x.Item1 == identifier);
+            if (existing != null)
+            {
+                _ = _secrets.Remove(existing);
+            }
+            _secrets.Add(new Tuple<string, string>(identifier, secret));
+        }
+
         public void Save() { }
     }
 }

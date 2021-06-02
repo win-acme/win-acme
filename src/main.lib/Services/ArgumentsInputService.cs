@@ -10,13 +10,13 @@ namespace PKISharp.WACS.Services
     public partial class ArgumentsInputService
     {
         private readonly ILogService _log;
-        private readonly IArgumentsService _arguments;
+        private readonly ArgumentsParser _arguments;
         private readonly IInputService _input;
         private readonly SecretServiceManager _secretService;
 
         public ArgumentsInputService(
             ILogService log,
-            IArgumentsService arguments,
+            ArgumentsParser arguments,
             IInputService input,
             SecretServiceManager secretService)
         {
@@ -25,31 +25,27 @@ namespace PKISharp.WACS.Services
             _input = input;
             _secretService = secretService;
         }
-        public ArgumentResult<T, ProtectedString?> GetProtectedString<T>(Expression<Func<T, string?>> expression, bool allowEmtpy = false)
+        public ArgumentResult<ProtectedString?> GetProtectedString<T>(Expression<Func<T, string?>> expression, bool allowEmtpy = false)
             where T : class, IArguments,
             new() => new(GetArgument(expression).Protect(allowEmtpy), GetMetaData(expression),
-                async (label, value) => (await _secretService.GetSecret(label, value?.Value, allowEmtpy ? "" : null)).Protect(allowEmtpy), 
-                allowEmtpy);
+                async (args) => (await _secretService.GetSecret(args.Label, args.Default?.Value, allowEmtpy ? "" : null, args.Required, args.Multiline)).Protect(allowEmtpy),
+                _log, allowEmtpy);
 
-        public ArgumentResult<T, string?> GetString<T>(Expression<Func<T, string?>> expression)
+        public ArgumentResult<string?> GetString<T>(Expression<Func<T, string?>> expression)
             where T : class, IArguments, new() =>
             new(GetArgument(expression), GetMetaData(expression),
-                async (label, value) =>
-                {
-                    var raw = await _input.RequestString(label);
-                    return string.IsNullOrWhiteSpace(raw) ? null : raw;
-                });
+                async (args) => await _input.RequestString(args.Label), _log);
 
-        public ArgumentResult<T, bool?> GetBool<T>(Expression<Func<T, bool?>> expression)
+        public ArgumentResult<bool?> GetBool<T>(Expression<Func<T, bool?>> expression)
             where T : class, IArguments, new() =>
             new(GetArgument(expression), GetMetaData(expression),
-                async (label, value) => await _input.PromptYesNo(label, value == true));
+                async (args) => await _input.PromptYesNo(args.Label, args.Default == true), _log);
 
-        public ArgumentResult<T, long?> GetLong<T>(Expression<Func<T, long?>> expression)
-            where T : class, IArguments, new() =>
+        public ArgumentResult<long?> GetLong<T>(Expression<Func<T, long?>> expression)
+            where T : class, IArguments, new() => 
             new(GetArgument(expression), GetMetaData(expression),
-                async (label, value) => {
-                    var str = await _input.RequestString(label);
+                async (args) => {
+                    var str = await _input.RequestString(args.Label);
                     if (long.TryParse(str, out var ret))
                     {
                         return ret;
@@ -59,19 +55,39 @@ namespace PKISharp.WACS.Services
                         _log.Warning("Invalid number: {ret}", ret);
                         return null;
                     }
-                });
+                }, _log);
 
-        protected CommandLineAttribute GetMetaData(LambdaExpression action)
+        public ArgumentResult<int?> GetInt<T>(Expression<Func<T, int?>> expression)
+            where T : class, IArguments, new() =>
+            new(GetArgument(expression), GetMetaData(expression),
+                async (args) => {
+                    var str = await _input.RequestString(args.Label);
+                    if (int.TryParse(str, out var ret))
+                    {
+                        return ret;
+                    }
+                    else
+                    {
+                        _log.Warning("Invalid number: {ret}", ret);
+                        return null;
+                    }
+                }, _log);
+
+        protected static CommandLineAttribute GetMetaData(LambdaExpression action)
         {
-            if (action.Body is MemberExpression expression)
+            if (action.Body is MemberExpression member)
             {
-                var property = expression.Member;
+                var property = member.Member;
                 return property.CommandLineOptions();
             }
-            else
+            else if (action.Body is UnaryExpression unary)
             {
-                throw new NotImplementedException("Unsupported expression");
+                if (unary.Operand is MemberExpression unaryMember)
+                {
+                    return unaryMember.Member.CommandLineOptions();
+                }
             }
+            throw new NotImplementedException("Unsupported expression");
         }
 
         /// <summary>
@@ -86,37 +102,42 @@ namespace PKISharp.WACS.Services
         {
             var returnValue = default(P);
             var args = _arguments.GetArguments<T>();
-            string? optionName;
             if (args != null)
             {
-                if (action.Body is MemberExpression expression)
-                {
-                    var property = expression.Member;
-                    var commandLineOptions = property.CommandLineOptions();
-                    optionName = (commandLineOptions.Name ?? property.Name).ToLower();
-                    var func = action.Compile();
-                    returnValue = func(args);
-                }
-                else
-                {
-                    throw new NotImplementedException("Unsupported expression");
-                }
+                var func = action.Compile();
+                returnValue = func(args);
             }
             else
             {
                 throw new InvalidOperationException($"Missing argumentprovider for type {typeof(T).Name}");
             }
-
+            var argumentName = GetMetaData(action).ArgumentName;
             if (returnValue == null)
             {
-                _log.Debug("No value provided for --{optionName}", optionName);
+                _log.Verbose("No value provided for {optionName}", $"--{argumentName}");
             }
             else
             {
-                var censor = ArgumentsParser.CensoredParameters.Any(c => optionName!.Contains(c));
-                _log.Debug("Parsed value for --{optionName}: {providedValue}",
-                    optionName,
-                    censor ? "********" : returnValue);
+                var censor = _arguments.SecretArguments.Contains(argumentName);
+                if (returnValue is string returnString && string.IsNullOrWhiteSpace(returnString)) 
+                {
+                    _log.Verbose("Parsed emtpy value for {optionName}", $"--{argumentName}");
+                } 
+                else if (returnValue is bool boolValue)
+                {
+                    if (boolValue)
+                    {
+                        _log.Verbose("Flag {optionName} is present", $"--{argumentName}");
+                    } 
+                    else
+                    {
+                        _log.Verbose("Flag {optionName} not present", $"--{argumentName}");
+                    }
+                }
+                else
+                {
+                    _log.Verbose("Parsed value for {optionName}: {providedValue}", $"--{argumentName}", censor ? "********" : returnValue);
+                }
             }
             return returnValue;
         }

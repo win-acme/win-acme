@@ -7,7 +7,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         public override string Name => "AcmeDns";
         public override string Group => "Validation";
-        public override string Condition => "--validationmode dns-01 --validation acme-dns";
+        public override string Condition => "--validation acme-dns";
 
         [CommandLine(Description = "Root URI of the acme-dns service")]
         public string? AcmeDnsServer { get; set; }
