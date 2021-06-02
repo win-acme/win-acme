@@ -25,7 +25,16 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// Is the user requesting the system proxy
         /// </summary>
-        public bool UseSystemProxy => string.Equals(_settings.Proxy.Url, "[System]", StringComparison.OrdinalIgnoreCase);
+        public WindowsProxyUsePolicy ProxyType => 
+            _settings.Proxy.Url?.ToLower().Trim() switch
+            {
+                "[winhttp]" => WindowsProxyUsePolicy.UseWinHttpProxy,
+                "[wininet]" => WindowsProxyUsePolicy.UseWinInetProxy,
+                "[system]" => WindowsProxyUsePolicy.UseWinInetProxy,
+                "" => WindowsProxyUsePolicy.DoNotUseProxy,
+                null => WindowsProxyUsePolicy.DoNotUseProxy,
+                _ => WindowsProxyUsePolicy.UseCustomProxy
+        };
 
         /// <summary>
         /// Get prepared HttpClient with correct system proxy settings
@@ -40,18 +49,20 @@ namespace PKISharp.WACS.Services
             };
             if (!checkSsl)
             {
-                httpClientHandler.ServerCertificateCustomValidationCallback = (a, b, c, d) => true;
+                httpClientHandler.ServerCertificateValidationCallback = (a, b, c, d) => true;
             }
-            if (UseSystemProxy)
+            httpClientHandler.WindowsProxyUsePolicy = ProxyType;
+            if (ProxyType == WindowsProxyUsePolicy.UseWinInetProxy)
             {
                 httpClientHandler.DefaultProxyCredentials = CredentialCache.DefaultCredentials;
-            }
+            } 
+           
             var httpClient = new HttpClient(httpClientHandler);
             httpClient.DefaultRequestHeaders.Add("User-Agent", $"win-acme/{VersionService.SoftwareVersion} (+https://github.com/win-acme/win-acme)");
             return httpClient;
         }
 
-        private class LoggingHttpClientHandler : HttpClientHandler
+        private class LoggingHttpClientHandler : WinHttpHandler
         {
             private readonly ILogService _log;
 
@@ -95,11 +106,11 @@ namespace PKISharp.WACS.Services
         {
             if (_proxy == null)
             {
-                var proxy = UseSystemProxy ?
-                                null :
-                                string.IsNullOrEmpty(_settings.Proxy.Url) ?
-                                    new WebProxy() :
-                                    new WebProxy(_settings.Proxy.Url);
+                var proxy = ProxyType switch {
+                    WindowsProxyUsePolicy.UseCustomProxy => new WebProxy(_settings.Proxy.Url),
+                    WindowsProxyUsePolicy.UseWinInetProxy => new WebProxy(),
+                    _ => null
+                };
                 if (proxy != null)
                 {
                     if (!string.IsNullOrWhiteSpace(_settings.Proxy.Username))
