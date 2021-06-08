@@ -114,7 +114,6 @@ namespace PKISharp.WACS.Services
             {
                 var proxy = ProxyType switch {
                     WindowsProxyUsePolicy.UseCustomProxy => new WebProxy(_settings.Proxy.Url),
-                    WindowsProxyUsePolicy.UseWinInetProxy => new WebProxy(),
                     _ => null
                 };
                 if (proxy != null)
@@ -124,17 +123,7 @@ namespace PKISharp.WACS.Services
                         var password = _secretService.EvaluateSecret(_settings.Proxy.Password);
                         proxy.Credentials = new NetworkCredential(_settings.Proxy.Username, password);
                     }
-                    var testUrl = new Uri("http://proxy.example.com");
-                    var proxyUrl = proxy.GetProxy(testUrl);
-                    if (proxyUrl != null)
-                    {
-
-                        var useProxy = !string.Equals(testUrl.Host, proxyUrl.Host);
-                        if (useProxy)
-                        {
-                            _log.Warning("Proxying via {proxy}:{port}", proxyUrl.Host, proxyUrl.Port);
-                        }
-                    }
+                    _log.Warning("Proxying via {proxy}:{port}", proxy.Address?.Host, proxy.Address?.Port);
                 }
                 _proxy = proxy;
             }
