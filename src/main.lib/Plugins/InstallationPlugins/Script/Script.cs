@@ -42,7 +42,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 return m.Value switch
                 {
                     "{0}" or "{CertCommonName}" => newCertificate.CommonName.Value,
-                    "{1}" or "{CachePassword}" => (censor ? _renewal.PfxPassword?.Value : _renewal.PfxPassword?.DisplayValue) ?? "",
+                    "{1}" or "{CachePassword}" => (censor ? _renewal.PfxPassword?.DisplayValue : _renewal.PfxPassword?.Value) ?? "",
                     "{2}" or "{CacheFile}" => newCertificate.CacheFile?.FullName ?? "",
                     "{3}" or "{StorePath}" => defaultStoreInfo.Path ?? "",
                     "{4}" or "{CertFriendlyName}" => newCertificate.Certificate.FriendlyName,
