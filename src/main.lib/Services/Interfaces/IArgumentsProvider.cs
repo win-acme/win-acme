@@ -1,11 +1,10 @@
-﻿using Fclp;
-using Fclp.Internals;
+﻿using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
 using System.Collections.Generic;
 
 namespace PKISharp.WACS.Services
 {
-    public interface IArgumentsProvider
+    public interface IArgumentsGroup
     {
         /// <summary>
         /// Name for this group of options
@@ -26,7 +25,20 @@ namespace PKISharp.WACS.Services
         /// Precondition to use these parameters
         /// </summary>
         bool Default { get; }
+    }
 
+    public interface IArguments : IArgumentsGroup
+    {
+        /// <summary>
+        /// Are the arguments provided?
+        /// </summary>
+        /// <param name="current"></param>
+        /// <returns></returns>
+        bool Active();
+    }
+
+    public interface IArgumentsProvider : IArgumentsGroup
+    {
         /// <summary>
         /// Reference to the logging service
         /// </summary>
@@ -35,12 +47,12 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// Which options are available
         /// </summary>
-        IEnumerable<ICommandLineOption> Configuration { get; }
+        IEnumerable<CommandLineAttribute> Configuration { get; }
 
         /// <summary>
         /// Feedback about the parsing
         /// </summary>
-        ICommandLineParserResult GetParseResult(string[] args);
+        IEnumerable<string> GetExtraArguments(string[] args);
 
         /// <summary>
         /// Get the parsed result

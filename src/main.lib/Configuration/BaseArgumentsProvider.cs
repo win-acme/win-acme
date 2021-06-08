@@ -1,94 +1,98 @@
 ﻿using Fclp;
-using Fclp.Internals;
 using PKISharp.WACS.Configuration.Arguments;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
 namespace PKISharp.WACS.Configuration
 {
-    public abstract class BaseArgumentsProvider<T> : IArgumentsProvider<T> where T : class, new()
+    /// <summary>
+    /// Default ArgumentsProvider that is brought to life by the 
+    /// PluginService for each implementation of IArgumentsStandalone
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public class BaseArgumentsProvider<T> : IArgumentsProvider<T> where T : class, IArguments, new()
     {
+        /// <summary>
+        /// Command line partser internal
+        /// </summary>
         private readonly FluentCommandLineParser<T> _parser;
+        private readonly IArgumentsProvider<T> _typedThis;
+
+        /// <summary>
+        /// Log service
+        /// </summary>
         public ILogService? Log { get; set; }
 
         public BaseArgumentsProvider()
         {
+            _typedThis = this;
             _parser = new FluentCommandLineParser<T>
             {
                 IsCaseSensitive = false
             };
-            Configure(_parser);
+            BaseArgumentsProvider<T>.Configure(_parser);
         }
 
-        public abstract string Name { get; }
-        public abstract string Group { get; }
-        public virtual string? Condition { get; }
-        public virtual bool Default => false;
-        public abstract void Configure(FluentCommandLineParser<T> parser);
-        bool IArgumentsProvider.Active(object current)
+        /// <summary>
+        /// Configure the command line parser based on metadata in this type
+        /// </summary>
+        /// <param name="parser"></param>
+        private static void Configure(FluentCommandLineParser<T> parser)
         {
-            if (current is T typed)
+            foreach (var (commandLineInfo, property) in typeof(T).CommandLineProperties())
             {
-                return IsActive(typed);
-            }
-            else
-            {
-                return false;
+                var setupMethod = typeof(FluentCommandLineParser<T>).GetMethod(nameof(parser.Setup), new[] { typeof(PropertyInfo) });
+                if (setupMethod == null)
+                {
+                    throw new InvalidOperationException();
+                }
+                var typedMethod = setupMethod.MakeGenericMethod(property.PropertyType);
+                var result = typedMethod.Invoke(parser, new[] { property });
+
+                var clob = typeof(ICommandLineOptionBuilderFluent<>).MakeGenericType(property.PropertyType);
+                var @as = clob.GetMethod(nameof(ICommandLineOptionBuilderFluent<object>.As), new[] { typeof(string) });
+                if (@as == null)
+                {
+                    throw new InvalidOperationException();
+                }
+                var asResult = @as.Invoke(result, new[] { (commandLineInfo.Name ?? property.Name).ToLower() });
+
+                // Add description when available
+                if (!string.IsNullOrWhiteSpace(commandLineInfo?.Description))
+                {
+                    var clo = typeof(ICommandLineOptionFluent<>).MakeGenericType(property.PropertyType);
+                    var withDescription = clo.GetMethod(nameof(ICommandLineOptionFluent<object>.WithDescription), new[] { typeof(string) });
+                    if (withDescription == null)
+                    {
+                        throw new InvalidOperationException();
+                    }
+                    withDescription.Invoke(asResult, new[] { commandLineInfo?.Description });
+                }
+
+                // Add default when available
+                if (!string.IsNullOrWhiteSpace(commandLineInfo?.Default))
+                {
+                    var clo = typeof(ICommandLineOptionFluent<>).MakeGenericType(property.PropertyType);
+                    var setDefault = clo.GetMethod(nameof(ICommandLineOptionFluent<object>.SetDefault), new[] { property.PropertyType });
+                    if (setDefault == null)
+                    {
+                        throw new InvalidOperationException();
+                    }
+                    setDefault.Invoke(asResult, new[] { commandLineInfo?.Default });
+                }
             }
         }
 
-        protected virtual bool IsActive(T current)
-        {
-            foreach (var prop in current.GetType().GetProperties())
-            {
-                if (prop.PropertyType == typeof(bool) && (bool)(prop.GetValue(current) ?? false) == true)
-                {
-                    return true;
-                }
-                if (prop.PropertyType == typeof(string) && !string.IsNullOrEmpty((string)(prop.GetValue(current) ?? string.Empty)))
-                {
-                    return true;
-                }
-                if (prop.PropertyType == typeof(int) && (int)(prop.GetValue(current) ?? 0) > 0)
-                {
-                    return true;
-                }
-                if (prop.PropertyType == typeof(int?) && (int?)prop.GetValue(current) != null)
-                {
-                    return true;
-                }
-                if (prop.PropertyType == typeof(long) && (long)(prop.GetValue(current) ?? 0) > 0)
-                {
-                    return true;
-                }
-                if (prop.PropertyType == typeof(long?) && (long?)prop.GetValue(current) != null)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public virtual bool Validate(T current, MainArguments main)
-        {
-            if (main.Renew)
-            {
-                if (IsActive(current))
-                {
-                    Log?.Error($"Renewal {(string.IsNullOrEmpty(Group)?"":$"{Group} ")}parameters cannot be changed during a renewal. Recreate/overwrite the renewal or edit the .json file if you want to make changes.");
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        bool IArgumentsProvider.Validate(object current, MainArguments main) => Validate((T)current, main);
-
-        public IEnumerable<ICommandLineOption> Configuration => _parser.Options;
-
-        public ICommandLineParserResult GetParseResult(string[] args) => _parser.Parse(args);
-
-        public T? GetResult(string[] args)
+        /// <summary>
+        /// Get the parsed result
+        /// </summary>
+        /// <param name="args"></param>
+        /// <returns></returns>
+        T? IArgumentsProvider<T>.GetResult(string[] args)
         {
             var result = _parser.Parse(args);
             if (result.HasErrors)
@@ -98,7 +102,95 @@ namespace PKISharp.WACS.Configuration
             }
             return _parser.Object;
         }
-        object? IArgumentsProvider.GetResult(string[] args) => GetResult(args);
+        object? IArgumentsProvider.GetResult(string[] args) => _typedThis.GetResult(args);
 
+        /// <summary>
+        /// Validate the arguments
+        /// </summary>
+        /// <param name="current"></param>
+        /// <param name="main"></param>
+        /// <returns></returns>
+        bool IArgumentsProvider<T>.Validate(T current, MainArguments main)
+        {
+            if (main.Renew)
+            {
+                if (_typedThis.Active(current))
+                {
+                    Log?.Error($"Renewal {(string.IsNullOrEmpty(_typedThis.Group) ? "" : $"{_typedThis.Group} ")}parameters cannot be changed during a renewal. Recreate/overwrite the renewal or edit the .json file if you want to make changes.");
+                    return false;
+                }
+            }
+            return true;
+        }
+        bool IArgumentsProvider.Validate(object current, MainArguments main) => _typedThis.Validate((T)current, main);
+
+        /// <summary>
+        /// Get list of unmatched arguments
+        /// </summary>
+        /// <param name="args"></param>
+        /// <returns></returns>
+        IEnumerable<string> IArgumentsProvider.GetExtraArguments(string[] args) => _parser.Parse(args).AdditionalOptionsFound.Select(x => x.Key);
+
+        /// <summary>
+        /// Test if the arguments are activated when they are
+        /// not supposed to (e.g. in --renew mode).
+        /// </summary>
+        /// <param name="current"></param>
+        /// <returns></returns>
+        bool IArgumentsProvider.Active(object current)
+        {
+            if (current is IArguments standalone)
+            {
+                return standalone.Active();
+            }
+            throw new InvalidOperationException();
+        }
+
+        /// <summary>
+        /// Construct an emtpy instance of T to able to use its properties
+        /// </summary>
+        private T DefaultInstance
+        {
+            get
+            {
+                if (_defaultInstance == null)
+                {
+                    var type = typeof(T);
+                    var constructor = type.GetConstructor(Array.Empty<Type>());
+                    if (constructor == null)
+                    {
+                        throw new InvalidOperationException();
+                    }
+                    _defaultInstance = (T)constructor.Invoke(null);
+                }
+                return _defaultInstance;
+            }
+        }
+        private T? _defaultInstance;
+
+        /// <summary>
+        /// List of all properties in this argument class
+        /// </summary>
+        IEnumerable<CommandLineAttribute> IArgumentsProvider.Configuration => typeof(T).CommandLineProperties().Select(cmd => cmd.Item1).OfType<CommandLineAttribute>();
+        
+        /// <summary>
+        /// Name of the arguments group
+        /// </summary>
+        string IArgumentsGroup.Name => DefaultInstance.Name;
+
+        /// <summary>
+        /// Supergroup
+        /// </summary>
+        string IArgumentsGroup.Group => DefaultInstance.Group;
+
+        /// <summary>
+        /// Under which conditions is this block of arguments usable
+        /// </summary>
+        string? IArgumentsGroup.Condition => DefaultInstance.Condition;
+
+        /// <summary>
+        /// Is this a default plugin?
+        /// </summary>
+        bool IArgumentsGroup.Default => DefaultInstance.Default;
     }
 }

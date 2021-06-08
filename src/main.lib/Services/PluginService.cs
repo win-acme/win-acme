@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services.Serialization;
 using System;
@@ -13,7 +14,7 @@ namespace PKISharp.WACS.Services
     public class PluginService : IPluginService
     {
         private readonly List<Type> _allTypes;
-        private readonly List<Type> _argumentProviders;
+        private readonly List<Type> _argumentGroups;
         private readonly List<Type> _optionFactories;
         private readonly List<Type> _plugins;
         
@@ -21,18 +22,27 @@ namespace PKISharp.WACS.Services
 
         public IEnumerable<IArgumentsProvider> ArgumentsProviders()
         {
-            return _argumentProviders.Select(x =>
+            if (_argumentsProviderCache == null)
             {
-                var c = x.GetConstructor(Array.Empty<Type>());
-                if (c == null)
-                {
-                    throw new Exception("IArgumentsProvider should have parameterless constructor");
-                }
-                var ret = (IArgumentsProvider)c.Invoke(Array.Empty<object>());
-                ret.Log = _log;
-                return ret;
-            }).ToList();
+                _argumentsProviderCache = new List<IArgumentsProvider>();
+                _argumentsProviderCache.AddRange(_argumentGroups.
+                    Select(x =>
+                    {
+                        var type = typeof(BaseArgumentsProvider<>).MakeGenericType(x);
+                        var constr = type.GetConstructor(Array.Empty<Type>());
+                        if (constr == null)
+                        {
+                            throw new Exception("IArgumentsProvider should have parameterless constructor");
+                        }
+                        var ret = (IArgumentsProvider)constr.Invoke(Array.Empty<object>());
+                        ret.Log = _log;
+                        return ret;
+                    }));
+            }
+            return _argumentsProviderCache;
         }
+        private List<IArgumentsProvider>? _argumentsProviderCache = null;
+
 
         public IEnumerable<Type> PluginOptionTypes<T>() where T : PluginOptions => GetResolvable<T>();
 
@@ -50,8 +60,7 @@ namespace PKISharp.WACS.Services
         {
             _log = logger;
             _allTypes = GetTypes();
-
-            _argumentProviders = GetResolvable<IArgumentsProvider>();
+            _argumentGroups = GetResolvable<IArguments>();
             _optionFactories = GetResolvable<IPluginOptionsFactory>(true);
             _plugins = new List<Type>();
             void AddPluginType<T>(string name)
@@ -162,7 +171,7 @@ namespace PKISharp.WACS.Services
             return ret;
         }
 
-        private static readonly List<string> IgnoreLibraries = new List<string>() { 
+        private static readonly List<string> IgnoreLibraries = new() { 
             "clrcompression.dll", 
             "clrjit.dll",
             "coreclr.dll",
@@ -248,7 +257,7 @@ namespace PKISharp.WACS.Services
         public T? GetFactory<T>(ILifetimeScope scope, string name, string? parameter = null) where T : IPluginOptionsFactory
         {
             var plugins = GetByName<T>(name, scope);
-            if (typeof(T) == typeof(IValidationPluginOptionsFactory))
+            if (typeof(T) == typeof(IValidationPluginOptionsFactory) && plugins.Count() > 1)
             {
                 plugins = plugins.Where(x => string.Equals(parameter, (x as IValidationPluginOptionsFactory)?.ChallengeType, StringComparison.InvariantCultureIgnoreCase));
             }

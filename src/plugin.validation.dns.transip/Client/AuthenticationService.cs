@@ -19,10 +19,14 @@ namespace TransIp.Library
     public class AuthenticationService : BaseService
     {
         private readonly string _login;
-        private readonly ICipherParameters _key;
+        private readonly ICipherParameters? _key;
 
-        public AuthenticationService(string login, string privateKey, IProxyService proxyService) : base(proxyService)
+        public AuthenticationService(string? login, string? privateKey, IProxyService proxyService) : base(proxyService)
         {
+            if (string.IsNullOrWhiteSpace(login))
+            {
+                throw new Exception("No login specified");
+            }
             _login = login;
             try
             {
@@ -45,7 +49,7 @@ namespace TransIp.Library
             return client;
         }
 
-        private async Task<string> GetToken()
+        private async Task<string?> GetToken()
         {
             var request = new AuthenticationRequest()
             {
@@ -62,7 +66,7 @@ namespace TransIp.Library
             var response = await client.PostAsync("auth", content);
             var result = await ParseResponse(response);
             var typedResult = new TransIpResponse<AuthenticationResponse>(result);
-            return typedResult.PayloadTyped.Token;
+            return typedResult.PayloadTyped?.Token;
         }
 
         private string Sign(string body)
@@ -92,9 +96,9 @@ namespace TransIp.Library
 			return cipher.DoFinal(digest);
 		}
 
-        public static ICipherParameters ParseKey(string key)
+        public static ICipherParameters? ParseKey(string? key)
 		{
-            if (string.IsNullOrEmpty(key)) {
+            if (string.IsNullOrWhiteSpace(key)) {
                 return null;
             }
             if (!key.Contains("\n"))
@@ -128,25 +132,25 @@ namespace TransIp.Library
         private class AuthenticationResponse
         {
             [JsonProperty("token")]
-            public string Token { get; set; }
+            public string? Token { get; set; }
         }
 
         private class AuthenticationRequest
         {
             [JsonProperty("nonce")]
-            public string Nonce { get; set; }
+            public string? Nonce { get; set; }
 
             [JsonProperty("login")]
-            public string Login { get; set; }
+            public string? Login { get; set; }
 
             [JsonProperty("read_only")]
             public bool ReadOnly { get; set; }
 
             [JsonProperty("expiration_time")]
-            public string ExpirationTime { get; set; }
+            public string? ExpirationTime { get; set; }
             
             [JsonProperty("label")]
-            public string Label { get; set; }
+            public string? Label { get; set; }
             
             [JsonProperty("global_key")]
             public bool GlobalKey { get; set; }

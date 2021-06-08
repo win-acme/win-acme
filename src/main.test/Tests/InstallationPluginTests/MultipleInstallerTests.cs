@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.UnitTests.Mock;
 using PKISharp.WACS.UnitTests.Mock.Services;
+using PKISharp.WACS.Configuration.Arguments;
 
 namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
 {
@@ -48,6 +49,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             _ = builder.RegisterType<LookupClientProvider>();
             _ = builder.RegisterType<mock.ProxyService>().As<IProxyService>();
             _ = builder.RegisterType<DomainParseService>();
+            _ = builder.RegisterType<ArgumentsInputService>();
             _ = builder.RegisterType<IISHelper>();
             var input = new mock.InputService(new List<string>());
             _ = builder.RegisterInstance(input).As<IInputService>();
@@ -68,11 +70,9 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             _ = builder.RegisterType<ArgumentsParser>().
                 SingleInstance().
                 WithParameter(new TypedParameter(typeof(string[]), commandLine.Split(' ')));
-            _ = builder.RegisterType<ArgumentsService>().
-                As<IArgumentsService>().
-                SingleInstance();
             _ = builder.RegisterType<mock.UserRoleService>().As<IUserRoleService>().SingleInstance();
             _ = builder.RegisterType<UnattendedResolver>().As<IResolver>();
+            _ = builder.Register(c => c.Resolve<ArgumentsParser>().GetArguments<MainArguments>()!).SingleInstance();
             plugins.Configure(builder);
 
             var scope = builder.Build();

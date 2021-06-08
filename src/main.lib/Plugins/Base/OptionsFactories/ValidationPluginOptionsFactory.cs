@@ -29,7 +29,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        public virtual bool CanValidate(Target target) => !target.GetHosts(false).Any(x => x.StartsWith("*."));
+        public virtual bool CanValidate(Target target) => !target.GetIdentifiers(false).Any(x => x.Value.StartsWith("*."));
 
     }
 }

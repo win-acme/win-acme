@@ -15,14 +15,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         private readonly ISettingsService _settings;
         private readonly LookupClientProvider _dnsClient;
         private readonly ILogService _log;
-        private readonly IArgumentsService _arguments;
+        private readonly ArgumentsInputService _arguments;
 
         public AcmeOptionsFactory(
             LookupClientProvider dnsClient,
             ILogService log,
             ISettingsService settings,
             IProxyService proxy,
-            IArgumentsService arguments) : base(Constants.Dns01ChallengeType)
+            ArgumentsInputService arguments) : base(Constants.Dns01ChallengeType)
         {
             _log = log;
             _arguments = arguments;
@@ -31,68 +31,42 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _dnsClient = dnsClient;
         }
 
+        private ArgumentResult<string?> Endpoint => _arguments.
+            GetString<AcmeArguments>(x => x.AcmeDnsServer).
+            Validate(x => Task.FromResult(new Uri(x!).ToString() != ""), "invalid uri").
+            Required();
+
         public override async Task<AcmeOptions?> Aquire(Target target, IInputService input, RunLevel runLevel)
         {
-            var ret = new AcmeOptions();
-            Uri? uri = null;
-            while (ret.BaseUri == null)
+            var ret = new AcmeOptions()
             {
-                try
-                {
-                    var userInput = await input.RequestString("URL of the acme-dns server");
-                    uri = new Uri(userInput);
-                    ret.BaseUri = uri.ToString();
-                }
-                catch { }
-            }
-            if (uri == null)
-            {
-                return null;
-            }
-            var acmeDnsClient = new AcmeDnsClient(_dnsClient, _proxy, _log, _settings, input, uri);
+                BaseUri = await Endpoint.Interactive(input).GetValue()
+            };
+            var acmeDnsClient = new AcmeDnsClient(_dnsClient, _proxy, _log, _settings, input, new Uri(ret.BaseUri!));
             var identifiers = target.Parts.SelectMany(x => x.Identifiers).Distinct();
             foreach (var identifier in identifiers)
             {
-                var registrationResult = await acmeDnsClient.EnsureRegistration(identifier.Replace("*.", ""), true);
+                var registrationResult = await acmeDnsClient.EnsureRegistration(identifier.Value.Replace("*.", ""), true);
                 if (!registrationResult)
                 {
                     return null;
                 }
-
             }
             return ret;
         }
 
         public override async Task<AcmeOptions?> Default(Target target)
         {
-            Uri? baseUri = null;
-            try
+            var ret = new AcmeOptions()
             {
-                var baseUriRaw =
-                    _arguments.TryGetRequiredArgument(nameof(AcmeArguments.AcmeDnsServer),
-                    _arguments.GetArguments<AcmeArguments>()?.AcmeDnsServer);
-                if (!string.IsNullOrEmpty(baseUriRaw))
-                {
-                    baseUri = new Uri(baseUriRaw);
-                } 
-            }
-            catch { }
-            if (baseUri == null)
-            {
-                _log.Error("The value provided for --acmednsserver is not a valid uri");
-                return null;
-            }
-
-            var ret = new AcmeOptions
-            {
-                BaseUri = baseUri.ToString()
+                BaseUri = await Endpoint.GetValue()
             };
-            var acmeDnsClient = new AcmeDnsClient(_dnsClient, _proxy, _log, _settings, null, baseUri);
+            var acmeDnsClient = new AcmeDnsClient(_dnsClient, _proxy, _log, _settings, null, new Uri(ret.BaseUri!));
             var identifiers = target.Parts.SelectMany(x => x.Identifiers).Distinct();
             var valid = true;
             foreach (var identifier in identifiers)
             {
-                if (!await acmeDnsClient.EnsureRegistration(identifier.Replace("*.", ""), false))
+                if (!await acmeDnsClient.EnsureRegistration(identifier.Value.Replace("*.", ""), false))
                 {
                     _log.Warning("No (valid) acme-dns registration could be found for {identifier}.", identifier);
                     valid = false;
@@ -105,6 +79,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return ret;
         }
 
-        public override bool CanValidate(Target target) => true;
+        public override bool CanValidate(Target target) => target.Parts.SelectMany(x => x.Identifiers).All(x => x.Type == IdentifierType.DnsName);
     }
 }

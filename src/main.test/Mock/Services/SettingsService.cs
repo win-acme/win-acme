@@ -15,7 +15,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         public NotificationSettings Notification => new();
         public SecuritySettings Security => new();
         public ClientSettings Client => new();
-        public TargetSettings Target => new();
+        public SourceSettings Source => new();
         public ValidationSettings Validation => new();
         public OrderSettings Order => new();
         public CsrSettings Csr => new();

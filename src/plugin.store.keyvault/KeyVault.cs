@@ -20,10 +20,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     /// </summary>
     internal class KeyVault : IStorePlugin
     {
-        private CertificateClient _azureKeyVaultClient;
+        private CertificateClient? _azureKeyVaultClient;
         private readonly IProxyService _proxyService;
         private readonly KeyVaultOptions _options;
-        private readonly AzureHelpers _helpers;
         private readonly ILogService _log;
 
         public KeyVault(KeyVaultOptions options, IProxyService proxyService, ILogService log)
@@ -31,7 +30,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _options = options;
             _proxyService = proxyService;
             _log = log;
-            _helpers = new AzureHelpers(_options, log);
         }
 
         private Task<CertificateClient> GetClient()
@@ -43,7 +41,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                     : (TokenCredential)new ClientSecretCredential(
                         _options.TenantId,
                         _options.ClientId,
-                        _options.Secret.Value);
+                        _options.Secret?.Value);
                 var options = new CertificateClientOptions
                 {
                     Transport = new HttpClientTransport(_proxyService.GetHttpClient())
@@ -61,7 +59,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var client = await GetClient();
             var importOptions = new ImportCertificateOptions(
                 _options.CertificateName,
-                await File.ReadAllBytesAsync(certificateInfo.CacheFile.FullName));
+                await File.ReadAllBytesAsync(certificateInfo.CacheFile!.FullName));
             importOptions.Password = certificateInfo.CacheFilePassword;
             try
             {

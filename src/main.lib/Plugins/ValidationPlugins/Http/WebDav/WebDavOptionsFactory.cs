@@ -7,12 +7,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
     internal class WebDavOptionsFactory : HttpValidationOptionsFactory<WebDav, WebDavOptions>
     {
-        private readonly SecretServiceManager _secretServiceManager;
-
-        public WebDavOptionsFactory(
-            IArgumentsService arguments,
-            SecretServiceManager secretServiceManager) : base(arguments) =>
-            _secretServiceManager = secretServiceManager;
+        public WebDavOptionsFactory(ArgumentsInputService arguments) : base(arguments) { }
 
         public override bool PathIsValid(string webRoot)
         {
@@ -35,9 +30,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 
         public override async Task<WebDavOptions?> Default(Target target)
         {
-            return new WebDavOptions(BaseDefault(target))
+            return new WebDavOptions(await BaseDefault(target))
             {
-                Credential = new NetworkCredentialOptions(_arguments)
+                Credential = await NetworkCredentialOptions.Create(_arguments)
             };
         }
 
@@ -45,7 +40,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         {
             return new WebDavOptions(await BaseAquire(target, inputService))
             {
-                Credential = new NetworkCredentialOptions(_arguments, inputService, "WebDav server", _secretServiceManager)
+                Credential = await NetworkCredentialOptions.Create(_arguments, inputService, "WebDav server")
             };
         }
     }

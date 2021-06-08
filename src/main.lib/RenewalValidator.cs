@@ -242,9 +242,14 @@ namespace PKISharp.WACS
             }
 
             // Find a targetPart that matches the challenge
+            // TODO: this might cause a bug when there are two 
+            // identifiers of different types with the same value
+            // though I cannot imagine at this point how that 
+            // would happen (ips are not valid domains, domains
+            // are not valid emails, etc.)
             var targetPart = context.Target.Parts.
-                FirstOrDefault(tp => tp.GetHosts(false).
-                Any(h => authorization.Identifier.Value == h.Replace("*.", "")));
+                FirstOrDefault(tp => tp.GetIdentifiers(false).
+                Any(h => authorization.Identifier.Value == h.Value.Replace("*.", "")));
 
             if (targetPart == null)
             {

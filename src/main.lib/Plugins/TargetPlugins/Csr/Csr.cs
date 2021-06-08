@@ -6,9 +6,7 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -48,8 +46,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
 
             // Parse CSR
-            List<string> alternativeNames;
-            string commonName;
+            List<Identifier> alternativeNames;
+            Identifier commonName;
             byte[] csrBytes;
             try
             {
@@ -126,14 +124,14 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         /// </summary>
         /// <param name="info"></param>
         /// <returns></returns>
-        private string ParseCn(CertificationRequestInfo info)
+        private Identifier ParseCn(CertificationRequestInfo info)
         {
             var subject = info.Subject;
             var cnValue = subject.GetValueList(new DerObjectIdentifier("2.5.4.3"));
             if (cnValue.Count > 0)
             {
                 var name = cnValue.Cast<string>().ElementAt(0);
-                return ProcessName(name);
+                return new DnsIdentifier(name).Unicode(true);
             } 
             else
             {
@@ -142,25 +140,14 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         }
 
         /// <summary>
-        /// Convert puny-code to unicode
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        private string ProcessName(string name)
-        {
-            var idn = new IdnMapping();
-            return idn.GetUnicode(name.ToLower());
-        }
-
-        /// <summary>
         /// Parse the SAN names.
         /// Based on https://stackoverflow.com/questions/44824897/getting-subject-alternate-names-with-pkcs10certificationrequest
         /// </summary>
         /// <param name="info"></param>
         /// <returns></returns>
-        private IEnumerable<string> ParseSan(CertificationRequestInfo info)
+        private IEnumerable<Identifier> ParseSan(CertificationRequestInfo info)
         {
-            var ret = new List<string>();
+            var ret = new List<Identifier>();
             var extensionSequence = info.Attributes.OfType<DerSequence>()
                 .Where(o => o.OfType<DerObjectIdentifier>().Any(oo => oo.Id == "1.2.840.113549.1.9.14"))
                 .FirstOrDefault();
@@ -185,7 +172,12 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
             var asn1object = Asn1Object.FromByteArray(derOctetString.GetOctets());
             var names = Org.BouncyCastle.Asn1.X509.GeneralNames.GetInstance(asn1object);
-            return names.GetNames().Select(x => x.Name.ToString()!).Select(x => ProcessName(x));
+            return names.GetNames().Select(x => x.TagNo switch {
+                1 => new EmailIdentifier(x.Name.ToString()!),
+                2 => new DnsIdentifier(x.Name.ToString()!).Unicode(true),
+                7 => new IpIdentifier(x.Name.ToString()!),
+                _ => new UnknownIdentifier(x.Name.ToString()!)
+            });
         }
 
         private T? GetAsn1ObjectRecursive<T>(DerSequence sequence, string id) where T : Asn1Object

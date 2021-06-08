@@ -188,13 +188,12 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        private bool Match(CertificateInfo info, Target target)
+        private static bool Match(CertificateInfo info, Target target)
         {
-            var identifiers = target.GetHosts(false);
-            var idn = new IdnMapping();
-            return info.CommonName == idn.GetAscii(target.CommonName) &&
-                info.SanNames.Count == identifiers.Count() &&
-                info.SanNames.All(h => identifiers.Contains(idn.GetAscii(h)));
+            var identifiers = target.GetIdentifiers(false);
+            return info.CommonName == target.CommonName.Unicode(false) &&
+                info.SanNames.Count == identifiers.Count &&
+                info.SanNames.All(h => identifiers.Contains(h.Unicode(false)));
         }
 
         /// <summary>
@@ -214,7 +213,7 @@ namespace PKISharp.WACS.Services
             var cacheKeyBuilder = new StringBuilder();
             cacheKeyBuilder.Append(order.CacheKeyPart);
             cacheKeyBuilder.Append(order.Target.CommonName);
-            cacheKeyBuilder.Append(string.Join(',', order.Target.GetHosts(true).OrderBy(x => x).Select(x => x.ToLower())));
+            cacheKeyBuilder.Append(string.Join(',', order.Target.GetIdentifiers(true).OrderBy(x => x).Select(x => x.Value.ToLower())));
             _ = order.Target.CsrBytes != null ?
                 cacheKeyBuilder.Append(Convert.ToBase64String(order.Target.CsrBytes)) :
                 cacheKeyBuilder.Append("-");
@@ -245,19 +244,12 @@ namespace PKISharp.WACS.Services
             var pfxFileInfo = new FileInfo(GetPath(order.Renewal, $"-{cacheKey}{PfxPostFix}"));
 
             // Determine/check the common name
-            var identifiers = order.Target.GetHosts(false);
-            var commonNameUni = order.Target.CommonName;
-            var commonNameAscii = string.Empty;
-            if (!string.IsNullOrWhiteSpace(commonNameUni))
+            var identifiers = order.Target.GetIdentifiers(false);
+            var commonName = order.Target.CommonName;
+            if (!identifiers.Contains(commonName.Unicode(false)))
             {
-                var idn = new IdnMapping();
-                commonNameAscii = idn.GetAscii(commonNameUni);
-                if (!identifiers.Contains(commonNameAscii, StringComparer.InvariantCultureIgnoreCase))
-                {
-                    _log.Warning($"Common name {commonNameUni} provided is invalid.");
-                    commonNameAscii = identifiers.First();
-                    commonNameUni = idn.GetUnicode(commonNameAscii);
-                }
+                _log.Warning($"Common name {commonName.Value} provided is invalid.");
+                commonName = identifiers.First();
             }
 
             // Determine the friendly name base (for the renewal)
@@ -268,7 +260,7 @@ namespace PKISharp.WACS.Services
             }
             if (string.IsNullOrEmpty(friendlyNameBase))
             {
-                friendlyNameBase = commonNameUni;
+                friendlyNameBase = commonName.Unicode(true).Value;
             }
 
             // Determine the friendly name for this specific certificate
@@ -322,7 +314,7 @@ namespace PKISharp.WACS.Services
                     {
                         keyFile = new FileInfo(GetPath(order.Renewal, $"-{cacheKey}.keys"));
                     }
-                    var csr = await csrPlugin.GenerateCsr(keyFile.FullName, commonNameAscii, identifiers);
+                    var csr = await csrPlugin.GenerateCsr(keyFile.FullName, commonName, identifiers);
                     var keySet = await csrPlugin.GetKeys();
                     order.Target.CsrBytes = csr.GetDerEncoded();
                     order.Target.PrivateKey = keySet.Private;
@@ -373,7 +365,7 @@ namespace PKISharp.WACS.Services
             ClearCache(order.Renewal, postfix: $"*{PfxPostFixLegacy}");
             await File.WriteAllBytesAsync(pfxFileInfo.FullName, selected.Export(X509ContentType.Pfx, order.Renewal.PfxPassword?.Value)!);
             _log.Debug("Certificate written to cache file {path} in certificate cache folder {folder}. It will be " +
-                "reused when renewing within {x} day(s) as long as the Target and Csr parameters remain the same and " +
+                "reused when renewing within {x} day(s) as long as the --source and --csr parameters remain the same and " +
                 "the --force switch is not used.", 
                 pfxFileInfo.Name, 
                 pfxFileInfo.Directory!.FullName,

@@ -1,8 +1,18 @@
-﻿namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Configuration.Arguments;
+
+namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    public sealed class LuaDnsArguments
+    public sealed class LuaDnsArguments : BaseArguments
     {
-        public string LuaDnsUsername { get; set; }
-        public string LuaDnsAPIKey { get; set; }
+        public override string Name { get; } = "LuaDns";
+        public override string Group { get; } = "Validation";
+        public override string Condition { get; } = "--validation luadns";
+
+        [CommandLine(Description = "LuaDNS account username (email address).")]
+        public string? LuaDnsUsername { get; set; }
+
+        [CommandLine(Description = "LuaDNS API key.", Secret = true)]
+        public string? LuaDnsAPIKey { get; set; }
     }
 }

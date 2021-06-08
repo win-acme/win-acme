@@ -22,6 +22,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         private readonly FileInfo batchPsPath;
         private readonly FileInfo psPath;
         private readonly FileInfo psNamedPath;
+        private readonly FileInfo psTrickyPath;
 
         public ScriptPluginTests()
         {
@@ -55,6 +56,11 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
                 $"}} else {{ " +
                 $"  Write-Host \"Hello $What\"" +
                 $"}}"
+            );
+
+            psTrickyPath = new FileInfo(tempPath.FullName + "\\create space and ' quote.ps1");
+            File.WriteAllText(psTrickyPath.FullName,
+                $"Write-Host \"Hello\""
             );
 
         }
@@ -124,6 +130,14 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         public void Ps1Regular()
         {
             TestScript(psPath.FullName, null);
+            Assert.IsTrue(log.WarningMessages.Count == 0);
+            Assert.IsTrue(log.ErrorMessages.Count == 0);
+        }
+
+        [TestMethod]
+        public void Ps1Tricky()
+        {
+            TestScript(psTrickyPath.FullName, null);
             Assert.IsTrue(log.WarningMessages.Count == 0);
             Assert.IsTrue(log.ErrorMessages.Count == 0);
         }

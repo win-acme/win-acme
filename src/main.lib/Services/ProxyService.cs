@@ -25,13 +25,19 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// Is the user requesting the system proxy
         /// </summary>
-        public bool UseSystemProxy => string.Equals(_settings.Proxy.Url, "[System]", StringComparison.OrdinalIgnoreCase);
+        public WindowsProxyUsePolicy ProxyType => 
+            _settings.Proxy.Url?.ToLower().Trim() switch
+            {
+                "[winhttp]" => WindowsProxyUsePolicy.UseWinHttpProxy,
+                "[wininet]" => WindowsProxyUsePolicy.UseWinInetProxy,
+                "[system]" => WindowsProxyUsePolicy.UseWinInetProxy,
+                "" => WindowsProxyUsePolicy.DoNotUseProxy,
+                null => WindowsProxyUsePolicy.DoNotUseProxy,
+                _ => WindowsProxyUsePolicy.UseCustomProxy
+        };
 
-        /// <summary>
-        /// Get prepared HttpClient with correct system proxy settings
-        /// </summary>
-        /// <returns></returns>
-        public HttpClient GetHttpClient(bool checkSsl = true)
+        public HttpMessageHandler GetHttpMessageHandler() => GetHttpMessageHandler(true);
+        public HttpMessageHandler GetHttpMessageHandler(bool checkSsl = true)
         {
             var httpClientHandler = new LoggingHttpClientHandler(_log)
             {
@@ -40,18 +46,29 @@ namespace PKISharp.WACS.Services
             };
             if (!checkSsl)
             {
-                httpClientHandler.ServerCertificateCustomValidationCallback = (a, b, c, d) => true;
+                httpClientHandler.ServerCertificateValidationCallback = (a, b, c, d) => true;
             }
-            if (UseSystemProxy)
+            httpClientHandler.WindowsProxyUsePolicy = ProxyType;
+            if (ProxyType == WindowsProxyUsePolicy.UseWinInetProxy)
             {
                 httpClientHandler.DefaultProxyCredentials = CredentialCache.DefaultCredentials;
             }
+            return httpClientHandler;
+        }
+
+        /// <summary>
+        /// Get prepared HttpClient with correct system proxy settings
+        /// </summary>
+        /// <returns></returns>
+        public HttpClient GetHttpClient(bool checkSsl = true)
+        {
+            var httpClientHandler = GetHttpMessageHandler(checkSsl);
             var httpClient = new HttpClient(httpClientHandler);
             httpClient.DefaultRequestHeaders.Add("User-Agent", $"win-acme/{VersionService.SoftwareVersion} (+https://github.com/win-acme/win-acme)");
             return httpClient;
         }
 
-        private class LoggingHttpClientHandler : HttpClientHandler
+        private class LoggingHttpClientHandler : WinHttpHandler
         {
             private readonly ILogService _log;
 
@@ -95,11 +112,10 @@ namespace PKISharp.WACS.Services
         {
             if (_proxy == null)
             {
-                var proxy = UseSystemProxy ?
-                                null :
-                                string.IsNullOrEmpty(_settings.Proxy.Url) ?
-                                    new WebProxy() :
-                                    new WebProxy(_settings.Proxy.Url);
+                var proxy = ProxyType switch {
+                    WindowsProxyUsePolicy.UseCustomProxy => new WebProxy(_settings.Proxy.Url),
+                    _ => null
+                };
                 if (proxy != null)
                 {
                     if (!string.IsNullOrWhiteSpace(_settings.Proxy.Username))
@@ -107,22 +123,11 @@ namespace PKISharp.WACS.Services
                         var password = _secretService.EvaluateSecret(_settings.Proxy.Password);
                         proxy.Credentials = new NetworkCredential(_settings.Proxy.Username, password);
                     }
-                    var testUrl = new Uri("http://proxy.example.com");
-                    var proxyUrl = proxy.GetProxy(testUrl);
-                    if (proxyUrl != null)
-                    {
-
-                        var useProxy = !string.Equals(testUrl.Host, proxyUrl.Host);
-                        if (useProxy)
-                        {
-                            _log.Warning("Proxying via {proxy}:{port}", proxyUrl.Host, proxyUrl.Port);
-                        }
-                    }
+                    _log.Warning("Proxying via {proxy}:{port}", proxy.Address?.Host, proxy.Address?.Port);
                 }
                 _proxy = proxy;
             }
             return _proxy;
         }
-
     }
 }

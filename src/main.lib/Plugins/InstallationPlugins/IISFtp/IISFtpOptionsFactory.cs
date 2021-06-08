@@ -13,11 +13,11 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
     internal class IISFtpOptionsFactory : InstallationPluginFactory<IISFtp, IISFtpOptions>
     {
         private readonly IIISClient _iisClient;
-        private readonly IArgumentsService _arguments;
+        private readonly ArgumentsInputService _arguments;
 
         public override int Order => 10;
 
-        public IISFtpOptionsFactory(IIISClient iisClient, IArgumentsService arguments, IUserRoleService userRoleService)
+        public IISFtpOptionsFactory(IIISClient iisClient, ArgumentsInputService arguments, IUserRoleService userRoleService)
         {
             _iisClient = iisClient;
             _arguments = arguments;
@@ -36,19 +36,16 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             return ret;
         }
 
-        public override Task<IISFtpOptions> Default(Target renewal)
+        public override async Task<IISFtpOptions> Default(Target renewal)
         {
-            var args = _arguments.GetArguments<IISFtpArguments>();
-            var ret = new IISFtpOptions();
-            var siteId = args?.FtpSiteId;
-            if (siteId == null)
+            return new IISFtpOptions()
             {
-                throw new Exception($"Missing parameter --{nameof(args.FtpSiteId).ToLower()}");
-            }
-            // Throws exception when site is not found
-            var site = _iisClient.GetFtpSite(siteId.Value);
-            ret.SiteId = site.Id;
-            return Task.FromResult(ret);
+                SiteId = (long)await _arguments.
+                    GetLong<IISFtpArguments>(x => x.FtpSiteId).
+                    Required().
+                    Validate(x => Task.FromResult(_iisClient.GetFtpSite(x!.Value) != null), "invalid site").
+                    GetValue()
+            };
         }
     }
 }

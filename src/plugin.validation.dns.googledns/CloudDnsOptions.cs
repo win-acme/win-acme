@@ -10,8 +10,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public override string Description => "Create verification records in Google Cloud DNS";
         public override string ChallengeType => Constants.Dns01ChallengeType;
 
-        public string ServiceAccountKeyPath { get; set; }
+        public string? ServiceAccountKeyPath { get; set; }
 
-        public string ProjectId { get; set; }
+        public string? ProjectId { get; set; }
     }
 }

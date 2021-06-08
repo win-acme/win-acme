@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
@@ -17,20 +18,22 @@ namespace PKISharp.WACS
         private readonly IInputService _input;
         private readonly ILogService _log;
         private readonly IRenewalStore _renewalStore;
-        private readonly IArgumentsService _arguments;
+        private readonly ArgumentsParser _arguments;
         private readonly MainArguments _args;
         private readonly IContainer _container;
         private readonly IAutofacBuilder _scopeBuilder;
         private readonly ExceptionHandler _exceptionHandler;
         private readonly RenewalExecutor _renewalExecutor;
+        private readonly RenewalCreator _renewalCreator;
         private readonly ISettingsService _settings;
 
         public RenewalManager(
-            IArgumentsService arguments, MainArguments args,
+            ArgumentsParser arguments, MainArguments args,
             IRenewalStore renewalStore, IContainer container,
             IInputService input, ILogService log,
             ISettingsService settings,
             IAutofacBuilder autofacBuilder, ExceptionHandler exceptionHandler,
+            RenewalCreator renewalCreator,
             RenewalExecutor renewalExecutor)
         {
             _renewalStore = renewalStore;
@@ -43,6 +46,7 @@ namespace PKISharp.WACS
             _scopeBuilder = autofacBuilder;
             _exceptionHandler = exceptionHandler;
             _renewalExecutor = renewalExecutor;
+            _renewalCreator = renewalCreator;
         }
 
         /// <summary>
@@ -107,7 +111,11 @@ namespace PKISharp.WACS
                             () => { displayAll = true; return Task.CompletedTask; },
                             "List all selected renewals", "A"));
                 }
-              
+                options.Add(
+                    Choice.Create<Func<Task>>(
+                        async () => { quit = true; await EditRenewal(selectedRenewals.First()); },
+                        "Edit renewal", "E",
+                        @disabled: (selectedRenewals.Count() != 1, none ? "No renewals selected." : "Multiple renewals selected.")));
                 if (selectedRenewals.Count() > 1)
                 {
                     options.Add(
@@ -206,7 +214,7 @@ namespace PKISharp.WACS
                     Choice.Create<Func<Task>>(
                         () => { quit = true; return Task.CompletedTask; },
                         "Back", "Q",
-                        @default: originalSelection.Count() == 0));
+                        @default: !originalSelection.Any()));
 
                 if (selectedRenewals.Count() > 1)
                 {
@@ -232,7 +240,7 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private async Task<IEnumerable<Renewal>> Analyze(IEnumerable<Renewal> selectedRenewals)
         {
-            var foundHosts = new Dictionary<string, List<Renewal>>();
+            var foundHosts = new Dictionary<Identifier, List<Renewal>>();
             var foundSites = new Dictionary<long, List<Renewal>>();
 
             foreach (var renewal in selectedRenewals)
@@ -250,7 +258,7 @@ namespace PKISharp.WACS
                         }
                         foundSites[siteId].Add(renewal);
                     }
-                    foreach (var host in targetPart.GetHosts(true))
+                    foreach (var host in targetPart.GetIdentifiers(true))
                     {
                         if (!foundHosts.ContainsKey(host))
                         {
@@ -265,22 +273,22 @@ namespace PKISharp.WACS
             var options = new List<Choice<List<Renewal>>>();
             foreach (var site in foundSites)
             {
-                if (site.Value.Count() > 1)
+                if (site.Value.Count > 1)
                 {
                     options.Add(
                       Choice.Create(
                           site.Value,
-                          $"Select {site.Value.Count()} renewals covering IIS site {site.Key}"));
+                          $"Select {site.Value.Count} renewals covering IIS site {site.Key}"));
                 }
             }
             foreach (var host in foundHosts)
             {
-                if (host.Value.Count() > 1)
+                if (host.Value.Count > 1)
                 {
                     options.Add(
                       Choice.Create(
                           host.Value,
-                          $"Select {host.Value.Count()} renewals covering host {host.Key}"));
+                          $"Select {host.Value.Count} renewals covering host {host.Key}"));
                 }
             }
             _input.CreateSpace();
@@ -396,7 +404,7 @@ namespace PKISharp.WACS
         private async Task<IEnumerable<Renewal>> FilterRenewalsByFriendlyName(IEnumerable<Renewal> current)
         {
             _input.CreateSpace();
-            _input.Show(null, "Please input friendly name to filter renewals by. " + IISArgumentsProvider.PatternExamples);
+            _input.Show(null, "Please input friendly name to filter renewals by. " + IISArguments.PatternExamples);
             var rawInput = await _input.RequestString("Friendly name");
             var ret = new List<Renewal>();
             var regex = new Regex(rawInput.PatternToRegex(), RegexOptions.IgnoreCase);
@@ -417,12 +425,12 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private async Task<IEnumerable<Renewal>> FilterRenewalsByCommandLine(string command)
         {
-            if (_arguments.HasFilter())
+            if (_args.HasFilter)
             {
                 var targets = _renewalStore.FindByArguments(
-                    _arguments.MainArguments.Id,
-                    _arguments.MainArguments.FriendlyName);
-                if (targets.Count() == 0)
+                    _args.Id,
+                    _args.FriendlyName);
+                if (!targets.Any())
                 {
                     _log.Error("No renewals matched.");
                 }
@@ -442,10 +450,10 @@ namespace PKISharp.WACS
         internal async Task CheckRenewals(RunLevel runLevel)
         {
             IEnumerable<Renewal> renewals;
-            if (_arguments.HasFilter())
+            if (_args.HasFilter)
             {
                 renewals = _renewalStore.FindByArguments(_args.Id, _args.FriendlyName);
-                if (renewals.Count() == 0)
+                if (!renewals.Any())
                 {
                     _log.Error("No renewals found that match the filter parameters --id and/or --friendlyname.");
                 }
@@ -454,13 +462,13 @@ namespace PKISharp.WACS
             {
                 _log.Verbose("Checking renewals");
                 renewals = _renewalStore.Renewals;
-                if (renewals.Count() == 0)
+                if (!renewals.Any())
                 {
                     _log.Warning("No scheduled renewals found.");
                 }
             }
 
-            if (renewals.Count() > 0)
+            if (renewals.Any())
             {
                 WarnAboutRenewalArguments();
                 foreach (var renewal in renewals)
@@ -527,13 +535,19 @@ namespace PKISharp.WACS
         /// </summary>
         internal void WarnAboutRenewalArguments()
         {
-            if (_arguments.Active)
+            if (_arguments.Active())
             {
                 _log.Warning("You have specified command line options for plugins. " +
                     "Note that these only affect new certificates, but NOT existing renewals. " +
                     "To change settings, re-create (overwrite) the renewal.");
             }
         }
+
+        /// <summary>
+        /// "Edit" renewal
+        /// </summary>
+        private async Task EditRenewal(Renewal renewal) => 
+            await _renewalCreator.SetupRenewal(RunLevel.Interactive | RunLevel.Advanced, renewal);
 
         /// <summary>
         /// Show certificate details

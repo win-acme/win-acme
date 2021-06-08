@@ -13,6 +13,7 @@ namespace PKISharp.WACS.Clients.IIS
 {
     internal class IISClient : IIISClient<IISSiteWrapper, IISBindingWrapper>, IDisposable
     {
+        public const string DefaultBindingPortFormat = "443"; 
         public const int DefaultBindingPort = 443;
         public const string DefaultBindingIp = "*";
 
@@ -190,7 +191,7 @@ namespace PKISharp.WACS.Clients.IIS
 
         #region _ Https Install _
 
-        public void AddOrUpdateBindings(IEnumerable<string> identifiers, BindingOptions bindingOptions, byte[]? oldThumbprint)
+        public void AddOrUpdateBindings(IEnumerable<Identifier> identifiers, BindingOptions bindingOptions, byte[]? oldThumbprint)
         {
             var updater = new IISHttpBindingUpdater<IISSiteWrapper, IISBindingWrapper>(this, _log);
             var updated = updater.AddOrUpdateBindings(identifiers, bindingOptions, oldThumbprint);
@@ -205,7 +206,7 @@ namespace PKISharp.WACS.Clients.IIS
             }
         }
 
-        public void AddBinding(IISSiteWrapper site, BindingOptions options)
+        public IIISBinding AddBinding(IISSiteWrapper site, BindingOptions options)
         {
             var newBinding = site.Site.Bindings.CreateElement("binding");
             newBinding.BindingInformation = options.Binding;
@@ -217,6 +218,7 @@ namespace PKISharp.WACS.Clients.IIS
                 newBinding.SetAttributeValue("sslFlags", options.Flags);
             }
             site.Site.Bindings.Add(newBinding);
+            return new IISBindingWrapper(newBinding);
         }
 
         public void UpdateBinding(IISSiteWrapper site, IISBindingWrapper existingBinding, BindingOptions options)

@@ -11,6 +11,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public override string Description => "Create verification records in Cloudflare DNS";
         public override string ChallengeType => Constants.Dns01ChallengeType;
 
-        public ProtectedString ApiToken { get; set; }
+        public ProtectedString? ApiToken { get; set; }
     }
 }

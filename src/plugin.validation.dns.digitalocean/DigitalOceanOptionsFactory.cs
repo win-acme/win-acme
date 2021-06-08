@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 using ACMESharp.Authorizations;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
@@ -9,32 +10,32 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     internal class DigitalOceanOptionsFactory : ValidationPluginOptionsFactory<DigitalOcean, DigitalOceanOptions>
     {
-        private readonly IArgumentsService _arguments;
+        private readonly ArgumentsInputService _arguments;
 
-        public DigitalOceanOptionsFactory(IArgumentsService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType)
-        {
-            _arguments = arguments;
-        }
+        public DigitalOceanOptionsFactory(ArgumentsInputService arguments) : 
+            base(Dns01ChallengeValidationDetails.Dns01ChallengeType)
+            => _arguments = arguments;
 
-        public override Task<DigitalOceanOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
+        private ArgumentResult<ProtectedString?> ApiKey => _arguments.
+            GetProtectedString<DigitalOceanArguments>(a => a.ApiToken).
+            Required();
+
+        public override async Task<DigitalOceanOptions?> Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
-            var arguments = _arguments.GetArguments<DigitalOceanArguments>();
-            return Task.FromResult(new DigitalOceanOptions
+            return new DigitalOceanOptions
             {
-                ApiToken = new ProtectedString(arguments.ApiToken)
-            });
+                ApiToken = await ApiKey.Interactive(inputService).GetValue()
+            };
         }
 
-        public override Task<DigitalOceanOptions> Default(Target target)
+        public override async Task<DigitalOceanOptions?> Default(Target target)
         {
-            var arguments = _arguments.GetArguments<DigitalOceanArguments>();
-            return Task.FromResult(new DigitalOceanOptions
+            return new DigitalOceanOptions
             {
-                ApiToken = new ProtectedString(
-                    _arguments.TryGetRequiredArgument(nameof(arguments.ApiToken), arguments.ApiToken))
-            });
+                ApiToken = await ApiKey.GetValue()
+            };
         }
 
-        public override bool CanValidate(Target target) => true;
+        public override bool CanValidate(Target target) => target.Parts.SelectMany(x => x.Identifiers).All(x => x.Type == IdentifierType.DnsName);
     }
 }

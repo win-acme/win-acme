@@ -21,9 +21,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             IProxyService proxy,
             ISettingsService settings,
             DomainParseService domainParser,
+            SecretServiceManager ssm,
             TransIpOptions options) : base(dnsClient, log, settings)
         {
-            var auth = new AuthenticationService(options.Login, options.PrivateKey.Value, proxy);
+            var auth = new AuthenticationService(options.Login, ssm.EvaluateSecret(options.PrivateKey), proxy);
             _dnsService = new DnsService(auth, proxy);
             _domainParser = domainParser;
         }

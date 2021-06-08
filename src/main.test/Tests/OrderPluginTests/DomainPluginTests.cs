@@ -12,7 +12,7 @@ namespace PKISharp.WACS.UnitTests.Tests.EcnryptionTests
         [TestMethod]
         public void DomainSplit()
         {
-            var parts = new TargetPart[] { new TargetPart(new[] { "x.com" }) };
+            var parts = new TargetPart[] { new TargetPart(new[] { new DnsIdentifier("x.com") }) };
             var target = new Target("x.com", "x.com", parts);
             var renewal = new Renewal();
             var container = new MockContainer().TestScope();

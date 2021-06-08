@@ -26,8 +26,10 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         private ManualOptions? Options(string commandLine)
         {
             var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
-            var arguments = new ArgumentsService(log, optionsParser);
-            var x = new ManualOptionsFactory(arguments);
+            var input = new Mock.Services.InputService(new());
+            var secretService = new SecretServiceManager(new SecretService(), input, log);
+            var argsInput = new ArgumentsInputService(log, optionsParser, input, secretService);
+            var x = new ManualOptionsFactory(argsInput);
             return x.Default().Result;
         }
 
@@ -118,6 +120,32 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                 Assert.AreEqual(options.AlternativeNames.First(), "经/已經.经/已經.example.com");
                 var tar = Target(options);
                 Assert.AreEqual(tar.IsValid(log), true);
+            }
+        }
+
+        [TestMethod]
+        public void IpAddress()
+        {
+            var options = Options($"--host abc.com,1.2.3.4");
+            Assert.IsNotNull(options);
+            if (options != null)
+            {
+                var tar = Target(options);
+                Assert.AreEqual(tar.IsValid(log), true);
+                Assert.IsTrue(tar.Parts.First().Identifiers.OfType<IpIdentifier>().First().Value == "1.2.3.4");
+            }
+        }
+
+        [TestMethod]
+        public void IpAddressCommon()
+        {
+            var options = Options($"--host 1.2.3.4,abc.com");
+            Assert.IsNotNull(options);
+            if (options != null)
+            {
+                var tar = Target(options);
+                Assert.AreEqual(tar.IsValid(log), true);
+                Assert.IsTrue(tar.CommonName.Value == "abc.com");
             }
         }
 

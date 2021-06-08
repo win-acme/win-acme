@@ -6,20 +6,17 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
 {
     internal class EcOptionsFactory : CsrPluginOptionsFactory<Ec, EcOptions>
     {
-        private readonly IArgumentsService _arguments;
-
-        public EcOptionsFactory(IArgumentsService arguments) => _arguments = arguments;
+        public EcOptionsFactory(ArgumentsInputService arguments) : base(arguments) { }
 
         public override Task<EcOptions> Aquire(IInputService inputService, RunLevel runLevel) => Default();
 
-        public override Task<EcOptions> Default()
+        public override async Task<EcOptions> Default()
         {
-            var args = _arguments.GetArguments<CsrArguments>();
-            return Task.FromResult(new EcOptions()
+            return new EcOptions()
             {
-                OcspMustStaple = args?.OcspMustStaple ?? null,
-                ReusePrivateKey = args?.ReusePrivateKey ?? null
-            });
+                OcspMustStaple = await OcspMustStaple.GetValue(),
+                ReusePrivateKey = await ReusePrivateKey.GetValue()
+            };
         }
     }
 }

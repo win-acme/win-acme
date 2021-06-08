@@ -11,6 +11,7 @@ namespace PKISharp.WACS.Configuration
         private readonly ILogService _log;
         private readonly string[] _args;
         private readonly IEnumerable<IArgumentsProvider> _providers;
+        private readonly IEnumerable<CommandLineAttribute> _arguments;
 
         public T? GetArguments<T>() where T : class, new()
         {
@@ -29,19 +30,19 @@ namespace PKISharp.WACS.Configuration
             _log = log;
             _args = args;
             _providers = plugins.ArgumentsProviders();
+            _arguments = _providers.SelectMany(x => x.Configuration).ToList();
         }
 
         internal bool Validate()
         {
             // Test if the arguments can be resolved by any of the known providers
-            var superset = _providers.SelectMany(x => x.Configuration);
-            var result = _providers.First().GetParseResult(_args);
-            foreach (var add in result.AdditionalOptionsFound)
+            var extraOptions = _providers.First().GetExtraArguments(_args);
+            foreach (var extraOption in extraOptions)
             {
-                var super = superset.FirstOrDefault(x => string.Equals(x.LongName, add.Key, StringComparison.InvariantCultureIgnoreCase));
+                var super = _arguments.FirstOrDefault(x => string.Equals(x.Name, extraOption, StringComparison.InvariantCultureIgnoreCase));
                 if (super == null)
                 {
-                    _log.Error("Unknown argument --{0}", add.Key);
+                    _log.Error("Unknown argument --{0}, use --help to get a list of possible arguments", extraOption);
                     return false;
                 }
             }
@@ -97,6 +98,8 @@ namespace PKISharp.WACS.Configuration
             return false;
         }
 
+        internal IEnumerable<string> SecretArguments => _arguments.Where(x => x.Secret).Select(x => x.ArgumentName);
+
         /// <summary>
         /// Show current command line
         /// </summary>
@@ -106,24 +109,23 @@ namespace PKISharp.WACS.Configuration
             {
                 var censoredArgs = new List<string>();
                 var censor = false;
-                var censorList = new List<string> { "key", "password", "secret", "token" };
                 for (var i = 0; i < _args.Length; i++)
                 {
                     if (!censor)
                     {
                         censoredArgs.Add(_args[i]);
-                        censor = censorList.Any(c => _args[i].ToLower().StartsWith("--") && _args[i].ToLower().Contains(c));
+                        censor = SecretArguments.Any(c => _args[i].ToLower() == $"--{c}");
                     }
                     else
                     {
-                        censoredArgs.Add(new string('*', _args[i].Length));
+                        censoredArgs.Add("********");
                         censor = false;
                     }
                 }
                 var argsFormat = censoredArgs.Any() ? $"Arguments: {string.Join(" ", censoredArgs)}" : "No command line arguments provided";
                 _log.Verbose(LogType.Screen | LogType.Event, argsFormat);
                 _log.Information(LogType.Disk, argsFormat);
-            } 
+            }
             catch (Exception ex)
             {
                 _log.Warning("Error censoring command line: {ex}", ex.Message);
@@ -162,19 +164,19 @@ namespace PKISharp.WACS.Configuration
                         }
                     }
                     Console.WriteLine("```");
-                    foreach (var x in provider.Configuration)
+                    foreach (var x in provider.Configuration.Where(x => !x.Obsolete))
                     {
                         Console.ForegroundColor = ConsoleColor.White;
-                        Console.Write($"   --{x.LongName}");
+                        Console.Write($"   --{x.ArgumentName}");
                         Console.WriteLine();
                         Console.ResetColor();
                         var step = 60;
                         var pos = 0;
-                        var words = x.Description.Split(' ');
+                        var words = x.Description?.Split(' ') ?? Array.Empty<string>();
                         while (pos < words.Length)
                         {
                             var line = "";
-                            while (pos < words.Length && line.Length + words[pos].Length + 1 < step)
+                            while (line == "" || (pos < words.Length && line.Length + words[pos].Length + 1 < step))
                             {
                                 line += " " + words[pos++];
                             }

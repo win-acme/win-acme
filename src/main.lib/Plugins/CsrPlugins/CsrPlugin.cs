@@ -4,6 +4,7 @@ using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Operators;
 using Org.BouncyCastle.Pkcs;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
@@ -11,7 +12,6 @@ using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
@@ -45,7 +45,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
 
         public virtual Task<X509Certificate2> PostProcess(X509Certificate2 original) => Task.FromResult(original);
 
-        async Task<Pkcs10CertificationRequest> ICsrPlugin.GenerateCsr(string cachePath, string commonName, List<string> identifiers)
+        async Task<Pkcs10CertificationRequest> ICsrPlugin.GenerateCsr(string cachePath, Identifier commonName, List<Identifier> identifiers)
         {
             var extensions = new Dictionary<DerObjectIdentifier, X509Extension>();
 
@@ -55,7 +55,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             var keys = await GetKeys();
 
             ProcessMustStaple(extensions);
-            ProcessSan(identifiers, extensions);
+            CsrPlugin<TPlugin, TOptions>.ProcessSan(identifiers, extensions);
 
             var csr = new Pkcs10CertificationRequest(
                 new Asn1SignatureFactory(GetSignatureAlgorithm(), keys.Private),
@@ -165,11 +165,18 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         /// </summary>
         /// <param name="identifiers"></param>
         /// <param name="extensions"></param>
-        private void ProcessSan(List<string> identifiers, Dictionary<DerObjectIdentifier, X509Extension> extensions)
+        private static void ProcessSan(List<Identifier> identifiers, Dictionary<DerObjectIdentifier, X509Extension> extensions)
         {
             // SAN
             var names = new GeneralNames(identifiers.
-                Select(n => new GeneralName(GeneralName.DnsName, n)).
+                Select(n => new GeneralName(
+                    n.Type switch
+                    {
+                        IdentifierType.DnsName => GeneralName.DnsName,
+                        IdentifierType.IpAddress => GeneralName.IPAddress,
+                        _ => GeneralName.OtherName
+                    }, 
+                    n.Value)).
                 ToArray());
             Asn1OctetString asn1ost = new DerOctetString(names);
             extensions.Add(X509Extensions.SubjectAlternativeName, new X509Extension(false, asn1ost));
@@ -203,13 +210,12 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         /// <param name="commonName"></param>
         /// <param name="identifiers"></param>
         /// <returns></returns>
-        private X509Name CommonName(string? commonName, List<string> identifiers)
+        private X509Name CommonName(Identifier? commonName, List<Identifier> identifiers)
         {
-            var idn = new IdnMapping();
-            if (!string.IsNullOrWhiteSpace(commonName))
+            if (commonName != null)
             {
-                commonName = idn.GetAscii(commonName);
-                if (!identifiers.Contains(commonName, StringComparer.InvariantCultureIgnoreCase))
+                commonName = commonName.Unicode(false);
+                if (!identifiers.Contains(commonName))
                 {
                     _log.Warning($"Common name {commonName} provided is invalid.");
                     commonName = null;
@@ -218,7 +224,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             var finalCommonName = commonName ?? identifiers.FirstOrDefault();
             IDictionary attrs = new Hashtable
             {
-                [X509Name.CN] = finalCommonName
+                [X509Name.CN] = finalCommonName?.Value
             };
             IList ord = new ArrayList
             {

@@ -62,11 +62,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             string? storeName;
             try
             {
-                storeName = settings.Store.CertificateStore?.DefaultStore;
-                if (string.IsNullOrWhiteSpace(storeName))
-                {
-                    storeName = settings.Store.DefaultCertificateStore;
-                }
+                storeName = settings.Store.CertificateStore.DefaultStore;
                 // Second priority: defaults
                 if (string.IsNullOrWhiteSpace(storeName))
                 {
@@ -228,14 +224,21 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
             foreach (var cert in chain)
             {
-                try
+                if (imStore.Certificates.Find(X509FindType.FindByThumbprint, cert.Thumbprint, false) == null)
                 {
-                    _log.Verbose("{sub} - {iss} ({thumb}) to store {store}", cert.Subject, cert.Issuer, cert.Thumbprint, imStore.Name);
-                    imStore.Add(cert);
+                    try
+                    {
+                        _log.Verbose("{sub} - {iss} ({thumb}) to store {store}", cert.Subject, cert.Issuer, cert.Thumbprint, imStore.Name);
+                        imStore.Add(cert);
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Warning("Error saving certificate to store {store}: {message}", imStore.Name, ex.Message);
+                    }
                 }
-                catch (Exception ex)
+                else
                 {
-                    _log.Warning("Error saving certificate to store {store}: {message}", imStore.Name, ex.Message);
+                    _log.Verbose("{sub} - {iss} ({thumb}) already exists in {store}", cert.Subject, cert.Issuer, cert.Thumbprint, imStore.Name);
                 }
             }
 

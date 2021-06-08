@@ -1,4 +1,5 @@
-﻿using System;
+﻿using PKISharp.WACS.Configuration.Arguments;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -9,13 +10,13 @@ namespace PKISharp.WACS.Services
 {
     public class InputService : IInputService
     {
-        private readonly IArgumentsService _arguments;
+        private readonly MainArguments _arguments;
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
         private const string _cancelCommand = "C";
         private bool _dirty;
 
-        public InputService(IArgumentsService arguments, ISettingsService settings, ILogService log)
+        public InputService(MainArguments arguments, ISettingsService settings, ILogService log)
         {
             _log = log;
             _arguments = arguments;
@@ -24,7 +25,7 @@ namespace PKISharp.WACS.Services
 
         private void Validate(string what)
         {
-            if (_arguments.MainArguments.Renew && !_arguments.MainArguments.Test)
+            if (_arguments.Renew && !_arguments.Test)
             {
                 throw new Exception($"User input '{what}' should not be needed in --renew mode.");
             }
@@ -84,22 +85,6 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        public async Task<string> RequestString(string[] what, bool multiline = false)
-        {
-            if (what != null)
-            {
-                CreateSpace();
-                Console.ForegroundColor = ConsoleColor.Green;
-                for (var i = 0; i < what.Length - 1; i++)
-                {
-                    Console.WriteLine($" {what[i]}");
-                }
-                Console.ResetColor();
-                return await RequestString(what[^1], multiline);
-            }
-            return "";
-        }
-
         public void Show(string? label, string? value, int level = 0)
         {
             var hasLabel = !string.IsNullOrEmpty(label);
@@ -137,30 +122,34 @@ namespace PKISharp.WACS.Services
             _dirty = true;
         }
 
-        private void WriteMultiline(int startPos, string value)
+        private static void WriteMultiline(int startPos, string value)
         {
             var step = 79 - startPos;
-            var pos = 0;
-            var words = value.Split(' ');
-            while (pos < words.Length)
+            var sentences = value.Split('\n');
+            foreach (var sentence in sentences)
             {
-                var line = "";
-                if (words[pos].Length + 1 >= step)
+                var pos = 0;
+                var words = sentence.Split(' ');
+                while (pos < words.Length)
                 {
-                    line = words[pos++];
-                }
-                else
-                {
-                    while (pos < words.Length && line.Length + words[pos].Length + 1 < step)
+                    var line = "";
+                    if (words[pos].Length + 1 >= step)
                     {
-                        line += " " + words[pos++];
+                        line = words[pos++];
                     }
+                    else
+                    {
+                        while (pos < words.Length && line.Length + words[pos].Length + 1 < step)
+                        {
+                            line += words[pos++] + " ";
+                        }
+                    }
+                    if (!Console.IsOutputRedirected)
+                    {
+                        Console.SetCursorPosition(startPos, Console.CursorTop);
+                    }
+                    Console.WriteLine($" {line.TrimEnd()}");
                 }
-                if (!Console.IsOutputRedirected)
-                {
-                    Console.SetCursorPosition(startPos, Console.CursorTop);
-                }
-                Console.WriteLine($" {line}");
             }
         }
 
@@ -434,7 +423,7 @@ namespace PKISharp.WACS.Services
             var currentIndex = 0;
             var currentPage = 0;
             CreateSpace();
-            if (listItems.Count() == 0)
+            if (!listItems.Any())
             {
                 Console.WriteLine($" [empty] ");
                 Console.WriteLine();

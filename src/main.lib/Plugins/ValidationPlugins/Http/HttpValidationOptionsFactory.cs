@@ -13,27 +13,54 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         where TPlugin : IValidationPlugin
         where TOptions : HttpValidationOptions<TPlugin>, new()
     {
-        protected readonly IArgumentsService _arguments;
+        protected readonly ArgumentsInputService _arguments;
 
-        public HttpValidationOptionsFactory(IArgumentsService arguments) => _arguments = arguments;
+        public HttpValidationOptionsFactory(ArgumentsInputService arguments) => _arguments = arguments;
+
+        private ArgumentResult<string?> GetPath(bool allowEmpty)
+        {
+            var pathArg = _arguments.
+                GetString<HttpValidationArguments>(x => x.WebRoot).
+                Validate(p => Task.FromResult(PathIsValid(p!)), $"invalid path");
+            if (!allowEmpty)
+            {
+                pathArg = pathArg.Required();
+            }
+            return pathArg;
+        }
+
+        private ArgumentResult<bool?> GetCopyWebConfig()
+        {
+            var pathArg = _arguments.
+                GetBool<HttpValidationArguments>(x => x.ManualTargetIsIIS).
+                DefaultAsNull().
+                WithDefault(false);
+            return pathArg;
+        }
 
         /// <summary>
         /// Get webroot path manually
         /// </summary>
         public async Task<HttpValidationOptions<TPlugin>> BaseAquire(Target target, IInputService input)
         {
-            var allowEmtpy = AllowEmtpy(target);
-            var path = await input.RequestString(WebrootHint(allowEmtpy));
-            while (
-                (!string.IsNullOrEmpty(path) && !PathIsValid(path)) ||
-                (string.IsNullOrEmpty(path) && !allowEmtpy))
-            {
-                path = await input.RequestString(WebrootHint(allowEmtpy));
-            }
+            var allowEmpty = AllowEmtpy(target);
             return new TOptions
             {
-                Path = path,
-                CopyWebConfig = target.IIS || await input.PromptYesNo("Copy default web.config before validation?", false)
+                Path = await GetPath(allowEmpty).Interactive(input, WebrootHint(allowEmpty)[0], string.Join('\n', WebrootHint(allowEmpty)[1..])).GetValue(),
+                CopyWebConfig = target.IIS || await GetCopyWebConfig().Interactive(input, "Copy default web.config before validation?").GetValue() == true
+            };
+        }
+
+        /// <summary>
+        /// Basic parameters shared by http validation plugins
+        /// </summary>
+        public async Task<HttpValidationOptions<TPlugin>> BaseDefault(Target target)
+        {
+            var allowEmpty = AllowEmtpy(target);
+            return new TOptions
+            {
+                Path = await GetPath(allowEmpty).GetValue(),
+                CopyWebConfig = target.IIS || await GetCopyWebConfig().GetValue() == true
             };
         }
 
@@ -50,29 +77,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// </summary>
         /// <returns></returns>
         public virtual bool PathIsValid(string path) => false;
-
-        /// <summary>
-        /// Get webroot automatically
-        /// </summary>
-        public HttpValidationOptions<TPlugin> BaseDefault(Target target)
-        {
-            string? path = null;
-            var allowEmpty = AllowEmtpy(target);
-            var args = _arguments.GetArguments<HttpValidationArguments>();
-            if (string.IsNullOrEmpty(path) && !allowEmpty)
-            {
-                path = _arguments.TryGetRequiredArgument(nameof(args.WebRoot), args?.WebRoot);
-            }
-            if (!string.IsNullOrEmpty(path) && !PathIsValid(path))
-            {
-                throw new ArgumentException($"Invalid webroot {path}: {WebrootHint(false)[0]}");
-            }
-            return new TOptions
-            {
-                Path = path,
-                CopyWebConfig = target.IIS || (args?.ManualTargetIsIIS ?? false)
-            };
-        }
 
         /// <summary>
         /// Hint to show to the user what the webroot should look like

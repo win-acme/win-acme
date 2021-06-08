@@ -28,36 +28,42 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="purpose"></param>
         /// <returns></returns>
-        public async Task<string?> GetSecret(string purpose, string? @default = null, bool? multiline = null)
+        public async Task<string?> GetSecret(string purpose, string? @default = null, string? none = null, bool required = false, bool multiline = false)
         {
             var stop = false;
             string? ret = null;
+            // While loop allows the "Find in vault" option
+            // to be cancelled so that the user can still
+            // input a new password if it's not found yet
+            // without having to restart the process.
             while (!stop && string.IsNullOrEmpty(ret))
             {
-                var options = new List<Choice<Func<Task<string?>>>>
+                var options = new List<Choice<Func<Task<string?>>>>();
+                if (!required)
                 {
-                    Choice.Create<Func<Task<string?>>>(
-                        () => { 
+                    options.Add(Choice.Create<Func<Task<string?>>>(
+                        () => {
                             stop = true;
-                            return Task.FromResult<string?>(null); 
+                            return Task.FromResult(none);
                         },
-                        description: "None"),
-                    Choice.Create<Func<Task<string?>>>(
-                        async () => {
-                            if (multiline == true)
-                            {
-                                return await _inputService.RequestString("New secret", true);
-                            } 
-                            else 
-                            {
-                                return await _inputService.ReadPassword("New secret");
-                            }
-                        },
-                        description: "Type/paste in console"),
-                     Choice.Create<Func<Task<string?>>>(
+                        description: "None"));
+                }
+                options.Add(Choice.Create<Func<Task<string?>>>(
+                    async () => {
+                        stop = true;
+                        if (multiline)
+                        {
+                            return await _inputService.RequestString(purpose, true);
+                        }
+                        else
+                        {
+                            return await _inputService.ReadPassword(purpose);
+                        }
+                    },
+                    description: "Type/paste in console"));
+                options.Add(Choice.Create<Func<Task<string?>>>(
                         () => FindSecret(),
-                        description: "Search in vault"),
-                };
+                        description: "Search in vault"));
                 if (!string.IsNullOrWhiteSpace(@default))
                 {
                     options.Add(Choice.Create<Func<Task<string?>>>(
@@ -67,17 +73,25 @@ namespace PKISharp.WACS.Services
                         },
                         description: "Default"));
                 }
-                var chosen = await _inputService.ChooseFromMenu(purpose, options);
+
+                // Handle undefined input as direct password
+                Choice<Func<Task<string?>>> processUnkown(string? unknown) => Choice.Create<Func<Task<string?>>>(() => Task.FromResult(unknown));
+
+                var chosen = await _inputService.ChooseFromMenu("Choose from the menu", options, (x) => processUnkown(x));
                 ret = await chosen.Invoke();
             }
 
-            if (stop || string.IsNullOrWhiteSpace(ret))
+            if (ret == none)
             {
-                return null;
+                return none;
+            }
+            if (ret == @default || ret == null)
+            {
+                return @default;
             }
 
             // Offer to save in list
-            if (ret != @default && !ret.StartsWith(VaultPrefix))
+            if (!ret.StartsWith(VaultPrefix))
             {
                 var save = await _inputService.PromptYesNo($"Save to vault for future reuse?", false);
                 if (save)
@@ -231,7 +245,7 @@ namespace PKISharp.WACS.Services
                 var secret = _secretService.GetSecret(key);
                 _inputService.CreateSpace();
                 _inputService.Show("Reference", key);
-                _inputService.Show("Secret", new string('*', secret?.Length ?? 0));
+                _inputService.Show("Secret", "********");
                 var choices = new List<Choice<Func<Task>>>
                 {
                     Choice.Create<Func<Task>>(() => ShowSecret(key), "Show secret", command: "S"),

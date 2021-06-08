@@ -3,7 +3,6 @@ using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
-using System;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
@@ -12,25 +11,28 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
     {
         public override int Order => 100;
         private readonly ILogService _log;
-        private readonly IArgumentsService _arguments;
+        private readonly ArgumentsInputService _arguments;
 
-        public ScriptOptionsFactory(ILogService log, IArgumentsService arguments)
+        public ScriptOptionsFactory(ILogService log, ArgumentsInputService arguments)
         {
             _log = log;
             _arguments = arguments;
         }
+        private ArgumentResult<string?> Script => _arguments.
+            GetString<ScriptArguments>(x => x.Script).
+            Validate(x => Task.FromResult(x.ValidFile(_log)), "invalid path").
+            Validate(x => Task.FromResult(x!.EndsWith(".ps1") || x!.EndsWith(".exe") || x!.EndsWith(".bat")), "invalid extension").
+            Required();
+
+        private ArgumentResult<string?> Parameters => _arguments.
+            GetString<ScriptArguments>(x => x.ScriptParameters);
 
         public override async Task<ScriptOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
-            var ret = new ScriptOptions();
-            var args = _arguments.GetArguments<ScriptArguments>();
-            inputService.Show("Full instructions", "https://www.win-acme.com/reference/plugins/installation/script");
-            do
-            {
-                ret.Script = await _arguments.TryGetArgument(args?.Script, inputService, "Enter the path to the script that you want to run after renewal");
-            }
-            while (!ret.Script.ValidFile(_log));
 
+            inputService.CreateSpace();
+            inputService.Show("Full instructions", "https://win-acme.com/reference/plugins/installation/script");
+            inputService.CreateSpace();
             inputService.Show("{CertCommonName}", "Common name (primary domain name)");
             inputService.Show("{CachePassword}", ".pfx password");
             inputService.Show("{CacheFile}", ".pfx full path");
@@ -42,26 +44,22 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             inputService.Show("{OldCertCommonName}", "Common name (primary domain name) of the previously issued certificate");
             inputService.Show("{OldCertFriendlyName}", "Friendly name of the previously issued certificate");
             inputService.Show("{OldCertThumbprint}", "Thumbprint of the previously issued certificate");
-            ret.ScriptParameters = await _arguments.TryGetArgument(
-                args?.ScriptParameters, 
-                inputService, 
-                "Enter the parameter format string for the script, e.g. \"--hostname {CertCommonName}\"");
-            return ret;
+            inputService.CreateSpace();
+
+            return new ScriptOptions
+            {
+                Script = await Script.Interactive(inputService, "File").GetValue(),
+                ScriptParameters = await Parameters.Interactive(inputService, "Parameters").GetValue()
+            };
         }
 
-        public override Task<ScriptOptions> Default(Target target)
+        public override async Task<ScriptOptions> Default(Target target)
         {
-            var args = _arguments.GetArguments<ScriptArguments>();
-            var ret = new ScriptOptions
+            return new ScriptOptions
             {
-                Script = _arguments.TryGetRequiredArgument(nameof(args.Script), args?.Script)
+                Script = await Script.GetValue(),
+                ScriptParameters = await Parameters.GetValue()
             };
-            if (!ret.Script.ValidFile(_log))
-            {
-                throw new ArgumentException(nameof(args.Script));
-            }
-            ret.ScriptParameters = args?.ScriptParameters;
-            return Task.FromResult(ret);
         }
     }
 }

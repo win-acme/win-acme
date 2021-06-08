@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Interfaces;
@@ -35,8 +36,11 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         private IISOptions? Options(string commandLine)
         {
             var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
-            var arguments = new ArgumentsService(log, optionsParser);
-            var x = new IISOptionsFactory(log, helper, arguments, userRoleService);
+            var input = new Mock.Services.InputService(new());
+            var secretService = new SecretServiceManager(new SecretService(), input, log);
+            var argsInput = new ArgumentsInputService(log, optionsParser, input, secretService);
+            var args = new MainArguments();
+            var x = new IISOptionsFactory(log, helper, args, argsInput, userRoleService);
             return x.Default().Result;
         }
 
@@ -58,11 +62,11 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                 var target = Target(result);
                 Assert.IsNotNull(target);
                 Assert.AreEqual(target.IsValid(log), true);
-                Assert.AreEqual(target.CommonName, host);
+                Assert.AreEqual(target.CommonName.Value, host);
                 Assert.AreEqual(target.Parts.Count(), 1);
                 Assert.AreEqual(target.Parts.First().SiteId, siteId);
                 Assert.AreEqual(target.Parts.First().Identifiers.Count(), 1);
-                Assert.AreEqual(target.Parts.First().Identifiers.First(), host);
+                Assert.AreEqual(target.Parts.First().Identifiers.First().Value, host);
             }
            
         }
@@ -90,11 +94,11 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                 Assert.IsNotNull(target);
                 Assert.AreEqual(target.IsValid(log), true);
                 Assert.AreEqual(target.IIS, true);
-                Assert.AreEqual(target.CommonName, uniHost);
+                Assert.AreEqual(target.CommonName.Value, uniHost);
                 Assert.AreEqual(target.Parts.Count(), 1);
                 Assert.AreEqual(target.Parts.First().SiteId, siteId);
                 Assert.AreEqual(target.Parts.First().Identifiers.Count(), 1);
-                Assert.AreEqual(target.Parts.First().Identifiers.First(), uniHost);
+                Assert.AreEqual(target.Parts.First().Identifiers.First().Value, uniHost);
             }
         }
 

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using WebDav;
 
 namespace PKISharp.WACS.Client
@@ -30,7 +31,7 @@ namespace PKISharp.WACS.Client
             _client = new WebDavClient(new WebDavClientParams()
             {
                 Proxy = _proxy.GetWebProxy(),
-                UseDefaultCredentials = _proxy.UseSystemProxy,
+                UseDefaultCredentials = _proxy.ProxyType == WindowsProxyUsePolicy.UseWinInetProxy,
                 Credentials = _credential
             });
         }

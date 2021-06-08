@@ -3,7 +3,6 @@ using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -17,26 +16,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private readonly string _path;
         private readonly string? _password;
 
-        public static string? DefaultPath(ISettingsService settings)
-        {
-            var ret = settings.Store.CentralSsl?.DefaultPath;
-            if (string.IsNullOrWhiteSpace(ret))
-            {
-                ret = settings.Store.DefaultCentralSslStore;
-            }
-            return ret;
-        }
-
-        public static string? DefaultPassword(ISettingsService settings)
-        {
-            var ret = settings.Store.CentralSsl?.DefaultPassword;
-            if (string.IsNullOrWhiteSpace(ret))
-            {
-                ret = settings.Store.DefaultCentralSslPfxPassword;
-            }
-            return ret;
-        }
-
         public CentralSsl(
             ILogService log,
             ISettingsService settings,
@@ -47,12 +26,12 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
             var passwordRaw = !string.IsNullOrWhiteSpace(options.PfxPassword?.Value) ?
                           options.PfxPassword.Value :
-                          DefaultPassword(settings);
+                          settings.Store.CentralSsl.DefaultPassword;
             _password = secretServiceManager.EvaluateSecret(passwordRaw);
 
             var path = !string.IsNullOrWhiteSpace(options.Path) ?
                 options.Path :
-                DefaultPath(settings);
+                settings.Store.CentralSsl.DefaultPath;
 
             if (path != null && path.ValidPath(log))
             {
@@ -65,7 +44,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
         }
 
-        private string PathForIdentifier(string identifier) => Path.Combine(_path, $"{identifier.Replace("*", "_")}.pfx");
+        private string PathForIdentifier(Identifier identifier) => Path.Combine(_path, $"{identifier.Value.Replace("*", "_")}.pfx");
 
         public async Task Save(CertificateInfo input)
         {

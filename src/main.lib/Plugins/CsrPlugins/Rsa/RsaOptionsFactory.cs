@@ -6,23 +6,16 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
 {
     internal class RsaOptionsFactory : CsrPluginOptionsFactory<Rsa, RsaOptions>
     {
-        private readonly IArgumentsService _arguments;
-
-        public RsaOptionsFactory(IArgumentsService arguments) => _arguments = arguments;
-
-        public string Name => "RSA";
-        public string Description => "RSA key";
-
+        public RsaOptionsFactory(ArgumentsInputService arguments) : base(arguments) { }
         public override Task<RsaOptions> Aquire(IInputService inputService, RunLevel runLevel) => Default();
 
-        public override Task<RsaOptions> Default()
+        public override async Task<RsaOptions> Default()
         {
-            var args = _arguments.GetArguments<CsrArguments>();
-            return Task.FromResult(new RsaOptions()
+            return new RsaOptions()
             {
-                OcspMustStaple = args?.OcspMustStaple ?? null,
-                ReusePrivateKey = args?.ReusePrivateKey ?? null
-            });
+                OcspMustStaple = await OcspMustStaple.GetValue(),
+                ReusePrivateKey = await ReusePrivateKey.GetValue()
+            };
         }
     }
 }

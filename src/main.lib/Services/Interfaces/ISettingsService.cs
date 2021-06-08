@@ -16,7 +16,7 @@ namespace PKISharp.WACS.Services
         SecuritySettings Security { get; }
         ScriptSettings Script { get; }
         ClientSettings Client { get; }
-        TargetSettings Target { get; }
+        SourceSettings Source { get; }
         ValidationSettings Validation { get; }
         OrderSettings Order { get; }
         CsrSettings Csr { get; }

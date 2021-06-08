@@ -9,8 +9,12 @@
     <FileVersion>2.1.0.0</FileVersion>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
   <ItemGroup>
-    <PackageReference Include="Google.Apis.Dns.v1" Version="1.51.0.2269" />
+    <PackageReference Include="Google.Apis.Dns.v1" Version="1.51.0.2304" />
   </ItemGroup>
 
   <ItemGroup>

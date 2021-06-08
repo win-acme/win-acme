@@ -6,6 +6,7 @@ using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
@@ -14,27 +15,48 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
     {
         public override int Order => 5;
         private readonly IIISClient _iisClient;
-        private readonly IArgumentsService _arguments;
+        private readonly ArgumentsInputService _arguments;
 
-        public IISWebOptionsFactory(IIISClient iisClient, IArgumentsService arguments, IUserRoleService userRoleService)
+        public IISWebOptionsFactory(IIISClient iisClient, ArgumentsInputService arguments, IUserRoleService userRoleService)
         {
             _iisClient = iisClient;
             _arguments = arguments;
             Disabled = IISWeb.Disabled(userRoleService, iisClient);
         }
 
-        public override bool CanInstall(IEnumerable<Type> storeTypes) => storeTypes.Contains(typeof(CertificateStore)) || storeTypes.Contains(typeof(CentralSsl));
+        public override bool CanInstall(IEnumerable<Type> storeTypes) => 
+            storeTypes.Contains(typeof(CertificateStore)) || 
+            storeTypes.Contains(typeof(CentralSsl));
+
+        private ArgumentResult<int?> NewBindingPort => _arguments.
+            GetInt<IISWebArguments>(x => x.SSLPort).
+            WithDefault(IISClient.DefaultBindingPort).
+            DefaultAsNull().
+            Validate(x => Task.FromResult(x >= 1), "invalid port").
+            Validate(x => Task.FromResult(x <= 65535), "invalid port");
+
+        private ArgumentResult<string?> NewBindingIp => _arguments.
+            GetString<IISWebArguments>(x => x.SSLIPAddress).
+            WithDefault(IISClient.DefaultBindingIp).
+            DefaultAsNull().
+            Validate(x => Task.FromResult(x == "*" || IPAddress.Parse(x!) != null), "invalid address");
+
+        private ArgumentResult<long?> InstallationSite => _arguments.
+            GetLong<IISWebArguments>(x => x.InstallationSiteId).
+            Validate(x => Task.FromResult(_iisClient.GetWebSite(x!.Value) != null), "invalid site");
 
         public override async Task<IISWebOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
-            var args = _arguments.GetArguments<IISWebArguments>();
-            var ret = new IISWebOptions(args);
+            var ret = new IISWebOptions()
+            {
+                NewBindingPort = await NewBindingPort.GetValue(),
+                NewBindingIp = await NewBindingIp.GetValue()
+            };
             var ask = true;
             if (target.IIS)
             {
-                ask = runLevel.HasFlag(RunLevel.Advanced) ? 
-                    await inputService.PromptYesNo("Use different site for installation?", false) : 
-                    false;
+                ask = runLevel.HasFlag(RunLevel.Advanced) && 
+                    await inputService.PromptYesNo("Use different site for installation?", false);
             }
             if (ask)
             {
@@ -46,21 +68,15 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             return ret;
         }
 
-        public override Task<IISWebOptions> Default(Target target)
+        public override async Task<IISWebOptions> Default(Target target)
         {
-            var args = _arguments.GetArguments<IISWebArguments>();
-            var ret = new IISWebOptions(args);
-            if (args?.InstallationSiteId != null)
+            var ret = new IISWebOptions()
             {
-                // Throws exception when not found
-                var site = _iisClient.GetWebSite(args.InstallationSiteId.Value);
-                ret.SiteId = site.Id;
-            }
-            else if (!target.IIS)
-            {
-                throw new Exception($"Missing parameter --{nameof(args.InstallationSiteId).ToLower()}");
-            }
-            return Task.FromResult(ret);
+                NewBindingPort = await NewBindingPort.GetValue(),
+                NewBindingIp = await NewBindingIp.GetValue(),
+                SiteId = await InstallationSite.Required(!target.IIS).GetValue()
+            };
+            return ret;
         }
     }
 }

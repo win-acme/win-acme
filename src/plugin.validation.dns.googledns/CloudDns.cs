@@ -1,12 +1,15 @@
 ﻿using Google.Apis.Auth.OAuth2;
 using Google.Apis.Dns.v1;
 using Google.Apis.Dns.v1.Data;
+using Google.Apis.Http;
 using Google.Apis.Services;
 using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
 using System;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Runtime.Versioning;
 using System.Threading.Tasks;
 
@@ -30,13 +33,27 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             _options = options;
             _proxy = proxy;
-            _client = CreateDnsService(log);
+            _client = CreateDnsService();
         }
 
-        private CloudDnsService CreateDnsService(ILogService log)
+        private class ProxyFactory : HttpClientFactory
+        {
+            private readonly IProxyService _proxy;
+            public ProxyFactory(IProxyService proxy) => _proxy = proxy;
+            protected override HttpMessageHandler CreateHandler(CreateHttpClientArgs args)
+            {
+                return _proxy.GetHttpMessageHandler();
+            }
+        }
+
+        private CloudDnsService CreateDnsService()
         {
             GoogleCredential credential;
-            using (var stream = new FileStream(_options.ServiceAccountKeyPath, FileMode.Open, FileAccess.Read))
+            if (!_options.ServiceAccountKeyPath.ValidFile(_log))
+            {
+                throw new Exception("Configuration error");
+            }
+            using (var stream = new FileStream(_options.ServiceAccountKeyPath!, FileMode.Open, FileAccess.Read))
             {
                 credential = GoogleCredential.FromStream(stream);
             }
@@ -44,7 +61,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var dnsService = new DnsService(new BaseClientService.Initializer()
             {
                 HttpClientInitializer = credential,
-                ApplicationName = "Win ACME",
+                HttpClientFactory = new ProxyFactory(_proxy),
+                ApplicationName = $"win-acme {VersionService.SoftwareVersion}",
             });
 
             return new CloudDnsService(dnsService);
@@ -65,7 +83,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
             try
             {
-                _ = await _client.CreateTxtRecord(_options.ProjectId, zone, recordName, token);
+                _ = await _client.CreateTxtRecord(_options.ProjectId ?? "", zone, recordName, token);
                 return true;
             }
             catch(Exception ex)
@@ -88,7 +106,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
             try
             {
-                _ = await _client.DeleteTxtRecord(_options.ProjectId, zone, recordName);
+                _ = await _client.DeleteTxtRecord(_options.ProjectId ?? "", zone, recordName);
                 _log.Debug("Deleted TXT record");
             }
             catch (Exception ex)
@@ -98,9 +116,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
         }
 
-        private async Task<ManagedZone> GetManagedZone(string projectId, string recordName)
+        private async Task<ManagedZone?> GetManagedZone(string? projectId, string recordName)
         {
-            var hostedZones = await _client.GetManagedZones(projectId);
+            var hostedZones = await _client.GetManagedZones(projectId ?? "");
             _log.Debug("Found {count} hosted zones in Google DNS", hostedZones.Count);
 
             var hostedZoneSets = hostedZones.Where(x => x.Visibility == "public").GroupBy(x => x.DnsName);

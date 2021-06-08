@@ -10,7 +10,7 @@ namespace PKISharp.WACS.Plugins.Base.Options
         public override string Name => throw new NotImplementedException();
         public override string Description => throw new NotImplementedException();
         public override Type Instance => throw new NotImplementedException();
-        public bool KeepExisting { get; set; }
+        public bool? KeepExisting { get; set; }
     }
 
     public abstract class StorePluginOptions<T> : StorePluginOptions where T : IStorePlugin
@@ -22,7 +22,7 @@ namespace PKISharp.WACS.Plugins.Base.Options
         {
             input.Show("Store");
             input.Show("Plugin", $"{Name} - ({Description})", level: 1);
-            if (KeepExisting)
+            if (KeepExisting == true)
             {
                 input.Show("KeepExisting", "Yes", level: 1);
             }
