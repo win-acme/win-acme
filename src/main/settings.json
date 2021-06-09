@@ -84,7 +84,7 @@
     },
     "CentralSsl": {
       "DefaultPath": null,
-      "DefaultPassword": null,
+      "DefaultPassword": null
     },
     "PemFiles": {
       "DefaultPath": null,
