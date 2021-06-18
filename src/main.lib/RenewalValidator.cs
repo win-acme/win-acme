@@ -163,7 +163,7 @@ namespace PKISharp.WACS
                     if (level.HasFlag(ParallelOperations.Answer))
                     {
                         // Parallel
-                        _log.Verbose("Handle {n} answers(s)", contextsWithChallenges.Count());
+                        _log.Verbose("Handle {n} answers(s)", contextsWithChallenges.Count);
                         var answerTasks = contextsWithChallenges.Select(vc => AnswerChallenge(vc));
                         await Task.WhenAll(answerTasks);
                         foreach (var ctx in contextsWithChallenges)
