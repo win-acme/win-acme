@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.TargetPlugins;
@@ -54,8 +55,9 @@ namespace PKISharp.WACS.Services
                     {
 
                         var storeConverter = new PluginOptionsConverter<StorePluginOptions>(_plugin.PluginOptionTypes<StorePluginOptions>(), _log);
+                        var text = File.ReadAllText(rj.FullName);
                         var result = JsonConvert.DeserializeObject<Renewal>(
-                            File.ReadAllText(rj.FullName),
+                            text,
                             new JsonSerializerSettings() {
                                 ObjectCreationHandling = ObjectCreationHandling.Replace,
                                 Converters = {
@@ -73,6 +75,11 @@ namespace PKISharp.WACS.Services
                         {
                             throw new Exception("result is empty");
                         }
+                        dynamic neutralResult = JObject.Parse(text);
+                        if (neutralResult == null)
+                        {
+                            throw new Exception("neutralResult is empty");
+                        }
                         if (result.Id != rj.Name.Replace(postFix, ""))
                         {
                             throw new Exception($"mismatch between filename and id {result.Id}");
@@ -83,6 +90,10 @@ namespace PKISharp.WACS.Services
                         }
                         if (result.ValidationPluginOptions == null || result.ValidationPluginOptions.GetType() == typeof(ValidationPluginOptions))
                         {
+                            if (neutralResult.ValidationPluginOptions != null)
+                            {
+                                 throw new Exception($"missing ValidationPlugin with {{{neutralResult.ValidationPluginOptions.Plugin}}}");
+                            }
                             throw new Exception("missing ValidationPluginOptions");
                         }
                         if (result.StorePluginOptions == null)
