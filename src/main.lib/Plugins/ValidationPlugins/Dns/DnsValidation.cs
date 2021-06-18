@@ -143,7 +143,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                     _log.Warning($"Error deleting record: {ex.Message}");
                 }
             }
-            await Finalize();
+            try
+            {
+                await Finalize();
+            }
+            catch (Exception ex)
+            {
+                _log.Warning($"Error finalizing cleanup: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -191,7 +198,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// Delete validation record
         /// </summary>
         /// <param name="recordName">Name of the record</param>
-        public abstract Task DeleteRecord(DnsValidationRecord record);
+        public virtual Task DeleteRecord(DnsValidationRecord record) => Task.CompletedTask;
 
         /// <summary>
         /// Create validation record
