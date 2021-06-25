@@ -153,6 +153,9 @@ PluginRelease plugin.store.keyvault @(
 	"Microsoft.Bcl.AsyncInterfaces.dll",
 	"Microsoft.Rest.ClientRuntime.dll"
 )
+PluginRelease plugin.validation.http.rest @(
+	"PKISharp.WACS.Plugins.ValidationPlugins.Rest.dll"
+)
 
 "Created artifacts:"
 dir $Out
