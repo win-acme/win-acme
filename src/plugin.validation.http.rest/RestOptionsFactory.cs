@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     /// <summary>
     /// HTTP validation through REST endpoints on the server
     /// </summary>
-    internal class RestOptionsFactory : ValidationPluginOptionsFactory<Rest, RestOptions>
+    internal sealed class RestOptionsFactory : ValidationPluginOptionsFactory<Rest, RestOptions>
     {
         private readonly ArgumentsInputService _arguments;
 

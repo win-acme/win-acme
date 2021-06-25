@@ -3,7 +3,7 @@ using PKISharp.WACS.Configuration.Arguments;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    internal class RestArguments : BaseArguments
+    internal sealed class RestArguments : BaseArguments
     {
         public override string Name => "Rest plugin";
         public override string Condition => "--validation rest";

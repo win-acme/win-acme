@@ -7,11 +7,14 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Runtime.Versioning;
 using System.Threading.Tasks;
+
+[assembly: SupportedOSPlatform("windows")]
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    internal class Rest : Validation<Http01ChallengeValidationDetails>
+    internal sealed class Rest : Validation<Http01ChallengeValidationDetails>
     {
         private readonly ConcurrentBag<(string url, string challengeValue)> _urlsChallenges = new();
         private readonly IProxyService _proxyService;

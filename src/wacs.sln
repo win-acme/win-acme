@@ -48,7 +48,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.store.keyvault", "plug
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.dns.godaddy", "plugin.validation.dns.godaddy\wacs.validation.dns.godaddy.csproj", "{6AE9AD47-511D-4DE4-9E2F-B0990B9D1C75}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wacs.validation.dns.googledns", "plugin.validation.dns.googledns\wacs.validation.dns.googledns.csproj", "{25DF1D2B-2E3E-4013-9A16-47625967A15E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.dns.googledns", "plugin.validation.dns.googledns\wacs.validation.dns.googledns.csproj", "{25DF1D2B-2E3E-4013-9A16-47625967A15E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.http.rest", "plugin.validation.http.rest\wacs.validation.http.rest.csproj", "{6C6DE6B2-F487-49F3-98FE-1E9EE0DF9615}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -153,6 +155,12 @@ Global
 		{25DF1D2B-2E3E-4013-9A16-47625967A15E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{25DF1D2B-2E3E-4013-9A16-47625967A15E}.ReleasePluggable|Any CPU.ActiveCfg = Release|Any CPU
 		{25DF1D2B-2E3E-4013-9A16-47625967A15E}.ReleasePluggable|Any CPU.Build.0 = Release|Any CPU
+		{6C6DE6B2-F487-49F3-98FE-1E9EE0DF9615}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C6DE6B2-F487-49F3-98FE-1E9EE0DF9615}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C6DE6B2-F487-49F3-98FE-1E9EE0DF9615}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C6DE6B2-F487-49F3-98FE-1E9EE0DF9615}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C6DE6B2-F487-49F3-98FE-1E9EE0DF9615}.ReleasePluggable|Any CPU.ActiveCfg = Release|Any CPU
+		{6C6DE6B2-F487-49F3-98FE-1E9EE0DF9615}.ReleasePluggable|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
