@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <AssemblyName>PKISharp.WACS.Plugins.ValidationPlugins.Rest</AssemblyName>
+    <RootNamespace>PKISharp.WACS.Plugins.ValidationPlugins</RootNamespace>
+    <Version>2.1.0.0</Version>
+    <AssemblyVersion>2.1.0.0</AssemblyVersion>
+    <FileVersion>2.1.0.0</FileVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\main.lib\wacs.lib.csproj" />
+  </ItemGroup>
+
+</Project>
