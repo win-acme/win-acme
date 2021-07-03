@@ -202,13 +202,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         }
 
         /// <summary>
-        /// Ignored because we keep track of our list of changes
-        /// </summary>
-        /// <param name="record"></param>
-        /// <returns></returns>
-        public override Task DeleteRecord(DnsValidationRecord record) => Task.CompletedTask;
-
-        /// <summary>
         /// Clear created
         /// </summary>
         /// <returns></returns>

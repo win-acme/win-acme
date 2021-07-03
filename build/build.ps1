@@ -39,6 +39,7 @@ $BuildFolder = Join-Path -Path $RepoRoot "build"
 & dotnet publish $RepoRoot\src\plugin.validation.dns.godaddy\wacs.validation.dns.godaddy.csproj -c "Release"
 & dotnet publish $RepoRoot\src\plugin.validation.dns.googledns\wacs.validation.dns.googledns.csproj -c "Release"
 & dotnet publish $RepoRoot\src\plugin.store.keyvault\wacs.store.keyvault.csproj -c "Release"
+& dotnet publish $RepoRoot\src\plugin.validation.http.rest\wacs.validation.http.rest.csproj -c "Release"
 
 if (-not $?)
 {

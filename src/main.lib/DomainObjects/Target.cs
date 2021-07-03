@@ -7,7 +7,7 @@ using System.Text;
 
 namespace PKISharp.WACS.DomainObjects
 {
-    [DebuggerDisplay("Target: {CommonName} ({Parts.Count} part(s) - IIS: {IIS})")]
+    [DebuggerDisplay("Target: {CommonName.Value} ({Parts.Count} part(s) - IIS: {IIS})")]
     public class Target
     {
         public Target(string friendlyName, string commonName, IEnumerable<TargetPart> parts) : 
@@ -58,7 +58,7 @@ namespace PKISharp.WACS.DomainObjects
         public override string ToString()
         {
             var x = new StringBuilder();
-            x.Append(CommonName);
+            x.Append(CommonName.Value);
             var alternativeNames = Parts.SelectMany(p => p.Identifiers).Distinct();
             if (alternativeNames.Count() > 1)
             {

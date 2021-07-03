@@ -114,6 +114,11 @@ namespace PKISharp.WACS
             if (tempRenewal == null)
             {
                 tempRenewal = Renewal.Create(_args.Id, _settings.ScheduledTask.RenewalDays, _passwordGenerator);
+            } 
+            else
+            {
+                tempRenewal.InstallationPluginOptions.Clear();
+                tempRenewal.StorePluginOptions.Clear();
             }
             using var configScope = _scopeBuilder.Configuration(_container, tempRenewal, runLevel);
             // Choose target plugin

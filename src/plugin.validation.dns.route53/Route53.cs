@@ -3,11 +3,11 @@ using Amazon.Route53;
 using Amazon.Route53.Model;
 using Amazon.Runtime;
 using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Runtime.Versioning;
 using System.Threading.Tasks;
 
@@ -18,7 +18,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     internal sealed class Route53 : DnsValidation<Route53>
     {
         private readonly IAmazonRoute53 _route53Client;
+        private readonly Dictionary<string, List<ResourceRecordSet>> _pendingZoneUpdates = new();
 
+        public override ParallelOperations Parallelism => ParallelOperations.Answer; 
         public Route53(
             LookupClientProvider dnsClient,
             ILogService log,
@@ -37,18 +39,41 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                     : new AmazonRoute53Client(config);
         }
 
-        private static ResourceRecordSet CreateResourceRecordSet(string name, string value)
+        private void CreateOrUpdateResourceRecordSet(string hostedZone, string name, string value)
         {
-            return new ResourceRecordSet
+            lock (_pendingZoneUpdates)
             {
-                Name = name,
-                Type = RRType.TXT,
-                ResourceRecords = new List<ResourceRecord> {
-                    new ResourceRecord("\"" + value + "\"") },
-                TTL = 1L
-            };
+                if (!_pendingZoneUpdates.ContainsKey(hostedZone))
+                {
+                    _pendingZoneUpdates.Add(hostedZone, new List<ResourceRecordSet>());
+                }
+                var pendingRecordSets = _pendingZoneUpdates[hostedZone];
+                var existing = pendingRecordSets.FirstOrDefault(x => x.Name == name);
+                if (existing == null)
+                {
+                    existing = new ResourceRecordSet
+                    {
+                        Name = name,
+                        Type = RRType.TXT,
+                        ResourceRecords = new(),
+                        TTL = 1L
+                    };
+                    pendingRecordSets.Add(existing);
+                }
+                var formattedValue = $"\"{value}\"";
+                if (!existing.ResourceRecords.Any(x => x.Value == formattedValue))
+                {
+                    existing.ResourceRecords.Add(new ResourceRecord(formattedValue));
+                }
+            }
         }
 
+        /// <summary>
+        /// Only create a list of which sets we are going to create in each zone.
+        /// Changes are only submitted in the SaveChanges phase.
+        /// </summary>
+        /// <param name="record"></param>
+        /// <returns></returns>
         public override async Task<bool> CreateRecord(DnsValidationRecord record)
         {
             try
@@ -61,18 +86,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                     return false;
                 }
                 _log.Information("Creating TXT record {recordName} with value {token}", recordName, token);
-                var updateTasks = hostedZoneIds.Select(hostedZoneId =>
-                    _route53Client.ChangeResourceRecordSetsAsync(
-                                   new ChangeResourceRecordSetsRequest(
-                                       hostedZoneId,
-                                       new ChangeBatch(new List<Change> {
-                                            new Change(
-                                                ChangeAction.UPSERT,
-                                                CreateResourceRecordSet(recordName, token))
-                                        }))));
-                var results = await Task.WhenAll(updateTasks);
-                var propagationTasks = results.Select(result => WaitChangesPropagation(result.ChangeInfo));
-                await Task.WhenAll(propagationTasks);
+                foreach (var zone in hostedZoneIds)
+                {
+                    CreateOrUpdateResourceRecordSet(zone, recordName, token);
+                }
                 return true;
             }
             catch (Exception ex)
@@ -82,27 +99,51 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
         }
 
-        public override async Task DeleteRecord(DnsValidationRecord record)
+        /// <summary>
+        /// Wait for propageation
+        /// </summary>
+        /// <returns></returns>
+        public override async Task SaveChanges()
         {
-            var recordName = record.Authority.Domain;
-            var token = record.Value;
-            var hostedZoneIds = await GetHostedZoneIds(recordName);
-            if (hostedZoneIds == null)
+            var updateTasks = new List<Task<ChangeResourceRecordSetsResponse>>();
+            foreach (var zone in _pendingZoneUpdates.Keys)
             {
-                return;
+                var recordSets = _pendingZoneUpdates[zone];
+                updateTasks.Add(_route53Client.ChangeResourceRecordSetsAsync(
+                    new ChangeResourceRecordSetsRequest(
+                        zone,
+                        new ChangeBatch(recordSets.Select(x => new Change(ChangeAction.UPSERT, x)).ToList()))));
             }
-            _log.Information($"Deleting TXT record {recordName} with value {token}");
-            var deleteTasks = hostedZoneIds.Select(hostedZoneId => 
-                _route53Client.ChangeResourceRecordSetsAsync(
-                    new ChangeResourceRecordSetsRequest(hostedZoneId,
-                        new ChangeBatch(new List<Change> {
-                    new Change(
-                        ChangeAction.DELETE,
-                        CreateResourceRecordSet(recordName, token))
-                        }))));
-            _ = await Task.WhenAll(deleteTasks);
+
+            var results = await Task.WhenAll(updateTasks);
+            var pendingChanges = results.Select(result => result.ChangeInfo);
+            var propagationTasks = pendingChanges.Select(change => WaitChangesPropagation(change));
+            await Task.WhenAll(propagationTasks);
         }
 
+        /// <summary>
+        /// Delete created records, do not wait for propagation here
+        /// </summary>
+        /// <returns></returns>
+        public override async Task Finalize()
+        {
+            var deleteTasks = new List<Task<ChangeResourceRecordSetsResponse>>();
+            foreach (var zone in _pendingZoneUpdates.Keys)
+            {
+                var recordSets = _pendingZoneUpdates[zone];
+                deleteTasks.Add(_route53Client.ChangeResourceRecordSetsAsync(
+                    new ChangeResourceRecordSetsRequest(
+                        zone,
+                        new ChangeBatch(recordSets.Select(x => new Change(ChangeAction.DELETE, x)).ToList()))));
+            }
+            _ = await Task.WhenAll(deleteTasks);
+        }      
+
+        /// <summary>
+        /// Find matching hosted zones
+        /// </summary>
+        /// <param name="recordName"></param>
+        /// <returns></returns>
         private async Task<IEnumerable<string>?> GetHostedZoneIds(string recordName)
         {
             var hostedZones = new List<HostedZone>();
@@ -116,7 +157,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                     });
                 hostedZones.AddRange(response.HostedZones);
             }
-            _log.Debug("Found {count} hosted zones in AWS", hostedZones);
+            _log.Debug("Found {count} hosted zones in AWS", hostedZones.Count);
 
             hostedZones = hostedZones.Where(x => !x.Config.PrivateZone).ToList();
             var hostedZoneSets = hostedZones.GroupBy(x => x.Name);

@@ -40,7 +40,6 @@ namespace PKISharp.WACS.Plugins.Interfaces
     {
         None = 0,
         Prepare = 1,
-        Answer = 2,
-        Clean = 4
+        Answer = 2
     }
 }
