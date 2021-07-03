@@ -22,7 +22,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         private readonly string? _securityToken;
         private readonly bool _useHttps;
 
-        public override ParallelOperations Parallelism => ParallelOperations.Prepare | ParallelOperations.Answer | ParallelOperations.Clean;
+        public override ParallelOperations Parallelism => ParallelOperations.Prepare | ParallelOperations.Answer;
 
         public Rest(
             IProxyService proxyService,
