@@ -17,13 +17,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     public class Cloudflare : DnsValidation<Cloudflare>, IDisposable
     {
         private readonly CloudflareOptions _options;
-        private readonly DomainParseService _domainParser;
         private readonly SecretServiceManager _ssm;
         private readonly HttpClient _hc;
 
         public Cloudflare(
             CloudflareOptions options,
-            DomainParseService domainParser,
             IProxyService proxyService,
             LookupClientProvider dnsClient,
             SecretServiceManager ssm,
@@ -32,7 +30,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             _options = options;
             _hc = proxyService.GetHttpClient();
-            _domainParser = domainParser;
             _ssm = ssm;
         }
 
@@ -42,21 +39,25 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         private async Task<Zone> GetHostedZone(IAuthorizedSyntax context, string recordName)
         {
-            var prs = _domainParser;
-            var domainName = $"{prs.GetRegisterableDomain(recordName)}";
             var zonesResp = await context.Zones.List()
-                .WithName(domainName)
                 .ParseAsync(_hc)
                 .ConfigureAwait(false);
 
             if (!zonesResp.Success || (zonesResp.Result?.Count ?? 0) < 1)
             {
-                _log.Error("Zone {domainName} could not be found using the Cloudflare API." +
-                    " Maybe you entered a wrong API Token or domain or the API Token does" +
-                    " not allow access to this domain?", domainName);
+                _log.Error("No zones could be found using the Cloudflare API. " +
+                    "Maybe you entered a wrong API Token?");
                 throw new Exception();
             }
-            return zonesResp.Unpack().First();
+            var allZones = zonesResp.Unpack();
+            var bestZone = FindBestMatch(allZones.ToDictionary(x => x.Name), recordName);
+            if (bestZone == null)
+            {
+                _log.Error($"No zone could be found that matches with record {recordName}. " +
+                    $"Maybe the API Token does not allow access to your domain?");
+                throw new Exception();
+            }
+            return bestZone;
         }
 
         public override async Task<bool> CreateRecord(DnsValidationRecord record)
