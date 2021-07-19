@@ -414,7 +414,28 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="option"></param>
         /// <returns></returns>
-        private string Root(X509Certificate2Collection option) => new CertificateInfo(option[0]).Issuer;
+        private string Root(X509Certificate2Collection option) {
+            var cert = option[0];
+            while (true)
+            {
+                X509Certificate2? stepup = null;
+                for (var i = 0; i < option.Count; i++)
+                {
+                    if (option[i] != cert && // Prevent infinite loop on self-signed
+                        option[i].Subject == cert.Issuer)
+                    {
+                        stepup = option[i];
+                        cert = stepup;
+                        break;
+                    }
+                }
+                if (stepup == null)
+                {
+                    break;
+                }
+            }
+            return new CertificateInfo(cert).Issuer;
+        }
 
         /// <summary>
         /// Choose between different versions of the certificate
