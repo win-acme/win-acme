@@ -40,7 +40,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Godaddy
                 {
                     client.DefaultRequestHeaders.Add("Authorization", $"sso-key {_apiKey}");
                 }
-                var putData = new List<object>() { new { ttl = 3600, data = value } };
+                var putData = new List<object>() { new { ttl = 0, data = value } };
                 var serializedObject = Newtonsoft.Json.JsonConvert.SerializeObject(putData);
 
                 //Record successfully created

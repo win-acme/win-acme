@@ -36,6 +36,7 @@ namespace PKISharp.WACS.Context
             ValidationContextParameters parameters)
         {
             Identifier = parameters.Authorization.Identifier.Value;
+            Label = (parameters.Authorization.Wildcard == true ? "*." : "") + Identifier;
             TargetPart = parameters.TargetPart;
             Authorization = parameters.Authorization;
             Scope = scope;
@@ -49,6 +50,7 @@ namespace PKISharp.WACS.Context
         }
         public ILifetimeScope Scope { get; }
         public string Identifier { get; }
+        public string Label { get; }
         public string ChallengeType { get; }
         public string PluginName { get; }
         public TargetPart? TargetPart { get; }
