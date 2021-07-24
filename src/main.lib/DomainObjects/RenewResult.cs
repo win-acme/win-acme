@@ -9,7 +9,7 @@ namespace PKISharp.WACS.DomainObjects
     public class RenewResult
     {
         public DateTime Date { get; set; }
-
+        public DateTime? ExpireDate { get; set; }
         [JsonIgnore]
         public bool Abort { get; set; }
 

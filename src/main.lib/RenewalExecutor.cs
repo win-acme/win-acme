@@ -214,6 +214,12 @@ namespace PKISharp.WACS
                 }
                 else
                 {
+                    // Store the date the certificate will expire
+                    if (context.Result.ExpireDate == null ||
+                        context.Result.ExpireDate > newCertificate.Certificate.NotAfter)
+                    {
+                        context.Result.ExpireDate = newCertificate.Certificate.NotAfter;
+                    };
                     context.Result.AddThumbprint(newCertificate.Certificate.Thumbprint);
                 }
 

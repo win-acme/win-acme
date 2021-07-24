@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Plugins.Base.Options
         public abstract override string Description { get; }
         public override void Show(IInputService input)
         {
-            input.Show("CSR");
+            input.Show(null, "[CSR]");
             input.Show("Plugin", $"{Name} - ({Description})", level: 1);
             if (OcspMustStaple == true)
             {

@@ -113,7 +113,7 @@ namespace PKISharp.WACS
             _log.Information(LogType.All, "Running in mode: {runLevel}", runLevel);
             if (tempRenewal == null)
             {
-                tempRenewal = Renewal.Create(_args.Id, _settings.ScheduledTask.RenewalDays, _passwordGenerator);
+                tempRenewal = Renewal.Create(_args.Id, _settings.ScheduledTask, _passwordGenerator);
             } 
             else
             {
