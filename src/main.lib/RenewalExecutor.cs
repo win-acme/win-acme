@@ -5,6 +5,7 @@ using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Context;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Base.Factories.Null;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
@@ -25,20 +26,26 @@ namespace PKISharp.WACS
         private readonly ILifetimeScope _container;
         private readonly ILogService _log;
         private readonly IInputService _input;
+        private readonly ISettingsService _settings;
         private readonly ExceptionHandler _exceptionHandler;
         private readonly RenewalValidator _validator;
 
         public RenewalExecutor(
-            MainArguments args, IAutofacBuilder scopeBuilder,
-            ILogService log, IInputService input,
+            MainArguments args,
+            IAutofacBuilder scopeBuilder,
+            ILogService log,
+            IInputService input,
+            ISettingsService settings,
             RenewalValidator validator,
-            ExceptionHandler exceptionHandler, IContainer container)
+            ExceptionHandler exceptionHandler, 
+            IContainer container)
         {
             _validator = validator;
             _args = args;
             _scopeBuilder = scopeBuilder;
             _log = log;
             _input = input;
+            _settings = settings;
             _exceptionHandler = exceptionHandler;
             _container = container;
         }
@@ -82,7 +89,7 @@ namespace PKISharp.WACS
             // Create one or more orders based on the target
             var orderPlugin = es.Resolve<IOrderPlugin>();
             var orders = orderPlugin.Split(renewal, target);
-            if (orders == null || orders.Count() == 0)
+            if (orders == null || !orders.Any())
             {
                 return new RenewResult("Order plugin failed to create order(s)");
             }
@@ -164,20 +171,9 @@ namespace PKISharp.WACS
                     orders.Count,
                     order.FriendlyNamePart ?? "Main");
 
-                // Create the order details
-                var orderManager = execute.Resolve<OrderManager>();
-                order.Details = await orderManager.GetOrCreate(order, runLevel);
-
                 // Create the execution context
                 var context = new ExecutionContext(execute, order, runLevel, result);
-
-                // Authorize the order (validation)
-                await _validator.AuthorizeOrder(context, runLevel);
-                if (context.Result.Success)
-                {
-                    // Execute final steps (CSR, store, install)
-                    await ExecuteOrder(context);
-                }
+                await ExecuteOrder(context, runLevel);
             }
             return result;
         }
@@ -186,45 +182,89 @@ namespace PKISharp.WACS
         /// Steps to take on succesful (re)authorization
         /// </summary>
         /// <param name="partialTarget"></param>
-        private async Task ExecuteOrder(ExecutionContext context)
+        private async Task ExecuteOrder(ExecutionContext context, RunLevel runLevel)
         {
             try
             {
+                // Get the previously issued certificate in this renewal
+                // regardless of the fact that it may have another shape
+                // (e.g. different SAN names or common name etc.). This
+                // means we cannot use the cache key for it. We might
+                // also want to check the history at some point.
                 var certificateService = context.Scope.Resolve<ICertificateService>();
-                var csrPlugin = context.Target.CsrBytes == null ? 
-                    context.Scope.Resolve<ICsrPlugin>() : 
-                    null;
-                if (csrPlugin != null)
-                {
-                    var (disabled, disabledReason) = csrPlugin.Disabled;
-                    if (disabled)
-                    {
-                        context.Result.AddErrorMessage($"CSR plugin is not available. {disabledReason}");
-                        return;
-                    }
-                }
-                var oldCertificate = certificateService.
+
+                // Before we do anything, lock down the previously issued 
+                // certificate
+                var previousCertificate = certificateService.
                     CachedInfos(context.Renewal).
                     OrderByDescending(x => x.Certificate.NotBefore).
                     FirstOrDefault();
-                var newCertificate = await certificateService.RequestCertificate(csrPlugin, context.RunLevel, context.Order);
 
-                // Test if a new certificate has been generated 
+                // Get the existing certificate matching the order description
+                // this may not be the same as the previous certificate
+                var newCertificate = certificateService.CachedInfo(context.Order);
+                if (newCertificate != null && newCertificate.CacheFile != null)
+                {
+                    if (newCertificate.CacheFile.LastWriteTime > DateTime.Now.AddDays(_settings.Cache.ReuseDays * -1))
+                    {
+                        if (runLevel.HasFlag(RunLevel.IgnoreCache))
+                        {
+                            _log.Warning("Cached certificate available on disk but not used due to --{switch} switch.",
+                                nameof(MainArguments.Force).ToLower());
+                        }
+                        else
+                        {
+                            _log.Warning("Using cached certificate for {friendlyName}. To force a new request of the " +
+                                "certificate within {days} days, run with the --{switch} switch.",
+                                context.Order.FriendlyNameIntermediate,
+                                _settings.Cache.ReuseDays,
+                                nameof(MainArguments.Force).ToLower());
+                        }
+                    }
+                }
+
+                // Actually request a new certificate, not using the cache
                 if (newCertificate == null)
                 {
-                    context.Result.AddErrorMessage("No certificate generated");
-                    return;
-                }
-                else
-                {
-                    // Store the date the certificate will expire
-                    if (context.Result.ExpireDate == null ||
-                        context.Result.ExpireDate > newCertificate.Certificate.NotAfter)
+                    // Place the order
+                    var orderManager = context.Scope.Resolve<OrderManager>();
+                    context.Order.Details = await orderManager.GetOrCreate(context.Order, runLevel);
+
+                    // Run validations
+                    await _validator.AuthorizeOrder(context, runLevel);
+                    if (!context.Result.Success)
                     {
-                        context.Result.ExpireDate = newCertificate.Certificate.NotAfter;
-                    };
-                    context.Result.AddThumbprint(newCertificate.Certificate.Thumbprint);
+                        return;
+                    }
+
+                    // Generate the CSR
+                    var csrPlugin = context.Target.CsrBytes == null ? context.Scope.Resolve<ICsrPlugin>() : null;
+                    if (csrPlugin != null)
+                    {
+                        var (disabled, disabledReason) = csrPlugin.Disabled;
+                        if (disabled)
+                        {
+                            context.Result.AddErrorMessage($"CSR plugin is not available. {disabledReason}");
+                            return;
+                        }
+                    }
+
+                    // Request the certificate
+                    newCertificate = await certificateService.RequestCertificate(csrPlugin, context.RunLevel, context.Order);
+                    if (newCertificate == null)
+                    {
+                        context.Result.AddErrorMessage("No certificate generated");
+                        return;
+                    }
                 }
+  
+                // Store the date the certificate will expire
+                if (context.Result.ExpireDate == null ||
+                    context.Result.ExpireDate > newCertificate.Certificate.NotAfter)
+                {
+                    context.Result.ExpireDate = newCertificate.Certificate.NotAfter;
+                };
+                context.Result.AddThumbprint(newCertificate.Certificate.Thumbprint);
 
                 // Early escape for testing validation only
                 if (context.Renewal.New &&
@@ -235,108 +275,32 @@ namespace PKISharp.WACS
                     return;
                 }
 
-                // Run store plugin(s)
-                var storePluginOptions = new List<StorePluginOptions>();
-                var storePlugins = new List<IStorePlugin>();
-                try
+                // Load the store plugins
+                var storePluginOptions = context.Renewal.StorePluginOptions.
+                    Where(x => !(x is NullStoreOptions)).
+                    ToList();
+                var storePlugins = storePluginOptions.
+                    Select(x => context.Scope.Resolve(x.Instance, new TypedParameter(x.GetType(), x))).
+                    OfType<IStorePlugin>().
+                    Where(x => !(x is INull)).
+                    ToList();
+                if (storePluginOptions.Count != storePlugins.Count)
                 {
-                    var steps = context.Renewal.StorePluginOptions.Count();
-                    for (var i = 0; i < steps; i++)
-                    {
-                        var storeOptions = context.Renewal.StorePluginOptions[i];
-                        var storePlugin = (IStorePlugin)context.Scope.Resolve(storeOptions.Instance,
-                            new TypedParameter(storeOptions.GetType(), storeOptions));
-                        if (!(storePlugin is INull))
-                        {
-                            if (steps > 1)
-                            {
-                                _log.Information("Store step {n}/{m}: {name}...", i + 1, steps, storeOptions.Name);
-                            }
-                            else
-                            {
-                                _log.Information("Store with {name}...", storeOptions.Name);
-                            }
-                            var (disabled, disabledReason) = storePlugin.Disabled;
-                            if (disabled)
-                            {
-                                context.Result.AddErrorMessage($"Store plugin is not available. {disabledReason}");
-                                return;
-                            }
-                            await storePlugin.Save(newCertificate);
-                            storePlugins.Add(storePlugin);
-                            storePluginOptions.Add(storeOptions);
-                        }
-                    }
+                    throw new InvalidOperationException("Store plugin/option count mismatch");
                 }
-                catch (Exception ex)
+
+                if (!await HandleStoreAdd(context, newCertificate, storePluginOptions, storePlugins)) 
                 {
-                    var reason = _exceptionHandler.HandleException(ex, "Unable to store certificate");
-                    context.Result.AddErrorMessage($"Store failed: {reason}");
                     return;
                 }
-
-                // Run installation plugin(s)
-                try
+                if (!await HandleInstall(context, newCertificate, previousCertificate, storePlugins))
                 {
-                    var steps = context.Renewal.InstallationPluginOptions.Count();
-                    for (var i = 0; i < steps; i++)
-                    {
-                        var installOptions = context.Renewal.InstallationPluginOptions[i];
-                        var installPlugin = (IInstallationPlugin)context.Scope.Resolve(
-                            installOptions.Instance,
-                            new TypedParameter(installOptions.GetType(), installOptions));
-
-                        if (!(installPlugin is INull))
-                        {
-                            if (steps > 1)
-                            {
-                                _log.Information("Installation step {n}/{m}: {name}...", i + 1, steps, installOptions.Name);
-                            }
-                            else
-                            {
-                                _log.Information("Installing with {name}...", installOptions.Name);
-                            }
-                            var (disabled, disabledReason) = installPlugin.Disabled;
-                            if (disabled)
-                            {
-                                context.Result.AddErrorMessage($"Installation plugin is not available. {disabledReason}");
-                                return;
-                            }
-                            if (!await installPlugin.Install(context.Target, storePlugins, newCertificate, oldCertificate))
-                            {   
-                                // This is not truly fatal, other installation plugins might still be able to do
-                                // something useful, and also we don't want to break compatiblitiy for users depending
-                                // on scripts that return an error
-                                context.Result.AddErrorMessage($"Installation plugin {installOptions.Name} encountered an error");
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    var reason = _exceptionHandler.HandleException(ex, "Unable to install certificate");
-                    context.Result.AddErrorMessage($"Install failed: {reason}");
                     return;
                 }
-
-                // Delete the old certificate if not forbidden, found and not re-used
-                for (var i = 0; i < storePluginOptions.Count; i++)
+                if (previousCertificate != null && 
+                    newCertificate.Certificate.Thumbprint != previousCertificate.Certificate.Thumbprint)
                 {
-                    if (storePluginOptions[i].KeepExisting != true &&
-                        oldCertificate != null &&
-                        newCertificate.Certificate.Thumbprint != oldCertificate.Certificate.Thumbprint)
-                    {
-                        try
-                        {
-                            await storePlugins[i].Delete(oldCertificate);
-                        }
-                        catch (Exception ex)
-                        {
-                            _log.Error(ex, "Unable to delete previous certificate");
-                            // not a show-stopper, consider the renewal a success
-                            context.Result.AddErrorMessage($"Delete failed: {ex.Message}", false);
-                        }
-                    }
+                    await HandleStoreRemove(context, previousCertificate, storePluginOptions, storePlugins);
                 }
             }
             catch (Exception ex)
@@ -345,6 +309,142 @@ namespace PKISharp.WACS
                 context.Result.AddErrorMessage(message);
             }
         }
-    
+
+        /// <summary>
+        /// Handle store plugins
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="newCertificate"></param>
+        /// <returns></returns>
+        private async Task<bool> HandleStoreAdd(
+            ExecutionContext context, 
+            CertificateInfo newCertificate, 
+            List<StorePluginOptions> storePluginOptions, 
+            List<IStorePlugin> storePlugins)
+        {
+            // Run store plugin(s)
+            try
+            {
+                var steps = storePluginOptions.Count;
+                for (var i = 0; i < steps; i++)
+                {
+                    var storeOptions = storePluginOptions[i];
+                    var storePlugin = storePlugins[i];
+                    if (steps > 1)
+                    {
+                        _log.Information("Store step {n}/{m}: {name}...", i + 1, steps, storeOptions.Name);
+                    }
+                    else
+                    {
+                        _log.Information("Store with {name}...", storeOptions.Name);
+                    }
+                    var (disabled, disabledReason) = storePlugin.Disabled;
+                    if (disabled)
+                    {
+                        context.Result.AddErrorMessage($"Store plugin is not available. {disabledReason}");
+                        return false;
+                    } 
+                    await storePlugin.Save(newCertificate);
+                }
+            }
+            catch (Exception ex)
+            {
+                var reason = _exceptionHandler.HandleException(ex, "Unable to store certificate");
+                context.Result.AddErrorMessage($"Store failed: {reason}");
+                return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Remove previous certificate from store
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="previousCertificate"></param>
+        /// <param name="storePluginOptions"></param>
+        /// <param name="storePlugins"></param>
+        /// <returns></returns>
+        private async Task HandleStoreRemove(
+            ExecutionContext context,
+            CertificateInfo previousCertificate,
+            List<StorePluginOptions> storePluginOptions,
+            List<IStorePlugin> storePlugins)
+        {
+            for (var i = 0; i < storePluginOptions.Count; i++)
+            {
+                if (storePluginOptions[i].KeepExisting != true)
+                {
+                    try
+                    {
+                        await storePlugins[i].Delete(previousCertificate);
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Error(ex, "Unable to delete previous certificate");
+                        // not a show-stopper, consider the renewal a success
+                        context.Result.AddErrorMessage($"Delete failed: {ex.Message}", false);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Handle installation steps
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="newCertificate"></param>
+        /// <param name="previousCertificate"></param>
+        /// <returns></returns>
+        private async Task<bool> HandleInstall(
+            ExecutionContext context,
+            CertificateInfo newCertificate, 
+            CertificateInfo? previousCertificate, 
+            IEnumerable<IStorePlugin> storePlugins)
+        {
+            // Run installation plugin(s)
+            try
+            {
+                var steps = context.Renewal.InstallationPluginOptions.Count;
+                for (var i = 0; i < steps; i++)
+                {
+                    var installOptions = context.Renewal.InstallationPluginOptions[i];
+                    var installPlugin = (IInstallationPlugin)context.Scope.Resolve(
+                        installOptions.Instance,
+                        new TypedParameter(installOptions.GetType(), installOptions));
+
+                    if (!(installPlugin is INull))
+                    {
+                        if (steps > 1)
+                        {
+                            _log.Information("Installation step {n}/{m}: {name}...", i + 1, steps, installOptions.Name);
+                        }
+                        else
+                        {
+                            _log.Information("Installing with {name}...", installOptions.Name);
+                        }
+                        var (disabled, disabledReason) = installPlugin.Disabled;
+                        if (disabled)
+                        {
+                            context.Result.AddErrorMessage($"Installation plugin is not available. {disabledReason}");
+                            return false;
+                        }
+                        if (!await installPlugin.Install(context.Target, storePlugins, newCertificate, previousCertificate))
+                        {
+                            // This is not truly fatal, other installation plugins might still be able to do
+                            // something useful, and also we don't want to break compatability for users depending
+                            // on scripts that return an error
+                            context.Result.AddErrorMessage($"Installation plugin {installOptions.Name} encountered an error");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                var reason = _exceptionHandler.HandleException(ex, "Unable to install certificate");
+                context.Result.AddErrorMessage($"Install failed: {reason}");
+                return false;
+            }
+            return true;
+        }
     }
 }
