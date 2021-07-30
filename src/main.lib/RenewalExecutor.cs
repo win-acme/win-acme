@@ -203,7 +203,10 @@ namespace PKISharp.WACS
                         return;
                     }
                 }
-                var oldCertificate = certificateService.CachedInfo(context.Order);
+                var oldCertificate = certificateService.
+                    CachedInfos(context.Renewal).
+                    OrderByDescending(x => x.Certificate.NotBefore).
+                    FirstOrDefault();
                 var newCertificate = await certificateService.RequestCertificate(csrPlugin, context.RunLevel, context.Order);
 
                 // Test if a new certificate has been generated 
