@@ -92,7 +92,8 @@ namespace PKISharp.WACS.DomainObjects
             var lastSuccess = History.LastOrDefault(x => x.Success);
             if (lastSuccess != null)
             {
-                var defaultDueDate = lastSuccess.
+                var firstOccurance = History.First(x => x.ThumbprintSummary == lastSuccess.ThumbprintSummary);
+                var defaultDueDate = firstOccurance.
                     Date.
                     AddDays(Settings.RenewalDays).
                     ToLocalTime();

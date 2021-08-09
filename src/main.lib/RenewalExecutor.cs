@@ -189,8 +189,7 @@ namespace PKISharp.WACS
                 // Get the previously issued certificate in this renewal
                 // regardless of the fact that it may have another shape
                 // (e.g. different SAN names or common name etc.). This
-                // means we cannot use the cache key for it. We might
-                // also want to check the history at some point.
+                // means we cannot use the cache key for it.
                 var certificateService = context.Scope.Resolve<ICertificateService>();
 
                 // Before we do anything, lock down the previously issued 
@@ -202,60 +201,11 @@ namespace PKISharp.WACS
 
                 // Get the existing certificate matching the order description
                 // this may not be the same as the previous certificate
-                var newCertificate = certificateService.CachedInfo(context.Order);
-                if (newCertificate != null && newCertificate.CacheFile != null)
-                {
-                    if (newCertificate.CacheFile.LastWriteTime > DateTime.Now.AddDays(_settings.Cache.ReuseDays * -1))
-                    {
-                        if (runLevel.HasFlag(RunLevel.IgnoreCache))
-                        {
-                            _log.Warning("Cached certificate available on disk but not used due to --{switch} switch.",
-                                nameof(MainArguments.Force).ToLower());
-                        }
-                        else
-                        {
-                            _log.Warning("Using cached certificate for {friendlyName}. To force a new request of the " +
-                                "certificate within {days} days, run with the --{switch} switch.",
-                                context.Order.FriendlyNameIntermediate,
-                                _settings.Cache.ReuseDays,
-                                nameof(MainArguments.Force).ToLower());
-                        }
-                    }
-                }
-
-                // Actually request a new certificate, not using the cache
+                var newCertificate = GetFromCache(context, runLevel) ?? await GetFromServer(context, runLevel);
                 if (newCertificate == null)
                 {
-                    // Place the order
-                    var orderManager = context.Scope.Resolve<OrderManager>();
-                    context.Order.Details = await orderManager.GetOrCreate(context.Order, runLevel);
-
-                    // Run validations
-                    await _validator.AuthorizeOrder(context, runLevel);
-                    if (!context.Result.Success)
-                    {
-                        return;
-                    }
-
-                    // Generate the CSR
-                    var csrPlugin = context.Target.CsrBytes == null ? context.Scope.Resolve<ICsrPlugin>() : null;
-                    if (csrPlugin != null)
-                    {
-                        var (disabled, disabledReason) = csrPlugin.Disabled;
-                        if (disabled)
-                        {
-                            context.Result.AddErrorMessage($"CSR plugin is not available. {disabledReason}");
-                            return;
-                        }
-                    }
-
-                    // Request the certificate
-                    newCertificate = await certificateService.RequestCertificate(csrPlugin, context.RunLevel, context.Order);
-                    if (newCertificate == null)
-                    {
-                        context.Result.AddErrorMessage("No certificate generated");
-                        return;
-                    }
+                    context.Result.AddErrorMessage("No certificate generated");
+                    return;
                 }
   
                 // Store the date the certificate will expire
@@ -308,6 +258,71 @@ namespace PKISharp.WACS
                 var message = _exceptionHandler.HandleException(ex);
                 context.Result.AddErrorMessage(message);
             }
+        }
+
+        /// <summary>
+        /// Get a certificate from the cache
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="runLevel"></param>
+        /// <returns></returns>
+        private CertificateInfo? GetFromCache(ExecutionContext context, RunLevel runLevel)
+        {
+            var certificateService = context.Scope.Resolve<ICertificateService>();
+            var cachedCertificate = certificateService.CachedInfo(context.Order);
+            if (cachedCertificate == null || cachedCertificate.CacheFile == null)
+            {
+                return null;
+            }
+            if (cachedCertificate.CacheFile.LastWriteTime < DateTime.Now.AddDays(_settings.Cache.ReuseDays * -1))
+            {
+                return null;
+            }
+            if (runLevel.HasFlag(RunLevel.IgnoreCache))
+            {
+                _log.Warning(
+                    "Cached certificate available on disk but not used due to --{switch} switch.",
+                    nameof(MainArguments.Force).ToLower());
+                return null;
+            }
+            _log.Warning(
+                "Using cached certificate for {friendlyName}. To force a new request of the " +
+                "certificate within {days} days, run with the --{switch} switch.",
+                context.Order.FriendlyNameIntermediate,
+                _settings.Cache.ReuseDays,
+                nameof(MainArguments.Force).ToLower());
+                return cachedCertificate;
+        }
+
+
+        private async Task<CertificateInfo?> GetFromServer(ExecutionContext context, RunLevel runLevel)
+        {
+            // Place the order
+            var orderManager = context.Scope.Resolve<OrderManager>();
+            context.Order.Details = await orderManager.GetOrCreate(context.Order, runLevel);
+
+            // Run validations
+            await _validator.AuthorizeOrder(context, runLevel);
+            if (!context.Result.Success)
+            {
+                return null;
+            }
+
+            // Generate the CSR
+            var csrPlugin = context.Target.CsrBytes == null ? context.Scope.Resolve<ICsrPlugin>() : null;
+            if (csrPlugin != null)
+            {
+                var (disabled, disabledReason) = csrPlugin.Disabled;
+                if (disabled)
+                {
+                    context.Result.AddErrorMessage($"CSR plugin is not available. {disabledReason}");
+                    return null;
+                }
+            }
+
+            // Request the certificate
+            var certificateService = context.Scope.Resolve<ICertificateService>();
+            return await certificateService.RequestCertificate(csrPlugin, context.RunLevel, context.Order);
         }
 
         /// <summary>
