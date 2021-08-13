@@ -134,22 +134,27 @@ namespace PKISharp.WACS
             var result = await ExecuteRenewal(es, orders.ToList(), runLevel);
 
             // Configure task scheduler
-            if (result.Success && !result.Abort)
+            var setupTaskScheduler = _args.SetupTaskScheduler;
+            if (!setupTaskScheduler && !_args.NoTaskScheduler)
             {
-                if ((renewal.New || renewal.Updated) && !_args.NoTaskScheduler)
-                {
-                    if (runLevel.HasFlag(RunLevel.Test) && !await _input.PromptYesNo($"[--test] Do you want to automatically renew with these settings?", true))
-                    {
-                        // Early out for test runs              
-                        result.Abort = true;
-                        return result;
-                    }
-                    else
-                    {
-                        // Make sure the Task Scheduler is configured
-                        await es.Resolve<TaskSchedulerService>().EnsureTaskScheduler(runLevel);
-                    }
+                setupTaskScheduler = result.Success && !result.Abort && (renewal.New || renewal.Updated);
+            }
+            if (setupTaskScheduler && runLevel.HasFlag(RunLevel.Test))
+            {
+                setupTaskScheduler = await _input.PromptYesNo($"[--test] Do you want to automatically renew with these settings?", true);
+                if (!setupTaskScheduler)
+                {           
+                    result.Abort = true;
                 }
+            }
+            if (setupTaskScheduler)
+            {
+                var taskLevel = runLevel;
+                if (_args.SetupTaskScheduler)
+                {
+                    taskLevel |= RunLevel.ForceRenew;
+                }
+                await es.Resolve<TaskSchedulerService>().EnsureTaskScheduler(runLevel);
             }
             return result;
         }
