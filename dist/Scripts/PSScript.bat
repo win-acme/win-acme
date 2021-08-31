@@ -4,4 +4,4 @@ REM Spaces are not supported in script path
 REM Also, in testing, powershell script must use positional parameters. Results may vary
 REM Ex. "./Scripts/PSScript.bat c:\scripts\test.ps1 value"
 
-powershell.exe -ExecutionPolicy RemoteSigned -File %*
+pwsh -ExecutionPolicy RemoteSigned -File %*
