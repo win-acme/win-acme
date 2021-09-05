@@ -282,6 +282,7 @@ namespace PKISharp.WACS.Configuration.Settings
     public class ScriptSettings
     {
         public int Timeout { get; set; } = 600;
+        public string? PowershellExecutablePath { get; set; }
     }
 
     public class SourceSettings
