@@ -52,6 +52,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.dns.googled
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.http.rest", "plugin.validation.http.rest\wacs.validation.http.rest.csproj", "{6C6DE6B2-F487-49F3-98FE-1E9EE0DF9615}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wacs.store.s3", "plugin.store.s3\wacs.store.s3.csproj", "{BFECC739-494C-450F-8A8A-30EA85D43117}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -161,6 +163,12 @@ Global
 		{6C6DE6B2-F487-49F3-98FE-1E9EE0DF9615}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6C6DE6B2-F487-49F3-98FE-1E9EE0DF9615}.ReleasePluggable|Any CPU.ActiveCfg = Release|Any CPU
 		{6C6DE6B2-F487-49F3-98FE-1E9EE0DF9615}.ReleasePluggable|Any CPU.Build.0 = Release|Any CPU
+		{BFECC739-494C-450F-8A8A-30EA85D43117}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BFECC739-494C-450F-8A8A-30EA85D43117}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BFECC739-494C-450F-8A8A-30EA85D43117}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BFECC739-494C-450F-8A8A-30EA85D43117}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BFECC739-494C-450F-8A8A-30EA85D43117}.ReleasePluggable|Any CPU.ActiveCfg = Release|Any CPU
+		{BFECC739-494C-450F-8A8A-30EA85D43117}.ReleasePluggable|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
