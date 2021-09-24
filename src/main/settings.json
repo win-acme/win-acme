@@ -56,7 +56,8 @@
     "EncryptConfig": true
   },
   "Script": {
-    "Timeout": 600
+    "Timeout": 600,
+    "PowershellExecutablePath": "powershell.exe"
   },
   "Source": {
     "DefaultSource": null

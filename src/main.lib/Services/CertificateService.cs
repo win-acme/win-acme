@@ -1,15 +1,12 @@
 ﻿using Newtonsoft.Json;
 using Org.BouncyCastle.Crypto;
 using PKISharp.WACS.Clients.Acme;
-using PKISharp.WACS.Configuration;
-using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
@@ -242,6 +239,7 @@ namespace PKISharp.WACS.Services
             // What are we going to get?
             var cacheKey = CacheKey(order);
             var pfxFileInfo = new FileInfo(GetPath(order.Renewal, $"-{cacheKey}{PfxPostFix}"));
+            var friendlyName = $"{order.FriendlyNameIntermediate} @ {_inputService.FormatDate(DateTime.Now)}";
 
             // Determine/check the common name
             var identifiers = order.Target.GetIdentifiers(false);
@@ -250,51 +248,6 @@ namespace PKISharp.WACS.Services
             {
                 _log.Warning($"Common name {commonName.Value} provided is invalid.");
                 commonName = identifiers.First();
-            }
-
-            // Determine the friendly name base (for the renewal)
-            var friendlyNameBase = order.Renewal.FriendlyName;
-            if (string.IsNullOrEmpty(friendlyNameBase))
-            {
-                friendlyNameBase = order.Target.FriendlyName;
-            }
-            if (string.IsNullOrEmpty(friendlyNameBase))
-            {
-                friendlyNameBase = commonName.Unicode(true).Value;
-            }
-
-            // Determine the friendly name for this specific certificate
-            var friendlyNameIntermediate = friendlyNameBase;
-            if (!string.IsNullOrEmpty(order.FriendlyNamePart))
-            {
-                friendlyNameIntermediate += $" [{order.FriendlyNamePart}]";
-            }
-            var friendlyName = $"{friendlyNameIntermediate} @ {_inputService.FormatDate(DateTime.Now)}";
-
-            // Try using cached certificate first to avoid rate limiting during
-            // (initial?) deployment troubleshooting. Real certificate requests
-            // will only be done once per day maximum unless the --force parameter 
-            // is used.
-            var cache = CachedInfo(order);
-            if (cache != null && cache.CacheFile != null)
-            {
-                if (cache.CacheFile.LastWriteTime > DateTime.Now.AddDays(_settings.Cache.ReuseDays * -1))
-                {
-                    if (runLevel.HasFlag(RunLevel.IgnoreCache))
-                    {
-                        _log.Warning("Cached certificate available on disk but not used due to --{switch} switch.", 
-                            nameof(MainArguments.Force).ToLower());
-                    }
-                    else
-                    {
-                        _log.Warning("Using cached certificate for {friendlyName}. To force a new request of the " +
-                            "certificate within {days} days, run with the --{switch} switch.",
-                            friendlyNameIntermediate,
-                            _settings.Cache.ReuseDays,
-                            nameof(MainArguments.Force).ToLower());
-                        return cache;
-                    }
-                }
             }
 
             if (order.Details.Payload.Status != AcmeClient.OrderValid)
@@ -333,7 +286,7 @@ namespace PKISharp.WACS.Services
                 }
             }
 
-            _log.Information("Requesting certificate {friendlyName}", friendlyNameIntermediate);
+            _log.Information("Requesting certificate {friendlyName}", order.FriendlyNameIntermediate);
             var certInfo = await _client.GetCertificate(order.Details);
             if (certInfo == null || certInfo.Certificate == null)
             {
@@ -403,7 +356,7 @@ namespace PKISharp.WACS.Services
             // Update LastFriendlyName so that the user sees
             // the most recently issued friendlyName in
             // the WACS GUI
-            order.Renewal.LastFriendlyName = friendlyNameBase;
+            order.Renewal.LastFriendlyName = order.FriendlyNameBase;
 
             // Recreate X509Certificate2 with correct flags for Store/Install
             return FromCache(pfxFileInfo, order.Renewal.PfxPassword?.Value);

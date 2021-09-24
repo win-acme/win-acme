@@ -21,5 +21,36 @@ namespace PKISharp.WACS.DomainObjects
             CacheKeyPart = cacheKeyPart;
             FriendlyNamePart = friendlyNamePart;
         }
+
+        public string FriendlyNameBase
+        {
+            get
+            {
+                var friendlyNameBase = Renewal.FriendlyName;
+                if (string.IsNullOrEmpty(friendlyNameBase))
+                {
+                    friendlyNameBase = Target.FriendlyName;
+                }
+                if (string.IsNullOrEmpty(friendlyNameBase))
+                {
+                    friendlyNameBase = Target.CommonName.Unicode(true).Value;
+                }
+                return friendlyNameBase;
+            }
+        }
+
+        public string FriendlyNameIntermediate
+        {
+            get
+            {
+                var friendlyNameIntermediate = FriendlyNameBase;
+                if (!string.IsNullOrEmpty(FriendlyNamePart))
+                {
+                    friendlyNameIntermediate += $" [{FriendlyNamePart}]";
+                }
+                return friendlyNameIntermediate;
+            }
+        }
+
     }
 }
