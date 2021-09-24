@@ -110,7 +110,7 @@ namespace PKISharp.WACS.Configuration.Arguments
         [CommandLine(Description = "Do not create (or offer to update) the scheduled task.")]
         public bool NoTaskScheduler { get; set; }
 
-        [CommandLine(Description = "(Obsolete) Avoid the question about specifying the task scheduler user, as such defaulting to the SYSTEM account.")]
+        [CommandLine(Obsolete = true, Description = "Avoid the question about specifying the task scheduler user, as such defaulting to the SYSTEM account.")]
         public bool UseDefaultTaskUser { get; set; }
 
         [CommandLine(Description = "Create or update the scheduled task according to the current settings.")]
