@@ -155,20 +155,20 @@ namespace PKISharp.WACS.Services
         public async System.Threading.Tasks.Task EnsureTaskScheduler(RunLevel runLevel)
         {
             var existingTask = ExistingTask;
-            var create = existingTask == null;
-            if (existingTask != null)
+            var create = false;
+            if (existingTask != null && !IsHealthy(existingTask))
             {
-                var healthy = IsHealthy(existingTask);
-                if (!healthy)
+                if (runLevel.HasFlag(RunLevel.ForceRenew)) 
                 {
-                    if (runLevel.HasFlag(RunLevel.Interactive))
-                    {
-                        create = await _input.PromptYesNo($"Do you want to replace the existing task?", false);
-                    }
-                    else
-                    {
-                        _log.Error("Proceeding with unhealthy scheduled task, automatic renewals may not work until this is addressed");
-                    }
+                    create = true;
+                }
+                else if (runLevel.HasFlag(RunLevel.Interactive))
+                {
+                    create = await _input.PromptYesNo($"Do you want to replace the existing task?", false);
+                }
+                else
+                {
+                    _log.Error("Proceeding with unhealthy scheduled task, automatic renewals may not work until this is addressed");
                 }
             }
             if (create)

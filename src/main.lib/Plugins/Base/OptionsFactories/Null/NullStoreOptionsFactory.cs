@@ -24,6 +24,10 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         int IPluginOptionsFactory.Order => int.MaxValue;
     }
 
+    /// <summary>
+    /// Do not make INull, we actually need to store these options to override
+    /// the default behaviour of CertificateStore
+    /// </summary>
     [Plugin("cfdd7caa-ba34-4e9e-b9de-2a3d64c4f4ec")]
     internal class NullStoreOptions : StorePluginOptions<NullStore>
     {

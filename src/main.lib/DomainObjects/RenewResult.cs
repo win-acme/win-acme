@@ -47,6 +47,7 @@ namespace PKISharp.WACS.DomainObjects
         }
 
         public List<string> Thumbprints { get; set; } = new List<string>();
+        public string ThumbprintSummary => string.Join("|", Thumbprints.OrderBy(x => x));
         public List<string> ErrorMessages { get; set; } = new List<string>();
 
         public RenewResult() 
