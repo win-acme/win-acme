@@ -356,18 +356,25 @@ namespace PKISharp.WACS.Clients.IIS
         private Version GetIISVersion()
         {
             // Get the W3SVC service
-            var iisService = ServiceController
-                .GetServices()
-                .FirstOrDefault(s => s.ServiceName == "W3SVC");
-            if (iisService == null)
+            try
             {
-                _log.Verbose("W3SVC service not detected");
-                return new Version(0, 0);
+                var iisService = ServiceController
+                    .GetServices()
+                    .FirstOrDefault(s => s.ServiceName == "W3SVC");
+                if (iisService == null)
+                {
+                    _log.Verbose("W3SVC service not detected");
+                    return new Version(0, 0);
+                }
+                if (iisService.Status != ServiceControllerStatus.Running)
+                {
+                    _log.Verbose("W3SVC service not running");
+                    return new Version(0, 0);
+                }
             }
-            if (iisService.Status != ServiceControllerStatus.Running)
+            catch
             {
-                _log.Verbose("W3SVC service not running");
-                return new Version(0, 0);
+                _log.Warning("Unable to scan for W3SVC service");
             }
             try
             {
