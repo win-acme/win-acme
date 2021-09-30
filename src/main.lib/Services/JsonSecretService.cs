@@ -32,8 +32,12 @@ namespace PKISharp.WACS.Services
         {
             _log = log;
             _settings = settings;
-            var fallback = Path.Join(settings.Client.ConfigurationPath, "secrets.json");
-            _file = new FileInfo(_settings.Secrets?.Json?.FilePath ?? fallback);
+            var path = _settings.Secrets?.Json?.FilePath;
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                path = Path.Join(settings.Client.ConfigurationPath, "secrets.json");
+            }
+            _file = new FileInfo(path);
             _secrets = new List<CredentialEntry>();
             if (_file.Exists)
             {
