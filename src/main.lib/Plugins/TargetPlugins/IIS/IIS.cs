@@ -27,7 +27,9 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         public async Task<Target> Generate()
         {
             // Check if we have any bindings
-            var allBindings = _helper.GetBindings();
+            var allBindings = _options.BindingType == "ftp" ? 
+                _helper.GetFtpBindings() : 
+                _helper.GetWebBindings();
             var filteredBindings = _helper.FilterBindings(allBindings, _options);
             if (filteredBindings.Count() == 0)
             {
@@ -53,7 +55,9 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var friendlyNameSuggestion = "[IIS]";
             if (_options.IncludeSiteIds != null && _options.IncludeSiteIds.Any())
             {
-                var sites = _helper.GetSites(false);
+                var sites = _options.BindingType == "ftp" ?
+                    _helper.GetFtpSites(false) :
+                    _helper.GetWebSites(false);
                 var site = default(IISHelper.IISSiteOption);
                 if (cnBinding != null)
                 {

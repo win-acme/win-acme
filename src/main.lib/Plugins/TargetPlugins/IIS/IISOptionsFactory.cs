@@ -60,7 +60,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         /// <returns></returns>
         public override async Task<IISOptions?> Aquire(IInputService input, RunLevel runLevel)
         {
-            var allSites = _iisHelper.GetSites(true).Where(x => x.Hosts.Any()).ToList();
+            var allSites = _iisHelper.GetWebSites(true).Where(x => x.Hosts.Any()).ToList();
             if (!allSites.Any())
             {
                 _log.Error($"No websites with host bindings have been configured in IIS. " +
@@ -69,7 +69,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 return null;
             }
 
-            var visibleSites = allSites.Where(x => !_args.HideHttps || x.Https == false).ToList();
+            var visibleSites = allSites.Where(x => !_args.HideHttps || x.Secure == false).ToList();
             if (!visibleSites.Any())
             {
                 _log.Error("No websites with host bindings remain after applying the --{hidehttps} filter. " +
@@ -93,8 +93,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             // Repeat the process until the user is happy with their settings
             do
             {
-                var allBindings = _iisHelper.GetBindings();
-                var visibleBindings = allBindings.Where(x => !_args.HideHttps || x.Https == false).ToList();
+                var allBindings = _iisHelper.GetWebBindings();
+                var visibleBindings = allBindings.Where(x => !_args.HideHttps || x.Secure == false).ToList();
                 var ret = await TryAquireSettings(input, allBindings, visibleBindings, allSites, visibleSites, runLevel);
                 if (ret != null)
                 {
@@ -142,7 +142,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                     item: x,
                     description: $"{x.Name} ({x.Hosts.Count()} binding{(x.Hosts.Count() == 1 ? "" : "s")})",
                     command: x.Id.ToString(),
-                    color: x.Https ? ConsoleColor.DarkGray : (ConsoleColor?)null)));
+                    color: x.Secure ? ConsoleColor.DarkGray : (ConsoleColor?)null)));
             var raw = await input.RequestString("Site identifier(s) or <Enter> to choose all");
             if (!ParseSiteOptions(raw, allSites, options))
             {
@@ -408,7 +408,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 return ConsoleColor.Green;
             }
-            else if (binding.Https)
+            else if (binding.Secure)
             {
                 return ConsoleColor.DarkGray;
             }
@@ -425,6 +425,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var pattern = await _arguments.GetString<IISArguments>(x => x.Pattern).GetValue();
             var regex = await _arguments.GetString<IISArguments>(x => x.Regex).GetValue();
             var siteId = await _arguments.GetString<IISArguments>(x => x.SiteId).GetValue();
+            options.BindingType = await _arguments.GetString<IISArguments>(x => x.BindingType).DefaultAsNull().GetValue();
 
             if (string.IsNullOrWhiteSpace(host) && 
                 string.IsNullOrWhiteSpace(pattern) &&
@@ -441,13 +442,17 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 return null;
             }
 
-            var allSites = _iisHelper.GetSites(false);
+            var allSites = options.BindingType == "ftp" ? 
+                _iisHelper.GetFtpSites(false) : 
+                _iisHelper.GetWebSites(false);
             if (!ParseSiteOptions(siteId, allSites, options))
             {
                 return null;
             }
 
-            var allBindings = _iisHelper.GetBindings();
+            var allBindings = options.BindingType == "ftp" ?
+                _iisHelper.GetFtpBindings() :
+                _iisHelper.GetWebBindings();
             if (!ParseHostOptions(host, allBindings, options, () => options.IncludeHosts, x => options.IncludeHosts = x))
             {
                 return null;

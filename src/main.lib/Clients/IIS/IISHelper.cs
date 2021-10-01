@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Clients.IIS
             }
 
             public long SiteId { get; set; }
-            public bool Https { get; set; }
+            public bool Secure { get; set; }
             public bool Wildcard => HostUnicode.StartsWith("*.");
             public string HostUnicode { get; private set; }
             public string HostPunycode { get; private set; }
@@ -49,7 +49,7 @@ namespace PKISharp.WACS.Clients.IIS
 
             public long Id { get; set; }
             public string Name { get; }
-            public bool Https { get; set; }
+            public bool Secure { get; set; }
             public List<string> Hosts { get; }
         }
 
@@ -65,31 +65,44 @@ namespace PKISharp.WACS.Clients.IIS
             _idnMapping = new IdnMapping();
             DomainParser = domainParser;
         }
-
-        internal List<IISBindingOption> GetBindings()
+        internal List<IISBindingOption> GetFtpBindings()
         {
             if (_iisClient.Version.Major == 0)
             {
                 _log.Warning("IIS not found. Skipping scan.");
                 return new List<IISBindingOption>();
             }
+            return GetBindings(_iisClient.FtpSites, "ftps");
+        }
 
+        internal List<IISBindingOption> GetWebBindings()
+        {
+            if (_iisClient.Version.Major == 0)
+            {
+                _log.Warning("IIS not found. Skipping scan.");
+                return new List<IISBindingOption>();
+            }
+            return GetBindings(_iisClient.WebSites, "https");
+        }
+
+        private List<IISBindingOption> GetBindings(IEnumerable<IIISSite> sites, string secureProtocol)
+        {
             // Get all bindings matched together with their respective sites
-            _log.Debug("Scanning IIS site bindings for hosts");
-            var siteBindings = _iisClient.WebSites.
+            _log.Debug("Scanning IIS bindings for hosts");
+            var siteBindings = sites.
                 SelectMany(site => site.Bindings, (site, binding) => new { site, binding }).
                 Where(sb => !string.IsNullOrWhiteSpace(sb.binding.Host)).
                 ToList();
 
-            static string lookupKey(IIISSite site, IIISBinding binding) => 
+            static string lookupKey(IIISSite site, IIISBinding binding) =>
                 site.Id + "#" + binding.BindingInformation.ToLower();
 
             // Option: hide http bindings when there are already https equivalents
-            var https = siteBindings
-                .Where(sb => 
-                    sb.binding.Protocol == "https" ||
-                    sb.site.Bindings.Any(other => 
-                        other.Protocol == "https" &&
+            var secure = siteBindings
+                .Where(sb =>
+                    sb.binding.Protocol == secureProtocol ||
+                    sb.site.Bindings.Any(other =>
+                        other.Protocol == secureProtocol &&
                         string.Equals(sb.binding.Host, other.Host, StringComparison.InvariantCultureIgnoreCase)))
                 .ToDictionary(sb => lookupKey(sb.site, sb.binding));
 
@@ -99,14 +112,14 @@ namespace PKISharp.WACS.Clients.IIS
                     host = sb.binding.Host.ToLower(),
                     sb.site,
                     sb.binding,
-                    https = https.ContainsKey(lookupKey(sb.site, sb.binding))
+                    secure = secure.ContainsKey(lookupKey(sb.site, sb.binding))
                 }).
                 Select(sbi => new IISBindingOption(sbi.host, _idnMapping.GetAscii(sbi.host))
                 {
                     SiteId = sbi.site.Id,
                     Port = sbi.binding.Port,
                     Protocol = sbi.binding.Protocol,
-                    Https = sbi.https
+                    Secure = sbi.secure
                 }).
                 DistinctBy(t => t.HostUnicode + "@" + t.SiteId).
                 ToList();
@@ -114,36 +127,59 @@ namespace PKISharp.WACS.Clients.IIS
             return targets;
         }
 
-        internal List<IISSiteOption> GetSites(bool logInvalidSites)
+        internal List<IISSiteOption> GetFtpSites(bool logInvalidSites)
         {
             if (_iisClient.Version.Major == 0)
             {
                 _log.Warning("IIS not found. Skipping scan.");
                 return new List<IISSiteOption>();
             }
-
             // Get all bindings matched together with their respective sites
-            _log.Debug("Scanning IIS sites");
+            _log.Debug("Scanning IIS FTP sites");
+            var sites = _iisClient.FtpSites.ToList();
+            var targets = GetSites(sites, "ftps");
+            if (!targets.Any() && logInvalidSites)
+            {
+                _log.Warning("No applicable IIS FTP sites were found.");
+            }
+            return targets;
+        }
+
+        internal List<IISSiteOption> GetWebSites(bool logInvalidSites)
+        {
+            if (_iisClient.Version.Major == 0)
+            {
+                _log.Warning("IIS not found. Skipping scan.");
+                return new List<IISSiteOption>();
+            }
+            // Get all bindings matched together with their respective sites
+            _log.Debug("Scanning IIS websites");
             var sites = _iisClient.WebSites.ToList();
-            var https = sites.Where(site =>
+            var targets = GetSites(sites, "https");
+            if (!targets.Any() && logInvalidSites)
+            {
+                _log.Warning("No applicable IIS websites were found.");
+            }
+            return targets;
+        }
+
+        private List<IISSiteOption> GetSites(IEnumerable<IIISSite> sites, string secureProtocol)
+        {
+            // Get all bindings matched together with their respective sites
+            var secure = sites.Where(site =>
                 site.Bindings.All(binding =>
-                    binding.Protocol == "https" ||
+                    binding.Protocol == secureProtocol ||
                     site.Bindings.Any(other =>
-                        other.Protocol == "https" &&
+                        other.Protocol == secureProtocol &&
                         string.Equals(other.Host, binding.Host, StringComparison.InvariantCultureIgnoreCase)))).ToList();
 
             var targets = sites.
                 Select(site => new IISSiteOption(site.Name, GetHosts(site))
                 {
                     Id = site.Id,
-                    Https = https.Contains(site)
+                    Secure = secure.Contains(site)
                 }).
                 ToList();
-
-            if (!targets.Any() && logInvalidSites)
-            {
-                _log.Warning("No applicable IIS sites were found.");
-            }
             return targets;
         }
 
@@ -187,7 +223,7 @@ namespace PKISharp.WACS.Clients.IIS
             return bindings.ToList();
         }
 
-        internal bool Matches(IISBindingOption binding, Regex regex)
+        internal static bool Matches(IISBindingOption binding, Regex regex)
         {
             return regex.IsMatch(binding.HostUnicode)
                 || regex.IsMatch(binding.HostPunycode);
