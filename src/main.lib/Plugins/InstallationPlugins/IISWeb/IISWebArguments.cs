@@ -1,8 +1,6 @@
 ﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
-using PKISharp.WACS.Services;
-using System.Net;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
