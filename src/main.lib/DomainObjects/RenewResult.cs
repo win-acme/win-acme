@@ -9,7 +9,7 @@ namespace PKISharp.WACS.DomainObjects
     public class RenewResult
     {
         public DateTime Date { get; set; }
-
+        public DateTime? ExpireDate { get; set; }
         [JsonIgnore]
         public bool Abort { get; set; }
 
@@ -47,6 +47,7 @@ namespace PKISharp.WACS.DomainObjects
         }
 
         public List<string> Thumbprints { get; set; } = new List<string>();
+        public string ThumbprintSummary => string.Join("|", Thumbprints.OrderBy(x => x));
         public List<string> ErrorMessages { get; set; } = new List<string>();
 
         public RenewResult() 

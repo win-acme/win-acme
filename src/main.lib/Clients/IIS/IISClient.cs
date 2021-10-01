@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.ServiceProcess;
 
 namespace PKISharp.WACS.Clients.IIS
 {
@@ -354,6 +355,41 @@ namespace PKISharp.WACS.Clients.IIS
         /// <returns></returns>
         private Version GetIISVersion()
         {
+            // Get the W3SVC service
+            try
+            {
+                var iisService = ServiceController
+                    .GetServices()
+                    .FirstOrDefault(s => s.ServiceName == "W3SVC");
+                if (iisService == null)
+                {
+                    _log.Verbose("W3SVC service not detected");
+                    return new Version(0, 0);
+                }
+                if (iisService.Status != ServiceControllerStatus.Running)
+                {
+                    _log.Verbose("W3SVC service not running");
+                    return new Version(0, 0);
+                }
+            }
+            catch
+            {
+                _log.Warning("Unable to scan for W3SVC service");
+            }
+            try
+            {
+                // Try to create a ServerManager object and read from it
+                using var x = new ServerManager();
+                _ = x.ApplicationDefaults;
+            }
+            catch (Exception ex)
+            {
+                // Assume no IIS if we're not able to use the server manager
+                _log.Verbose("IIS ServerManager exception: {message}", ex.Message);
+                return new Version(0, 0);
+            }
+
+            // Looks like IIS is working, now lets see if we can determine the version
             try
             {
                 using var componentsKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\InetStp", false);
@@ -366,12 +402,14 @@ namespace PKISharp.WACS.Clients.IIS
                         return new Version(majorVersion, minorVersion);
                     }
                 }
-            } 
-            catch
-            {
-                // Assume nu IIS if we're not able to open the registry key
             }
-            return new Version(0, 0);
+            catch (Exception ex)
+            {
+                _log.Verbose("Error reading IIS version fomr registry: {message}", ex.Message);
+            }
+            _log.Verbose("Unable to detect IIS version, making assumption");
+            return new Version(10, 0);
+
         }
 
         #region IDisposable

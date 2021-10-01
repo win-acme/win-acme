@@ -116,7 +116,7 @@ namespace PKISharp.WACS.Services
                         {
                             result.History = new List<RenewResult>();
                         }
-                        result.RenewalDays = _settings.ScheduledTask.RenewalDays;
+                        result.Settings = _settings.ScheduledTask;
                         list.Add(result);
                     }
                     catch (Exception ex)

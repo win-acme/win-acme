@@ -152,6 +152,20 @@ namespace PKISharp.WACS.Configuration.Settings
         /// correctly.
         /// </summary>
         public int RenewalDays { get; set; }
+
+        /// <summary>
+        /// If a certificate is valid for less time than
+        /// specified in RenewalDays it is at risk of expiring.
+        /// E.g. a certificate valid for 30 days, would be invalid
+        /// for 15 days already before it would be renewed at 
+        /// 55 days. This is of course undesirable, so this setting
+        /// defines the minimum number of valid days that the 
+        /// certificate should have left. E.g. when the setting is 7,
+        /// any certificate due to expire in less than 7 days will be
+        /// renewed, regardless of when they were created.
+        /// </summary>
+        public int? RenewalMinimumValidDays { get; set; }
+
         /// <summary>
         /// Configures random time to wait for starting 
         /// the scheduled task.
@@ -268,6 +282,7 @@ namespace PKISharp.WACS.Configuration.Settings
     public class ScriptSettings
     {
         public int Timeout { get; set; } = 600;
+        public string? PowershellExecutablePath { get; set; }
     }
 
     public class SourceSettings

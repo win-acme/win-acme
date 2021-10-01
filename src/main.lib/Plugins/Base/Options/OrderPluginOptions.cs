@@ -19,7 +19,7 @@ namespace PKISharp.WACS.Plugins.Base.Options
 
         public override void Show(IInputService input)
         {
-            input.Show("Order");
+            input.Show(null, "[Order]");
             input.Show("Plugin", $"{Name} - ({Description})", level: 1);
         }
 

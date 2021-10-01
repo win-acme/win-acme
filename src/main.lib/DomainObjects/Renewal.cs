@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+using PKISharp.WACS.Configuration.Settings;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
@@ -18,14 +19,14 @@ namespace PKISharp.WACS.DomainObjects
     [DebuggerDisplay("Renewal {Id}: {FriendlyName}")]
     public class Renewal
     {
-        internal static Renewal Create(string? id, int renewalDays, PasswordGenerator generator)
+        internal static Renewal Create(string? id, ScheduledTaskSettings settings, PasswordGenerator generator)
         {
             var ret = new Renewal
             {
                 New = true,
                 Id = string.IsNullOrEmpty(id) ? ShortGuid.NewGuid().ToString() : id,
                 PfxPassword = new ProtectedString(generator.Generate()),
-                RenewalDays = renewalDays
+                Settings = settings
             };
             return ret;
         }
@@ -54,7 +55,7 @@ namespace PKISharp.WACS.DomainObjects
         /// otherwise available to the instance
         /// </summary>
         [JsonIgnore]
-        internal int RenewalDays { get; set; }
+        internal ScheduledTaskSettings Settings { get; set; }
 
         /// <summary>
         /// Is this renewal new
@@ -88,13 +89,28 @@ namespace PKISharp.WACS.DomainObjects
 
         public DateTime? GetDueDate()
         {
-            var lastSuccess = History.LastOrDefault(x => x.Success)?.Date;
-            if (lastSuccess.HasValue)
+            var lastSuccess = History.LastOrDefault(x => x.Success);
+            if (lastSuccess != null)
             {
-                return lastSuccess.
-                    Value.
-                    AddDays(RenewalDays).
+                var firstOccurance = History.First(x => x.ThumbprintSummary == lastSuccess.ThumbprintSummary);
+                var defaultDueDate = firstOccurance.
+                    Date.
+                    AddDays(Settings.RenewalDays).
                     ToLocalTime();
+                if (lastSuccess.ExpireDate == null)
+                {
+                    return defaultDueDate;
+                }
+                var minDays = Settings.RenewalMinimumValidDays ?? 7;
+                var expireBasedDueDate = lastSuccess.
+                    ExpireDate.
+                    Value.
+                    AddDays(minDays * -1).
+                    ToLocalTime();
+
+                return expireBasedDueDate < defaultDueDate ?
+                    expireBasedDueDate : 
+                    defaultDueDate;
             }
             else
             {

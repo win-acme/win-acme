@@ -22,7 +22,7 @@ namespace PKISharp.WACS.Plugins.Base.Options
 
         public override void Show(IInputService input)
         {
-            input.Show("Validation");
+            input.Show(null, "[Validation]");
             input.Show("Plugin", $"{Name} - ({Description})", level: 1);
         }
 

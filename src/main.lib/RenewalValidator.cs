@@ -268,7 +268,7 @@ namespace PKISharp.WACS
         /// <param name="prefix"></param>
         private void TransferErrors(ValidationContext from, RenewResult to)
         {
-            from.ErrorMessages.ForEach(e => to.AddErrorMessage($"[{from.Identifier}] {e}", from.Success != true));
+            from.ErrorMessages.ForEach(e => to.AddErrorMessage($"[{from.Label}] {e}", from.Success != true));
             from.ErrorMessages.Clear();
         }
 
@@ -290,18 +290,18 @@ namespace PKISharp.WACS
                 if (context.Authorization.Status == AcmeClient.AuthorizationValid)
                 {
                     context.Success = true;
-                    _log.Information("[{identifier}] Cached authorization result: {Status}", context.Identifier, context.Authorization.Status);
+                    _log.Information("[{identifier}] Cached authorization result: {Status}", context.Label, context.Authorization.Status);
                     if (!runLevel.HasFlag(RunLevel.Test) && !runLevel.HasFlag(RunLevel.IgnoreCache))
                     {
                         return;
                     }
-                    _log.Information("[{identifier}] Handling challenge anyway because --test and/or --force is active", context.Identifier);
+                    _log.Information("[{identifier}] Handling challenge anyway because --test and/or --force is active", context.Label);
 
                 }
 
-                _log.Information("[{identifier}] Authorizing...", context.Identifier);
-                _log.Verbose("[{identifier}] Initial authorization status: {status}", context.Identifier, context.Authorization.Status);
-                _log.Verbose("[{identifier}] Challenge types available: {challenges}", context.Identifier, context.Authorization.Challenges.Select(x => x.Type ?? "[Unknown]"));
+                _log.Information("[{identifier}] Authorizing...", context.Label);
+                _log.Verbose("[{identifier}] Initial authorization status: {status}", context.Label, context.Authorization.Status);
+                _log.Verbose("[{identifier}] Challenge types available: {challenges}", context.Label, context.Authorization.Challenges.Select(x => x.Type ?? "[Unknown]"));
                 var challenge = context.Authorization.Challenges.FirstOrDefault(c => string.Equals(c.Type, context.ChallengeType, StringComparison.InvariantCultureIgnoreCase));
                 if (challenge == null)
                 {
@@ -311,7 +311,7 @@ namespace PKISharp.WACS
                             Where(x => x.Status == AcmeClient.ChallengeValid).
                             FirstOrDefault();
                         _log.Warning("[{identifier}] Expected challenge type {type} not available, already validated using {valided}.",
-                            context.Identifier,
+                            context.Label,
                             context.ChallengeType,
                             usedType?.Type ?? "[unknown]");
                         return;
@@ -319,7 +319,7 @@ namespace PKISharp.WACS
                     else
                     {
                         _log.Error("[{identifier}] Expected challenge type {type} not available.",
-                            context.Identifier,
+                            context.Label,
                             context.ChallengeType);
                         context.AddErrorMessage("Expected challenge type not available", context.Success == false);
                         return;
@@ -327,7 +327,7 @@ namespace PKISharp.WACS
                 }
                 else
                 {
-                    _log.Verbose("[{identifier}] Initial challenge status: {status}", context.Identifier, challenge.Status);
+                    _log.Verbose("[{identifier}] Initial challenge status: {status}", context.Label, challenge.Status);
                     if (challenge.Status == AcmeClient.ChallengeValid)
                     {
                         // We actually should not get here because if one of the
@@ -335,13 +335,13 @@ namespace PKISharp.WACS
                         // be valid.
                         if (!runLevel.HasFlag(RunLevel.Test) && !runLevel.HasFlag(RunLevel.IgnoreCache))
                         {
-                            _log.Information("[{identifier}] Cached challenge result: {Status}", context.Identifier, context.Authorization.Status);
+                            _log.Information("[{identifier}] Cached challenge result: {Status}", context.Label, context.Authorization.Status);
                             return;
                         }
                     }
                 }
                 _log.Information("[{identifier}] Authorizing using {challengeType} validation ({name})",
-                    context.Identifier,
+                    context.Label,
                     context.ChallengeType,
                     context.PluginName);
                 try
@@ -355,14 +355,14 @@ namespace PKISharp.WACS
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(ex, "[{identifier}] Error preparing for challenge answer", context.Identifier);
+                    _log.Error(ex, "[{identifier}] Error preparing for challenge answer", context.Label);
                     context.AddErrorMessage("Error preparing for challenge answer", context.Success == false);
                     return;
                 }
             }
             catch (Exception ex)
             {
-                _log.Error("[{identifier}] Error preparing challenge answer", context.Identifier);
+                _log.Error("[{identifier}] Error preparing challenge answer", context.Label);
                 var message = _exceptionHandler.HandleException(ex);
                 context.AddErrorMessage(message, context.Success == false);
             }
@@ -381,16 +381,16 @@ namespace PKISharp.WACS
             }
             try
             {
-                _log.Debug("[{identifier}] Submitting challenge answer", validationContext.Identifier);
+                _log.Debug("[{identifier}] Submitting challenge answer", validationContext.Label);
                 var client = validationContext.Scope.Resolve<AcmeClient>();
                 var updatedChallenge = await client.AnswerChallenge(validationContext.Challenge);
                 validationContext.Challenge = updatedChallenge;
                 if (updatedChallenge.Status != AcmeClient.ChallengeValid)
                 {
-                    _log.Error("[{identifier}] Authorization result: {Status}", validationContext.Identifier, updatedChallenge.Status);
+                    _log.Error("[{identifier}] Authorization result: {Status}", validationContext.Label, updatedChallenge.Status);
                     if (updatedChallenge.Error != null)
                     {
-                        _log.Error("[{identifier}] {Error}", validationContext.Identifier, updatedChallenge.Error.ToString());
+                        _log.Error("[{identifier}] {Error}", validationContext.Label, updatedChallenge.Error.ToString());
 
                     }
                     validationContext.AddErrorMessage("Validation failed", validationContext.Success != true);
@@ -399,13 +399,13 @@ namespace PKISharp.WACS
                 else
                 {
                     validationContext.Success = true;
-                    _log.Information("[{identifier}] Authorization result: {Status}", validationContext.Identifier, updatedChallenge.Status);
+                    _log.Information("[{identifier}] Authorization result: {Status}", validationContext.Label, updatedChallenge.Status);
                     return;
                 }
             }
             catch (Exception ex)
             {
-                _log.Error("[{identifier}] Error submitting challenge answer", validationContext.Identifier);
+                _log.Error("[{identifier}] Error submitting challenge answer", validationContext.Label);
                 var message = _exceptionHandler.HandleException(ex);
                 validationContext.AddErrorMessage(message, validationContext.Success != true);
             }

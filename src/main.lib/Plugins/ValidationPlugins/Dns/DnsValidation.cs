@@ -46,17 +46,17 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             var success = false;
             while (!success)
             {
-                _log.Debug("[{identifier}] Attempting to create DNS record under {authority}...", context.Identifier, authority.Domain);
+                _log.Debug("[{identifier}] Attempting to create DNS record under {authority}...", context.Label, authority.Domain);
                 var record = new DnsValidationRecord(context, authority, challenge.DnsRecordValue);
                 success = await CreateRecord(record);
                 if (!success)
                 {
-                    _log.Debug("[{identifier}] Failed to create record under {authority}", context.Identifier, authority.Domain);
-                    authority = authority.From ?? throw new Exception($"[{context.Identifier}] Unable to prepare for challenge answer");
+                    _log.Debug("[{identifier}] Failed to create record under {authority}", context.Label, authority.Domain);
+                    authority = authority.From ?? throw new Exception($"[{context.Label}] Unable to prepare for challenge answer");
                 } 
                 else
                 {
-                    _log.Debug("[{identifier}] Record successfully created", context.Identifier, authority.Domain);
+                    _log.Debug("[{identifier}] Record {value} successfully created", context.Label, record.Value);
                     _recordsCreated.Add(record);
                 }
             }
@@ -99,31 +99,31 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         {
             try
             {
-                _log.Debug("[{identifier}] Looking for TXT value {DnsRecordValue}...", record.Context.Identifier, record.Authority.Domain);
+                _log.Debug("[{identifier}] Looking for TXT value {DnsRecordValue}...", record.Context.Label, record.Value);
                 foreach (var client in record.Authority.Nameservers)
                 {
-                    _log.Debug("[{identifier}] Preliminary validation asking {ip}...", record.Context.Identifier, client.IpAddress);
+                    _log.Debug("[{identifier}] Preliminary validation asking {ip}...", record.Context.Label, client.IpAddress);
                     var answers = await client.GetTxtRecords(record.Authority.Domain);
                     if (!answers.Any())
                     {
-                        _log.Warning("[{identifier}] Preliminary validation failed: no TXT records found", record.Context.Identifier);
+                        _log.Warning("[{identifier}] Preliminary validation failed: no TXT records found", record.Context.Label);
                         return false;
                     }
                     if (!answers.Contains(record.Value))
                     {
-                        _log.Debug("[{identifier}] Preliminary validation found values: {answers}", record.Context.Identifier, answers);
-                        _log.Warning("[{identifier}] Preliminary validation failed: incorrect TXT record(s) found", record.Context.Identifier);
+                        _log.Debug("[{identifier}] Preliminary validation found values: {answers}", record.Context.Label, answers);
+                        _log.Warning("[{identifier}] Preliminary validation failed: incorrect TXT record(s) found", record.Context.Label);
                         return false;
                     }
-                    _log.Debug("[{identifier}] Preliminary validation from {ip} looks good", record.Context.Identifier, client.IpAddress);
+                    _log.Debug("[{identifier}] Preliminary validation from {ip} looks good", record.Context.Label, client.IpAddress);
                 }
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "[{identifier}] Preliminary validation failed", record.Context.Identifier);
+                _log.Error(ex, "[{identifier}] Preliminary validation failed", record.Context.Label);
                 return false;
             }
-            _log.Information("[{identifier}] Preliminary validation succeeded", record.Context.Identifier);
+            _log.Information("[{identifier}] Preliminary validation succeeded", record.Context.Label);
             return true;
         }
 

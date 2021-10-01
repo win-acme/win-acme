@@ -561,8 +561,26 @@ namespace PKISharp.WACS
                 _input.Show("File", $"{renewal.Id}.renewal.json");
                 _input.Show("FriendlyName", string.IsNullOrEmpty(renewal.FriendlyName) ? $"[Auto] {renewal.LastFriendlyName}" : renewal.FriendlyName);
                 _input.Show(".pfx password", renewal.PfxPassword?.Value);
-                _input.Show("Renewal due", renewal.GetDueDate()?.ToString() ?? "now");
+                var expires = renewal.History.Where(x => x.Success).FirstOrDefault()?.ExpireDate;
+                if (expires == null)
+                {
+                    _input.Show("Expires", "Unknown");
+                }
+                else
+                {
+                    _input.Show("Expires", _input.FormatDate(expires.Value));
+                }
+                var dueDate = renewal.GetDueDate();
+                if (dueDate == null)
+                {
+                    _input.Show("Renewal due", "Now");
+                } 
+                else
+                {
+                    _input.Show("Renewal due", _input.FormatDate(dueDate.Value));
+                }
                 _input.Show("Renewed", $"{renewal.History.Where(x => x.Success).Count()} times");
+                _input.CreateSpace();
                 renewal.TargetPluginOptions.Show(_input);
                 renewal.ValidationPluginOptions.Show(_input);
                 if (renewal.OrderPluginOptions != null)
@@ -581,10 +599,11 @@ namespace PKISharp.WACS
                 {
                     ipo.Show(_input);
                 }
-                var historyLimit = 10;
+                _input.CreateSpace();
+                var historyLimit = 10; 
                 if (renewal.History.Count <= historyLimit)
                 {
-                    _input.Show("History");
+                    _input.Show(null, "[History]");
                 }
                 else
                 {
