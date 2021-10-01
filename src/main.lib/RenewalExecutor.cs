@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using Newtonsoft.Json.Schema;
+using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Context;
@@ -103,7 +104,18 @@ namespace PKISharp.WACS
 
             // If at this point we haven't retured already with an error/abort
             // actually execute the renewal
+            var preScript = _settings.Execution?.DefaultPreExecutionScript;
+            var scriptClient = es.Resolve<ScriptClient>();
+            if (!string.IsNullOrWhiteSpace(preScript))
+            {
+                await scriptClient.RunScript(preScript, $"{renewal.Id}");
+            }
             var result = await ExecuteRenewal(es, orders.ToList(), runLevel);
+            var postScript = _settings.Execution?.DefaultPostExecutionScript;
+            if (!string.IsNullOrWhiteSpace(postScript))
+            {
+                await scriptClient.RunScript(postScript, $"{renewal.Id}");
+            }
 
             // Configure task scheduler
             var setupTaskScheduler = _args.SetupTaskScheduler;
