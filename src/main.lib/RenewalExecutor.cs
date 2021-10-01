@@ -95,38 +95,10 @@ namespace PKISharp.WACS
             }
             _log.Verbose("Targeted convert into {n} order(s)", orders.Count());
 
-            // Check if renewal is needed
-            if (!runLevel.HasFlag(RunLevel.ForceRenew) && !renewal.Updated)
+            // Test if this renewal should run right now
+            if (!ShouldRun(es, orders, renewal, runLevel))
             {
-                _log.Verbose("Checking {renewal}", renewal.LastFriendlyName);
-                if (!renewal.IsDue())
-                {
-                    var cs = es.Resolve<ICertificateService>();
-                    var abort = true;
-                    foreach (var order in orders)
-                    {
-                        var cache = cs.CachedInfo(order);
-                        if (cache == null && !renewal.New)
-                        {
-                            _log.Information(LogType.All, "Renewal for {renewal} running prematurely due to detected target change", renewal.LastFriendlyName);
-                            abort = false;
-                            break;
-                        }
-                    }
-                    if (abort)
-                    {
-                        _log.Information("Renewal for {renewal} is due after {date}", renewal.LastFriendlyName, renewal.GetDueDate());
-                        return new RenewResult() { Abort = true };
-                    }
-                }
-                else if (!renewal.New)
-                {
-                    _log.Information(LogType.All, "Renewing certificate for {renewal}", renewal.LastFriendlyName);
-                }
-            }
-            else if (runLevel.HasFlag(RunLevel.ForceRenew))
-            {
-                _log.Information(LogType.All, "Force renewing certificate for {renewal}", renewal.LastFriendlyName);
+                return new RenewResult() { Abort = true };
             }
 
             // If at this point we haven't retured already with an error/abort
@@ -157,6 +129,44 @@ namespace PKISharp.WACS
                 await es.Resolve<TaskSchedulerService>().EnsureTaskScheduler(runLevel);
             }
             return result;
+        }
+
+        private bool ShouldRun(ILifetimeScope target, IEnumerable<Order> orders, Renewal renewal, RunLevel runLevel)
+        {
+            // Check if renewal is needed
+            if (!runLevel.HasFlag(RunLevel.ForceRenew) && !renewal.Updated)
+            {
+                _log.Verbose("Checking {renewal}", renewal.LastFriendlyName);
+                if (!renewal.IsDue())
+                {
+                    var cs = target.Resolve<ICertificateService>();
+                    var abort = true;
+                    foreach (var order in orders)
+                    {
+                        var cache = cs.CachedInfo(order);
+                        if (cache == null && !renewal.New)
+                        {
+                            _log.Information(LogType.All, "Renewal for {renewal} running prematurely due to detected target change", renewal.LastFriendlyName);
+                            abort = false;
+                            break;
+                        }
+                    }
+                    if (abort)
+                    {
+                        _log.Information("Renewal for {renewal} is due after {date}", renewal.LastFriendlyName, renewal.GetDueDate());
+                        return false;
+                    }
+                }
+                else if (!renewal.New)
+                {
+                    _log.Information(LogType.All, "Renewing certificate for {renewal}", renewal.LastFriendlyName);
+                }
+            }
+            else if (runLevel.HasFlag(RunLevel.ForceRenew))
+            {
+                _log.Information(LogType.All, "Force renewing certificate for {renewal}", renewal.LastFriendlyName);
+            }
+            return true;
         }
 
         /// <summary>
