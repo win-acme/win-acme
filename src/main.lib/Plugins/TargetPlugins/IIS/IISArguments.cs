@@ -6,7 +6,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
     internal class IISArguments : BaseArguments
     {
         public override string Name => "IIS plugin";
-        public override string Group => "Target";
+        public override string Group => "Source";
         public override string Condition => "--source iis";
 
         public const string PatternExamples = "You may use a `*` for a range of any characters and a `?` " +
