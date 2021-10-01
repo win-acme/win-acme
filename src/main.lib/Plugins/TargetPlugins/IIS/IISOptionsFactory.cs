@@ -63,7 +63,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var allSites = _iisHelper.GetSites(true).Where(x => x.Hosts.Any()).ToList();
             if (!allSites.Any())
             {
-                _log.Error($"No sites with host bindings have been configured in IIS. " +
+                _log.Error($"No websites with host bindings have been configured in IIS. " +
                     $"Add one in the IIS Manager or choose the plugin '{ManualOptions.DescriptionText}' " +
                     $"instead.");
                 return null;
