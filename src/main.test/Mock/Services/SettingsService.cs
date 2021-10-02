@@ -9,6 +9,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         public Uri BaseUri => new("https://www.win-acme.com/");
         public UiSettings UI => new();
         public AcmeSettings Acme => new();
+        public ExecutionSettings Execution => new();
         public ProxySettings Proxy => new();
         public CacheSettings Cache => new();
         public ScheduledTaskSettings ScheduledTask => new();

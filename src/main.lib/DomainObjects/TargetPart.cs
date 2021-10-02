@@ -1,4 +1,5 @@
-﻿using System;
+﻿using PKISharp.WACS.Clients.IIS;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -22,9 +23,16 @@ namespace PKISharp.WACS.DomainObjects
         public long? SiteId { get; set; }
 
         /// <summary>
+        /// What type of site is this target part from
+        /// </summary>
+        public IISSiteType? SiteType { get; set; }
+
+        /// <summary>
         /// Short check
         /// </summary>
-        public bool IIS => SiteId != null;
+        public bool IIS => 
+            SiteType == IISSiteType.Ftp || 
+            SiteType == IISSiteType.Web;
 
         /// <summary>
         /// <summary>

@@ -30,7 +30,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         {
             var ret = new IISFtpOptions();
             var chosen = await inputService.ChooseRequired("Choose ftp site to bind the certificate to",
-                _iisClient.FtpSites,
+                _iisClient.Sites.Where(x => x.Type == IISSiteType.Ftp),
                 x => Choice.Create(x.Id, x.Name, x.Id.ToString()));
             ret.SiteId = chosen;
             return ret;
@@ -43,7 +43,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 SiteId = (long)await _arguments.
                     GetLong<IISFtpArguments>(x => x.FtpSiteId).
                     Required().
-                    Validate(x => Task.FromResult(_iisClient.GetFtpSite(x!.Value) != null), "invalid site").
+                    Validate(x => Task.FromResult(_iisClient.GetSite(x!.Value, IISSiteType.Ftp) != null), "invalid site").
                     GetValue()
             };
         }

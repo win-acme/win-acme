@@ -88,14 +88,11 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
         public Version Version { get; set; }
         public MockSite[] MockSites { get; set; }
 
-        IEnumerable<IIISSite> IIISClient.FtpSites => FtpSites;
-        IEnumerable<IIISSite> IIISClient.WebSites => WebSites;
+        IEnumerable<IIISSite> IIISClient.Sites => Sites;
+        public IEnumerable<MockSite> Sites => MockSites;
 
-        public IEnumerable<MockSite> FtpSites => new List<MockSite>();
-        public IEnumerable<MockSite> WebSites => MockSites;
-
-        public bool HasFtpSites => FtpSites.Count() > 0;
-        public bool HasWebSites => WebSites.Count() > 0;
+        public bool HasFtpSites => Sites.Where(x => x.Type == IISSiteType.Ftp).Count() > 0;
+        public bool HasWebSites => Sites.Where(x => x.Type == IISSiteType.Web).Count() > 0;
 
         public void AddOrUpdateBindings(IEnumerable<Identifier> identifiers, BindingOptions bindingOptions, byte[]? oldThumbprint)
         {
@@ -111,11 +108,9 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
                 _log.Warning("No bindings have been changed");
             }
         }
-        public MockSite GetFtpSite(long id) => FtpSites.First(x => id == x.Id);
-        public MockSite GetWebSite(long id) => WebSites.First(x => id == x.Id);
-        public void UpdateFtpSite(long FtpSiteId, CertificateInfo newCertificate, CertificateInfo? oldCertificate) { }
-        IIISSite IIISClient.GetFtpSite(long id) => GetFtpSite(id);
-        IIISSite IIISClient.GetWebSite(long id) => GetWebSite(id);
+        public MockSite GetSite(long id, IISSiteType? type = null) => Sites.First(x => id == x.Id && (type == null || x.Type == type));
+        public void UpdateFtpSite(long? FtpSiteId, CertificateInfo newCertificate, CertificateInfo? oldCertificate) { }
+        IIISSite IIISClient.GetSite(long id, IISSiteType? type = null) => GetSite(id, type);
 
         public IIISBinding AddBinding(MockSite site, BindingOptions bindingOptions) {
             var newBinding = new MockBinding(bindingOptions);
@@ -146,6 +141,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
         public string Name { get; set; } = "";
         public string Path { get; set; } = "";
         IEnumerable<MockBinding> IIISSite<MockBinding>.Bindings => Bindings;
+        public IISSiteType Type => IISSiteType.Web;
     }
 
     internal class MockBinding : IIISBinding
@@ -185,5 +181,6 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
         }
         private string? _bindingInformation = null;
         public SSLFlags SSLFlags { get; set; }
+        public bool Secure => Protocol == "https" || Protocol == "ftps";
     }
 }

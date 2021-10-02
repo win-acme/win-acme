@@ -45,7 +45,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
             var helper = new IISHelper(log, iis, domainParse);
             var timer = new Stopwatch();
             timer.Start();
-            _ = helper.GetWebSites(false);
+            _ = helper.GetSites(false);
             timer.Stop();
             Assert.IsTrue(timer.ElapsedMilliseconds < 1000);
 

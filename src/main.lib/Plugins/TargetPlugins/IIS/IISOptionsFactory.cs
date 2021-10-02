@@ -60,7 +60,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         /// <returns></returns>
         public override async Task<IISOptions?> Aquire(IInputService input, RunLevel runLevel)
         {
-            var allSites = _iisHelper.GetWebSites(true).Where(x => x.Hosts.Any()).ToList();
+            var allSites = _iisHelper.GetSites(true).Where(x => x.Hosts.Any()).ToList();
             if (!allSites.Any())
             {
                 _log.Error($"No websites with host bindings have been configured in IIS. " +
@@ -93,7 +93,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             // Repeat the process until the user is happy with their settings
             do
             {
-                var allBindings = _iisHelper.GetWebBindings();
+                var allBindings = _iisHelper.GetBindings();
                 var visibleBindings = allBindings.Where(x => !_args.HideHttps || x.Secure == false).ToList();
                 var ret = await TryAquireSettings(input, allBindings, visibleBindings, allSites, visibleSites, runLevel);
                 if (ret != null)
@@ -425,7 +425,11 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var pattern = await _arguments.GetString<IISArguments>(x => x.Pattern).GetValue();
             var regex = await _arguments.GetString<IISArguments>(x => x.Regex).GetValue();
             var siteId = await _arguments.GetString<IISArguments>(x => x.SiteId).GetValue();
-            options.BindingType = await _arguments.GetString<IISArguments>(x => x.BindingType).DefaultAsNull().GetValue();
+            var types = await _arguments.
+                GetString<IISArguments>(x => x.Type).
+                DefaultAsNull().
+                Validate(x => Task.FromResult(x.ParseCsv()?.All(x => x == IISHelper.WebTypeFilter || x == IISHelper.FtpTypeFilter) ?? false), "unsupported value").
+                GetValue();
 
             if (string.IsNullOrWhiteSpace(host) && 
                 string.IsNullOrWhiteSpace(pattern) &&
@@ -442,17 +446,18 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 return null;
             }
 
-            var allSites = options.BindingType == "ftp" ? 
-                _iisHelper.GetFtpSites(false) : 
-                _iisHelper.GetWebSites(false);
+            // Host types
+            options.IncludeTypes = types.ParseCsv();
+
+            // Site options
+            var allSites = _iisHelper.GetSites(false);
             if (!ParseSiteOptions(siteId, allSites, options))
             {
                 return null;
             }
 
-            var allBindings = options.BindingType == "ftp" ?
-                _iisHelper.GetFtpBindings() :
-                _iisHelper.GetWebBindings();
+            // Binding options
+            var allBindings = _iisHelper.GetBindings();
             if (!ParseHostOptions(host, allBindings, options, () => options.IncludeHosts, x => options.IncludeHosts = x))
             {
                 return null;

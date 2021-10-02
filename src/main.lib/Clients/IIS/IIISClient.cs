@@ -4,20 +4,25 @@ using System.Collections.Generic;
 
 namespace PKISharp.WACS.Clients.IIS
 {
+    public enum IISSiteType
+    {
+        Web,
+        Ftp,
+        Unknown
+    }
+
     public interface IIISClient
     {
         void Refresh();
-        IEnumerable<IIISSite> FtpSites { get; }
+        IEnumerable<IIISSite> Sites { get; }
         bool HasFtpSites { get; }
         bool HasWebSites { get; }
         Version Version { get; }
-        IEnumerable<IIISSite> WebSites { get; }
 
         void AddOrUpdateBindings(IEnumerable<Identifier> identifiers, BindingOptions bindingOptions, byte[]? oldThumbprint);
 
-        IIISSite GetFtpSite(long id);
-        IIISSite GetWebSite(long id);
-        void UpdateFtpSite(long siteId, CertificateInfo newCertificate, CertificateInfo? oldCertificate);
+        IIISSite GetSite(long id, IISSiteType? type = null);
+        void UpdateFtpSite(long? id, CertificateInfo newCertificate, CertificateInfo? oldCertificate);
     }
 
     public interface IIISClient<TSite, TBinding> : IIISClient
@@ -26,16 +31,15 @@ namespace PKISharp.WACS.Clients.IIS
     {
         IIISBinding AddBinding(TSite site, BindingOptions bindingOptions);
         void UpdateBinding(TSite site, TBinding binding, BindingOptions bindingOptions);
-        new IEnumerable<TSite> FtpSites { get; }
-        new IEnumerable<TSite> WebSites { get; }
-        new TSite GetFtpSite(long id);
-        new TSite GetWebSite(long id);
+        new IEnumerable<TSite> Sites { get; }
+        new TSite GetSite(long id, IISSiteType? type);
 
     }
 
     public interface IIISSite
     {
         long Id { get; }
+        IISSiteType Type { get; }
         string Name { get; }
         string Path { get; }
         IEnumerable<IIISBinding> Bindings { get; }
@@ -51,6 +55,7 @@ namespace PKISharp.WACS.Clients.IIS
     {
         string Host { get; }
         string Protocol { get; }
+        bool Secure { get; }
         byte[]? CertificateHash { get; }
         string CertificateStoreName { get; }
         string BindingInformation { get; }

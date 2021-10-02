@@ -254,7 +254,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 if (_iisClient.HasWebSites)
                 {
                     var hash = certificate.GetCertHash();
-                    if (_iisClient.WebSites.Any(site =>
+                    if (_iisClient.Sites.Any(site =>
                         site.Bindings.Any(binding => 
                         StructuralComparisons.StructuralEqualityComparer.Equals(binding.CertificateHash, hash) &&
                         Equals(binding.CertificateStoreName, _storeName))))

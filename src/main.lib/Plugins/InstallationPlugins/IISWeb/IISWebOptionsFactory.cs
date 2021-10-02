@@ -43,7 +43,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 
         private ArgumentResult<long?> InstallationSite => _arguments.
             GetLong<IISWebArguments>(x => x.InstallationSiteId).
-            Validate(x => Task.FromResult(_iisClient.GetWebSite(x!.Value) != null), "invalid site");
+            Validate(x => Task.FromResult(_iisClient.GetSite(x!.Value) != null), "invalid site");
 
         public override async Task<IISWebOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
@@ -61,7 +61,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             if (ask)
             {
                 var chosen = await inputService.ChooseRequired("Choose site to create new bindings",
-                   _iisClient.WebSites,
+                   _iisClient.Sites,
                    x => Choice.Create(x.Id, x.Name, x.Id.ToString()));
                 ret.SiteId = chosen;
             }

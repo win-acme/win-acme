@@ -11,6 +11,6 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         public int? NewBindingPort { get; set; }
 
         public override string Name => "IIS";
-        public override string Description => "Create or update https bindings in IIS";
+        public override string Description => "Create or update bindings in IIS";
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.Web.Administration;
 using PKISharp.WACS.Extensions;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace PKISharp.WACS.Clients.IIS
@@ -8,6 +9,7 @@ namespace PKISharp.WACS.Clients.IIS
     /// <summary>
     /// Standard real implementation for IIS-site. Other 
     /// </summary>
+    [DebuggerDisplay("Site {Id}")]
     internal class IISSiteWrapper : IIISSite<IISBindingWrapper>
     {
         internal Site Site { get; }
@@ -18,21 +20,44 @@ namespace PKISharp.WACS.Clients.IIS
 
         IEnumerable<IIISBinding> IIISSite.Bindings => Bindings;
         public IEnumerable<IISBindingWrapper> Bindings { get; private set; }
-
+        public IISSiteType Type { get; private set; } = IISSiteType.Unknown;
 
         public IISSiteWrapper(Site site)
         {
             Site = site;
-
             Bindings = site.Bindings.Select(x => new IISBindingWrapper(x)).ToList();
+            if (Bindings.All(b => b.Protocol == "ftp" || b.Protocol == "ftps"))
+            {
+                Type = IISSiteType.Ftp;
+            } 
+            else if (Bindings.Any(b => b.Protocol == "http" || b.Protocol == "https"))
+            {
+                Type = IISSiteType.Web;
+            }
         }
     }
 
+    [DebuggerDisplay("{BindingInformation}")]
     internal class IISBindingWrapper : IIISBinding
     {
         internal Binding Binding { get; }
 
-        public string Host => Binding.Host;
+        public string Host 
+        {
+            get
+            {
+                if (Binding.Protocol == "ftp")
+                {
+                    var split = BindingInformation.Split(":");
+                    if (split.Length == 3)
+                    {
+                        return split[2];
+                    }
+                }
+                return Binding.Host;
+            }
+        }
+
         public string Protocol => Binding.Protocol;
         public int Port => Binding.EndPoint?.Port ?? -1;
         public string? IP 
@@ -69,6 +94,7 @@ namespace PKISharp.WACS.Clients.IIS
         public string CertificateStoreName => Binding.CertificateStoreName;
         public string BindingInformation => Binding.NormalizedBindingInformation();
         public SSLFlags SSLFlags => Binding.SSLFlags();
+        public bool Secure => Protocol == "ftps" || Protocol == "https";
 
         public IISBindingWrapper(Binding binding) => Binding = binding;
     }

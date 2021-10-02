@@ -25,58 +25,95 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             _userRoleService = userRoleService;
         }
 
-        Task<bool> IInstallationPlugin.Install(Target target, IEnumerable<IStorePlugin> stores, CertificateInfo newCertificate, CertificateInfo? oldCertificate)
+        Task<bool> IInstallationPlugin.Install(
+            Target target, 
+            IEnumerable<IStorePlugin> stores,
+            CertificateInfo newCertificate,
+            CertificateInfo? oldCertificate)
         {
-            var bindingOptions = new BindingOptions().
-                WithThumbprint(newCertificate.Certificate.GetCertHash());
-
+            // Store validation
+            var centralSslForHttp = false;
             var centralSsl = stores.FirstOrDefault(x => x is CentralSsl);
             var certificateStore = stores.FirstOrDefault(x => x is CertificateStore);
-
-            if (centralSsl != null)
+            if (centralSsl == null && certificateStore == null)
             {
-                if (_iisClient.Version.Major < 8)
-                {
-                    var errorMessage = "Centralized SSL is only supported on IIS8+";
-                    _log.Error(errorMessage);
-                    throw new InvalidOperationException(errorMessage);
-                }
-                else
-                {
-                    bindingOptions = bindingOptions.WithFlags(SSLFlags.CentralSsl);
-                }
-            }
-            else if (certificateStore != null)
-            {
-                bindingOptions = bindingOptions.WithStore(newCertificate.StoreInfo[typeof(CertificateStore)].Path);
-            }
-            else
-            {
-                // Unknown/unsupported store
-                var errorMessage = "This installation plugin cannot be used in combination with the store plugin";
+                // No supported store
+                var errorMessage = "The IIS installation plugin requires the CertificateStore and/or CentralSsl store plugin";
                 _log.Error(errorMessage);
                 throw new InvalidOperationException(errorMessage);
             }
-
-            // Optionaly overrule the standard IP for new bindings 
-            if (!string.IsNullOrEmpty(_options.NewBindingIp))
+ 
+            if (centralSsl != null)
             {
-                bindingOptions = bindingOptions.WithIP(_options.NewBindingIp);
-            }
-
-            // Optionaly overrule the standard port for new bindings 
-            if (_options.NewBindingPort > 0)
-            {
-                bindingOptions = bindingOptions.WithPort(_options.NewBindingPort.Value);
+                centralSslForHttp = true;
+                var supported = true;
+                var reason = "";
+                if (_iisClient.Version.Major < 8)
+                {
+                    reason = "CentralSsl store requires IIS version 8.0 or higher";
+                    supported = false;
+                    centralSslForHttp = false;
+                }
+                if (target.Parts.Any(p => p.SiteType == IISSiteType.Ftp)) 
+                {
+                    reason = "CentralSsl store is not supported for FTP sites";
+                    supported = false;
+                }
+                if (!supported && certificateStore == null)
+                {
+                    // Only throw error if there is no fallback 
+                    // available to the CertificateStore plugin.
+                    _log.Error(reason);
+                    throw new InvalidOperationException(reason);
+                } 
             }
 
             var oldThumb = oldCertificate?.Certificate?.GetCertHash();
+            var newThumb = newCertificate.Certificate.GetCertHash();
             foreach (var part in target.Parts)
             {
-                _iisClient.AddOrUpdateBindings(
-                    part.Identifiers.OfType<DnsIdentifier>(),
-                    bindingOptions.WithSiteId(_options.SiteId ?? part.SiteId),
-                    oldThumb);
+                var siteId = _options.SiteId ?? part.SiteId;
+                switch (part.SiteType)
+                {
+                    case IISSiteType.Web:
+                        {
+                            // Fresh binding options 
+                            var bindingOptions = new BindingOptions();
+                            
+                            // Pick between CentralSsl and CertificateStore
+                            bindingOptions = centralSslForHttp
+                                ? bindingOptions.
+                                    WithFlags(SSLFlags.CentralSsl)
+                                : bindingOptions.
+                                    WithThumbprint(newThumb).
+                                    WithStore(newCertificate.StoreInfo[typeof(CertificateStore)].Path);
+
+                            // Optionaly overrule the standard IP for new bindings 
+                            if (!string.IsNullOrEmpty(_options.NewBindingIp))
+                            {
+                                bindingOptions = bindingOptions.
+                                    WithIP(_options.NewBindingIp);
+                            }
+                            // Optionaly overrule the standard port for new bindings 
+                            if (_options.NewBindingPort > 0)
+                            {
+                                bindingOptions = bindingOptions.
+                                    WithPort(_options.NewBindingPort.Value);
+                            }
+                            // Update bindings in IIS
+                            _iisClient.AddOrUpdateBindings(
+                                part.Identifiers.OfType<DnsIdentifier>(),
+                                bindingOptions.WithSiteId(siteId),
+                                oldThumb);
+                            break;
+                        }
+                    case IISSiteType.Ftp:
+                        {
+                            // Update FTP site
+                            _iisClient.UpdateFtpSite(siteId, newCertificate, oldCertificate);
+                            break;
+                        }
+                }
             }
 
             return Task.FromResult(true);
@@ -91,9 +128,9 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             {
                 return (true, reason);
             }
-            if (!iisClient.HasWebSites)
+            if (!iisClient.Sites.Any())
             {
-                return (true, "No IIS websites available.");
+                return (true, "No IIS sites available.");
             }
             return (false, null);
         }

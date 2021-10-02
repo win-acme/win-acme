@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         private const string SslPortParameterName = "sslport";
         private const string SslIpParameterName = "sslipaddress";
 
-        public override string Name => "IIS Web plugin";
+        public override string Name => "IIS plugin";
         public override string Group => "Installation";
         public override string Condition => "--installation iis";
 

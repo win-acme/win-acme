@@ -14,10 +14,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         public override string Description => "Read bindings from IIS";
 
         /// <summary>
-        /// Scan for ftp bindings if set to "ftp"
-        /// </summary>
-        public string? BindingType { get; set; }
-        /// <summary>
         /// Common name for the certificate
         /// </summary>
         public string? CommonName { get; set; }
@@ -41,6 +37,11 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         /// Excluded bindings (additional filter)
         /// </summary>
         public List<string>? ExcludeHosts { get; set; }
+
+        /// <summary>
+        /// Which types of bindings to consider
+        /// </summary>
+        public List<string>? IncludeTypes { get; set; }
 
         /// <summary>
         /// Site ids to include in the selection

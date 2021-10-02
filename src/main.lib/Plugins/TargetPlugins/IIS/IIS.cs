@@ -27,9 +27,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         public async Task<Target> Generate()
         {
             // Check if we have any bindings
-            var allBindings = _options.BindingType == "ftp" ? 
-                _helper.GetFtpBindings() : 
-                _helper.GetWebBindings();
+            var allBindings = _helper.GetBindings();
             var filteredBindings = _helper.FilterBindings(allBindings, _options);
             if (filteredBindings.Count() == 0)
             {
@@ -55,9 +53,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var friendlyNameSuggestion = "[IIS]";
             if (_options.IncludeSiteIds != null && _options.IncludeSiteIds.Any())
             {
-                var sites = _options.BindingType == "ftp" ?
-                    _helper.GetFtpSites(false) :
-                    _helper.GetWebSites(false);
+                var sites = _helper.GetSites(false);
                 var site = default(IISHelper.IISSiteOption);
                 if (cnBinding != null)
                 {
@@ -73,7 +69,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                     friendlyNameSuggestion += $" {site.Name}";
                     count -= 1;
                 }
-                if (count > 1)
+                if (count > 0)
                 {
                     friendlyNameSuggestion += $" (+{count} other{(count == 1 ? "" : "s")})";
                 } 
@@ -120,7 +116,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 GroupBy(x => x.SiteId).
                 Select(group => new TargetPart(group.Select(x => new DnsIdentifier(x.HostUnicode)))
                 {
-                    SiteId = group.Key
+                    SiteId = group.Key,
+                    SiteType = group.First().SiteType
                 });
             return new Target(friendlyNameSuggestion, commonName, parts);
         }

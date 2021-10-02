@@ -20,6 +20,7 @@ namespace PKISharp.WACS.Clients.IIS
             }
 
             public long SiteId { get; set; }
+            public IISSiteType SiteType { get; set; }
             public bool Secure { get; set; }
             public bool Wildcard => HostUnicode.StartsWith("*.");
             public string HostUnicode { get; private set; }
@@ -35,7 +36,6 @@ namespace PKISharp.WACS.Clients.IIS
                     return $"{HostUnicode}:{Port} (Site {SiteId}, {Protocol})";
                 }
                 return $"{HostUnicode} (Site {SiteId})";
-
             }
         }
 
@@ -48,11 +48,14 @@ namespace PKISharp.WACS.Clients.IIS
             }
 
             public long Id { get; set; }
+            public IISSiteType SiteType { get; set; }
             public string Name { get; }
             public bool Secure { get; set; }
             public List<string> Hosts { get; }
         }
 
+        public const string WebTypeFilter = "http";
+        public const string FtpTypeFilter = "ftp";
         private readonly IIISClient _iisClient;
         private readonly ILogService _log;
         private readonly IdnMapping _idnMapping;
@@ -65,27 +68,18 @@ namespace PKISharp.WACS.Clients.IIS
             _idnMapping = new IdnMapping();
             DomainParser = domainParser;
         }
-        internal List<IISBindingOption> GetFtpBindings()
+
+        internal List<IISBindingOption> GetBindings()
         {
             if (_iisClient.Version.Major == 0)
             {
                 _log.Warning("IIS not found. Skipping scan.");
                 return new List<IISBindingOption>();
             }
-            return GetBindings(_iisClient.FtpSites, "ftps");
+            return GetBindings(_iisClient.Sites).ToList();
         }
 
-        internal List<IISBindingOption> GetWebBindings()
-        {
-            if (_iisClient.Version.Major == 0)
-            {
-                _log.Warning("IIS not found. Skipping scan.");
-                return new List<IISBindingOption>();
-            }
-            return GetBindings(_iisClient.WebSites, "https");
-        }
-
-        private List<IISBindingOption> GetBindings(IEnumerable<IIISSite> sites, string secureProtocol)
+        private List<IISBindingOption> GetBindings(IEnumerable<IIISSite> sites)
         {
             // Get all bindings matched together with their respective sites
             _log.Debug("Scanning IIS bindings for hosts");
@@ -100,9 +94,9 @@ namespace PKISharp.WACS.Clients.IIS
             // Option: hide http bindings when there are already https equivalents
             var secure = siteBindings
                 .Where(sb =>
-                    sb.binding.Protocol == secureProtocol ||
+                    sb.binding.Secure ||
                     sb.site.Bindings.Any(other =>
-                        other.Protocol == secureProtocol &&
+                        other.Secure &&
                         string.Equals(sb.binding.Host, other.Host, StringComparison.InvariantCultureIgnoreCase)))
                 .ToDictionary(sb => lookupKey(sb.site, sb.binding));
 
@@ -117,6 +111,7 @@ namespace PKISharp.WACS.Clients.IIS
                 Select(sbi => new IISBindingOption(sbi.host, _idnMapping.GetAscii(sbi.host))
                 {
                     SiteId = sbi.site.Id,
+                    SiteType = sbi.site.Type,
                     Port = sbi.binding.Port,
                     Protocol = sbi.binding.Protocol,
                     Secure = sbi.secure
@@ -127,7 +122,7 @@ namespace PKISharp.WACS.Clients.IIS
             return targets;
         }
 
-        internal List<IISSiteOption> GetFtpSites(bool logInvalidSites)
+        internal List<IISSiteOption> GetSites(bool logInvalidSites)
         {
             if (_iisClient.Version.Major == 0)
             {
@@ -135,48 +130,30 @@ namespace PKISharp.WACS.Clients.IIS
                 return new List<IISSiteOption>();
             }
             // Get all bindings matched together with their respective sites
-            _log.Debug("Scanning IIS FTP sites");
-            var sites = _iisClient.FtpSites.ToList();
-            var targets = GetSites(sites, "ftps");
+            _log.Debug("Scanning IIS sites");
+            var targets = GetSites(_iisClient.Sites).ToList();
             if (!targets.Any() && logInvalidSites)
             {
-                _log.Warning("No applicable IIS FTP sites were found.");
+                _log.Warning("No applicable IIS sites were found.");
             }
             return targets;
         }
 
-        internal List<IISSiteOption> GetWebSites(bool logInvalidSites)
-        {
-            if (_iisClient.Version.Major == 0)
-            {
-                _log.Warning("IIS not found. Skipping scan.");
-                return new List<IISSiteOption>();
-            }
-            // Get all bindings matched together with their respective sites
-            _log.Debug("Scanning IIS websites");
-            var sites = _iisClient.WebSites.ToList();
-            var targets = GetSites(sites, "https");
-            if (!targets.Any() && logInvalidSites)
-            {
-                _log.Warning("No applicable IIS websites were found.");
-            }
-            return targets;
-        }
-
-        private List<IISSiteOption> GetSites(IEnumerable<IIISSite> sites, string secureProtocol)
+        private List<IISSiteOption> GetSites(IEnumerable<IIISSite> sites)
         {
             // Get all bindings matched together with their respective sites
             var secure = sites.Where(site =>
                 site.Bindings.All(binding =>
-                    binding.Protocol == secureProtocol ||
+                    binding.Secure ||
                     site.Bindings.Any(other =>
-                        other.Protocol == secureProtocol &&
+                        other.Secure &&
                         string.Equals(other.Host, binding.Host, StringComparison.InvariantCultureIgnoreCase)))).ToList();
 
             var targets = sites.
                 Select(site => new IISSiteOption(site.Name, GetHosts(site))
                 {
                     Id = site.Id,
+                    SiteType = site.Type,
                     Secure = secure.Contains(site)
                 }).
                 ToList();
@@ -186,12 +163,26 @@ namespace PKISharp.WACS.Clients.IIS
         internal List<IISBindingOption> FilterBindings(List<IISBindingOption> bindings, IISOptions options)
         {
             // Check if we have any bindings
-            _log.Verbose("{0} named bindings found in IIS", bindings.Count());
+            _log.Verbose("{0} named bindings found in IIS", bindings.Count);
+
+            // Filter by binding/site type
+            _log.Debug("Filtering based on binding type");
+                bindings = bindings.Where(x => {
+                    return x.SiteType switch
+                    {
+                        IISSiteType.Web => options.IncludeTypes == null || options.IncludeTypes.Contains(WebTypeFilter),
+                        IISSiteType.Ftp => options.IncludeTypes != null && options.IncludeTypes.Contains(FtpTypeFilter),
+                        _ => false
+                    };
+                }). 
+                ToList();
+
+            // Filter by site
             if (options.IncludeSiteIds != null && options.IncludeSiteIds.Any())
             {
                 _log.Debug("Filtering by site(s) {0}", options.IncludeSiteIds);
                 bindings = bindings.Where(x => options.IncludeSiteIds.Contains(x.SiteId)).ToList();
-                _log.Verbose("{0} bindings remaining after site filter", bindings.Count());
+                _log.Verbose("{0} bindings remaining after site filter", bindings.Count);
             }
             else
             {

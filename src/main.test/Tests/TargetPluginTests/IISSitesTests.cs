@@ -56,8 +56,8 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         {
             var siteIdA = 1;
             var siteIdB = 2;
-            var siteA = iis.GetWebSite(siteIdA);
-            var siteB = iis.GetWebSite(siteIdB);
+            var siteA = iis.GetSite(siteIdA);
+            var siteB = iis.GetSite(siteIdB);
             var options = Options($"--siteid {siteIdA},{siteIdB}");
             Assert.IsNotNull(options);
             if (options != null)
@@ -124,7 +124,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         public void ExcludeBindings()
         {
             var siteIdA = 1;
-            var siteA = iis.GetWebSite(siteIdA);
+            var siteA = iis.GetSite(siteIdA);
             var options = Options($"--siteid 1,2 --excludebindings {siteA.Bindings.ElementAt(0).Host},four.example.com");
             Assert.IsNotNull(options);
             if (options != null)
@@ -161,7 +161,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         public void CommonNameExcludedAfter()
         {
             var siteId = 1;
-            var site = iis.GetWebSite(siteId);
+            var site = iis.GetSite(siteId);
             var options = new IISSitesOptions() { SiteIds = new List<long>() { 1, 2 }, CommonName = "missing.example.com" };
             var target = Target(options);
             Assert.AreEqual(true, target.IsValid(log));

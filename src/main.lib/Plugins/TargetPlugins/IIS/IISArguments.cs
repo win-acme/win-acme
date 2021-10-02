@@ -15,9 +15,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 "`a.example.com` and `b.example.com` (but not `www.example.com`). Note that multiple patterns " +
                 "can be combined by comma seperating them.";
 
-        [CommandLine(Name = "binding-type", Default = "http", Description = "By default http bindings as scanned. Other possible value is ftp.")]
-        public string? BindingType { get; set; }
-
         [CommandLine(Description = "Identifiers of one or more sites to include. This may be a comma-separated list.")]
         public string? SiteId { get; set; }
 
@@ -37,5 +34,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         [CommandLine(Description = "Exclude host names from the certificate. This may be a comma-separated list.")]
         public string? ExcludeBindings { get; set; }
+
+        [CommandLine(Default = "http", Name = "host-type", Description = "Specify which types of bindings to consider. May be set to http, ftp or both (comma seperated)")]
+        public string? Type { get; set; }
     }
 }

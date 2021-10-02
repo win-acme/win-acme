@@ -149,12 +149,12 @@ namespace PKISharp.WACS
             var initialTarget = targetScope.Resolve<Target>();
             if (initialTarget is INull)
             {
-                _exceptionHandler.HandleException(message: $"Source plugin {targetPluginOptionsFactory.Name} was unable to generate a target");
+                _exceptionHandler.HandleException(message: $"Source plugin {targetPluginOptionsFactory.Name} was unable to generate the certificate parameters.");
                 return;
             }
             if (!initialTarget.IsValid(_log))
             {
-                _exceptionHandler.HandleException(message: $"Source plugin {targetPluginOptionsFactory.Name} generated an invalid target");
+                _exceptionHandler.HandleException(message: $"Source plugin {targetPluginOptionsFactory.Name} generated invalid certificate parameters");
                 return;
             }
             _log.Information("Source generated using plugin {name}: {target}", targetPluginOptions.Name, initialTarget);
