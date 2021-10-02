@@ -297,6 +297,10 @@ namespace PKISharp.WACS.Clients.IIS
             string? oldThumbprint, string? newThumbprint,
             string? newStore)
         {
+            if (string.Equals(oldThumbprint, newThumbprint, StringComparison.CurrentCultureIgnoreCase))
+            {
+                return false;
+            }
             var currentThumbprint = element.GetAttributeValue("serverCertHash").ToString();
             var currentStore = element.GetAttributeValue("serverCertStoreName").ToString();
             bool update;
