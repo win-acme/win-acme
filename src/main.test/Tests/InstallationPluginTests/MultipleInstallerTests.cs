@@ -81,7 +81,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             Assert.IsNotNull(first);
             if (first != null)
             {
-                Assert.IsInstanceOfType(first, typeof(IISWebOptionsFactory));
+                Assert.IsInstanceOfType(first, typeof(IISOptionsFactory));
                 chosen.Add(first);
                 var second = await resolver.GetInstallationPlugin(scope, types, chosen);
                 Assert.IsNotNull(second);

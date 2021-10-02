@@ -10,14 +10,14 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    internal class IISWeb : IInstallationPlugin
+    internal class IIS : IInstallationPlugin
     {
         private readonly ILogService _log;
         private readonly IIISClient _iisClient;
-        private readonly IISWebOptions _options;
+        private readonly IISOptions _options;
         private readonly IUserRoleService _userRoleService;
 
-        public IISWeb(IISWebOptions options, IIISClient iisClient, ILogService log, IUserRoleService userRoleService)
+        public IIS(IISOptions options, IIISClient iisClient, ILogService log, IUserRoleService userRoleService)
         {
             _iisClient = iisClient;
             _log = log;

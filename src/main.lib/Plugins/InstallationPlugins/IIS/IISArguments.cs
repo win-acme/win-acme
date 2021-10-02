@@ -4,7 +4,7 @@ using PKISharp.WACS.Configuration.Arguments;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    internal class IISWebArguments : BaseArguments
+    internal class IISArguments : BaseArguments
     {
         private const string SslPortParameterName = "sslport";
         private const string SslIpParameterName = "sslipaddress";

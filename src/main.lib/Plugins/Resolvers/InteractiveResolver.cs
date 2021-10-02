@@ -4,7 +4,6 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories.Null;
 using PKISharp.WACS.Plugins.CsrPlugins;
-using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Plugins.TargetPlugins;
@@ -170,7 +169,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             return await GetPlugin<ITargetPluginOptionsFactory>(
                 scope,
                 defaultParam1: _settings.Source.DefaultSource,
-                defaultType: typeof(IISOptionsFactory),
+                defaultType: typeof(TargetPlugins.IISOptionsFactory),
                 defaultTypeFallback: typeof(ManualOptionsFactory),
                 nullResult: new NullTargetFactory(),
                 className: "target",
@@ -291,7 +290,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <returns></returns>
         public override async Task<IInstallationPluginOptionsFactory?> GetInstallationPlugin(ILifetimeScope scope, IEnumerable<Type> storeTypes, IEnumerable<IInstallationPluginOptionsFactory> chosen)
         {
-            var defaultType = typeof(IISWebOptionsFactory);
+            var defaultType = typeof(InstallationPlugins.IISOptionsFactory);
             var shortDescription = "Which installation step should run first?";
             var longDescription = "With the certificate saved to the store(s) of your choice, " +
                 "you may choose one or more steps to update your applications, e.g. to configure " +
