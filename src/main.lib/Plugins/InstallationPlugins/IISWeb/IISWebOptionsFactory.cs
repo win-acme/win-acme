@@ -17,6 +17,20 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         private readonly IIISClient _iisClient;
         private readonly ArgumentsInputService _arguments;
 
+        /// <summary>
+        /// Match with the legacy target plugin names
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public override bool Match(string name)
+        {
+            return name.ToLowerInvariant() switch
+            {
+                "iisftp" => true,
+                _ => base.Match(name),
+            };
+        }
+
         public IISWebOptionsFactory(IIISClient iisClient, ArgumentsInputService arguments, IUserRoleService userRoleService)
         {
             _iisClient = iisClient;

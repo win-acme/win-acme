@@ -41,15 +41,11 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         /// <returns></returns>
         public override bool Match(string name)
         {
-            switch (name.ToLowerInvariant())
+            return name.ToLowerInvariant() switch
             {
-                case "iisbinding":
-                case "iissite":
-                case "iissites":
-                    return true;
-                default:
-                    return base.Match(name);
-            }
+                "iisbinding" or "iissite" or "iissites" => true,
+                _ => base.Match(name),
+            };
         }
 
         /// <summary>
@@ -280,7 +276,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 {
                     if (int.TryParse(x, out var id))
                     {
-                        if (id > 0 && id <= sorted.Count())
+                        if (id > 0 && id <= sorted.Count)
                         {
                             return sorted[id - 1].HostUnicode;
                         }
