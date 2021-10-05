@@ -54,7 +54,6 @@ if ($CertInStore)
         Set-Item -Path RDS:\GatewayServer\SSLCertificate\Thumbprint -Value $CertInStore.Thumbprint -ErrorAction Stop
         Restart-Service TSGateway -Force -ErrorAction Stop
         "Cert thumbprint set to RD Gateway listener and service restarted"
-		wmic /namespace:\\root\cimv2\TerminalServices PATH Win32_TSGeneralSetting Set SSLCertificateSHA1Hash="$($CertInStore.Thumbprint)"
     } 
 	catch 
 	{
