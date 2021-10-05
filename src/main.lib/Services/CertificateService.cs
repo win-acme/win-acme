@@ -240,38 +240,41 @@ namespace PKISharp.WACS.Services
             var pfxFileInfo = new FileInfo(GetPath(order.Renewal, $"-{cacheKey}{PfxPostFix}"));
             var friendlyName = $"{order.FriendlyNameIntermediate} @ {_inputService.FormatDate(DateTime.Now)}";
 
+            // Generate the CSR here, because we want to save it 
+            // in the certificate cache folder even though we might
+            // not need to submit it to the server in case of a 
+            // cached order
+            order.Target.CsrBytes = order.Target.UserCsrBytes;
+            if (order.Target.CsrBytes == null)
+            {
+                if (csrPlugin == null)
+                {
+                    throw new InvalidOperationException("Missing CsrPlugin");
+                }
+                if (order.KeyPath == null)
+                {
+                    throw new InvalidOperationException("Missing ReusedKeyPath");
+                }
+                var csr = await csrPlugin.GenerateCsr(order.KeyPath, order.Target);
+                var keySet = await csrPlugin.GetKeys();
+                order.Target.CsrBytes = csr.GetDerEncoded();
+                order.Target.PrivateKey = keySet.Private;
+            }
+
+            if (order.Target.CsrBytes == null)
+            {
+                throw new InvalidOperationException("No CsrBytes found");
+            }
+
+            // Store CSR for future reference
+            ClearCache(order.Renewal, postfix: CsrPostFix);
+            var csrPath = GetPath(order.Renewal, $"-{cacheKey}{CsrPostFix}");
+            await File.WriteAllTextAsync(csrPath, _pemService.GetPem("CERTIFICATE REQUEST", order.Target.CsrBytes));
+            _log.Debug("CSR stored at {path} in certificate cache folder {folder}", Path.GetFileName(csrPath), Path.GetDirectoryName(csrPath));
+
             // Check order status
             if (order.Details.Payload.Status != AcmeClient.OrderValid)
             {
-                // Generate the CSR here too
-                order.Target.CsrBytes = order.Target.UserCsrBytes;
-                if (order.Target.CsrBytes == null)
-                {
-                    if (csrPlugin == null)
-                    {
-                        throw new InvalidOperationException("Missing CsrPlugin");
-                    }
-                    if (order.KeyPath == null)
-                    {
-                        throw new InvalidOperationException("Missing ReusedKeyPath");
-                    }
-                    var csr = await csrPlugin.GenerateCsr(order.KeyPath, order.Target);
-                    var keySet = await csrPlugin.GetKeys();
-                    order.Target.CsrBytes = csr.GetDerEncoded();
-                    order.Target.PrivateKey = keySet.Private;
-                }
-
-                if (order.Target.CsrBytes == null)
-                {
-                    throw new InvalidOperationException("No CsrBytes found");
-                }
-
-                // Store CSR for future reference
-                ClearCache(order.Renewal, postfix: CsrPostFix);
-                var csrPath = GetPath(order.Renewal, $"-{cacheKey}{CsrPostFix}");
-                await File.WriteAllTextAsync(csrPath, _pemService.GetPem("CERTIFICATE REQUEST", order.Target.CsrBytes));
-                _log.Debug("CSR stored at {path} in certificate cache folder {folder}", Path.GetFileName(csrPath), Path.GetDirectoryName(csrPath));
-
                 // Finish the order by sending the CSR to 
                 // the server, which can then generate the
                 // certificate.
@@ -285,7 +288,7 @@ namespace PKISharp.WACS.Services
             }
 
             // Download the certificate from the server
-            _log.Information("Requesting certificate {friendlyName}", order.FriendlyNameIntermediate);
+            _log.Information("Downloading certificate {friendlyName}", order.FriendlyNameIntermediate);
             var certInfo = await _client.GetCertificate(order.Details);
             if (certInfo == null || certInfo.Certificate == null)
             {

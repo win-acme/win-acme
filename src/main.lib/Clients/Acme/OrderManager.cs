@@ -22,7 +22,7 @@ namespace PKISharp.WACS.Clients.Acme
         private readonly AcmeClient _client;
         private readonly DirectoryInfo _orderPath;
         private const string _orderFileExtension = "order.json";
-        private const string _orderKeyExtension = "order.key";
+        private const string _orderKeyExtension = "order.keys";
 
         public OrderManager(ILogService log, ISettingsService settings, AcmeClient client)
         {
@@ -117,7 +117,7 @@ namespace PKISharp.WACS.Clients.Acme
                 return null;
             }
 
-            _log.Warning("Using cached order. To force a new order within {days} days, " +
+            _log.Warning("Using cache. To force a new order within {days} days, " +
                   "run with --{switch}. Beware that you might run into rate limits.",
                   _settings.Cache.ReuseDays,
                   nameof(MainArguments.Force).ToLower());

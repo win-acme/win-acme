@@ -315,7 +315,7 @@ namespace PKISharp.WACS
                 return null;
             }
             _log.Warning(
-                "Using cached certificate for {friendlyName}. To get a new one " +
+                "Using cache for {friendlyName}. To get a new certificate " +
                 "within {days} days, run with --{switch}.",
                 context.Order.FriendlyNameIntermediate,
                 _settings.Cache.ReuseDays,
