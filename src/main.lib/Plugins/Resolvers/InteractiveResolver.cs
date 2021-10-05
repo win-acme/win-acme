@@ -169,10 +169,10 @@ namespace PKISharp.WACS.Plugins.Resolvers
             return await GetPlugin<ITargetPluginOptionsFactory>(
                 scope,
                 defaultParam1: _settings.Source.DefaultSource,
-                defaultType: typeof(TargetPlugins.IISOptionsFactory),
+                defaultType: typeof(IISOptionsFactory),
                 defaultTypeFallback: typeof(ManualOptionsFactory),
                 nullResult: new NullTargetFactory(),
-                className: "target",
+                className: "source",
                 shortDescription: "How shall we determine the domain(s) to include in the certificate?",
                 longDescription: "Please specify how the list of domain names that will be included in the certificate " +
                     "should be determined. If you choose for one of the \"all bindings\" options, the list will automatically be " +

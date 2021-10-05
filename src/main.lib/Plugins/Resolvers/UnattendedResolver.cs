@@ -122,7 +122,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 defaultParam1: string.IsNullOrWhiteSpace(_arguments.Source) ? _arguments.Target : _arguments.Source,
                 defaultType: typeof(ManualOptionsFactory),
                 nullResult: new NullTargetFactory(),
-                className: "target");
+                className: "source");
         }
 
         /// <summary>

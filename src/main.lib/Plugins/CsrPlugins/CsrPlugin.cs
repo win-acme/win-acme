@@ -5,6 +5,7 @@ using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Operators;
 using Org.BouncyCastle.Pkcs;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
@@ -16,6 +17,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using Target = PKISharp.WACS.DomainObjects.Target;
 using X509Extension = Org.BouncyCastle.Asn1.X509.X509Extension;
 
 namespace PKISharp.WACS.Plugins.CsrPlugins
@@ -45,8 +47,10 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
 
         public virtual Task<X509Certificate2> PostProcess(X509Certificate2 original) => Task.FromResult(original);
 
-        async Task<Pkcs10CertificationRequest> ICsrPlugin.GenerateCsr(string cachePath, Identifier commonName, List<Identifier> identifiers)
+        async Task<Pkcs10CertificationRequest> ICsrPlugin.GenerateCsr(string cachePath, Target target)
         {
+            var identifiers = target.GetIdentifiers(false);
+            var commonName = target.CommonName;
             var extensions = new Dictionary<DerObjectIdentifier, X509Extension>();
 
             LoadFromCache(cachePath);
@@ -75,33 +79,30 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         /// <param name="cachePath"></param>
         private void LoadFromCache(string cachePath)
         {
-            if (_options.ReusePrivateKey == true)
+            try
             {
-                try
+                var fi = new FileInfo(cachePath);
+                if (fi.Exists)
                 {
-                    var fi = new FileInfo(cachePath);
-                    if (fi.Exists)
+                    var rawData = new ProtectedString(File.ReadAllText(cachePath), _log);
+                    if (!rawData.Error)
                     {
-                        var rawData = new ProtectedString(File.ReadAllText(cachePath), _log);
-                        if (!rawData.Error)
-                        {
-                            _cacheData = rawData.Value;
-                            _log.Warning("Re-using key data generated at {time}", fi.LastWriteTime);
-                        }
-                        else
-                        {
-                            _log.Warning("Key reuse is enabled but file {cachePath} cannot be decrypted, creating new key...", cachePath);
-                        }
+                        _cacheData = rawData.Value;
+                        _log.Debug("Re-using private key generated at {time}", fi.LastWriteTime);
                     }
                     else
                     {
-                        _log.Warning("Key reuse is enabled but file {cachePath} does't exist yet, creating new key...", cachePath);
+                        _log.Warning("Private key at {cachePath} cannot be decrypted, creating new key...", cachePath);
                     }
                 }
-                catch
+                else
                 {
-                    throw new Exception($"Unable to read from cache file {cachePath}");
+                    _log.Debug("Creating new private key at {cachePath}...", cachePath);
                 }
+            }
+            catch
+            {
+                throw new Exception($"Unable to read from cache file {cachePath}");
             }
         }
 
@@ -111,11 +112,8 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         /// <param name="cachePath"></param>
         private void SaveToCache(string cachePath)
         {
-            if (_options.ReusePrivateKey == true)
-            {
-                var rawData = new ProtectedString(_cacheData);
-                File.WriteAllText(cachePath, rawData.DiskValue(_settings.Security.EncryptConfig));
-            }
+            var rawData = new ProtectedString(_cacheData);
+            File.WriteAllText(cachePath, rawData.DiskValue(_settings.Security.EncryptConfig));
         }
 
         public abstract string GetSignatureAlgorithm();
@@ -191,7 +189,6 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             // OCSP Must-Staple
             if (_options.OcspMustStaple == true)
             {
-
                 _log.Information("Enable OCSP Must-Staple extension");
                 extensions.Add(
                     new DerObjectIdentifier("1.3.6.1.5.5.7.1.24"),

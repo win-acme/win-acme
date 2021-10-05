@@ -42,6 +42,11 @@ namespace PKISharp.WACS.DomainObjects
         public bool IIS => Parts.All(x => x.IIS);
 
         /// <summary>
+        /// The CSR provided by the user
+        /// </summary>
+        public byte[]? UserCsrBytes { get; set; }
+
+        /// <summary>
         /// The CSR used to request the certificate
         /// </summary>
         public byte[]? CsrBytes { get; set; }

@@ -153,7 +153,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             return Task.CompletedTask;
         }
 
-        public CertificateInfo? FindByThumbprint(string thumbprint) => ToInfo(GetCertificate(CertificateService.ThumbprintFilter(thumbprint)));
+        public CertificateInfo? FindByThumbprint(string thumbprint) => ToInfo(GetCertificate(x => string.Equals(x.Thumbprint, thumbprint)));
 
         private CertificateInfo? ToInfo(X509Certificate2? cert)
         {

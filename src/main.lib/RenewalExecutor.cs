@@ -228,7 +228,9 @@ namespace PKISharp.WACS
 
                 // Get the existing certificate matching the order description
                 // this may not be the same as the previous certificate
-                var newCertificate = GetFromCache(context, runLevel) ?? await GetFromServer(context, runLevel);
+                var newCertificate = 
+                    GetFromCache(context, runLevel) ??
+                    await GetFromServer(context, runLevel);
                 if (newCertificate == null)
                 {
                     context.Result.AddErrorMessage("No certificate generated");
@@ -308,13 +310,13 @@ namespace PKISharp.WACS
             if (runLevel.HasFlag(RunLevel.IgnoreCache))
             {
                 _log.Warning(
-                    "Cached certificate available on disk but not used due to --{switch} switch.",
+                    "Cached certificate available but not used due to --{switch} switch.",
                     nameof(MainArguments.Force).ToLower());
                 return null;
             }
             _log.Warning(
-                "Using cached certificate for {friendlyName}. To force a new request of the " +
-                "certificate within {days} days, run with the --{switch} switch.",
+                "Using cached certificate for {friendlyName}. To get a new one " +
+                "within {days} days, run with --{switch}.",
                 context.Order.FriendlyNameIntermediate,
                 _settings.Cache.ReuseDays,
                 nameof(MainArguments.Force).ToLower());
@@ -325,17 +327,13 @@ namespace PKISharp.WACS
         private async Task<CertificateInfo?> GetFromServer(ExecutionContext context, RunLevel runLevel)
         {
             // Place the order
+            var certificateService = context.Scope.Resolve<ICertificateService>();
             var orderManager = context.Scope.Resolve<OrderManager>();
+            context.Order.KeyPath = context.Order.Renewal.CsrPluginOptions?.ReusePrivateKey == true
+                ? certificateService.ReuseKeyPath(context.Order) : null;
             context.Order.Details = await orderManager.GetOrCreate(context.Order, runLevel);
 
-            // Run validations
-            await _validator.AuthorizeOrder(context, runLevel);
-            if (!context.Result.Success)
-            {
-                return null;
-            }
-
-            // Generate the CSR
+            // Generate the CSR plugin
             var csrPlugin = context.Target.CsrBytes == null ? context.Scope.Resolve<ICsrPlugin>() : null;
             if (csrPlugin != null)
             {
@@ -346,9 +344,15 @@ namespace PKISharp.WACS
                     return null;
                 }
             }
+           
+            // Run validations
+            await _validator.AuthorizeOrder(context, runLevel);
+            if (!context.Result.Success)
+            {
+                return null;
+            }
 
             // Request the certificate
-            var certificateService = context.Scope.Resolve<ICertificateService>();
             return await certificateService.RequestCertificate(csrPlugin, context.RunLevel, context.Order);
         }
 
