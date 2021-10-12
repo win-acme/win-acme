@@ -220,7 +220,7 @@ namespace PKISharp.WACS.Services
             if (HasValue(_argumentValue))
             {
                 var showValue = _metaData.Secret ? "********" : _argumentValue?.ToString();
-                input.Show("Argument", showValue);
+                input.Show("Argument", $"{showValue} (press <Enter> to use this)");
             }
             var args = new ArgumentResultInputArguments<TResult>()
             {
