@@ -546,8 +546,24 @@ namespace PKISharp.WACS
         /// <summary>
         /// "Edit" renewal
         /// </summary>
-        private async Task EditRenewal(Renewal renewal) => 
-            await _renewalCreator.SetupRenewal(RunLevel.Interactive | RunLevel.Advanced, renewal);
+        private async Task EditRenewal(Renewal renewal)
+        {
+            var options = new List<Choice<Steps>>
+            {
+                Choice.Create(Steps.All, "All"),
+                Choice.Create(Steps.Target, "Source"),
+                Choice.Create(Steps.Csr, "CSR"),
+                Choice.Create(Steps.Validation, "Validation"),
+                Choice.Create(Steps.Store, "Store"),
+                Choice.Create(Steps.Installation, "Installation"),
+                Choice.Create(Steps.None, "Cancel")
+            };
+            var chosen = await _input.ChooseFromMenu("Which step do you want to edit?", options);
+            if (chosen != Steps.None)
+            {
+                await _renewalCreator.SetupRenewal(RunLevel.Interactive | RunLevel.Advanced, chosen, renewal);
+            }
+        }
 
         /// <summary>
         /// Show certificate details

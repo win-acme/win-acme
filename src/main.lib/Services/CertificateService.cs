@@ -59,22 +59,27 @@ namespace PKISharp.WACS.Services
             var count = files.Count();
             if (count > 0)
             {
-                _log.Warning("Found {nr} files older than {days} days in {cachePath}", count, days, _cache.FullName);
                 if (_settings.Cache.DeleteStaleFiles)
                 {
-                    _log.Information("Deleting stale files");
+                    _log.Verbose("Deleting stale cache files...");
                     try
                     {
                         foreach (var file in files)
                         {
                             file.Delete();
                         }
-                        _log.Information("Stale files deleted");
+                        _log.Information("Deleted {nr} files older than {days} days", count, days);
                     }
                     catch (Exception ex)
                     {
-                        _log.Error(ex, "Deleting stale files");
+                        _log.Error(ex, "Error deleting stale files");
                     }
+                } 
+                else
+                {
+                    _log.Warning("Found {nr} files older than {days} days in {cachePath}, " +
+                        "enable Cache.DeleteStaleFiles in settings.json to automatically " +
+                        "delete these on each run.", count, days, _cache.FullName);
                 }
             }
         }
@@ -267,7 +272,7 @@ namespace PKISharp.WACS.Services
             }
 
             // Store CSR for future reference
-            ClearCache(order.Renewal, postfix: CsrPostFix);
+            ClearCache(order.Renewal, postfix: $"*{CsrPostFix}");
             var csrPath = GetPath(order.Renewal, $"-{cacheKey}{CsrPostFix}");
             await File.WriteAllTextAsync(csrPath, _pemService.GetPem("CERTIFICATE REQUEST", order.Target.CsrBytes));
             _log.Debug("CSR stored at {path} in certificate cache folder {folder}", Path.GetFileName(csrPath), Path.GetDirectoryName(csrPath));

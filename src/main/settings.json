@@ -30,7 +30,7 @@
   },
   "Cache": {
     "ReuseDays": 1,
-    "DeleteStaleFiles": false,
+    "DeleteStaleFiles": true,
     "Path": null
   },
   "ScheduledTask": {

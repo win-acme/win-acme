@@ -72,10 +72,24 @@ namespace PKISharp.WACS.Clients.Acme
             {
                 order.KeyPath = Path.Combine(_orderPath.FullName, $"{cacheKey}.{_orderKeyExtension}");
             }
-            var orderDetails = 
-                await GetFromCache(cacheKey, runLevel) ?? 
-                await CreateOrder(cacheKey, order.Target);
-            return orderDetails;
+            var orderDetails = await GetFromCache(cacheKey, runLevel);
+            if (orderDetails != null)
+            {
+                var keyFile = new FileInfo(order.KeyPath);
+                if (keyFile.Exists)
+                {
+                    _log.Warning("Using cache. To force a new order within {days} days, " +
+                          "run with --{switch}. Beware that you might run into rate limits.",
+                          _settings.Cache.ReuseDays,
+                          nameof(MainArguments.Force).ToLower());
+                    return orderDetails;
+                }
+                else
+                {
+                    _log.Warning("Cached order available but not used due to missing private key");
+                }
+            }
+            return await CreateOrder(cacheKey, order.Target);
         }
 
         /// <summary>
@@ -95,13 +109,14 @@ namespace PKISharp.WACS.Clients.Acme
 
             if (runLevel.HasFlag(RunLevel.IgnoreCache))
             {
-                _log.Warning("Cached order available but not used with the --{switch} switch.",
+                _log.Warning("Cached order available but not used with --{switch} option.",
                     nameof(MainArguments.Force).ToLower());
                 return null;
             }
 
             try
             {
+                _log.Debug("Refreshing cached order");
                 existingOrder = await RefreshOrder(existingOrder);
             }
             catch (Exception ex)
@@ -113,14 +128,9 @@ namespace PKISharp.WACS.Clients.Acme
             if (existingOrder.Payload.Status != AcmeClient.OrderValid &&
                 existingOrder.Payload.Status != AcmeClient.OrderReady)
             {
-                _log.Debug("Cached order has status {status}, discarding", existingOrder.Payload.Status);
+                _log.Warning("Cached order has status {status}, discarding", existingOrder.Payload.Status);
                 return null;
             }
-
-            _log.Warning("Using cache. To force a new order within {days} days, " +
-                  "run with --{switch}. Beware that you might run into rate limits.",
-                  _settings.Cache.ReuseDays,
-                  nameof(MainArguments.Force).ToLower());
             
             // Make sure that the CsrBytes and PrivateKey are available
             // for this order

@@ -7,7 +7,7 @@ using System.Text;
 
 namespace PKISharp.WACS.DomainObjects
 {
-    [DebuggerDisplay("Target: {CommonName.Value} ({Parts.Count} part(s) - IIS: {IIS})")]
+    [DebuggerDisplay("Target: {CommonName.Value}")]
     public class Target
     {
         public Target(string friendlyName, string commonName, IEnumerable<TargetPart> parts) : 

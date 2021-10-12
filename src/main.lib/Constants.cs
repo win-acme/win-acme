@@ -20,6 +20,19 @@ namespace PKISharp.WACS
         IgnoreCache = 128
     }
 
+    [Flags]
+    public enum Steps
+    {
+        None = 0,
+        Target = 1,
+        Order = 2,
+        Csr = 4,
+        Validation = 8,
+        Store = 16,
+        Installation = 32,
+        All = int.MaxValue
+    }
+
     public static class Constants
     {
         public const int MaxNames = 100;

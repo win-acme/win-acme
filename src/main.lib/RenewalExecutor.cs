@@ -333,6 +333,18 @@ namespace PKISharp.WACS
                 ? certificateService.ReuseKeyPath(context.Order) : null;
             context.Order.Details = await orderManager.GetOrCreate(context.Order, runLevel);
 
+            // Sanity checks
+            if (context.Order.Details == null)
+            {
+                context.Result.AddErrorMessage($"Unable to create order");
+                return null;
+            }
+            if (context.Order.Details.Payload.Status == AcmeClient.OrderInvalid)
+            {
+                context.Result.AddErrorMessage($"Created order was invalid");
+                return null;
+            }
+
             // Generate the CSR plugin
             var csrPlugin = context.Target.CsrBytes == null ? context.Scope.Resolve<ICsrPlugin>() : null;
             if (csrPlugin != null)
@@ -344,12 +356,18 @@ namespace PKISharp.WACS
                     return null;
                 }
             }
-           
+
             // Run validations
-            await _validator.AuthorizeOrder(context, runLevel);
-            if (!context.Result.Success)
+            var orderValid = 
+                context.Order.Details.Payload.Status == AcmeClient.OrderValid ||
+                context.Order.Details.Payload.Status == AcmeClient.OrderReady;
+            if (!orderValid || runLevel.HasFlag(RunLevel.Test) || runLevel.HasFlag(RunLevel.IgnoreCache))
             {
-                return null;
+                await _validator.AuthorizeOrder(context, orderValid);
+                if (!context.Result.Success)
+                {
+                    return null;
+                }
             }
 
             // Request the certificate
