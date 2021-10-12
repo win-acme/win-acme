@@ -110,7 +110,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
         }
         public MockSite GetSite(long id, IISSiteType? type = null) => Sites.First(x => id == x.Id && (type == null || x.Type == type));
         public void UpdateFtpSite(long? FtpSiteId, CertificateInfo newCertificate, CertificateInfo? oldCertificate) { }
-        IIISSite IIISClient.GetSite(long id, IISSiteType? type = null) => GetSite(id, type);
+        IIISSite IIISClient.GetSite(long id, IISSiteType? type) => GetSite(id, type);
 
         public IIISBinding AddBinding(MockSite site, BindingOptions bindingOptions) {
             var newBinding = new MockBinding(bindingOptions);

@@ -33,6 +33,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
             });
         }
 
-       public Task RevokeCertificate(Renewal renewal) => Task.CompletedTask;
+        public string ReuseKeyPath(Order order) => "";
+        public Task RevokeCertificate(Renewal renewal) => Task.CompletedTask;
     }
 }

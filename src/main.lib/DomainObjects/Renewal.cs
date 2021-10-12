@@ -55,7 +55,7 @@ namespace PKISharp.WACS.DomainObjects
         /// otherwise available to the instance
         /// </summary>
         [JsonIgnore]
-        internal ScheduledTaskSettings Settings { get; set; }
+        internal ScheduledTaskSettings Settings { get; set; } = new ScheduledTaskSettings();
 
         /// <summary>
         /// Is this renewal new
