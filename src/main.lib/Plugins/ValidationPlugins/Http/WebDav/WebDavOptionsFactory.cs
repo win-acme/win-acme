@@ -22,9 +22,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         public override string[] WebrootHint(bool allowEmtpy)
         {
             return new[] {
-                "Enter a webdav path that leads to the web root of the host for http authentication",
-                " Example, \\\\domain.com:80\\",
-                " Example, \\\\domain.com:443\\"
+                "WebDav path",
+                "Example, \\\\domain.com:80\\",
+                "Example, \\\\domain.com:443\\"
             };
         }
 

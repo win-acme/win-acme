@@ -104,11 +104,13 @@ namespace PKISharp.WACS.Services
 
             if (!string.IsNullOrWhiteSpace(value))
             {
+                var offset = 0;
                 if (hasLabel)
                 {
+                    offset = Math.Max(20, label!.Length + 2);
                     Console.Write(":");
                 }
-                WriteMultiline(hasLabel ? 20 : 0, value);
+                WriteMultiline(offset, value);
             }
             else
             {
