@@ -158,25 +158,25 @@ namespace PKISharp.WACS
                         var cache = cs.CachedInfo(order);
                         if (cache == null && !renewal.New)
                         {
-                            _log.Information(LogType.All, "Renewal for {renewal} running prematurely due to detected target change", renewal.LastFriendlyName);
+                            _log.Information(LogType.All, "Renewal {renewal} running prematurely due to source change", renewal.LastFriendlyName);
                             abort = false;
                             break;
                         }
                     }
                     if (abort)
                     {
-                        _log.Information("Renewal for {renewal} is due after {date}", renewal.LastFriendlyName, renewal.GetDueDate());
+                        _log.Information("Renewal {renewal} is due after {date}", renewal.LastFriendlyName, renewal.GetDueDate());
                         return false;
                     }
                 }
                 else if (!renewal.New)
                 {
-                    _log.Information(LogType.All, "Renewing certificate for {renewal}", renewal.LastFriendlyName);
+                    _log.Information(LogType.All, "Renewing certificate {renewal}", renewal.LastFriendlyName);
                 }
             }
             else if (runLevel.HasFlag(RunLevel.ForceRenew))
             {
-                _log.Information(LogType.All, "Force renewing certificate for {renewal}", renewal.LastFriendlyName);
+                _log.Information(LogType.All, "Force renewing certificate {renewal}", renewal.LastFriendlyName);
             }
             return true;
         }
