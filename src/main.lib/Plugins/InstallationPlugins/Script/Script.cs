@@ -25,8 +25,12 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         {
             if (_options.Script != null)
             {
-                var defaultStoreType = store.First().GetType();
-                var defaultStoreInfo = newCertificate.StoreInfo[defaultStoreType];
+                var defaultStoreType = store.FirstOrDefault()?.GetType();
+                var defaultStoreInfo = default(StoreInfo?);
+                if (defaultStoreType != null)
+                {
+                    defaultStoreInfo = newCertificate.StoreInfo[defaultStoreType];
+                }
                 var parameters = ReplaceParameters(_options.ScriptParameters ?? "", defaultStoreInfo, newCertificate, oldCertificate, false);
                 var censoredParameters = ReplaceParameters(_options.ScriptParameters ?? "", defaultStoreInfo, newCertificate, oldCertificate, true);
                 return await _client.RunScript(_options.Script, parameters, censoredParameters);
@@ -34,7 +38,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             return false;
         }
 
-        private string ReplaceParameters(string input, StoreInfo defaultStoreInfo, CertificateInfo newCertificate, CertificateInfo? oldCertificate, bool censor)
+        private string ReplaceParameters(string input, StoreInfo? defaultStoreInfo, CertificateInfo newCertificate, CertificateInfo? oldCertificate, bool censor)
         {
             // Numbered parameters for backwards compatibility only,
             // do not extend for future updates
@@ -44,12 +48,12 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                     "{0}" or "{CertCommonName}" => newCertificate.CommonName.Value,
                     "{1}" or "{CachePassword}" => (censor ? _renewal.PfxPassword?.DisplayValue : _renewal.PfxPassword?.Value) ?? "",
                     "{2}" or "{CacheFile}" => newCertificate.CacheFile?.FullName ?? "",
-                    "{3}" or "{StorePath}" => defaultStoreInfo.Path ?? "",
+                    "{3}" or "{StorePath}" => defaultStoreInfo?.Path ?? "",
                     "{4}" or "{CertFriendlyName}" => newCertificate.Certificate.FriendlyName,
                     "{5}" or "{CertThumbprint}" => newCertificate.Certificate.Thumbprint,
                     "{6}" or "{CacheFolder}" => newCertificate.CacheFile?.Directory?.FullName ?? "",
                     "{7}" or "{RenewalId}" => _renewal.Id,
-                    "{StoreType}" => defaultStoreInfo.Name ?? "",
+                    "{StoreType}" => defaultStoreInfo?.Name ?? "",
                     "{OldCertCommonName}" => oldCertificate?.CommonName?.Value ?? "",
                     "{OldCertFriendlyName}" => oldCertificate?.Certificate.FriendlyName ?? "",
                     "{OldCertThumbprint}" => oldCertificate?.Certificate.Thumbprint ?? "",
