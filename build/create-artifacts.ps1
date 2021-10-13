@@ -151,7 +151,8 @@ PluginRelease plugin.store.keyvault @(
 	"PKISharp.WACS.Plugins.Azure.Common.dll",
 	"PKISharp.WACS.Plugins.StorePlugins.KeyVault.dll",
 	"Microsoft.Bcl.AsyncInterfaces.dll",
-	"Microsoft.Rest.ClientRuntime.dll"
+	"Microsoft.Rest.ClientRuntime.dll",
+	"System.Memory.Data.dll"
 )
 PluginRelease plugin.validation.http.rest @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.Rest.dll"
