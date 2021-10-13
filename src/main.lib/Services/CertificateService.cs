@@ -143,8 +143,13 @@ namespace PKISharp.WACS.Services
                 return null;
             }
 
-            var keyName = GetPath(order.Renewal, $"-{CacheKey(order)}{PfxPostFix}");
-            var fileCache = cachedInfos.Where(x => x.CacheFile?.FullName == keyName).FirstOrDefault();
+            var fileName = GetPath(order.Renewal, $"-{CacheKey(order, 2)}{PfxPostFix}");
+            var fileCache = cachedInfos.Where(x => x.CacheFile?.FullName == fileName).FirstOrDefault();
+            if (fileCache == null)
+            {
+                fileName = GetPath(order.Renewal, $"-{CacheKey(order, 1)}{PfxPostFix}");
+                fileCache = cachedInfos.Where(x => x.CacheFile?.FullName == fileName).FirstOrDefault();
+            }
             if (fileCache == null)
             {
                 var legacyFile = GetPath(order.Renewal, PfxPostFixLegacy);
@@ -207,14 +212,16 @@ namespace PKISharp.WACS.Services
         /// <param name="renewal"></param>
         /// <param name="target"></param>
         /// <returns></returns>
-        private static string CacheKey(Order order)
+        private static string CacheKey(Order order, int version = 2)
         {
             // Check if we can reuse a cached certificate and/or order
             // based on currently active set of parameters and shape of 
             // the target.
             var cacheKeyBuilder = new StringBuilder();
             cacheKeyBuilder.Append(order.CacheKeyPart);
-            cacheKeyBuilder.Append(order.Target.CommonName);
+            _ = version > 1 ?
+                cacheKeyBuilder.Append(order.Target.CommonName.Value) :
+                cacheKeyBuilder.Append(order.Target.CommonName);
             cacheKeyBuilder.Append(string.Join(',', order.Target.GetIdentifiers(true).OrderBy(x => x).Select(x => x.Value.ToLower())));
             _ = order.Target.UserCsrBytes != null ?
                 cacheKeyBuilder.Append(Convert.ToBase64String(order.Target.UserCsrBytes)) :
@@ -592,13 +599,16 @@ namespace PKISharp.WACS.Services
         /// <param name="order"></param>
         /// <returns></returns>
         public string ReuseKeyPath(Order order) {
-            // Backwards compatible with existing keys, which are not split
-            // per order yet.
-            var cacheKey = CacheKey(order);
+            // Backwards compatible with existing keys, which are not split per order yet.
+           
             var keyFile = new FileInfo(GetPath(order.Renewal, $".keys"));
             if (!keyFile.Exists)
             {
-                keyFile = new FileInfo(GetPath(order.Renewal, $"-{cacheKey}.keys"));
+                keyFile = new FileInfo(GetPath(order.Renewal, $"-{CacheKey(order, 2)}.keys"));
+            }
+            if (!keyFile.Exists)
+            {
+                keyFile = new FileInfo(GetPath(order.Renewal, $"-{CacheKey(order, 1)}.keys"));
             }
             return keyFile.FullName;
         }
