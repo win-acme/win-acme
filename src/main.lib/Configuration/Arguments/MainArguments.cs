@@ -5,7 +5,7 @@ namespace PKISharp.WACS.Configuration.Arguments
     public class MainArguments : BaseArguments
     {
         public override string Name => "Main";
-        public override bool Active()
+        public override bool Active(string[] args)
         {
             return
                 !string.IsNullOrEmpty(FriendlyName) ||

@@ -54,7 +54,7 @@ namespace PKISharp.WACS.Configuration
                 return false;
             }
             var mainProvider = _providers.OfType<IArgumentsProvider<MainArguments>>().First();
-            if (mainProvider.Validate(main, main))
+            if (mainProvider.Validate(main, main, _args))
             {
                 // Validate the others
                 var others = _providers.Except(new[] { mainProvider });
@@ -65,7 +65,7 @@ namespace PKISharp.WACS.Configuration
                     {
                         return false;
                     }
-                    if (!other.Validate(opt, main))
+                    if (!other.Validate(opt, main, _args))
                     {
                         return false;
                     }
@@ -90,7 +90,7 @@ namespace PKISharp.WACS.Configuration
             foreach (var other in others)
             {
                 var opt = other.GetResult(_args);
-                if (opt != null && other.Active(opt))
+                if (opt != null && other.Active(opt, _args))
                 {
                     return true;
                 }

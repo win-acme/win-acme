@@ -34,7 +34,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="current"></param>
         /// <returns></returns>
-        bool Active();
+        bool Active(string[] args);
     }
 
     public interface IArgumentsProvider : IArgumentsGroup
@@ -65,14 +65,14 @@ namespace PKISharp.WACS.Services
         /// <param name="current"></param>
         /// <param name="main"></param>
         /// <returns></returns>
-        bool Validate(object current, MainArguments main);
+        bool Validate(object current, MainArguments main, string[] args);
 
         /// <summary>
         /// Are the arguments provided?
         /// </summary>
         /// <param name="current"></param>
         /// <returns></returns>
-        bool Active(object current);
+        bool Active(object current, string[] args);
     }
 
     public interface IArgumentsProvider<T> : IArgumentsProvider where T : class, new()
@@ -88,6 +88,6 @@ namespace PKISharp.WACS.Services
         /// <param name="current"></param>
         /// <param name="main"></param>
         /// <returns></returns>
-        bool Validate(T current, MainArguments main);
+        bool Validate(T current, MainArguments main, string[] args);
     }
 }
