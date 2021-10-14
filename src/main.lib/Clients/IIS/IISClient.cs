@@ -158,10 +158,10 @@ namespace PKISharp.WACS.Clients.IIS
 
         #region _ Https Install _
 
-        public void AddOrUpdateBindings(IEnumerable<Identifier> identifiers, BindingOptions bindingOptions, byte[]? oldThumbprint)
+        public void UpdateHttpSite(IEnumerable<Identifier> identifiers, BindingOptions bindingOptions, byte[]? oldThumbprint, bool replaceOnly)
         {
             var updater = new IISHttpBindingUpdater<IISSiteWrapper, IISBindingWrapper>(this, _log);
-            var updated = updater.AddOrUpdateBindings(identifiers, bindingOptions, oldThumbprint);
+            var updated = updater.AddOrUpdateBindings(identifiers, bindingOptions, oldThumbprint, replaceOnly);
             if (updated > 0)
             {
                 _log.Information("Committing {count} {type} binding changes to IIS", updated, "https");
@@ -185,7 +185,7 @@ namespace PKISharp.WACS.Clients.IIS
                 newBinding.SetAttributeValue("sslFlags", options.Flags);
             }
             site.Site.Bindings.Add(newBinding);
-            return new IISBindingWrapper(newBinding);
+            return new IISBindingWrapper(newBinding, true);
         }
 
         public void UpdateBinding(IISSiteWrapper site, IISBindingWrapper existingBinding, BindingOptions options)
@@ -236,7 +236,7 @@ namespace PKISharp.WACS.Clients.IIS
         /// <param name="id"></param>
         /// <param name="newCertificate"></param>
         /// <param name="oldCertificate"></param>
-        public void UpdateFtpSite(long? id, CertificateInfo newCertificate, CertificateInfo? oldCertificate)
+        public void UpdateFtpSite(long? id, CertificateInfo newCertificate, CertificateInfo? oldCertificate, bool replaceOnly)
         {
             var ftpSites = Sites.Where(x => x.Type == IISSiteType.Ftp).ToList();
             var oldThumbprint = oldCertificate?.Certificate?.Thumbprint;
@@ -292,6 +292,15 @@ namespace PKISharp.WACS.Clients.IIS
             }
         }
 
+        /// <summary>
+        /// Test if FTP site needs a binding update
+        /// </summary>
+        /// <param name="element"></param>
+        /// <param name="installSite"></param>
+        /// <param name="oldThumbprint"></param>
+        /// <param name="newThumbprint"></param>
+        /// <param name="newStore"></param>
+        /// <returns></returns>
         private bool RequireUpdate(ConfigurationElement element, 
             bool installSite, 
             string? oldThumbprint, string? newThumbprint,

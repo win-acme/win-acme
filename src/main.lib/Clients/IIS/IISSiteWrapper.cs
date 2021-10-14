@@ -24,8 +24,20 @@ namespace PKISharp.WACS.Clients.IIS
 
         public IISSiteWrapper(Site site)
         {
+            var ftpSsl = !string.IsNullOrWhiteSpace(site.
+                GetChildElement("ftpServer")?.
+                GetChildElement("security")?.
+                GetChildElement("ssl")?.
+                GetAttributeValue("serverCertHash")?.
+                ToString());
+
             Site = site;
-            Bindings = site.Bindings.Select(x => new IISBindingWrapper(x)).ToList();
+            Bindings = site.Bindings.Select(x =>
+            {
+                var secure = x.Protocol == "https" || ((x.Protocol == "ftp") && ftpSsl);
+                return new IISBindingWrapper(x, secure);
+            }).ToList();
+
             if (Bindings.All(b => b.Protocol == "ftp" || b.Protocol == "ftps"))
             {
                 Type = IISSiteType.Ftp;
@@ -94,8 +106,12 @@ namespace PKISharp.WACS.Clients.IIS
         public string CertificateStoreName => Binding.CertificateStoreName;
         public string BindingInformation => Binding.NormalizedBindingInformation();
         public SSLFlags SSLFlags => Binding.SSLFlags();
-        public bool Secure => Protocol == "ftps" || Protocol == "https";
+        public bool Secure { get; private set; }
 
-        public IISBindingWrapper(Binding binding) => Binding = binding;
+        public IISBindingWrapper(Binding binding, bool secure)
+        {
+            Binding = binding;
+            Secure = secure;
+        }
     }
 }

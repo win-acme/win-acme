@@ -15,14 +15,12 @@ namespace PKISharp.WACS.Clients.IIS
     {
         void Refresh();
         IEnumerable<IIISSite> Sites { get; }
+        IIISSite GetSite(long id, IISSiteType? type = null);
         bool HasFtpSites { get; }
         bool HasWebSites { get; }
         Version Version { get; }
-
-        void AddOrUpdateBindings(IEnumerable<Identifier> identifiers, BindingOptions bindingOptions, byte[]? oldThumbprint);
-
-        IIISSite GetSite(long id, IISSiteType? type = null);
-        void UpdateFtpSite(long? id, CertificateInfo newCertificate, CertificateInfo? oldCertificate);
+        void UpdateHttpSite(IEnumerable<Identifier> identifiers, BindingOptions bindingOptions, byte[]? oldThumbprint, bool replaceOnly);
+        void UpdateFtpSite(long? id, CertificateInfo newCertificate, CertificateInfo? oldCertificate, bool replaceOnly);
     }
 
     public interface IIISClient<TSite, TBinding> : IIISClient

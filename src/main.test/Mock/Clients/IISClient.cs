@@ -91,13 +91,13 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
         IEnumerable<IIISSite> IIISClient.Sites => Sites;
         public IEnumerable<MockSite> Sites => MockSites;
 
-        public bool HasFtpSites => Sites.Where(x => x.Type == IISSiteType.Ftp).Count() > 0;
-        public bool HasWebSites => Sites.Where(x => x.Type == IISSiteType.Web).Count() > 0;
+        public bool HasFtpSites => Sites.Any(x => x.Type == IISSiteType.Ftp);
+        public bool HasWebSites => Sites.Any(x => x.Type == IISSiteType.Web);
 
-        public void AddOrUpdateBindings(IEnumerable<Identifier> identifiers, BindingOptions bindingOptions, byte[]? oldThumbprint)
+        public void UpdateHttpSite(IEnumerable<Identifier> identifiers, BindingOptions bindingOptions, byte[]? oldThumbprint, bool replaceOnly)
         {
             var updater = new IISHttpBindingUpdater<MockSite, MockBinding>(this, _log);
-            var updated = updater.AddOrUpdateBindings(identifiers, bindingOptions, oldThumbprint);
+            var updated = updater.AddOrUpdateBindings(identifiers, bindingOptions, oldThumbprint, false);
             if (updated > 0)
             {
                 _log.Information("Committing {count} {type} binding changes to IIS", updated, "https");
@@ -109,7 +109,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
             }
         }
         public MockSite GetSite(long id, IISSiteType? type = null) => Sites.First(x => id == x.Id && (type == null || x.Type == type));
-        public void UpdateFtpSite(long? FtpSiteId, CertificateInfo newCertificate, CertificateInfo? oldCertificate) { }
+        public void UpdateFtpSite(long? FtpSiteId, CertificateInfo newCertificate, CertificateInfo? oldCertificate, bool replaceOnly) { }
         IIISSite IIISClient.GetSite(long id, IISSiteType? type) => GetSite(id, type);
 
         public IIISBinding AddBinding(MockSite site, BindingOptions bindingOptions) {

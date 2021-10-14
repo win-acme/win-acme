@@ -154,7 +154,7 @@ namespace PKISharp.WACS
             // Choose the validation plugin
             if (steps.HasFlag(Steps.Validation))
             {
-                var validationOptions = await SetupValidation(configScope, initialTarget, runLevel);
+                var validationOptions = await SetupValidation(targetScope, initialTarget, runLevel);
                 if (validationOptions == null)
                 {
                     return;

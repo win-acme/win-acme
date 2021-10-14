@@ -76,45 +76,44 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 switch (part.SiteType)
                 {
                     case IISSiteType.Web:
-                        {
-                            // Fresh binding options 
-                            var bindingOptions = new BindingOptions();
+                        // Fresh binding options 
+                        var bindingOptions = new BindingOptions();
                             
-                            // Pick between CentralSsl and CertificateStore
-                            bindingOptions = centralSslForHttp
-                                ? bindingOptions.
-                                    WithFlags(SSLFlags.CentralSsl)
-                                : bindingOptions.
-                                    WithThumbprint(newThumb).
-                                    WithStore(newCertificate.StoreInfo[typeof(CertificateStore)].Path);
+                        // Pick between CentralSsl and CertificateStore
+                        bindingOptions = centralSslForHttp
+                            ? bindingOptions.
+                                WithFlags(SSLFlags.CentralSsl)
+                            : bindingOptions.
+                                WithThumbprint(newThumb).
+                                WithStore(newCertificate.StoreInfo[typeof(CertificateStore)].Path);
 
-                            // Optionaly overrule the standard IP for new bindings 
-                            if (!string.IsNullOrEmpty(_options.NewBindingIp))
-                            {
-                                bindingOptions = bindingOptions.
-                                    WithIP(_options.NewBindingIp);
-                            }
-                            // Optionaly overrule the standard port for new bindings 
-                            if (_options.NewBindingPort > 0)
-                            {
-                                bindingOptions = bindingOptions.
-                                    WithPort(_options.NewBindingPort.Value);
-                            }
-                            // Update bindings in IIS
-                            _iisClient.AddOrUpdateBindings(
-                                part.Identifiers.OfType<DnsIdentifier>(),
-                                bindingOptions.WithSiteId(siteId),
-                                oldThumb);
-                            break;
-                        }
-                    case IISSiteType.Ftp:
+                        // Optionaly overrule the standard IP for new bindings 
+                        if (!string.IsNullOrEmpty(_options.NewBindingIp))
                         {
-                            // Update FTP site
-                            _iisClient.UpdateFtpSite(siteId, newCertificate, oldCertificate);
-                            break;
+                            bindingOptions = bindingOptions.
+                                WithIP(_options.NewBindingIp);
                         }
+                        // Optionaly overrule the standard port for new bindings 
+                        if (_options.NewBindingPort > 0)
+                        {
+                            bindingOptions = bindingOptions.
+                                WithPort(_options.NewBindingPort.Value);
+                        }
+                        // Update bindings in IIS
+                        _iisClient.UpdateHttpSite(
+                            part.Identifiers.OfType<DnsIdentifier>(),
+                            bindingOptions.WithSiteId(siteId),
+                            oldThumb, 
+                            false);
+                        break;
+
+                    case IISSiteType.Ftp:
+                        // Update FTP site
+                        _iisClient.UpdateFtpSite(siteId, newCertificate, oldCertificate, false);
+                        break;
                 }
-            }
+            }                     
+
 
             return Task.FromResult(true);
         }

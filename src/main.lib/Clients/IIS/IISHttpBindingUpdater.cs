@@ -39,7 +39,8 @@ namespace PKISharp.WACS.Clients.IIS
         public int AddOrUpdateBindings(
             IEnumerable<Identifier> identifiers,
             BindingOptions bindingOptions,
-            byte[]? oldThumbprint)
+            byte[]? oldThumbprint,
+            bool replaceOnly)
         {
             // Helper function to get updated sites
             IEnumerable<(TSite site, TBinding binding)> GetAllSites() => _client.Sites.
@@ -87,6 +88,11 @@ namespace PKISharp.WACS.Clients.IIS
                             throw;
                         }
                     }
+                }
+
+                if (replaceOnly)
+                {
+                    return bindingsUpdated;
                 }
 
                 // Find all hostnames which are not covered by any of the already updated
@@ -147,6 +153,7 @@ namespace PKISharp.WACS.Clients.IIS
                 throw;
             }
         }
+
         /// <summary>
         /// Create or update a single binding in a single site
         /// </summary>
