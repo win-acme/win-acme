@@ -19,8 +19,8 @@ namespace PKISharp.WACS.Clients.IIS
         bool HasFtpSites { get; }
         bool HasWebSites { get; }
         Version Version { get; }
-        void UpdateHttpSite(IEnumerable<Identifier> identifiers, BindingOptions bindingOptions, byte[]? oldThumbprint, bool replaceOnly);
-        void UpdateFtpSite(long? id, CertificateInfo newCertificate, CertificateInfo? oldCertificate, bool replaceOnly);
+        void UpdateHttpSite(IEnumerable<Identifier> identifiers, BindingOptions bindingOptions, byte[]? oldThumbprint);
+        void UpdateFtpSite(long? id, CertificateInfo newCertificate, CertificateInfo? oldCertificate);
     }
 
     public interface IIISClient<TSite, TBinding> : IIISClient

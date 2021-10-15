@@ -39,8 +39,7 @@ namespace PKISharp.WACS.Clients.IIS
         public int AddOrUpdateBindings(
             IEnumerable<Identifier> identifiers,
             BindingOptions bindingOptions,
-            byte[]? oldThumbprint,
-            bool replaceOnly)
+            byte[]? oldThumbprint)
         {
             // Helper function to get updated sites
             IEnumerable<(TSite site, TBinding binding)> GetAllSites() => _client.Sites.
@@ -90,7 +89,7 @@ namespace PKISharp.WACS.Clients.IIS
                     }
                 }
 
-                if (replaceOnly)
+                if (bindingOptions.SiteId == null)
                 {
                     return bindingsUpdated;
                 }
@@ -98,7 +97,7 @@ namespace PKISharp.WACS.Clients.IIS
                 // Find all hostnames which are not covered by any of the already updated
                 // bindings yet, because we will want to make sure that those are accessable
                 // in the target site
-                var targetSite = _client.GetSite(bindingOptions.SiteId ?? -1, IISSiteType.Web);
+                var targetSite = _client.GetSite(bindingOptions.SiteId.Value, IISSiteType.Web);
                 var todo = identifiers;
                 while (todo.Any())
                 {

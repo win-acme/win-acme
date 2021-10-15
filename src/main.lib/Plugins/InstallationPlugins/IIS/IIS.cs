@@ -26,7 +26,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         }
 
         Task<bool> IInstallationPlugin.Install(
-            Target target, 
+            Target source, 
             IEnumerable<IStorePlugin> stores,
             CertificateInfo newCertificate,
             CertificateInfo? oldCertificate)
@@ -54,7 +54,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                     supported = false;
                     centralSslForHttp = false;
                 }
-                if (target.Parts.Any(p => p.SiteType == IISSiteType.Ftp)) 
+                if (source.Parts.Any(p => p.SiteType == IISSiteType.Ftp)) 
                 {
                     reason = "CentralSsl store is not supported for FTP sites";
                     supported = false;
@@ -70,23 +70,23 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 
             var oldThumb = oldCertificate?.Certificate?.GetCertHash();
             var newThumb = newCertificate.Certificate.GetCertHash();
-            foreach (var part in target.Parts)
+            foreach (var part in source.Parts)
             {
                 var siteId = _options.SiteId ?? part.SiteId;
+                var httpIdentifiers = part.Identifiers.OfType<DnsIdentifier>();
+                var bindingOptions = new BindingOptions();
+
+                // Pick between CentralSsl and CertificateStore
+                bindingOptions = centralSslForHttp
+                    ? bindingOptions.
+                        WithFlags(SSLFlags.CentralSsl)
+                    : bindingOptions.
+                        WithThumbprint(newThumb).
+                        WithStore(newCertificate.StoreInfo[typeof(CertificateStore)].Path);
+
                 switch (part.SiteType)
                 {
                     case IISSiteType.Web:
-                        // Fresh binding options 
-                        var bindingOptions = new BindingOptions();
-                            
-                        // Pick between CentralSsl and CertificateStore
-                        bindingOptions = centralSslForHttp
-                            ? bindingOptions.
-                                WithFlags(SSLFlags.CentralSsl)
-                            : bindingOptions.
-                                WithThumbprint(newThumb).
-                                WithStore(newCertificate.StoreInfo[typeof(CertificateStore)].Path);
-
                         // Optionaly overrule the standard IP for new bindings 
                         if (!string.IsNullOrEmpty(_options.NewBindingIp))
                         {
@@ -99,21 +99,20 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                             bindingOptions = bindingOptions.
                                 WithPort(_options.NewBindingPort.Value);
                         }
-                        // Update bindings in IIS
-                        _iisClient.UpdateHttpSite(
-                            part.Identifiers.OfType<DnsIdentifier>(),
-                            bindingOptions.WithSiteId(siteId),
-                            oldThumb, 
-                            false);
+                        bindingOptions = bindingOptions.WithSiteId(siteId);
+                        _iisClient.UpdateHttpSite(httpIdentifiers, bindingOptions, oldThumb);
+                        if (certificateStore != null) 
+                        {
+                            _iisClient.UpdateFtpSite(0, newCertificate, oldCertificate);
+                        }
                         break;
-
                     case IISSiteType.Ftp:
                         // Update FTP site
-                        _iisClient.UpdateFtpSite(siteId, newCertificate, oldCertificate, false);
+                        _iisClient.UpdateFtpSite(siteId, newCertificate, oldCertificate);
+                        _iisClient.UpdateHttpSite(httpIdentifiers, bindingOptions, oldThumb);
                         break;
                 }
-            }                     
-
+            }
 
             return Task.FromResult(true);
         }
