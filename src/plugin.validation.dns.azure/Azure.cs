@@ -27,7 +27,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         private IEnumerable<Zone>? _hostedZones;
         
         public Azure(AzureOptions options,
-            LookupClientProvider dnsClient, 
+            LookupClientProvider dnsClient,
+            SecretServiceManager ssm,
             IProxyService proxyService,
             ILogService log, 
             ISettingsService settings) : base(dnsClient, log, settings)
@@ -35,7 +36,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _options = options;
             _proxyService = proxyService;
             _recordSets = new Dictionary<string, Dictionary<string, RecordSet?>>();
-            _helpers = new AzureHelpers(_options, log);
+            _helpers = new AzureHelpers(_options, log, ssm);
         }
 
         /// <summary>

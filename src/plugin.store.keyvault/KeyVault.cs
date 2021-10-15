@@ -24,12 +24,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         private readonly IProxyService _proxyService;
         private readonly KeyVaultOptions _options;
         private readonly ILogService _log;
+        private readonly SecretServiceManager _ssm;
 
-        public KeyVault(KeyVaultOptions options, IProxyService proxyService, ILogService log)
+        public KeyVault(KeyVaultOptions options, SecretServiceManager ssm, IProxyService proxyService, ILogService log)
         {
             _options = options;
             _proxyService = proxyService;
             _log = log;
+            _ssm = ssm;
         }
 
         private Task<CertificateClient> GetClient()
@@ -41,7 +43,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                     : (TokenCredential)new ClientSecretCredential(
                         _options.TenantId,
                         _options.ClientId,
-                        _options.Secret?.Value);
+                        _ssm.EvaluateSecret(_options.Secret?.Value));
                 var options = new CertificateClientOptions
                 {
                     Transport = new HttpClientTransport(_proxyService.GetHttpClient())

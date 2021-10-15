@@ -10,10 +10,13 @@ namespace PKISharp.WACS.Plugins.Azure.Common
     public class AzureHelpers
     {
         private readonly IAzureOptionsCommon _options;
+        private readonly SecretServiceManager _ssm;
+
         public Uri ResourceManagersEndpoint { get; private set; }
-        public AzureHelpers(IAzureOptionsCommon options, ILogService log)
+        public AzureHelpers(IAzureOptionsCommon options, ILogService log, SecretServiceManager ssm)
         {
             _options = options;
+            _ssm = ssm;
             ResourceManagersEndpoint = new Uri(AzureEnvironments.ResourceManagerUrls[AzureEnvironments.AzureCloud]);
             if (!string.IsNullOrEmpty(options.AzureEnvironment))
             {
@@ -66,7 +69,7 @@ namespace PKISharp.WACS.Plugins.Azure.Common
                 credentials = await ApplicationTokenProvider.LoginSilentAsync(
                     _options.TenantId,
                     _options.ClientId,
-                    _options.Secret?.Value,
+                    _ssm.EvaluateSecret(_options.Secret?.Value),
                     GetActiveDirectorySettingsForAzureEnvironment());
             }
             return credentials;
