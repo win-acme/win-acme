@@ -17,6 +17,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         private readonly IISOptions _options;
         private readonly IUserRoleService _userRoleService;
 
+        public IIS(IISFtpOptions options, IIISClient iisClient, ILogService log, IUserRoleService userRoleService) : this((IISOptions)options, iisClient, log, userRoleService) { }
         public IIS(IISOptions options, IIISClient iisClient, ILogService log, IUserRoleService userRoleService)
         {
             _iisClient = iisClient;
@@ -43,6 +44,13 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 throw new InvalidOperationException(errorMessage);
             }
  
+            // Determine site types
+            foreach (var part in source.Parts)
+            {
+                part.SiteId ??= _options.SiteId;
+                part.SiteType ??= _iisClient.GetSite(part.SiteId!.Value).Type;
+            }
+
             if (centralSsl != null)
             {
                 centralSslForHttp = true;
@@ -72,7 +80,6 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             var newThumb = newCertificate.Certificate.GetCertHash();
             foreach (var part in source.Parts)
             {
-                var siteId = _options.SiteId ?? part.SiteId;
                 var httpIdentifiers = part.Identifiers.OfType<DnsIdentifier>();
                 var bindingOptions = new BindingOptions();
 
@@ -99,7 +106,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                             bindingOptions = bindingOptions.
                                 WithPort(_options.NewBindingPort.Value);
                         }
-                        bindingOptions = bindingOptions.WithSiteId(siteId);
+                        bindingOptions = bindingOptions.WithSiteId(part.SiteId!.Value);
                         _iisClient.UpdateHttpSite(httpIdentifiers, bindingOptions, oldThumb);
                         if (certificateStore != null) 
                         {
@@ -108,8 +115,11 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                         break;
                     case IISSiteType.Ftp:
                         // Update FTP site
-                        _iisClient.UpdateFtpSite(siteId, newCertificate, oldCertificate);
+                        _iisClient.UpdateFtpSite(part.SiteId!.Value, newCertificate, oldCertificate);
                         _iisClient.UpdateHttpSite(httpIdentifiers, bindingOptions, oldThumb);
+                        break;
+                    default:
+                        _log.Error("Unknown site type");
                         break;
                 }
             }
