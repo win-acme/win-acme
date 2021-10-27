@@ -35,9 +35,13 @@ $CertInStore = Get-ChildItem -Path Cert:\LocalMachine -Recurse | Where-Object {$
 if($CertInStore){
     try{
         $winrm = 'winrm/config/listener'
+        $WinRmEndpoint = Get-WSManInstance -ResourceURI $winrm -Enumerate | Where-Object {$_.Transport -eq 'HTTPS' -and $CertInStore.DnsNameList -contains $_.Hostname}
 
-        Get-WSManInstance -ResourceURI $winrm -Enumerate | Where-Object {$CertInStore.DnsNameList -contains $_.Hostname} | ForEach-Object {Set-WSManInstance -ResourceURI $winrm -SelectorSet @{Address=$_.Address; Transport=$_.Transport} -ValueSet @{CertificateThumbprint=$CertInStore.Thumbprint}}
-
+        if($null -ne $WinRmEndpoint){
+            $WinRmEndpoint | ForEach-Object {Set-WSManInstance -ResourceURI $winrm -SelectorSet @{Address=$_.Address; Transport=$_.Transport} -ValueSet @{CertificateThumbprint=$CertInStore.Thumbprint}}
+        }else{
+            New-WSManInstance -ResourceURI $winrm -SelectorSet @{Transport='HTTPS'; Address='*'} -ValueSet @{Hostname=(@($env:COMPUTERNAME, $env:USERDNSDOMAIN) -join '.').ToLower();CertificateThumbprint=$CertInStore.Thumbprint}
+        }
         Restart-Service WinRM -Force -ErrorAction Stop
         "Cert thumbprint set to WinRM public HTTPS listener and service restarted"
     }catch{
@@ -47,4 +51,3 @@ if($CertInStore){
 }else{
     "Cert thumbprint not found in the cert store... which is strange because it should be there."
 }
-
