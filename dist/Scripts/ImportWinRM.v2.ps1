@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-Imports a cert from WACS renewal into any WinRM HTTPS listeners
+Imports a cert from WACS renewal into any WinRM HTTPS listeners. If no HTTPS listener exists, a new one will be created.
 .DESCRIPTION
 Note that this script is intended to be run via the install script plugin from win-acme via the
 batch script wrapper. As such, we use positional parameters to avoid issues with using a dash in the
