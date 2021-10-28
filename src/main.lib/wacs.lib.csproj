@@ -23,7 +23,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Autofac" Version="6.2.0" />
+    <PackageReference Include="Autofac" Version="6.3.0" />
     <PackageReference Include="DnsClient" Version="1.4.0" />
     <PackageReference Include="MailKit" Version="2.12.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="5.0.0" />
