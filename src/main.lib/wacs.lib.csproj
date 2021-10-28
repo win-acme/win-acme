@@ -50,7 +50,7 @@
     <PackageReference Include="System.Security.Cryptography.Cng" Version="5.0.0" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="5.0.0" />
     <PackageReference Include="System.Security.Cryptography.X509Certificates" Version="4.3.2" />
-    <PackageReference Include="TaskScheduler" Version="2.9.1" />
+    <PackageReference Include="TaskScheduler" Version="2.9.2" />
     <PackageReference Include="WebDav.Client" Version="2.7.0" />
   </ItemGroup>
 
