@@ -686,9 +686,14 @@ namespace PKISharp.WACS.Clients.Acme
             {
                 if (ape.Response.StatusCode == HttpStatusCode.TooManyRequests)
                 {
+                    if (ape.ProblemType == acme.ProblemType.RateLimited)
+                    {
+                        // Do not keep retrying when rate limit is hit
+                        throw;
+                    }
                     if (attempt == 5)
                     {
-                        throw new Exception("Service is too busy, try again later...");
+                        throw new Exception("Service is too busy, try again later...", ape);
                     }
                     var delaySeconds = (int)Math.Pow(2, attempt + 3); // 5 retries with 8 to 128 seconds delay
                     _log.Warning("Service is busy at the moment, backing off for {n} seconds", delaySeconds);
