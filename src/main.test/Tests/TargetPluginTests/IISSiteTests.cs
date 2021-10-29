@@ -56,7 +56,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         public void Regular()
         {
             var siteId = 1;
-            var site = iis.GetWebSite(siteId);
+            var site = iis.GetSite(siteId);
             var options = Options($"--siteid {siteId}");
             Assert.IsNotNull(options);
             if (options != null)
@@ -85,7 +85,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         {
             var siteId = 1;
             var commonName = "经/已經.example.com";
-            _ = iis.GetWebSite(siteId);
+            _ = iis.GetSite(siteId);
             var options = Options($"--siteid {siteId} --commonname {commonName}");
             Assert.IsNotNull(options); 
             if (options != null)
@@ -123,7 +123,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         public void ExcludeBindings()
         {
             var siteId = 1;
-            var site = iis.GetWebSite(siteId);
+            var site = iis.GetSite(siteId);
             var options = Options($"--siteid {siteId} --excludebindings test.example.com,four.example.com");
             Assert.IsNotNull(options);
             if (options != null)
@@ -169,7 +169,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         public void CommonNameExcludedAfter()
         {
             var siteId = 1;
-            var site = iis.GetWebSite(siteId);
+            var site = iis.GetSite(siteId);
             var options = new IISSiteOptions() { SiteId = siteId, CommonName = "missing.example.com" };
             var target = Target(options);
             Assert.AreEqual(target.IsValid(log), true);

@@ -16,6 +16,7 @@ namespace PKISharp.WACS.Services
         public ClientSettings Client { get; private set; } = new ClientSettings();
         public UiSettings UI { get; private set; } = new UiSettings();
         public AcmeSettings Acme { get; private set; } = new AcmeSettings();
+        public ExecutionSettings Execution { get; private set; } = new ExecutionSettings();
         public ProxySettings Proxy { get; private set; } = new ProxySettings();
         public CacheSettings Cache { get; private set; } = new CacheSettings();
         public ScheduledTaskSettings ScheduledTask { get; private set; } = new ScheduledTaskSettings();

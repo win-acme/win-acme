@@ -44,7 +44,6 @@ namespace PKISharp.WACS.Host
             }
 
 
-
             // The main class might change the character encoding
             // save the original setting so that it can be restored
             // after the run.

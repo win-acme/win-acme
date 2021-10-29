@@ -328,7 +328,7 @@ namespace PKISharp.WACS.Services.Legacy
                 switch (legacyName.ToLower())
                 {
                     case "iis":
-                        ret.InstallationPluginOptions.Add(new install.IISWebOptions()
+                        ret.InstallationPluginOptions.Add(new install.IISOptions()
                         {
                             SiteId = legacy.Binding.InstallationSiteId,
                             NewBindingIp = legacy.Binding.SSLIPAddress,
@@ -336,7 +336,7 @@ namespace PKISharp.WACS.Services.Legacy
                         });
                         break;
                     case "iisftp":
-                        ret.InstallationPluginOptions.Add(new install.IISFtpOptions()
+                        ret.InstallationPluginOptions.Add(new install.IISOptions()
                         {
                             SiteId = legacy.Binding.FtpSiteId ?? 
                                 legacy.Binding.InstallationSiteId ?? 

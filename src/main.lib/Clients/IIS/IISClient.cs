@@ -22,8 +22,7 @@ namespace PKISharp.WACS.Clients.IIS
         [SuppressMessage("Code Quality", "IDE0069:Disposable fields should be disposed", Justification = "Actually is disposed")]
         private readonly ILogService _log;
         private ServerManager? _serverManager;
-        private List<IISSiteWrapper>? _webSites = null;
-        private List<IISSiteWrapper>? _ftpSites = null;
+        private List<IISSiteWrapper>? _sites = null;
 
         public IISClient(ILogService log)
         {
@@ -50,8 +49,7 @@ namespace PKISharp.WACS.Clients.IIS
                         {
                             _log.Error($"Unable to create an IIS ServerManager");
                         }
-                        _webSites = null;
-                        _ftpSites = null;
+                        _sites = null;
                     }
                 }
                 return _serverManager;
@@ -86,8 +84,7 @@ namespace PKISharp.WACS.Clients.IIS
 
         public void Refresh()
         {
-            _webSites = null;
-            _ftpSites = null;
+            _sites = null;
             if (_serverManager != null)
             {
                 _serverManager.Dispose();
@@ -97,19 +94,12 @@ namespace PKISharp.WACS.Clients.IIS
 
         #region _ Basic retrieval _
 
-        IEnumerable<IIISSite> IIISClient.WebSites => WebSites;
+        IEnumerable<IIISSite> IIISClient.Sites => Sites;
+        IIISSite IIISClient.GetSite(long id, IISSiteType? type) => GetSite(id, type);
+        public bool HasWebSites => Version.Major > 0 && Sites.Any(w => w.Type == IISSiteType.Web);
+        public bool HasFtpSites => Version >= new Version(7, 5) && Sites.Any(w => w.Type == IISSiteType.Ftp);
 
-        IEnumerable<IIISSite> IIISClient.FtpSites => FtpSites;
-
-        IIISSite IIISClient.GetWebSite(long id) => GetWebSite(id);
-
-        IIISSite IIISClient.GetFtpSite(long id) => GetFtpSite(id);
-
-        public bool HasWebSites => Version.Major > 0 && WebSites.Any();
-
-        public bool HasFtpSites => Version >= new Version(7, 5) && FtpSites.Any();
-
-        public IEnumerable<IISSiteWrapper> WebSites
+        public IEnumerable<IISSiteWrapper> Sites
         {
             get
             {
@@ -117,82 +107,58 @@ namespace PKISharp.WACS.Clients.IIS
                 {
                     return new List<IISSiteWrapper>();
                 }
-                if (_webSites == null)
+                if (_sites == null)
                 {
-                   _webSites = ServerManager.Sites.AsEnumerable().
-                       Where(s => s.Bindings.Any(sb => sb.Protocol == "http" || sb.Protocol == "https")).
+                   _sites = ServerManager.Sites.AsEnumerable().
+                       Select(x => new IISSiteWrapper(x)).
                        Where(s =>
                        {
-
-                           try
+                           switch (s.Type)
                            {
-                               return s.State == ObjectState.Started;
-                           }
-                           catch
-                           {
-                                // Prevent COMExceptions such as misconfigured
-                                // application pools from crashing the whole 
-                                _log.Warning("Unable to determine state for Site {id}", s.Id);
-                               return false;
+                               case IISSiteType.Ftp:
+                                   return true;
+                               case IISSiteType.Web:
+                                   try
+                                   {
+                                       return s.Site.State == ObjectState.Started;
+                                   }
+                                   catch
+                                   {
+                                       // Prevent COMExceptions such as misconfigured
+                                       // application pools from crashing the whole 
+                                       _log.Warning("Unable to determine state for Site {id}", s.Id);
+                                       return false;
+                                   }
+                               default:
+                                   return false;
                            }
                        }).
                        OrderBy(s => s.Name).
-                       Select(x => new IISSiteWrapper(x)).
                        ToList();
                 }
-                return _webSites;
+                return _sites;
             }
         }
 
-        public IEnumerable<IISSiteWrapper> FtpSites
+        public IISSiteWrapper GetSite(long id, IISSiteType? type)
         {
-            get
+            var ret = Sites.Where(s => s.Site.Id == id).FirstOrDefault();
+            if (ret == null)
             {
-                if (ServerManager == null)
-                {
-                    return new List<IISSiteWrapper>();
-                }
-                if (_ftpSites == null)
-                {
-                    _ftpSites = ServerManager.Sites.AsEnumerable().
-                        Where(s => s.Bindings.Any(sb => sb.Protocol == "ftp")).
-                        OrderBy(s => s.Name).
-                        Select(x => new IISSiteWrapper(x)).
-                        ToList();
-                }
-                return _ftpSites;
+                throw new Exception($"Unable to find IIS SiteId #{id}");
             }
-        }
-
-        public IISSiteWrapper GetWebSite(long id)
-        {
-            foreach (var site in WebSites)
+            if (type != null && ret.Type != type)
             {
-                if (site.Site.Id == id)
-                {
-                    return site;
-                }
+                throw new Exception($"IIS SiteId #{id} is not of the expected type {type}");
             }
-            throw new Exception($"Unable to find IIS SiteId #{id}");
-        }
-
-        public IISSiteWrapper GetFtpSite(long id)
-        {
-            foreach (var site in FtpSites)
-            {
-                if (site.Site.Id == id)
-                {
-                    return site;
-                }
-            }
-            throw new Exception($"Unable to find IIS SiteId #{id}");
+            return ret;
         }
 
         #endregion
 
         #region _ Https Install _
 
-        public void AddOrUpdateBindings(IEnumerable<Identifier> identifiers, BindingOptions bindingOptions, byte[]? oldThumbprint)
+        public void UpdateHttpSite(IEnumerable<Identifier> identifiers, BindingOptions bindingOptions, byte[]? oldThumbprint)
         {
             var updater = new IISHttpBindingUpdater<IISSiteWrapper, IISBindingWrapper>(this, _log);
             var updated = updater.AddOrUpdateBindings(identifiers, bindingOptions, oldThumbprint);
@@ -219,7 +185,7 @@ namespace PKISharp.WACS.Clients.IIS
                 newBinding.SetAttributeValue("sslFlags", options.Flags);
             }
             site.Site.Bindings.Add(newBinding);
-            return new IISBindingWrapper(newBinding);
+            return new IISBindingWrapper(newBinding, true);
         }
 
         public void UpdateBinding(IISSiteWrapper site, IISBindingWrapper existingBinding, BindingOptions options)
@@ -267,12 +233,12 @@ namespace PKISharp.WACS.Clients.IIS
         /// <summary>
         /// Update binding for FTPS site
         /// </summary>
-        /// <param name="FtpSiteId"></param>
+        /// <param name="id"></param>
         /// <param name="newCertificate"></param>
         /// <param name="oldCertificate"></param>
-        public void UpdateFtpSite(long FtpSiteId, CertificateInfo newCertificate, CertificateInfo? oldCertificate)
+        public void UpdateFtpSite(long? id, CertificateInfo newCertificate, CertificateInfo? oldCertificate)
         {
-            var ftpSites = FtpSites.ToList();
+            var ftpSites = Sites.Where(x => x.Type == IISSiteType.Ftp).ToList();
             var oldThumbprint = oldCertificate?.Certificate?.Thumbprint;
             var newThumbprint = newCertificate?.Certificate?.Thumbprint;
             var newStore = newCertificate?.StoreInfo[typeof(CertificateStore)].Path;
@@ -287,7 +253,7 @@ namespace PKISharp.WACS.Clients.IIS
                 GetChildElement("ftpServer").
                 GetChildElement("security").
                 GetChildElement("ssl");
-            if (RequireUpdate(sslElement, 0, FtpSiteId, oldThumbprint, newThumbprint, newStore))
+            if (RequireUpdate(sslElement, false, oldThumbprint, newThumbprint, newStore))
             {
                 sslElement.SetAttributeValue("serverCertHash", newThumbprint);
                 sslElement.SetAttributeValue("serverCertStoreName", newStore);
@@ -306,7 +272,7 @@ namespace PKISharp.WACS.Clients.IIS
                     GetChildElement("security").
                     GetChildElement("ssl");
 
-                if (RequireUpdate(sslElement, ftpSite.Id, FtpSiteId, oldThumbprint, newThumbprint, newStore))
+                if (RequireUpdate(sslElement, ftpSite.Id == id, oldThumbprint, newThumbprint, newStore))
                 {
                     sslElement.SetAttributeValue("serverCertHash", newThumbprint);
                     sslElement.SetAttributeValue("serverCertStoreName", newStore);
@@ -326,15 +292,28 @@ namespace PKISharp.WACS.Clients.IIS
             }
         }
 
+        /// <summary>
+        /// Test if FTP site needs a binding update
+        /// </summary>
+        /// <param name="element"></param>
+        /// <param name="installSite"></param>
+        /// <param name="oldThumbprint"></param>
+        /// <param name="newThumbprint"></param>
+        /// <param name="newStore"></param>
+        /// <returns></returns>
         private bool RequireUpdate(ConfigurationElement element, 
-            long currentSiteId, long installSiteId, 
+            bool installSite, 
             string? oldThumbprint, string? newThumbprint,
             string? newStore)
         {
+            if (string.Equals(oldThumbprint, newThumbprint, StringComparison.CurrentCultureIgnoreCase))
+            {
+                return false;
+            }
             var currentThumbprint = element.GetAttributeValue("serverCertHash").ToString();
             var currentStore = element.GetAttributeValue("serverCertStoreName").ToString();
             bool update;
-            if (currentSiteId == installSiteId)
+            if (installSite)
             {
                 update =
                     !string.Equals(currentThumbprint, newThumbprint, StringComparison.CurrentCultureIgnoreCase) ||

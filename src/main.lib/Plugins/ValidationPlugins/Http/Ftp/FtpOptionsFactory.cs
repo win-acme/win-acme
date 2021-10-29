@@ -32,9 +32,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         public override string[] WebrootHint(bool allowEmpty)
         {
             return new[] {
-                "Enter an ftp path that leads to the web root of the host for http authentication",
-                " Example, ftp://domain.com:21/site/wwwroot/",
-                " Example, ftps://domain.com:990/site/wwwroot/"
+                "FTP path",
+                "Example, ftp://domain.com:21/site/wwwroot/",
+                "Example, ftps://domain.com:990/site/wwwroot/"
             };
         }
 

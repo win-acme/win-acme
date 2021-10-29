@@ -2,7 +2,6 @@
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Plugins.Base.Factories.Null;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
@@ -89,6 +88,7 @@ namespace PKISharp.WACS
             _log.Warning("Overwriting previously created renewal");
             existing.Updated = true;
             existing.TargetPluginOptions = temp.TargetPluginOptions;
+            existing.OrderPluginOptions = temp.OrderPluginOptions;
             existing.CsrPluginOptions = temp.CsrPluginOptions;
             existing.StorePluginOptions = temp.StorePluginOptions;
             existing.ValidationPluginOptions = temp.ValidationPluginOptions;
@@ -99,8 +99,12 @@ namespace PKISharp.WACS
         /// <summary>
         /// Setup a new scheduled renewal
         /// </summary>
+        /// </summary>
         /// <param name="runLevel"></param>
-        internal async Task SetupRenewal(RunLevel runLevel, Renewal? tempRenewal = null)
+        /// <param name="steps"></param>
+        /// <param name="tempRenewal"></param>
+        /// <returns></returns>
+        internal async Task SetupRenewal(RunLevel runLevel, Steps steps = Steps.All, Renewal? tempRenewal = null)
         {
             if (_args.Test)
             {
@@ -115,245 +119,83 @@ namespace PKISharp.WACS
             {
                 tempRenewal = Renewal.Create(_args.Id, _settings.ScheduledTask, _passwordGenerator);
             } 
-            else
-            {
-                tempRenewal.InstallationPluginOptions.Clear();
-                tempRenewal.StorePluginOptions.Clear();
-            }
             using var configScope = _scopeBuilder.Configuration(_container, tempRenewal, runLevel);
-            // Choose target plugin
-            var targetPluginOptionsFactory = configScope.Resolve<ITargetPluginOptionsFactory>();
-            if (targetPluginOptionsFactory is INull)
-            {
-                _exceptionHandler.HandleException(message: $"No source plugin could be selected");
-                return;
-            }
-            var (targetPluginDisabled, targetPluginDisabledReason) = targetPluginOptionsFactory.Disabled;
-            if (targetPluginDisabled)
-            {
-                _exceptionHandler.HandleException(message: $"Source plugin {targetPluginOptionsFactory.Name} is not available. {targetPluginDisabledReason}");
-                return;
-            }
-            var targetPluginOptions = runLevel.HasFlag(RunLevel.Unattended) ?
-                await targetPluginOptionsFactory.Default() :
-                await targetPluginOptionsFactory.Aquire(_input, runLevel);
-            if (targetPluginOptions == null)
-            {
-                _exceptionHandler.HandleException(message: $"Source plugin {targetPluginOptionsFactory.Name} aborted or failed");
-                return;
-            }
-            tempRenewal.TargetPluginOptions = targetPluginOptions;
 
-            // Generate Target and validation plugin choice
+            // Choose the target plugin
+            if (steps.HasFlag(Steps.Target))
+            {
+                var targetOptions = await SetupTarget(configScope, runLevel);
+                if (targetOptions == null)
+                {
+                    return;
+                }
+                tempRenewal.TargetPluginOptions = targetOptions;
+            }
+
+            // Generate initial target
             using var targetScope = _scopeBuilder.Target(_container, tempRenewal, runLevel);
             var initialTarget = targetScope.Resolve<Target>();
             if (initialTarget is INull)
             {
-                _exceptionHandler.HandleException(message: $"Source plugin {targetPluginOptionsFactory.Name} was unable to generate a target");
+                _exceptionHandler.HandleException(message: $"Source plugin {tempRenewal.TargetPluginOptions.Name} was unable to generate the certificate parameters.");
                 return;
             }
             if (!initialTarget.IsValid(_log))
             {
-                _exceptionHandler.HandleException(message: $"Source plugin {targetPluginOptionsFactory.Name} generated an invalid target");
+                _exceptionHandler.HandleException(message: $"Source plugin {tempRenewal.TargetPluginOptions.Name} generated invalid certificate parameters");
                 return;
             }
-            _log.Information("Source generated using plugin {name}: {target}", targetPluginOptions.Name, initialTarget);
+            _log.Information("Source generated using plugin {name}: {target}", tempRenewal.TargetPluginOptions.Name, initialTarget);
 
-            // Choose FriendlyName
-            if (!string.IsNullOrEmpty(_args.FriendlyName))
-            {
-                tempRenewal.FriendlyName = _args.FriendlyName;
-            }
-            else if (runLevel.HasFlag(RunLevel.Advanced | RunLevel.Interactive))
-            {
-                var alt = await _input.RequestString($"Suggested friendly name '{initialTarget.FriendlyName}', press <Enter> to accept or type an alternative");
-                if (!string.IsNullOrEmpty(alt))
-                {
-                    tempRenewal.FriendlyName = alt;
-                }
-            }
-            tempRenewal.LastFriendlyName = tempRenewal.FriendlyName ?? initialTarget.FriendlyName;
+            // Setup the friendly name
+            var ask = runLevel.HasFlag(RunLevel.Advanced | RunLevel.Interactive) && steps.HasFlag(Steps.Target);
+            await SetupFriendlyName(tempRenewal, initialTarget, ask);
 
-            // Choose validation plugin
-            var validationPluginOptionsFactory = targetScope.Resolve<IValidationPluginOptionsFactory>();
-            if (validationPluginOptionsFactory is INull)
+            // Choose the validation plugin
+            if (steps.HasFlag(Steps.Validation))
             {
-                _exceptionHandler.HandleException(message: $"No validation plugin could be selected");
-                return;
-            }
-
-            // Configure validation
-            try
-            {
-                var validationOptions = runLevel.HasFlag(RunLevel.Unattended)
-                    ? await validationPluginOptionsFactory.Default(initialTarget)
-                    : await validationPluginOptionsFactory.Aquire(initialTarget, _input, runLevel);
+                var validationOptions = await SetupValidation(targetScope, initialTarget, runLevel);
                 if (validationOptions == null)
                 {
-                    _exceptionHandler.HandleException(message: $"Validation plugin {validationPluginOptionsFactory.Name} was unable to generate options");
                     return;
                 }
                 tempRenewal.ValidationPluginOptions = validationOptions;
             }
-            catch (Exception ex)
-            {
-                _exceptionHandler.HandleException(ex, $"Validation plugin {validationPluginOptionsFactory.Name} aborted or failed");
-                return;
-            }
 
-            // Choose order plugin
-            var orderPluginOptionsFactory = targetScope.Resolve<IOrderPluginOptionsFactory>();
-            if (orderPluginOptionsFactory is INull)
+            // Choose the order plugin
+            if (steps.HasFlag(Steps.Order))
             {
-                _exceptionHandler.HandleException(message: $"No order plugin could be selected");
-                return;
-            }
-
-            // Configure order
-            try
-            {
-                var orderOptions = runLevel.HasFlag(RunLevel.Unattended) ?
-                    await orderPluginOptionsFactory.Default() :
-                    await orderPluginOptionsFactory.Aquire(_input, runLevel);
-                if (orderOptions == null)
+                tempRenewal.OrderPluginOptions = await SetupOrder(targetScope, runLevel);
+                if (tempRenewal.OrderPluginOptions == null)
                 {
-                    _exceptionHandler.HandleException(message: $"Order plugin {orderPluginOptionsFactory.Name} was unable to generate options");
-                    return;
-                }
-                tempRenewal.OrderPluginOptions = orderOptions;
-            }
-            catch (Exception ex)
-            {
-                _exceptionHandler.HandleException(ex, $"Order plugin {orderPluginOptionsFactory.Name} aborted or failed");
-                return;
-            }
-
-            // Choose CSR plugin
-            if (initialTarget.CsrBytes == null)
-            {
-                var csrPluginOptionsFactory = configScope.Resolve<ICsrPluginOptionsFactory>();
-                if (csrPluginOptionsFactory is INull)
-                {
-                    _exceptionHandler.HandleException(message: $"No CSR plugin could be selected");
-                    return;
-                }
-
-                // Configure CSR
-                try
-                {
-                    var csrOptions = runLevel.HasFlag(RunLevel.Unattended) ?
-                        await csrPluginOptionsFactory.Default() :
-                        await csrPluginOptionsFactory.Aquire(_input, runLevel);
-                    if (csrOptions == null)
-                    {
-                        _exceptionHandler.HandleException(message: $"CSR plugin {csrPluginOptionsFactory.Name} was unable to generate options");
-                        return;
-                    }
-                    tempRenewal.CsrPluginOptions = csrOptions;
-                }
-                catch (Exception ex)
-                {
-                    _exceptionHandler.HandleException(ex, $"CSR plugin {csrPluginOptionsFactory.Name} aborted or failed");
                     return;
                 }
             }
 
-            // Choose and configure store plugins
-            var resolver = configScope.Resolve<IResolver>();
-            var storePluginOptionsFactories = new List<IStorePluginOptionsFactory>();
-            try
+            // Choose the CSR plugin
+            if (initialTarget.CsrBytes != null)
             {
-                while (true)
+                tempRenewal.CsrPluginOptions = null;
+            }
+            else if (steps.HasFlag(Steps.Csr))
+            {
+                tempRenewal.CsrPluginOptions = await SetupCsr(configScope, runLevel);
+                if (tempRenewal.CsrPluginOptions == null)
                 {
-                    var storePluginOptionsFactory = await resolver.GetStorePlugin(configScope, storePluginOptionsFactories);
-                    if (storePluginOptionsFactory == null)
-                    {
-                        _exceptionHandler.HandleException(message: $"Store could not be selected");
-                        return;
-                    }
-                    StorePluginOptions? storeOptions;
-                    try
-                    {
-                        storeOptions = runLevel.HasFlag(RunLevel.Unattended)
-                            ? await storePluginOptionsFactory.Default()
-                            : await storePluginOptionsFactory.Aquire(_input, runLevel);
-                    }
-                    catch (Exception ex)
-                    {
-                        _exceptionHandler.HandleException(ex, $"Store plugin {storePluginOptionsFactory.Name} aborted or failed");
-                        return;
-                    }
-                    if (storeOptions == null)
-                    {
-                        _exceptionHandler.HandleException(message: $"Store plugin {storePluginOptionsFactory.Name} was unable to generate options");
-                        return;
-                    }
-                    var isNull = storePluginOptionsFactory is NullStoreOptionsFactory;
-                    if (!isNull || storePluginOptionsFactories.Count == 0)
-                    {
-                        tempRenewal.StorePluginOptions.Add(storeOptions);
-                        storePluginOptionsFactories.Add(storePluginOptionsFactory);
-                    }
-                    if (isNull)
-                    {
-                        break;
-                    }
+                    return;
                 }
             }
-            catch (Exception ex)
+            
+            // Choose store plugin(s)
+            if (steps.HasFlag(Steps.Store))
             {
-                _exceptionHandler.HandleException(ex, "Invalid selection of store plugins");
-                return;
+                tempRenewal.StorePluginOptions = await SetupStore(configScope, runLevel);
             }
 
-            // Choose and configure installation plugins
-            var installationPluginFactories = new List<IInstallationPluginOptionsFactory>();
-            try
+            // Choose installation plugin(s)
+            if (steps.HasFlag(Steps.Installation))
             {
-                while (true)
-                {
-                    var installationPluginOptionsFactory = await resolver.GetInstallationPlugin(configScope,
-                        tempRenewal.StorePluginOptions.Select(x => x.Instance),
-                        installationPluginFactories);
-
-                    if (installationPluginOptionsFactory == null)
-                    {
-                        _exceptionHandler.HandleException(message: $"Installation plugin could not be selected");
-                        return;
-                    }
-                    InstallationPluginOptions installOptions;
-                    try
-                    {
-                        installOptions = runLevel.HasFlag(RunLevel.Unattended)
-                            ? await installationPluginOptionsFactory.Default(initialTarget)
-                            : await installationPluginOptionsFactory.Aquire(initialTarget, _input, runLevel);
-                    }
-                    catch (Exception ex)
-                    {
-                        _exceptionHandler.HandleException(ex, $"Installation plugin {installationPluginOptionsFactory.Name} aborted or failed");
-                        return;
-                    }
-                    if (installOptions == null)
-                    {
-                        _exceptionHandler.HandleException(message: $"Installation plugin {installationPluginOptionsFactory.Name} was unable to generate options");
-                        return;
-                    }
-                    var isNull = installationPluginOptionsFactory is NullInstallationOptionsFactory;
-                    if (!isNull || installationPluginFactories.Count == 0)
-                    {
-                        tempRenewal.InstallationPluginOptions.Add(installOptions);
-                        installationPluginFactories.Add(installationPluginOptionsFactory);
-                    }
-                    if (isNull)
-                    {
-                        break;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _exceptionHandler.HandleException(ex, "Invalid selection of installation plugins");
-                return;
+                tempRenewal.InstallationPluginOptions = await SetupInstallation(configScope, runLevel, tempRenewal, initialTarget);
             }
 
             // Try to run for the first time
@@ -392,5 +234,191 @@ namespace PKISharp.WACS
             }
         }
 
+        /// <summary>
+        /// Choose friendly name to use for the PFX file
+        /// </summary>
+        /// <param name="runLevel"></param>
+        /// <param name="renewal"></param>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        internal async Task SetupFriendlyName(Renewal renewal, Target target, bool ask)
+        {
+            if (!string.IsNullOrEmpty(_args.FriendlyName))
+            {
+                renewal.FriendlyName = _args.FriendlyName;
+            }
+            else if (ask)
+            {
+                var current = renewal.FriendlyName ?? target.FriendlyName;
+                var alt = await _input.RequestString($"Friendly name '{current}'. <Enter> to accept or type desired name");
+                if (!string.IsNullOrWhiteSpace(alt))
+                {
+                    renewal.FriendlyName = alt;
+                }
+            }
+            renewal.LastFriendlyName = renewal.FriendlyName ?? target.FriendlyName;
+        }
+
+        internal async Task<ValidationPluginOptions?> SetupValidation(ILifetimeScope scope, Target target, RunLevel runLevel) => 
+            await SetupPlugin<ValidationPluginOptions, IValidationPluginOptionsFactory>(
+                "Validation", scope, runLevel, x => x.Default(target), x => x.Aquire(target, _input, runLevel));
+
+        internal async Task<OrderPluginOptions?> SetupOrder(ILifetimeScope scope, RunLevel runLevel) => 
+            await SetupPlugin<OrderPluginOptions, IOrderPluginOptionsFactory>(
+                "Order", scope, runLevel, x => x.Default(), x => x.Aquire(_input, runLevel));
+
+        internal async Task<TargetPluginOptions?> SetupTarget(ILifetimeScope scope, RunLevel runLevel) =>
+            await SetupPlugin<TargetPluginOptions, ITargetPluginOptionsFactory>(
+                "Source", scope, runLevel, x => x.Default(), x => x.Aquire(_input, runLevel));
+
+        internal async Task<CsrPluginOptions?> SetupCsr(ILifetimeScope scope, RunLevel runLevel) => 
+            await SetupPlugin<CsrPluginOptions, ICsrPluginOptionsFactory>(
+                "CSR", scope, runLevel, x => x.Default(), x => x.Aquire(_input, runLevel));
+
+        internal async Task<List<StorePluginOptions>> SetupStore(ILifetimeScope scope, RunLevel runLevel) =>
+            await SetupPlugins<StorePluginOptions, IStorePluginOptionsFactory>(
+                "Store",
+                scope,
+                runLevel,
+                (resolver, factories) => resolver.GetStorePlugin(scope, factories),
+                x => x.Default(),
+                x => x.Aquire(_input, runLevel));
+
+        internal async Task<List<InstallationPluginOptions>> SetupInstallation(ILifetimeScope scope, RunLevel runLevel, Renewal renewal, Target target)
+        {
+            var stores = renewal.StorePluginOptions.Select(x => x.Instance);
+            return await SetupPlugins<InstallationPluginOptions, IInstallationPluginOptionsFactory>(
+                "Installation",
+                scope,
+                runLevel,
+                (resolver, factories) => resolver.GetInstallationPlugin(scope, stores, factories),
+                x => x.Default(target),
+                x => x.Aquire(target, _input, runLevel));
+        }
+
+        /// <summary>
+        /// Generic method to select a list of plugins
+        /// </summary>
+        /// <typeparam name="TOptions"></typeparam>
+        /// <typeparam name="TOptionsFactory"></typeparam>
+        /// <param name="name"></param>
+        /// <param name="scope"></param>
+        /// <param name="runLevel"></param>
+        /// <param name="next"></param>
+        /// <param name="default"></param>
+        /// <param name="aquire"></param>
+        /// <returns></returns>
+        internal async Task<List<TOptions>> SetupPlugins<TOptions, TOptionsFactory>(
+            string name,
+            ILifetimeScope scope, 
+            RunLevel runLevel, 
+            Func<IResolver, IEnumerable<TOptionsFactory>, Task<TOptionsFactory?>> next,
+            Func<TOptionsFactory, Task<TOptions?>> @default,
+            Func<TOptionsFactory, Task<TOptions?>> aquire)
+            where TOptionsFactory : IPluginOptionsFactory
+            where TOptions : class
+        {
+            var resolver = scope.Resolve<IResolver>();
+            var ret = new List<TOptions>();
+            var factories = new List<TOptionsFactory>();
+            try
+            {
+                while (true)
+                {
+                    var factory = await next(resolver, factories);
+                    if (factory == null)
+                    {
+                        _exceptionHandler.HandleException(message: $"{name} plugin could not be selected");
+                        continue;
+                    }
+                    TOptions? options;
+                    try
+                    {
+                        options = runLevel.HasFlag(RunLevel.Unattended)
+                            ? await @default(factory)
+                            : await aquire(factory);
+                    }
+                    catch (Exception ex)
+                    {
+                        _exceptionHandler.HandleException(ex, $"{name} plugin {factory.Name} aborted or failed");
+                        continue;
+                    }
+                    if (options == null)
+                    {
+                        _exceptionHandler.HandleException(message: $"{name} plugin {factory.Name} was unable to generate options");
+                        continue;
+                    }
+                    var isNull = factory is INull;
+                    if (!isNull || factories.Count == 0)
+                    {
+                        ret.Add(options);
+                        factories.Add(factory);
+                    }
+                    if (isNull)
+                    {
+                        break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _exceptionHandler.HandleException(ex, $"Invalid selection of {name} plugins");
+            }
+            return ret;
+        }
+
+        /// <summary>
+        /// Generic method to pick a plugin
+        /// </summary>
+        /// <typeparam name="TOptions"></typeparam>
+        /// <typeparam name="TOptionsFactory"></typeparam>
+        /// <param name="name"></param>
+        /// <param name="scope"></param>
+        /// <param name="runLevel"></param>
+        /// <param name="default"></param>
+        /// <param name="aquire"></param>
+        /// <returns></returns>
+        internal async Task<TOptions?> SetupPlugin<TOptions, TOptionsFactory>(
+            string name,
+            ILifetimeScope scope,
+            RunLevel runLevel,
+            Func<TOptionsFactory, Task<TOptions?>> @default,
+            Func<TOptionsFactory, Task<TOptions?>> aquire)
+            where TOptionsFactory : IPluginOptionsFactory
+            where TOptions : class
+        {
+            // Choose the options factory
+            var optionsFactory = scope.Resolve<TOptionsFactory>();
+            if (optionsFactory is INull)
+            {
+                _exceptionHandler.HandleException(message: $"No {name} plugin could be selected");
+                return null;
+            }
+            var (pluginDisabled, pluginDisabledReason) = optionsFactory.Disabled;
+            if (pluginDisabled)
+            {
+                _exceptionHandler.HandleException(message: $"{name} plugin {optionsFactory.Name} is not available. {pluginDisabledReason}");
+                return null;
+            }
+
+            // Configure the plugin
+            try
+            {
+                var options = runLevel.HasFlag(RunLevel.Unattended) ?
+                    await @default(optionsFactory) :
+                    await aquire(optionsFactory); 
+                if (options == null)
+                {
+                    _exceptionHandler.HandleException(message: $"{name} plugin {optionsFactory.Name} was unable to generate options");
+                    return null;
+                }
+                return options;
+            }
+            catch (Exception ex)
+            {
+                _exceptionHandler.HandleException(ex, $"{name} plugin {optionsFactory.Name} aborted or failed");
+                return null;
+            }
+        }
     }
 }

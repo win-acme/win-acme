@@ -74,7 +74,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
             if (!valid)
             {
-                _log.Warning($"Creating his renewal might fail because the acme-dns configuration for one or more identifiers looks unhealthy.");
+                _log.Warning($"Creating this renewal might fail because the acme-dns configuration for one or more identifiers looks unhealthy.");
             }
             return ret;
         }

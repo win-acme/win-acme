@@ -11,7 +11,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
     internal class IISOptions : TargetPluginOptions<IIS>
     {
         public override string Name => "IIS";
-        public override string Description => "Read site bindings from IIS";
+        public override string Description => "Read bindings from IIS";
 
         /// <summary>
         /// Common name for the certificate
@@ -37,6 +37,11 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         /// Excluded bindings (additional filter)
         /// </summary>
         public List<string>? ExcludeHosts { get; set; }
+
+        /// <summary>
+        /// Which types of bindings to consider
+        /// </summary>
+        public List<string>? IncludeTypes { get; set; }
 
         /// <summary>
         /// Site ids to include in the selection

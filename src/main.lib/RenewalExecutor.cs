@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using Newtonsoft.Json.Schema;
+using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Context;
@@ -95,43 +96,26 @@ namespace PKISharp.WACS
             }
             _log.Verbose("Targeted convert into {n} order(s)", orders.Count());
 
-            // Check if renewal is needed
-            if (!runLevel.HasFlag(RunLevel.ForceRenew) && !renewal.Updated)
+            // Test if this renewal should run right now
+            if (!ShouldRun(es, orders, renewal, runLevel))
             {
-                _log.Verbose("Checking {renewal}", renewal.LastFriendlyName);
-                if (!renewal.IsDue())
-                {
-                    var cs = es.Resolve<ICertificateService>();
-                    var abort = true;
-                    foreach (var order in orders)
-                    {
-                        var cache = cs.CachedInfo(order);
-                        if (cache == null && !renewal.New)
-                        {
-                            _log.Information(LogType.All, "Renewal for {renewal} running prematurely due to detected target change", renewal.LastFriendlyName);
-                            abort = false;
-                            break;
-                        }
-                    }
-                    if (abort)
-                    {
-                        _log.Information("Renewal for {renewal} is due after {date}", renewal.LastFriendlyName, renewal.GetDueDate());
-                        return new RenewResult() { Abort = true };
-                    }
-                }
-                else if (!renewal.New)
-                {
-                    _log.Information(LogType.All, "Renewing certificate for {renewal}", renewal.LastFriendlyName);
-                }
-            }
-            else if (runLevel.HasFlag(RunLevel.ForceRenew))
-            {
-                _log.Information(LogType.All, "Force renewing certificate for {renewal}", renewal.LastFriendlyName);
+                return new RenewResult() { Abort = true };
             }
 
             // If at this point we haven't retured already with an error/abort
             // actually execute the renewal
+            var preScript = _settings.Execution?.DefaultPreExecutionScript;
+            var scriptClient = es.Resolve<ScriptClient>();
+            if (!string.IsNullOrWhiteSpace(preScript))
+            {
+                await scriptClient.RunScript(preScript, $"{renewal.Id}");
+            }
             var result = await ExecuteRenewal(es, orders.ToList(), runLevel);
+            var postScript = _settings.Execution?.DefaultPostExecutionScript;
+            if (!string.IsNullOrWhiteSpace(postScript))
+            {
+                await scriptClient.RunScript(postScript, $"{renewal.Id}");
+            }
 
             // Configure task scheduler
             var setupTaskScheduler = _args.SetupTaskScheduler;
@@ -157,6 +141,44 @@ namespace PKISharp.WACS
                 await es.Resolve<TaskSchedulerService>().EnsureTaskScheduler(runLevel);
             }
             return result;
+        }
+
+        private bool ShouldRun(ILifetimeScope target, IEnumerable<Order> orders, Renewal renewal, RunLevel runLevel)
+        {
+            // Check if renewal is needed
+            if (!runLevel.HasFlag(RunLevel.ForceRenew) && !renewal.Updated)
+            {
+                _log.Verbose("Checking {renewal}", renewal.LastFriendlyName);
+                if (!renewal.IsDue())
+                {
+                    var cs = target.Resolve<ICertificateService>();
+                    var abort = true;
+                    foreach (var order in orders)
+                    {
+                        var cache = cs.CachedInfo(order);
+                        if (cache == null && !renewal.New)
+                        {
+                            _log.Information(LogType.All, "Renewal {renewal} running prematurely due to source change", renewal.LastFriendlyName);
+                            abort = false;
+                            break;
+                        }
+                    }
+                    if (abort)
+                    {
+                        _log.Information("Renewal {renewal} is due after {date}", renewal.LastFriendlyName, renewal.GetDueDate());
+                        return false;
+                    }
+                }
+                else if (!renewal.New)
+                {
+                    _log.Information(LogType.All, "Renewing certificate {renewal}", renewal.LastFriendlyName);
+                }
+            }
+            else if (runLevel.HasFlag(RunLevel.ForceRenew))
+            {
+                _log.Information(LogType.All, "Force renewing certificate {renewal}", renewal.LastFriendlyName);
+            }
+            return true;
         }
 
         /// <summary>
@@ -206,7 +228,9 @@ namespace PKISharp.WACS
 
                 // Get the existing certificate matching the order description
                 // this may not be the same as the previous certificate
-                var newCertificate = GetFromCache(context, runLevel) ?? await GetFromServer(context, runLevel);
+                var newCertificate = 
+                    GetFromCache(context, runLevel) ??
+                    await GetFromServer(context, runLevel);
                 if (newCertificate == null)
                 {
                     context.Result.AddErrorMessage("No certificate generated");
@@ -286,13 +310,13 @@ namespace PKISharp.WACS
             if (runLevel.HasFlag(RunLevel.IgnoreCache))
             {
                 _log.Warning(
-                    "Cached certificate available on disk but not used due to --{switch} switch.",
+                    "Cached certificate available but not used due to --{switch} switch.",
                     nameof(MainArguments.Force).ToLower());
                 return null;
             }
             _log.Warning(
-                "Using cached certificate for {friendlyName}. To force a new request of the " +
-                "certificate within {days} days, run with the --{switch} switch.",
+                "Using cache for {friendlyName}. To get a new certificate " +
+                "within {days} days, run with --{switch}.",
                 context.Order.FriendlyNameIntermediate,
                 _settings.Cache.ReuseDays,
                 nameof(MainArguments.Force).ToLower());
@@ -303,17 +327,25 @@ namespace PKISharp.WACS
         private async Task<CertificateInfo?> GetFromServer(ExecutionContext context, RunLevel runLevel)
         {
             // Place the order
+            var certificateService = context.Scope.Resolve<ICertificateService>();
             var orderManager = context.Scope.Resolve<OrderManager>();
+            context.Order.KeyPath = context.Order.Renewal.CsrPluginOptions?.ReusePrivateKey == true
+                ? certificateService.ReuseKeyPath(context.Order) : null;
             context.Order.Details = await orderManager.GetOrCreate(context.Order, runLevel);
 
-            // Run validations
-            await _validator.AuthorizeOrder(context, runLevel);
-            if (!context.Result.Success)
+            // Sanity checks
+            if (context.Order.Details == null)
             {
+                context.Result.AddErrorMessage($"Unable to create order");
+                return null;
+            }
+            if (context.Order.Details.Payload.Status == AcmeClient.OrderInvalid)
+            {
+                context.Result.AddErrorMessage($"Created order was invalid");
                 return null;
             }
 
-            // Generate the CSR
+            // Generate the CSR plugin
             var csrPlugin = context.Target.CsrBytes == null ? context.Scope.Resolve<ICsrPlugin>() : null;
             if (csrPlugin != null)
             {
@@ -325,8 +357,20 @@ namespace PKISharp.WACS
                 }
             }
 
+            // Run validations
+            var orderValid = 
+                context.Order.Details.Payload.Status == AcmeClient.OrderValid ||
+                context.Order.Details.Payload.Status == AcmeClient.OrderReady;
+            if (!orderValid || runLevel.HasFlag(RunLevel.Test) || runLevel.HasFlag(RunLevel.IgnoreCache))
+            {
+                await _validator.AuthorizeOrder(context, orderValid);
+                if (!context.Result.Success)
+                {
+                    return null;
+                }
+            }
+
             // Request the certificate
-            var certificateService = context.Scope.Resolve<ICertificateService>();
             return await certificateService.RequestCertificate(csrPlugin, context.RunLevel, context.Order);
         }
 

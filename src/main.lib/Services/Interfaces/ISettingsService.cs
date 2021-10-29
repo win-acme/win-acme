@@ -8,6 +8,7 @@ namespace PKISharp.WACS.Services
         Uri BaseUri { get; }
         UiSettings UI { get; }
         AcmeSettings Acme { get; }
+        ExecutionSettings Execution { get; }
         ProxySettings Proxy { get; }
         CacheSettings Cache { get; }
         SecretsSettings Secrets { get; }

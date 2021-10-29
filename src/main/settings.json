@@ -19,6 +19,10 @@
     "RetryInterval": 5,
     "PreferredIssuer": null
   },
+  "Execution": {
+    "DefaultPreExecutionScript": null,
+    "DefaultPostExecutionScript": null
+  },
   "Proxy": {
     "Url": "[System]",
     "UserName": null,
@@ -26,7 +30,7 @@
   },
   "Cache": {
     "ReuseDays": 1,
-    "DeleteStaleFiles": false,
+    "DeleteStaleFiles": true,
     "Path": null
   },
   "ScheduledTask": {
@@ -57,7 +61,9 @@
   },
   "Script": {
     "Timeout": 600,
-    "PowershellExecutablePath": "powershell.exe"
+    "PowershellExecutablePath": "powershell.exe",
+    "PreExecutionScript": null,
+    "PostExecutionScript": null
   },
   "Source": {
     "DefaultSource": null

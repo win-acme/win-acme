@@ -8,7 +8,7 @@ namespace PKISharp.WACS.Services
 {
     internal interface ICertificateService
     {
-        string CacheKey(Order order);
+        string ReuseKeyPath(Order order);
         CertificateInfo? CachedInfo(Order order);
         IEnumerable<CertificateInfo> CachedInfos(Renewal renewal);
         Task<CertificateInfo> RequestCertificate(ICsrPlugin? csrPlugin, RunLevel runLevel, Order order);

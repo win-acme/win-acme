@@ -17,6 +17,7 @@ using System.Security.Authentication;
 using System.Threading;
 using System.Threading.Tasks;
 using PKISharp.WACS.DomainObjects;
+using System.Net;
 
 namespace PKISharp.WACS.Clients.Acme
 {
@@ -72,24 +73,50 @@ namespace PKISharp.WACS.Clients.Acme
             _zeroSsl = zeroSsl;
         }
 
+        /// <summary>
+        /// Test the network connection
+        /// </summary>
+        internal async Task CheckNetwork()
+        {
+            using var httpClient = _proxyService.GetHttpClient();
+            httpClient.BaseAddress = _settings.BaseUri;
+            httpClient.Timeout = new TimeSpan(0, 0, 10);
+            try
+            {
+                _log.Verbose("SecurityProtocol setting: {setting}", System.Net.ServicePointManager.SecurityProtocol);
+                _ = await httpClient.GetAsync("directory").ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Initial connection failed, retrying with TLS 1.2 forced");
+                _proxyService.SslProtocols = SslProtocols.Tls12;
+                using var altClient = _proxyService.GetHttpClient();
+                altClient.BaseAddress = _settings.BaseUri;
+                altClient.Timeout = new TimeSpan(0, 0, 10);
+                try
+                {
+                    _ = await altClient.GetAsync("directory").ConfigureAwait(false);
+                }
+                catch (Exception ex2)
+                {
+                    _log.Error(ex2, "Unable to connect to ACME server");
+                    return;
+                }
+            }
+            _log.Debug("Connection OK!");
+        }
+
+        /// <summary>
+        /// Load the account, signer and directory
+        /// </summary>
+        /// <returns></returns>
         internal async Task ConfigureAcmeClient()
         {
             var httpClient = _proxyService.GetHttpClient();
             httpClient.BaseAddress = _settings.BaseUri;
             _log.Verbose("Constructing ACME protocol client...");
             var client = new AcmeProtocolClient(httpClient, usePostAsGet: _settings.Acme.PostAsGet);
-            try
-            {
-                client.Directory = await client.GetDirectoryAsync();
-            }
-            catch (Exception)
-            {
-                // Perhaps the BaseUri *is* the directory, such
-                // as implemented by Digicert (#1434)
-                client.Directory.Directory = "";
-                client.Directory = await client.GetDirectoryAsync();
-            }
-
+            client.Directory = await EnsureServiceDirectory(client);
             // Try to load prexisting account
             if (_accountManager.CurrentAccount != null && 
                 _accountManager.CurrentSigner != null)
@@ -109,6 +136,37 @@ namespace PKISharp.WACS.Clients.Acme
             }
             _client = client;
             _log.Verbose("ACME client initialized");
+        }
+
+        /// <summary>
+        /// Make sure that we find a service directory
+        /// </summary>
+        /// <param name="client"></param>
+        /// <returns></returns>
+        internal async Task<acme.ServiceDirectory> EnsureServiceDirectory(AcmeProtocolClient client)
+        {
+            acme.ServiceDirectory? directory;
+            try
+            {
+                _log.Verbose("Getting service directory...");
+                directory = await Backoff(async () => await client.GetDirectoryAsync("directory"));
+                if (directory != null)
+                {
+                    return directory;
+                }
+            }
+            catch
+            {
+
+            }
+            // Perhaps the BaseUri *is* the directory, such
+            // as implemented by Digicert (#1434)
+            directory = await Backoff(async () => await client.GetDirectoryAsync(""));
+            if (directory != null)
+            {
+                return directory;
+            }
+            throw new Exception("Unable to get service directory");
         }
 
         internal async Task<AccountDetails?> GetAccount() => (await GetClient()).Account;
@@ -352,39 +410,6 @@ namespace PKISharp.WACS.Clients.Acme
         }
 
         /// <summary>
-        /// Test the network connection
-        /// </summary>
-        internal async Task CheckNetwork()
-        {
-            using var httpClient = _proxyService.GetHttpClient();
-            httpClient.BaseAddress = _settings.BaseUri;
-            httpClient.Timeout = new TimeSpan(0, 0, 10);
-            try
-            {
-                _log.Verbose("SecurityProtocol setting: {setting}", System.Net.ServicePointManager.SecurityProtocol);
-                _ = await httpClient.GetAsync("directory").ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Initial connection failed, retrying with TLS 1.2 forced");
-                _proxyService.SslProtocols = SslProtocols.Tls12;
-                using var altClient = _proxyService.GetHttpClient();
-                altClient.BaseAddress = _settings.BaseUri;
-                altClient.Timeout = new TimeSpan(0, 0, 10);
-                try
-                {
-                    _ = await altClient.GetAsync("directory").ConfigureAwait(false);
-                }
-                catch (Exception ex2)
-                {
-                    _log.Error(ex2, "Unable to connect to ACME server");
-                    return;
-                }
-            }
-            _log.Debug("Connection OK!");
-        }
-
-        /// <summary>
         /// Get contact information
         /// </summary>
         /// <returns></returns>
@@ -598,18 +623,20 @@ namespace PKISharp.WACS.Clients.Acme
             }
             try
             {
-                if (string.IsNullOrEmpty(client.NextNonce))
-                {
-                    await client.GetNonceAsync();
-                }
-                return await executor();
+                return await Backoff(async () => {
+                    if (string.IsNullOrEmpty(client.NextNonce))
+                    {
+                        await GetNonce(client);
+                    }
+                    return await executor();
+                });
             }
             catch (AcmeProtocolException apex)
             {
                 if (attempt < 3 && apex.ProblemType == acme.ProblemType.BadNonce)
                 {
                     _log.Warning("First chance error calling into ACME server, retrying with new nonce...");
-                    await client.GetNonceAsync();
+                    await GetNonce(client);
                     return await Retry(client, executor, attempt + 1);
                 }
                 else if (apex.ProblemType == acme.ProblemType.UserActionRequired)
@@ -628,6 +655,52 @@ namespace PKISharp.WACS.Clients.Acme
                 {
                     _requestLock.Release();
                 }
+            }
+        }
+
+        /// <summary>
+        /// Get a new nonce to use by the client
+        /// </summary>
+        /// <returns></returns>
+        internal async Task GetNonce(AcmeProtocolClient client) => await Backoff(async () => { 
+            await client.GetNonceAsync(); 
+            return 1; 
+        });
+
+        /// <summary>
+        /// Retry a call to the AcmeService up to five times, with a bigger
+        /// delay for each time that the call fails with a TooManyRequests 
+        /// response
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="executor"></param>
+        /// <param name="attempt"></param>
+        /// <returns></returns>
+        internal async Task<T> Backoff<T>(Func<Task<T>> executor, int attempt = 0)
+        {
+            try
+            {
+                return await executor();
+            }
+            catch (AcmeProtocolException ape)
+            {
+                if (ape.Response.StatusCode == HttpStatusCode.TooManyRequests)
+                {
+                    if (ape.ProblemType == acme.ProblemType.RateLimited)
+                    {
+                        // Do not keep retrying when rate limit is hit
+                        throw;
+                    }
+                    if (attempt == 5)
+                    {
+                        throw new Exception("Service is too busy, try again later...", ape);
+                    }
+                    var delaySeconds = (int)Math.Pow(2, attempt + 3); // 5 retries with 8 to 128 seconds delay
+                    _log.Warning("Service is busy at the moment, backing off for {n} seconds", delaySeconds);
+                    await Task.Delay(1000 * delaySeconds);
+                    return await Backoff(executor, attempt + 1);
+                }
+                throw;
             }
         }
 

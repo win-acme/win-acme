@@ -6,6 +6,7 @@ namespace PKISharp.WACS.DomainObjects
     {
         public string? CacheKeyPart { get; set; }
         public string? FriendlyNamePart { get; set; }
+        public string? KeyPath { get; set; }
         public Target Target { get; set; }
         public Renewal Renewal { get; set; }
         public acme.OrderDetails? Details { get; set; } = null;

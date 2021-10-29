@@ -6,7 +6,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
     internal class IISArguments : BaseArguments
     {
         public override string Name => "IIS plugin";
-        public override string Group => "Target";
+        public override string Group => "Source";
         public override string Condition => "--source iis";
 
         public const string PatternExamples = "You may use a `*` for a range of any characters and a `?` " +
@@ -34,5 +34,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         [CommandLine(Description = "Exclude host names from the certificate. This may be a comma-separated list.")]
         public string? ExcludeBindings { get; set; }
+
+        [CommandLine(Default = "http", Name = "host-type", Description = "Specify which types of bindings to consider. May be set to http, ftp or both (comma seperated)")]
+        public string? Type { get; set; }
     }
 }

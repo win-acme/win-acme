@@ -76,7 +76,7 @@ namespace PKISharp.WACS.Services
 
             protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             {
-                _log.Debug("Send {method} request to {uri}", request.Method, request.RequestUri);
+                _log.Debug("Send {method} to {uri}", request.Method, request.RequestUri);
 #if DEBUG
                 if (request.Content != null)
                 {

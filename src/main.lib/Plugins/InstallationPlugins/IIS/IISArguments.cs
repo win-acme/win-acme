@@ -1,17 +1,15 @@
 ﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
-using PKISharp.WACS.Services;
-using System.Net;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    internal class IISWebArguments : BaseArguments
+    internal class IISArguments : BaseArguments
     {
         private const string SslPortParameterName = "sslport";
         private const string SslIpParameterName = "sslipaddress";
 
-        public override string Name => "IIS Web plugin";
+        public override string Name => "IIS plugin";
         public override string Group => "Installation";
         public override string Condition => "--installation iis";
 

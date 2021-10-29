@@ -44,9 +44,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public async Task<HttpValidationOptions<TPlugin>> BaseAquire(Target target, IInputService input)
         {
             var allowEmpty = AllowEmtpy(target);
+            var webRootHint = WebrootHint(allowEmpty);
+            var pathGetter = GetPath(allowEmpty);
+            pathGetter = webRootHint.Length > 1
+                ? pathGetter.Interactive(input, webRootHint[0], string.Join('\n', webRootHint[1..]))
+                : pathGetter.Interactive(input, webRootHint[0]);
             return new TOptions
             {
-                Path = await GetPath(allowEmpty).Interactive(input, WebrootHint(allowEmpty)[0], string.Join('\n', WebrootHint(allowEmpty)[1..])).GetValue(),
+                Path = await pathGetter.GetValue(),
                 CopyWebConfig = target.IIS || await GetCopyWebConfig().Interactive(input, "Copy default web.config before validation?").GetValue() == true
             };
         }
@@ -84,7 +89,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <returns></returns>
         public virtual string[] WebrootHint(bool allowEmpty)
         {
-            var ret = new List<string> { "Path to the root of the site that will handle authentication" };
+            var ret = new List<string> { "Path" };
             if (allowEmpty)
             {
                 ret.Add("Leave empty to automatically read the path from IIS");

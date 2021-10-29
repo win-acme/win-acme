@@ -113,7 +113,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                     new TargetPart(alternativeNames)
                 })
             {
-                CsrBytes = csrBytes,
+                UserCsrBytes = csrBytes,
                 PrivateKey = pkBytes
             };
             return ret;

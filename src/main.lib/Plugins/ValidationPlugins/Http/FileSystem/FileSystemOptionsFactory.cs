@@ -2,6 +2,7 @@
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
@@ -34,7 +35,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                 if (target.IIS && _iisClient.HasWebSites)
                 {
                     ret.SiteId = await ValidationSite().
-                        Validate(s => Task.FromResult(_iisClient.GetWebSite(s!.Value) != null), "site doesn't exist").
+                        Validate(s => Task.FromResult(_iisClient.GetSite(s!.Value, IISSiteType.Web) != null), "site doesn't exist").
                         GetValue();
                 }
             }
@@ -54,7 +55,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                 if (siteId != null || await inputService.PromptYesNo("Use different site for validation?", false))
                 {
                     var site = await inputService.ChooseOptional("Validation site, must receive requests for all hosts on port 80",
-                        _iisClient.WebSites,
+                        _iisClient.Sites.Where(x => x.Type == IISSiteType.Web),
                         x => Choice.Create<IIISSite?>(x, x.Name, x.Id.ToString(), @default: x.Id == siteId),
                         "Automatic (target site)");
                     if (site != null)

@@ -42,7 +42,7 @@ namespace PKISharp.WACS.Clients.IIS
             byte[]? oldThumbprint)
         {
             // Helper function to get updated sites
-            IEnumerable<(TSite site, TBinding binding)> GetAllSites() => _client.WebSites.
+            IEnumerable<(TSite site, TBinding binding)> GetAllSites() => _client.Sites.
                 SelectMany(site => site.Bindings, (site, binding) => (site, binding)).
                 ToList();
 
@@ -89,10 +89,15 @@ namespace PKISharp.WACS.Clients.IIS
                     }
                 }
 
+                if (bindingOptions.SiteId == null)
+                {
+                    return bindingsUpdated;
+                }
+
                 // Find all hostnames which are not covered by any of the already updated
                 // bindings yet, because we will want to make sure that those are accessable
                 // in the target site
-                var targetSite = _client.GetWebSite(bindingOptions.SiteId ?? -1);
+                var targetSite = _client.GetSite(bindingOptions.SiteId.Value, IISSiteType.Web);
                 var todo = identifiers;
                 while (todo.Any())
                 {
@@ -147,6 +152,7 @@ namespace PKISharp.WACS.Clients.IIS
                 throw;
             }
         }
+
         /// <summary>
         /// Create or update a single binding in a single site
         /// </summary>
@@ -517,6 +523,7 @@ namespace PKISharp.WACS.Clients.IIS
                     throw new InvalidOperationException();
                 }
             }
+            public bool Secure => throw new NotImplementedException();
             string IIISBinding.Host => _host;
             string IIISBinding.Protocol => throw new NotImplementedException();
             byte[]? IIISBinding.CertificateHash => throw new NotImplementedException();

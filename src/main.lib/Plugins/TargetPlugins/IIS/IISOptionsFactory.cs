@@ -41,15 +41,11 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         /// <returns></returns>
         public override bool Match(string name)
         {
-            switch (name.ToLowerInvariant())
+            return name.ToLowerInvariant() switch
             {
-                case "iisbinding":
-                case "iissite":
-                case "iissites":
-                    return true;
-                default:
-                    return base.Match(name);
-            }
+                "iisbinding" or "iissite" or "iissites" => true,
+                _ => base.Match(name),
+            };
         }
 
         /// <summary>
@@ -63,16 +59,16 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var allSites = _iisHelper.GetSites(true).Where(x => x.Hosts.Any()).ToList();
             if (!allSites.Any())
             {
-                _log.Error($"No sites with host bindings have been configured in IIS. " +
+                _log.Error($"No websites with host bindings have been configured in IIS. " +
                     $"Add one in the IIS Manager or choose the plugin '{ManualOptions.DescriptionText}' " +
                     $"instead.");
                 return null;
             }
 
-            var visibleSites = allSites.Where(x => !_args.HideHttps || x.Https == false).ToList();
+            var visibleSites = allSites.Where(x => !_args.HideHttps || x.Secure == false).ToList();
             if (!visibleSites.Any())
             {
-                _log.Error("No sites with host bindings remain after applying the --{hidehttps} filter. " +
+                _log.Error("No websites with host bindings remain after applying the --{hidehttps} filter. " +
                     "It looks like all your websites are already configured for https!", "hidehttps");
                 return null;
             }
@@ -83,8 +79,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 visibleSites = visibleSites.Where(x => x.Hosts.Any(h => !h.StartsWith("*"))).ToList();
                 if (!visibleSites.Any())
                 {
-                    _log.Error("No sites with host bindings remain after discarding wildcard domains. To " +
-                        "create certificates including wildcards, please use the 'Full options' mode, as " +
+                    _log.Error("No websites with host bindings remain after discarding wildcard domains. To " +
+                        "create certificates including wildcards, please use the 'full options' mode, as " +
                         "this requires DNS validation.");
                     return null;
                 }
@@ -94,7 +90,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             do
             {
                 var allBindings = _iisHelper.GetBindings();
-                var visibleBindings = allBindings.Where(x => !_args.HideHttps || x.Https == false).ToList();
+                var visibleBindings = allBindings.Where(x => !_args.HideHttps || x.Secure == false).ToList();
                 var ret = await TryAquireSettings(input, allBindings, visibleBindings, allSites, visibleSites, runLevel);
                 if (ret != null)
                 {
@@ -124,7 +120,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         /// <param name="runLevel"></param>
         /// <returns></returns>
         private async Task<IISOptions?> TryAquireSettings(
-            IInputService input, 
+            IInputService input,
             List<IISHelper.IISBindingOption> allBindings,
             List<IISHelper.IISBindingOption> visibleBindings,
             List<IISHelper.IISSiteOption> allSites,
@@ -136,19 +132,29 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 "You may input one or more site identifiers (comma-separated) to filter by those sites, " +
                 "or alternatively leave the input empty to scan *all* websites.");
 
-            var options = new IISOptions();
+            // Include all types by default
+            var options = new IISOptions
+            {
+                IncludeTypes = new List<string>() {
+                    IISHelper.FtpTypeFilter,
+                    IISHelper.WebTypeFilter
+                }
+            };
+
+            // Pick sites
             await input.WritePagedList(
                 visibleSites.Select(x => Choice.Create(
                     item: x,
-                    description: $"{x.Name} ({x.Hosts.Count()} binding{(x.Hosts.Count() == 1 ? "" : "s")})",
+                    description: $"{x.Name} ({x.Hosts.Count} binding{(x.Hosts.Count == 1 ? "" : "s")})",
                     command: x.Id.ToString(),
-                    color: x.Https ? ConsoleColor.DarkGray : (ConsoleColor?)null)));
+                    color: x.Secure ? ConsoleColor.DarkGray : (ConsoleColor?)null)));
             var raw = await input.RequestString("Site identifier(s) or <Enter> to choose all");
             if (!ParseSiteOptions(raw, allSites, options))
             {
                 return null;
             }
 
+            // Pick bindings
             var filtered = _iisHelper.FilterBindings(visibleBindings, options);
             await ListBindings(input, filtered);
             input.CreateSpace();
@@ -220,6 +226,18 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 await InputCommonName(input, filtered, options);
             }
+
+            var ftpIncluded = filtered.Any(x => x.SiteType == IISSiteType.Ftp);
+            var webIncluded = filtered.Any(x => x.SiteType == IISSiteType.Web);
+            options.IncludeTypes = new List<string>();
+            if (ftpIncluded)
+            {
+                options.IncludeTypes.Add(IISHelper.FtpTypeFilter);
+            }
+            if (webIncluded)
+            {
+                options.IncludeTypes.Add(IISHelper.WebTypeFilter);
+            }
             return options;
         }
 
@@ -280,7 +298,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 {
                     if (int.TryParse(x, out var id))
                     {
-                        if (id > 0 && id <= sorted.Count())
+                        if (id > 0 && id <= sorted.Count)
                         {
                             return sorted[id - 1].HostUnicode;
                         }
@@ -408,7 +426,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 return ConsoleColor.Green;
             }
-            else if (binding.Https)
+            else if (binding.Secure)
             {
                 return ConsoleColor.DarkGray;
             }
@@ -425,6 +443,11 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var pattern = await _arguments.GetString<IISArguments>(x => x.Pattern).GetValue();
             var regex = await _arguments.GetString<IISArguments>(x => x.Regex).GetValue();
             var siteId = await _arguments.GetString<IISArguments>(x => x.SiteId).GetValue();
+            var types = await _arguments.
+                GetString<IISArguments>(x => x.Type).
+                DefaultAsNull().
+                Validate(x => Task.FromResult(x.ParseCsv()?.All(x => x == IISHelper.WebTypeFilter || x == IISHelper.FtpTypeFilter) ?? false), "unsupported value").
+                GetValue();
 
             if (string.IsNullOrWhiteSpace(host) && 
                 string.IsNullOrWhiteSpace(pattern) &&
@@ -441,12 +464,17 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 return null;
             }
 
+            // Host types
+            options.IncludeTypes = types.ParseCsv();
+
+            // Site options
             var allSites = _iisHelper.GetSites(false);
             if (!ParseSiteOptions(siteId, allSites, options))
             {
                 return null;
             }
 
+            // Binding options
             var allBindings = _iisHelper.GetBindings();
             if (!ParseHostOptions(host, allBindings, options, () => options.IncludeHosts, x => options.IncludeHosts = x))
             {

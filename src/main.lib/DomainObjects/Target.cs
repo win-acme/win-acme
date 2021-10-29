@@ -7,7 +7,7 @@ using System.Text;
 
 namespace PKISharp.WACS.DomainObjects
 {
-    [DebuggerDisplay("Target: {CommonName.Value} ({Parts.Count} part(s) - IIS: {IIS})")]
+    [DebuggerDisplay("Target: {CommonName.Value}")]
     public class Target
     {
         public Target(string friendlyName, string commonName, IEnumerable<TargetPart> parts) : 
@@ -40,6 +40,11 @@ namespace PKISharp.WACS.DomainObjects
         /// Check if all parts are IIS
         /// </summary>
         public bool IIS => Parts.All(x => x.IIS);
+
+        /// <summary>
+        /// The CSR provided by the user
+        /// </summary>
+        public byte[]? UserCsrBytes { get; set; }
 
         /// <summary>
         /// The CSR used to request the certificate

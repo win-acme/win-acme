@@ -40,7 +40,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             body.Ttl = 0;
             body.Rrdatas = new List<string>(){"\"" + value + "\"" };
 
-            var request = _client.Projects.ManagedZones.Rrsets.Create(body, projectId, zone.Name);
+            var request = _client.ResourceRecordSets.Create(body, projectId, zone.Name);
 
             return await request.ExecuteAsync();
         }
@@ -50,7 +50,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             if (!name.EndsWith("."))
                 name += ".";
 
-            var request = _client.Projects.ManagedZones.Rrsets.Delete(projectId, zone.Name, name, "TXT");
+            var request = _client.ResourceRecordSets.Delete(projectId, zone.Name, name, "TXT");
             return await request.ExecuteAsync();
         }
     }

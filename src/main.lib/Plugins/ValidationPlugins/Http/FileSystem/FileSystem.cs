@@ -72,7 +72,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                 var siteId = _options.SiteId ?? targetPart.SiteId;
                 if (siteId > 0)
                 {
-                    _path = _iisClient.GetWebSite(siteId.Value).Path;
+                    _path = _iisClient.GetSite(siteId.Value, IISSiteType.Web).Path;
                 }
                 else
                 {

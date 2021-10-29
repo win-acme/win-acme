@@ -69,7 +69,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                     friendlyNameSuggestion += $" {site.Name}";
                     count -= 1;
                 }
-                if (count > 1)
+                if (count > 0)
                 {
                     friendlyNameSuggestion += $" (+{count} other{(count == 1 ? "" : "s")})";
                 } 
@@ -116,7 +116,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 GroupBy(x => x.SiteId).
                 Select(group => new TargetPart(group.Select(x => new DnsIdentifier(x.HostUnicode)))
                 {
-                    SiteId = group.Key
+                    SiteId = group.Key,
+                    SiteType = group.First().SiteType
                 });
             return new Target(friendlyNameSuggestion, commonName, parts);
         }

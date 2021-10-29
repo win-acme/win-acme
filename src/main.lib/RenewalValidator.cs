@@ -39,35 +39,11 @@ namespace PKISharp.WACS
         /// <param name="result"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        public async Task AuthorizeOrder(ExecutionContext context, RunLevel runLevel)
+        public async Task AuthorizeOrder(ExecutionContext context, bool orderValid)
         {
-            // Sanity check
             if (context.Order.Details == null)
             {
-                context.Result.AddErrorMessage($"Unable to create order");
-                return;
-            }
-
-            if (context.Order.Details.Payload.Status == AcmeClient.OrderInvalid)
-            {
-                context.Result.AddErrorMessage($"Created order was invalid");
-                return;
-            }
-
-            // Maybe validation is not needed at all
-            var orderValid = false;
-            if (context.Order.Details.Payload.Status == AcmeClient.OrderReady ||
-                context.Order.Details.Payload.Status == AcmeClient.OrderValid)
-            {
-                if (!runLevel.HasFlag(RunLevel.Test) &&
-                    !runLevel.HasFlag(RunLevel.IgnoreCache))
-                {
-                    return;
-                }
-                else
-                {
-                    orderValid = true;
-                }
+                throw new InvalidOperationException();
             }
 
             // Get validation plugin

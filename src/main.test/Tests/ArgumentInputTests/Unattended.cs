@@ -35,7 +35,7 @@ namespace PKISharp.WACS.UnitTests.Tests.ArgumentInputTests
             var container = new MockContainer().TestScope(commandLine: $"--installationsiteid {input}");
             var mock = container.Resolve<ArgumentsInputService>();
             var basic = mock.
-                GetLong<IISWebArguments>(x => x.InstallationSiteId).
+                GetLong<IISArguments>(x => x.InstallationSiteId).
                 GetValue().
                 Result;
             Assert.AreEqual(output, basic);

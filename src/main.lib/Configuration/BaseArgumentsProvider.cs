@@ -110,19 +110,19 @@ namespace PKISharp.WACS.Configuration
         /// <param name="current"></param>
         /// <param name="main"></param>
         /// <returns></returns>
-        bool IArgumentsProvider<T>.Validate(T current, MainArguments main)
+        bool IArgumentsProvider<T>.Validate(T current, MainArguments main, string[] args)
         {
             if (main.Renew)
             {
-                if (_typedThis.Active(current))
+                if (_typedThis.Active(current, args))
                 {
-                    Log?.Error($"Renewal {(string.IsNullOrEmpty(_typedThis.Group) ? "" : $"{_typedThis.Group} ")}parameters cannot be changed during a renewal. Recreate/overwrite the renewal or edit the .json file if you want to make changes.");
+                    Log?.Error($"Renewal {(string.IsNullOrEmpty(_typedThis.Group) ? "" : $"{_typedThis.Group} ")}parameters cannot be changed during --renew. Edit the renewal using the renewal manager or recreate the existing one to make changes.");
                     return false;
                 }
             }
             return true;
         }
-        bool IArgumentsProvider.Validate(object current, MainArguments main) => _typedThis.Validate((T)current, main);
+        bool IArgumentsProvider.Validate(object current, MainArguments main, string[] args) => _typedThis.Validate((T)current, main, args);
 
         /// <summary>
         /// Get list of unmatched arguments
@@ -137,11 +137,11 @@ namespace PKISharp.WACS.Configuration
         /// </summary>
         /// <param name="current"></param>
         /// <returns></returns>
-        bool IArgumentsProvider.Active(object current)
+        bool IArgumentsProvider.Active(object current, string[] args)
         {
             if (current is IArguments standalone)
             {
-                return standalone.Active();
+                return standalone.Active(args);
             }
             throw new InvalidOperationException();
         }

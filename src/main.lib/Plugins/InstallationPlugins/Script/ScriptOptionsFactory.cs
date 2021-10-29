@@ -29,28 +29,25 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 
         public override async Task<ScriptOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
-
-            inputService.CreateSpace();
-            inputService.Show("Full instructions", "https://win-acme.com/reference/plugins/installation/script");
+            var ret = new ScriptOptions
+            {
+                Script = await Script.Interactive(inputService, "File").GetValue(),
+            };
             inputService.CreateSpace();
             inputService.Show("{CertCommonName}", "Common name (primary domain name)");
             inputService.Show("{CachePassword}", ".pfx password");
             inputService.Show("{CacheFile}", ".pfx full path");
             inputService.Show("{CertFriendlyName}", "Certificate friendly name");
             inputService.Show("{CertThumbprint}", "Certificate thumbprint");
-            inputService.Show("{StoreType}", $"Type of store ({CentralSslOptions.PluginName}/{CertificateStoreOptions.PluginName}/{PemFilesOptions.PluginName})");
+            inputService.Show("{StoreType}", $"Type of store (e.g. {CentralSslOptions.PluginName}, {CertificateStoreOptions.PluginName}, {PemFilesOptions.PluginName}, ...)");
             inputService.Show("{StorePath}", "Path to the store");
             inputService.Show("{RenewalId}", "Renewal identifier");
             inputService.Show("{OldCertCommonName}", "Common name (primary domain name) of the previously issued certificate");
             inputService.Show("{OldCertFriendlyName}", "Friendly name of the previously issued certificate");
             inputService.Show("{OldCertThumbprint}", "Thumbprint of the previously issued certificate");
             inputService.CreateSpace();
-
-            return new ScriptOptions
-            {
-                Script = await Script.Interactive(inputService, "File").GetValue(),
-                ScriptParameters = await Parameters.Interactive(inputService, "Parameters").GetValue()
-            };
+            ret.ScriptParameters = await Parameters.Interactive(inputService, "Parameters").GetValue();
+            return ret;
         }
 
         public override async Task<ScriptOptions> Default(Target target)
