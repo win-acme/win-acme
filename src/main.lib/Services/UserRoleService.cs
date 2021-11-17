@@ -16,13 +16,13 @@ namespace PKISharp.WACS.Services
         {
             get
             {
-                if (!(_iisClient.Version.Major > 6))
-                {
-                    return (false, "No supported version of IIS detected.");
-                }
-                else if (!IsAdmin)
+                if (!IsAdmin)
                 {
                     return (false, "Run as administrator to allow access to IIS.");
+                }
+                if (_iisClient.Version.Major <= 6)
+                {
+                    return (false, "No supported version of IIS detected.");
                 }
                 return (true, null);
             }
