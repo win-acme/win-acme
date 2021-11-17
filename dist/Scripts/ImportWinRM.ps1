@@ -57,9 +57,9 @@ if($CertInStore){
             $CertInStore = Get-ChildItem -Path Cert:\LocalMachine\My -Recurse | Where-Object {$_.thumbprint -eq $NewCertThumbprint} | Sort-Object -Descending | Select-Object -f 1
         }
         $winrm = 'winrm/config/listener'
-
-        Get-WSManInstance -ResourceURI $winrm -Enumerate | Where-Object {$CertInStore.DnsNameList -contains $_.Hostname} | ForEach-Object {Set-WSManInstance -ResourceURI $winrm -SelectorSet @{Address=$_.Address; Transport=$_.Transport} -ValueSet @{CertificateThumbprint=$CertInStore.Thumbprint}}
-
+        
+        Get-WSManInstance -ResourceURI $winrm -Enumerate | Where-Object {$CertInStore.DnsNameList -contains $_.Hostname.ToLower()} | ForEach-Object {Set-WSManInstance -ResourceURI $winrm -SelectorSet @{Address=$_.Address; Transport=$_.Transport} -ValueSet @{CertificateThumbprint=$CertInStore.Thumbprint}}
+        
         Restart-Service WinRM -Force -ErrorAction Stop
         "Cert thumbprint set to WinRM public HTTPS listener and service restarted"
     }catch{
