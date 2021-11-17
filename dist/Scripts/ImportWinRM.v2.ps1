@@ -35,7 +35,7 @@ $CertInStore = Get-ChildItem -Path Cert:\LocalMachine -Recurse | Where-Object {$
 if($CertInStore){
     try{
         $winrm = 'winrm/config/listener'
-        $WinRmEndpoint = Get-WSManInstance -ResourceURI $winrm -Enumerate | Where-Object {$_.Transport -eq 'HTTPS' -and $CertInStore.DnsNameList -contains $_.Hostname}
+        $WinRmEndpoint = Get-WSManInstance -ResourceURI $winrm -Enumerate | Where-Object {$_.Transport -eq 'HTTPS' -and $CertInStore.DnsNameList -contains $_.Hostname.ToLower()}
 
         if($null -ne $WinRmEndpoint){
             $WinRmEndpoint | ForEach-Object {Set-WSManInstance -ResourceURI $winrm -SelectorSet @{Address=$_.Address; Transport=$_.Transport} -ValueSet @{CertificateThumbprint=$CertInStore.Thumbprint}}
