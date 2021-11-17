@@ -84,7 +84,7 @@ namespace PKISharp.WACS.Configuration.Arguments
         [CommandLine(Description = "Specify which validation plugin to run. If none is specified, SelfHosting validation will be chosen as the default.")]
         public string? Validation { get; set; }
 
-        [CommandLine(Description = "Specify which validation mode to use. HTTP-01 is the default.", Default = Constants.Http01ChallengeType)]
+        [CommandLine(Description = "Specify which validation mode to use. HTTP-01 is the default.")]
         public string? ValidationMode { get; set; }
 
         [CommandLine(Description = "Specify which order plugin to use. Single is the default.")]

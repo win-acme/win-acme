@@ -21,11 +21,19 @@ param (
 	$Password
 )
 
-$SignTool = "C:\Program Files (x86)\Windows Kits\8.1\bin\x86\signtool.exe"
-if (!(Test-Path $SignTool)) {
-    $SignTool = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.18362.0\x64\signtool.exe"
+$paths = @(
+	"C:\Program Files (x86)\Windows Kits\8.1\bin\x86\signtool.exe",
+	"C:\Program Files (x86)\Windows Kits\10\bin\10.0.18362.0\x64\signtool.exe",
+	"C:\Program Files (x86)\Microsoft SDKs\ClickOnce\SignTool\signtool.exe"
+)
+foreach ($possiblePath in $paths) 
+{
+	if (Test-Path $possiblePath) 
+	{
+		$SignTool = $possiblePath
+	}
 }
-if (Test-Path $SignTool) 
+if ($null -ne $SignTool) 
 {
 	if ($Password -eq "" -or $Password -eq $null) 
 	{
