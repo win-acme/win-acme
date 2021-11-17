@@ -15,15 +15,18 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     internal sealed class TransIpOptionsFactory : ValidationPluginOptionsFactory<TransIp, TransIpOptions>
     {
         private readonly ArgumentsInputService _arguments;
+        private readonly SecretServiceManager _ssm;
         private readonly ILogService _log;
         private readonly IProxyService _proxy;
 
         public TransIpOptionsFactory(
             ArgumentsInputService arguments,
+            SecretServiceManager ssm,
             ILogService log,
             IProxyService proxy) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) 
         {
             _arguments = arguments;
+            _ssm = ssm;
             _log = log;
             _proxy = proxy;
         }
@@ -34,7 +37,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         private ArgumentResult<ProtectedString?> PrivateKey => _arguments.
             GetProtectedString<TransIpArguments>(a => a.PrivateKey).
-            Validate(x => Task.FromResult(CheckKey(x?.Value)), "invalid private key").
+            Validate(x => Task.FromResult(CheckKey(_ssm.EvaluateSecret(x?.Value))), "invalid private key").
             Required();
 
         public override async Task<TransIpOptions?> Aquire(Target target, IInputService input, RunLevel runLevel)
