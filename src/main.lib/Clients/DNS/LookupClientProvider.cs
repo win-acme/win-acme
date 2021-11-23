@@ -210,6 +210,6 @@ namespace PKISharp.WACS.Clients.DNS
             return Produce(key, from);
         }
 
-        private DnsLookupResult Produce(string key, DnsLookupResult? parent = null) => new DnsLookupResult(key, _authoritativeNs[key].Select(ip => Produce(ip)), parent);
+        private DnsLookupResult Produce(string key, DnsLookupResult? parent = null) => new(key, _authoritativeNs[key].Select(ip => Produce(ip)), parent);
     }
 }
