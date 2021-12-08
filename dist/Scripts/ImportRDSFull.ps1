@@ -18,14 +18,22 @@ The exact thumbprint of the cert to be imported. The script will copy this cert 
 
 .PARAMETER RDCB
 This parameter specifies the Remote Desktop Connection Broker (RD Connection Broker) server for a Remote Desktop deployment.
+
 If you don't specify a value, the script uses the local computer's fully qualified domain name (FQDN).
+
+.PARAMETER OldCertThumbprint
+The exact thumbprint of the cert to be replaced. The script will delete this cert from the Personal store of the RD Connection Broker upon successful completion.
+
+If you don't specify this value and the RD Connection Broker is not the local machine, the replaced cert will remain in the store.
 
 .EXAMPLE 
 
-ImportRDS.ps1 <certThumbprint> <ConnectionBroker.contoso.com>
+ImportRDS.ps1 <certThumbprint> <ConnectionBroker.contoso.com> <oldCertThumbprint>
 
 .NOTES
 The private key of the letsencrypt certificate needs to be exportable. Set "PrivateKeyExportable" in settings.json to true.
+
+In order for this script to update the cert on a remote RD Connection Broker, PowerShell on the RD Connection Broker needs to be configured to receive remote commands and the scheduled task needs to be configured to run with highest privileges as a domain user who is an admin on both the machine running the update and the RD Connection Broker.
 
 #>
 
@@ -33,16 +41,43 @@ param(
     [Parameter(Position=0,Mandatory=$true)]
     [string]$NewCertThumbprint,
     [Parameter(Position=1,Mandatory=$false)]
-    [string]$RDCB
+    [string]$RDCB,
+    [Parameter(Position=3,Mandatory=$false)]
+    [string]$OldCertThumbprint
+
 )
+$LocalHost = (Get-WmiObject win32_computersystem).DNSHostName+"."+(Get-WmiObject win32_computersystem).Domain
 if (-not $PSBoundParameters.ContainsKey('RDCB')) {$RDCB = (Get-WmiObject win32_computersystem).DNSHostName+"."+(Get-WmiObject win32_computersystem).Domain} 
 try 
 {
+	if ($RDCB -ne $LocalHost) {$RDCBPS = New-PSSession -ComputerName $RDCB}
+}
+catch 
+{
+	"Could not create remote PowerShell Session to Remote Desktop Connection Broker"
+	"Error: $($Error[0])"
+	return
+}
+try 
+{
+	if ($RDCB -ne $LocalHost)
+	{
+		try
+		{
+			Invoke-Command -Session $RDCBPS {Import-Module RemoteDesktopServices}
+		}
+		catch
+		{
+			"Could not load Remote Desktop Services module on $RDCB"
+			"Error: $($Error[0])"
+			return
+		}
+	}
 	Import-Module RemoteDesktopServices
 }
 catch 
 {
-	"Cert thumbprint was not set successfully to RDP listener"
+	"Could not load Remote Desktop Services module on $LocalHost"
 	"Error: $($Error[0])"
 	return
 }
@@ -147,11 +182,29 @@ if ($CertInStore)
         "Error: $($Error[0])"
 		return
     }
-    # Cleanup the temporary PFX file
-    Remove-Item -Path $tempPfxPath
-} 
+    finally
+	{
+		"Cleaning up"
+		Remove-Item -Path $tempPfxPath
+		if ($RDCB -ne $LocalHost)
+		{
+			if ($PSBoundParameters.ContainsKey('OldCertThumbprint'))
+			{
+				$RemoteCert = Invoke-Command -Session $RDCBPS {Get-ChildItem -Path Cert:\LocalMachine\My -Recurse | Where-Object { $_.thumbprint -eq $Using:NewCertThumbprint}}
+				if ($RemoteCert -and $RemoteCert.thumbprint -ne $OldCertThumbprint)
+				{
+					Invoke-Command -Session $RDCBPS {Get-ChildItem -Path Cert:\LocalMachine\My -Recurse | Where-Object { $_.thumbprint -eq $Using:OldCertThumbprint} | Remove-Item}
+				}
+				else
+				{
+					"Remote cert not changed, skipping deletion."
+				}
+			} 
+			Remove-PSSession $RDCBPS
+		}
+	}
+}
 else 
 {
     "Cert thumbprint not found in the My cert store... have you specified --certificatestore My?"
 }
- 
