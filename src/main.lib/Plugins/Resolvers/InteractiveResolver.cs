@@ -186,7 +186,11 @@ namespace PKISharp.WACS.Plugins.Resolvers
         public override async Task<IValidationPluginOptionsFactory> GetValidationPlugin(ILifetimeScope scope, Target target)
         {
             var defaultParam1 = _settings.Validation.DefaultValidation;
-            var defaultParam2 = _settings.Validation.DefaultValidationMode ?? Constants.Http01ChallengeType;
+            var defaultParam2 = _settings.Validation.DefaultValidationMode;
+            if (string.IsNullOrEmpty(defaultParam2))
+            {
+                defaultParam2 = Constants.Http01ChallengeType;
+            }
             if (!string.IsNullOrWhiteSpace(_arguments.Validation))
             {
                 defaultParam1 = _arguments.Validation;

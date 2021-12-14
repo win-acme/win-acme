@@ -132,13 +132,15 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <returns></returns>
         public virtual async Task<IValidationPluginOptionsFactory> GetValidationPlugin(ILifetimeScope scope, Target target)
         {
+            var defaultParam2 = _arguments.ValidationMode ?? _settings.Validation.DefaultValidationMode;
+            if (string.IsNullOrEmpty(defaultParam2))
+            {
+                defaultParam2 = Constants.Http01ChallengeType;
+            }
             return await GetPlugin<IValidationPluginOptionsFactory>(
                 scope,
-                defaultParam1: _arguments.Validation ?? 
-                    _settings.Validation.DefaultValidation,
-                defaultParam2: _arguments.ValidationMode ?? 
-                    _settings.Validation.DefaultValidationMode ?? 
-                    Constants.Http01ChallengeType,
+                defaultParam1: _arguments.Validation ?? _settings.Validation.DefaultValidation,
+                defaultParam2: defaultParam2,
                 defaultType: typeof(SelfHostingOptionsFactory),
                 nullResult: new NullValidationFactory(),
                 unusable: (c) => (!c.CanValidate(target), "Unsuppored target. Most likely this is because you have included a wildcard identifier (*.example.com), which requires DNS validation."),
