@@ -204,18 +204,18 @@ namespace PKISharp.WACS.Host
                 var client = _container.Resolve<AcmeClient>();
                 await client.CheckNetwork().ConfigureAwait(false);
             }
-            var iis = _container.Resolve<IIISClient>().Version;
-            if (iis.Major > 0)
-            {
-                _log.Debug("IIS version {version}", iis);
-            }
-            else
-            {
-                _log.Debug("IIS not detected");
-            }
             if (_userRoleService.IsAdmin)
             {
                 _log.Debug("Running with administrator credentials");
+                var iis = _container.Resolve<IIISClient>().Version;
+                if (iis.Major > 0)
+                {
+                    _log.Debug("IIS version {version}", iis);
+                }
+                else
+                {
+                    _log.Debug("IIS not detected");
+                }
             }
             else
             {

@@ -337,23 +337,44 @@ namespace PKISharp.WACS.Clients.IIS
             // Get the W3SVC service
             try
             {
-                var iisService = ServiceController
-                    .GetServices()
-                    .FirstOrDefault(s => s.ServiceName == "W3SVC");
-                if (iisService == null)
+                var anyService = false;
+                var allServices = ServiceController.GetServices();
+                var w3Service = allServices.FirstOrDefault(s => s.ServiceName == "W3SVC");
+                if (w3Service == null)
                 {
-                    _log.Verbose("W3SVC service not detected");
-                    return new Version(0, 0);
+                    _log.Verbose("No W3SVC detected");
                 }
-                if (iisService.Status != ServiceControllerStatus.Running)
+                else if (w3Service.Status != ServiceControllerStatus.Running)
                 {
-                    _log.Verbose("W3SVC service not running");
+                    _log.Verbose("W3SVC not running");
+                } 
+                else
+                {
+                    _log.Verbose("W3SVC detected and running");
+                    anyService = true;
+                }
+                var ftpService = allServices.FirstOrDefault(s => s.ServiceName == "FTPSVC");
+                if (ftpService == null)
+                {
+                    _log.Verbose("No FTPSVC detected");
+                }
+                else if (ftpService.Status != ServiceControllerStatus.Running)
+                {
+                    _log.Verbose("FTPSVC not running");
+                }
+                else
+                {
+                    _log.Verbose("FTPSVC detected and running");
+                    anyService = true;
+                }
+                if (!anyService)
+                {
                     return new Version(0, 0);
                 }
             }
             catch
             {
-                _log.Warning("Unable to scan for W3SVC service");
+                _log.Warning("Unable to scan for services");
             }
             try
             {
