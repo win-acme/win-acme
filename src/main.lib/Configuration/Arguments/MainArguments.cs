@@ -96,7 +96,7 @@ namespace PKISharp.WACS.Configuration.Arguments
         [CommandLine(Description = "Specify which store plugin to use. CertificateStore is the default. This may be a comma-separated list.")]
         public string? Store { get; set; }
 
-        [CommandLine(Description = "Specify which installation plugins to use. IIS is the default. This may be a comma-separated list.")]
+        [CommandLine(Description = "Specify which installation plugins to use (if any). This may be a comma-separated list.")]
         public string? Installation { get; set; }
 
         // Misc
