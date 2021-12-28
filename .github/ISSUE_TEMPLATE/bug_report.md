@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Let us know if you ran into an error or something unexpected happened
+about: Let us know if you ran into an error that you believe is caused by this program
 title: ''
 labels: possible bug
 assignees: ''

@@ -32,6 +32,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{1FD6
 		..\.github\ISSUE_TEMPLATE\bug_report.md = ..\.github\ISSUE_TEMPLATE\bug_report.md
 		..\.github\ISSUE_TEMPLATE\feature_request.md = ..\.github\ISSUE_TEMPLATE\feature_request.md
 		..\.github\ISSUE_TEMPLATE\question.md = ..\.github\ISSUE_TEMPLATE\question.md
+		..\.github\ISSUE_TEMPLATE\validation_problem.md = ..\.github\ISSUE_TEMPLATE\validation_problem.md
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.dns.cloudflare", "plugin.validation.dns.cloudflare\wacs.validation.dns.cloudflare.csproj", "{DB1D4461-5563-425E-8D5E-D57893015D73}"
