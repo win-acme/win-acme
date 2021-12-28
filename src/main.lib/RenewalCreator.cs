@@ -189,13 +189,29 @@ namespace PKISharp.WACS
             // Choose store plugin(s)
             if (steps.HasFlag(Steps.Store))
             {
-                tempRenewal.StorePluginOptions = await SetupStore(configScope, runLevel);
+                var store = await SetupStore(configScope, runLevel); 
+                if (store != null)
+                {
+                    tempRenewal.StorePluginOptions = store;
+                } 
+                else
+                {
+                    return;
+                }
             }
 
             // Choose installation plugin(s)
             if (steps.HasFlag(Steps.Installation))
             {
-                tempRenewal.InstallationPluginOptions = await SetupInstallation(configScope, runLevel, tempRenewal, initialTarget);
+                var install = await SetupInstallation(configScope, runLevel, tempRenewal, initialTarget);
+                if (install != null)
+                {
+                    tempRenewal.InstallationPluginOptions = install;
+                }
+                else
+                {
+                    return;
+                }
             }
 
             // Try to run for the first time
@@ -275,7 +291,7 @@ namespace PKISharp.WACS
             await SetupPlugin<CsrPluginOptions, ICsrPluginOptionsFactory>(
                 "CSR", scope, runLevel, x => x.Default(), x => x.Aquire(_input, runLevel));
 
-        internal async Task<List<StorePluginOptions>> SetupStore(ILifetimeScope scope, RunLevel runLevel) =>
+        internal async Task<List<StorePluginOptions>?> SetupStore(ILifetimeScope scope, RunLevel runLevel) =>
             await SetupPlugins<StorePluginOptions, IStorePluginOptionsFactory>(
                 "Store",
                 scope,
@@ -284,7 +300,7 @@ namespace PKISharp.WACS
                 x => x.Default(),
                 x => x.Aquire(_input, runLevel));
 
-        internal async Task<List<InstallationPluginOptions>> SetupInstallation(ILifetimeScope scope, RunLevel runLevel, Renewal renewal, Target target)
+        internal async Task<List<InstallationPluginOptions>?> SetupInstallation(ILifetimeScope scope, RunLevel runLevel, Renewal renewal, Target target)
         {
             var stores = renewal.StorePluginOptions.Select(x => x.Instance);
             return await SetupPlugins<InstallationPluginOptions, IInstallationPluginOptionsFactory>(
@@ -308,7 +324,7 @@ namespace PKISharp.WACS
         /// <param name="default"></param>
         /// <param name="aquire"></param>
         /// <returns></returns>
-        internal async Task<List<TOptions>> SetupPlugins<TOptions, TOptionsFactory>(
+        internal async Task<List<TOptions>?> SetupPlugins<TOptions, TOptionsFactory>(
             string name,
             ILifetimeScope scope, 
             RunLevel runLevel, 
@@ -329,7 +345,7 @@ namespace PKISharp.WACS
                     if (factory == null)
                     {
                         _exceptionHandler.HandleException(message: $"{name} plugin could not be selected");
-                        continue;
+                        return null;
                     }
                     TOptions? options;
                     try
@@ -341,12 +357,12 @@ namespace PKISharp.WACS
                     catch (Exception ex)
                     {
                         _exceptionHandler.HandleException(ex, $"{name} plugin {factory.Name} aborted or failed");
-                        continue;
+                        return null;
                     }
                     if (options == null)
                     {
                         _exceptionHandler.HandleException(message: $"{name} plugin {factory.Name} was unable to generate options");
-                        continue;
+                        return null;
                     }
                     var isNull = factory is INull;
                     if (!isNull || factories.Count == 0)
