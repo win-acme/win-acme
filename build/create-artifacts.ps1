@@ -142,6 +142,9 @@ PluginRelease plugin.validation.dns.googledns @(
 	"Google.Apis.Dns.v1.dll",
 	"PKISharp.WACS.Plugins.ValidationPlugins.GoogleDns.dll"
 )
+PluginRelease plugin.validation.dns.godaddy @(
+	"PKISharp.WACS.Plugins.ValidationPlugins.NS1.dll"
+)
 PluginRelease plugin.store.keyvault @(
 	"Azure.Core.dll",
 	"Azure.Identity.dll",
