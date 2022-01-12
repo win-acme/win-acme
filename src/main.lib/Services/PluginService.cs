@@ -175,6 +175,7 @@ namespace PKISharp.WACS.Services
             "clrcompression.dll", 
             "clrjit.dll",
             "coreclr.dll",
+            "mscordbi.dll",
             "mscordaccore.dll"
         };
 

@@ -53,6 +53,15 @@ function PlatformRelease
 		Set-Content -Path "$Temp\version.txt" -Value "v$Version ($PlatformShort, $ReleaseType)"
 		[io.compression.zipfile]::CreateFromDirectory($Temp, $MainZipPath)
 	}
+
+	# Debugger interface as optional extra download
+	$DbiZip = "mscordbi.v$Version.$PlatformShort.zip"
+	$DbiZipPath = "$Out\$DbiZip"
+	if (!(Test-Path $DbiZipPath)) {
+		Remove-Item $Temp\* -recurse
+		Copy-Item "$MainBin\mscordbi.dll" $Temp
+		[io.compression.zipfile]::CreateFromDirectory($Temp, $DbiZipPath)
+	}
 }
 
 function PluginRelease
