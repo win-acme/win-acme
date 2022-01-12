@@ -42,7 +42,8 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         [SupportedOSPlatform("windows")]
         public override Task<X509Certificate2> PostProcess(X509Certificate2 original)
         {
-            if (original.PrivateKey == null)
+            var privateKey = original.GetRSAPrivateKey();
+            if (privateKey == null)
             {
                 return Task.FromResult(original);
             }
@@ -56,7 +57,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
                     ProviderType = 12 // Microsoft RSA SChannel Cryptographic Provider
                 };
                 var rsaProvider = new RSACryptoServiceProvider(cspParameters);
-                var parameters = ((RSACng)original.PrivateKey).ExportParameters(true);
+                var parameters = privateKey.ExportParameters(true);
                 rsaProvider.ImportParameters(parameters);
 
                 var tempPfx = new X509Certificate2(
