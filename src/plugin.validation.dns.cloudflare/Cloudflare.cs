@@ -40,7 +40,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         private async Task<Zone> GetHostedZone(IAuthorizedSyntax context, string recordName)
         {
-            var page = -1;
+            var page = 0;
             var allZones = new List<Zone>();
             var totalCount = int.MaxValue;
             while (allZones.Count < totalCount)
