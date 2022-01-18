@@ -274,8 +274,8 @@ namespace PKISharp.WACS.Clients.Acme
                         "How would you like to create the account?",
                         new List<Choice<Func<Task>>>()
                         {
-                            Choice.Create((Func<Task>)apiKeyRegistration, "API access key"),
-                            Choice.Create((Func<Task>)emailRegistration, "Email address"),
+                            Choice.Create(apiKeyRegistration, "API access key"),
+                            Choice.Create(emailRegistration, "Email address"),
                             Choice.Create<Func<Task>>(() => Task.CompletedTask, "Input EAB credentials directly")
                         });
                     await chosen.Invoke();
@@ -297,7 +297,7 @@ namespace PKISharp.WACS.Clients.Acme
                 {
                     eabKey = await _input.ReadPassword("Key (base64url encoded)");
                 }
-              
+                contacts = await GetContacts(runLevel: RunLevel.Unattended);
             } 
             else
             {
@@ -413,10 +413,13 @@ namespace PKISharp.WACS.Clients.Acme
         /// Get contact information
         /// </summary>
         /// <returns></returns>
-        private async Task<string[]> GetContacts(bool allowMultiple = true, string prefix = "mailto:")
+        private async Task<string[]> GetContacts(
+            bool allowMultiple = true, 
+            string prefix = "mailto:", 
+            RunLevel runLevel = RunLevel.Interactive)
         {
             var email = _accountArguments.EmailAddress;
-            if (string.IsNullOrWhiteSpace(email))
+            if (string.IsNullOrWhiteSpace(email) && runLevel.HasFlag(RunLevel.Interactive))
             {
                 var question = allowMultiple ?
                     "Enter email(s) for notifications about problems and abuse (comma-separated)" :
@@ -429,10 +432,10 @@ namespace PKISharp.WACS.Clients.Acme
                 newEmails = email.ParseCsv();
                 if (newEmails == null)
                 {
-                    return new string[] { };
+                    return Array.Empty<string>();
                 }
             } 
-            else
+            else if (!string.IsNullOrWhiteSpace(email))
             {
                 newEmails.Add(email);
             }
