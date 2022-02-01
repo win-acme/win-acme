@@ -230,6 +230,7 @@ namespace PKISharp.WACS
                     goto retry;
                 }
                 if (!renewal.New && 
+                    runLevel.HasFlag(RunLevel.Interactive) &&
                     await _input.PromptYesNo("Save these new settings anyway?", false))
                 {
                     _renewalStore.Save(renewal, result);
