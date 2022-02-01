@@ -50,7 +50,12 @@ namespace PKISharp.WACS.Clients.IIS
             {
                 var allBindings = GetAllSites();
                 var bindingsUpdated = 0;
-                var found = new List<IIISBinding>();
+                var found = allBindings.
+                    Where(sb => StructuralComparisons.StructuralEqualityComparer.Equals(sb.binding.CertificateHash, bindingOptions.Thumbprint)).
+                    Select(sb => sb.binding).
+                    OfType<IIISBinding>().
+                    ToList();
+
                 if (oldThumbprint != null)
                 {
                     var siteBindings = allBindings.

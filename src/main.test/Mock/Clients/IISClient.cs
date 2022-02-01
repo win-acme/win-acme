@@ -100,12 +100,12 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
             var updated = updater.AddOrUpdateBindings(identifiers, bindingOptions, oldThumbprint);
             if (updated > 0)
             {
-                _log.Information("Committing {count} {type} binding changes to IIS", updated, "https");
+                _log.Information("Committing {count} {type} binding changes to IIS while updating site {site}", updated, "https", bindingOptions.SiteId);
 
             }
             else
             {
-                _log.Warning("No bindings have been changed");
+                _log.Information("No bindings have been changed while updating site {site}", bindingOptions.SiteId);
             }
         }
         public MockSite GetSite(long id, IISSiteType? type = null) => Sites.First(x => id == x.Id && (type == null || x.Type == type));

@@ -1084,6 +1084,91 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
             Assert.AreEqual(expectedBindings, dup2.Bindings.Count);
         }
 
+        [TestMethod]
+        public void MultipleNonSNI()
+        {
+            var dup1 = new MockSite()
+            {
+                Id = 1,
+                Bindings = new List<MockBinding> {
+                            new MockBinding() {
+                                IP = "*",
+                                Port = 80,
+                                Host = "wacs1.test.net",
+                                Protocol = "http"
+                            },
+                            new MockBinding() {
+                                IP = "*",
+                                Port = 443,
+                                Host = "wacs1.test.net",
+                                Protocol = "https",
+                                SSLFlags = SSLFlags.None,
+                                CertificateHash = oldCert1,
+                                CertificateStoreName = DefaultStore
+                            }
+                        }
+            };
+
+            var dup2 = new MockSite()
+            {
+                Id = 2,
+                Bindings = new List<MockBinding> {
+                    new MockBinding() {
+                        IP = "*",
+                        Port = 80,
+                        Host = "wacs2.test.net",
+                        Protocol = "http"
+                    },
+                    new MockBinding() {
+                        IP = "*",
+                        Port = 443,
+                        Host = "wacs2.test.net",
+                        Protocol = "https",
+                        SSLFlags = SSLFlags.None,
+                        CertificateHash = oldCert1,
+                        CertificateStoreName = DefaultStore
+                    },
+                    new MockBinding() {
+                        IP = "*",
+                        Port = 443,
+                        Host = "wacs2alt.test.net",
+                        Protocol = "https",
+                        SSLFlags = SSLFlags.None,
+                        CertificateHash = oldCert1,
+                        CertificateStoreName = DefaultStore
+                    }
+                }
+            };
+
+            var iis = new MockIISClient(log, 10)
+            {
+                MockSites = new[] { dup1, dup2 }
+            };
+
+            var bindingOptions = new BindingOptions().
+                WithFlags(SSLFlags.None).
+                WithStore(DefaultStore).
+                WithThumbprint(newCert);
+
+            iis.UpdateHttpSite(new[] { 
+                new DnsIdentifier("wacs1.test.net"), 
+                new DnsIdentifier("wacs2.test.net"), 
+                new DnsIdentifier("wacs2alt.test.net") 
+            },
+            bindingOptions.WithSiteId(1),
+            oldCert1);
+
+            log.Information("Site 2");
+
+            iis.UpdateHttpSite(new[] {
+                new DnsIdentifier("wacs1.test.net"),
+                new DnsIdentifier("wacs2.test.net"),
+                new DnsIdentifier("wacs2alt.test.net")
+            },
+            bindingOptions.WithSiteId(2),
+            oldCert1);
+        }
+
         [DataRow(7, "")]
         [DataRow(10, "")]
         [DataRow(7, "exists.example.com")]
