@@ -1083,6 +1083,68 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
             iis.UpdateHttpSite(new[] { new DnsIdentifier("new.example.com") }, bindingOptions, scopeCert);
             Assert.AreEqual(expectedBindings, dup2.Bindings.Count);
         }
+        [TestMethod]
+        public void MultipleDontCreate()
+        {
+            var dup1 = new MockSite()
+            {
+                Id = 1,
+                Bindings = new List<MockBinding> {
+                            new MockBinding() {
+                                IP = "*",
+                                Port = 8080,
+                                Host = "wacs1.test.net",
+                                Protocol = "https",
+                                SSLFlags = SSLFlags.None,
+                                CertificateHash = oldCert1,
+                                CertificateStoreName = DefaultStore
+                            }
+                        }
+            };
+
+            var dup2 = new MockSite()
+            {
+                Id = 2,
+                Bindings = new List<MockBinding> {
+                    new MockBinding() {
+                        IP = "*",
+                        Port = 444,
+                        Host = "wacs1.test.net",
+                        Protocol = "https",
+                        SSLFlags = SSLFlags.SNI,
+                        CertificateHash = oldCert1,
+                        CertificateStoreName = DefaultStore
+                    }
+                }
+            };
+
+            var iis = new MockIISClient(log, 10)
+            {
+                MockSites = new[] { dup1, dup2 }
+            };
+
+            var bindingOptions = new BindingOptions().
+                WithFlags(SSLFlags.None).
+                WithStore(DefaultStore).
+                WithThumbprint(newCert);
+
+            log.Information("Site 1");
+            iis.UpdateHttpSite(new[] {
+                new DnsIdentifier("wacs1.test.net")
+            },
+            bindingOptions.WithSiteId(1),
+            oldCert1);
+
+            log.Information("Site 2");
+
+            iis.UpdateHttpSite(new[] {
+                new DnsIdentifier("wacs1.test.net")
+            },
+            bindingOptions.WithSiteId(2),
+            oldCert1);
+
+            Assert.AreEqual(1, dup2.Bindings.Count);
+        }
 
         [TestMethod]
         public void MultipleNonSNI()
