@@ -33,7 +33,10 @@ namespace PKISharp.WACS.Clients
             }
             var ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + ftpUri.AbsolutePath;
             var request = (FtpWebRequest)WebRequest.Create(ftpConnection);
-            request.Credentials = Credential;
+            if (Credential != null)
+            {
+                request.Credentials = Credential;
+            }
             if (ftpUri.Scheme == "ftps")
             {
                 request.EnableSsl = true;

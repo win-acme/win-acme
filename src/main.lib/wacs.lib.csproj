@@ -5,7 +5,7 @@
     <RootNamespace>PKISharp.WACS</RootNamespace>
     <Configurations>Debug;Release;ReleasePluggable</Configurations>
   </PropertyGroup>
-
+	
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
     <WarningLevel>1</WarningLevel>
   </PropertyGroup>
