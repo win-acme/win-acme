@@ -59,6 +59,11 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             GetLong<IISArguments>(x => x.InstallationSiteId).
             Validate(x => Task.FromResult(_iisClient.GetSite(x!.Value) != null), "invalid site");
 
+        private ArgumentResult<long?> FtpSite => _arguments.
+            GetLong<IISArguments>(x => x.FtpSiteId).
+            Validate(x => Task.FromResult(_iisClient.GetSite(x!.Value) != null), "invalid site").
+            Validate(x => Task.FromResult(_iisClient.GetSite(x!.Value).Type == IISSiteType.Ftp), "not an ftp site");
+
         public override async Task<IISOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
             var ret = new IISOptions()
@@ -84,11 +89,16 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 
         public override async Task<IISOptions> Default(Target target)
         {
+            var siteId = await FtpSite.GetValue();
+            if (siteId == null)
+            {
+                siteId = await InstallationSite.Required(!target.IIS).GetValue();
+            }
             var ret = new IISOptions()
             {
                 NewBindingPort = await NewBindingPort.GetValue(),
                 NewBindingIp = await NewBindingIp.GetValue(),
-                SiteId = await InstallationSite.Required(!target.IIS).GetValue()
+                SiteId = siteId
             };
             return ret;
         }

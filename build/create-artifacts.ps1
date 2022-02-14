@@ -39,23 +39,28 @@ function PlatformRelease
 	}
 	$MainZip = "win-acme.v$Version.$PlatformShort.$Postfix.zip"
 	$MainZipPath = "$Out\$MainZip"
-	$MainBin = "$Root\src\main\bin\$ReleaseType\net5.0\$Platform"
+	$MainBin = "$Root\src\main\bin\$ReleaseType\net6.0\$Platform"
 	if (!(Test-Path $MainBin)) 
 	{
-		$MainBin = "$Root\src\main\bin\Any CPU\$ReleaseType\net5.0\$Platform"
+		$MainBin = "$Root\src\main\bin\Any CPU\$ReleaseType\net6.0\$Platform"
 	}
 	if (Test-Path $MainBin) 
 	{
 		./sign-exe.ps1 "$MainBin\publish\wacs.exe" "$Root\build\codesigning.pfx" $Password
 		Copy-Item "$MainBin\publish\wacs.exe" $Temp
-		Copy-Item "$MainBin\publish\coreclr.dll" $Temp
-		Copy-Item "$MainBin\publish\clrjit.dll" $Temp
-		Copy-Item "$MainBin\publish\clrcompression.dll" $Temp
-		Copy-Item "$MainBin\publish\mscordaccore.dll" $Temp
 		Copy-Item "$MainBin\settings.json" "$Temp\settings_default.json"
 		Copy-Item "$Root\dist\*" $Temp -Recurse
 		Set-Content -Path "$Temp\version.txt" -Value "v$Version ($PlatformShort, $ReleaseType)"
 		[io.compression.zipfile]::CreateFromDirectory($Temp, $MainZipPath)
+	}
+
+	# Debugger interface as optional extra download
+	$DbiZip = "mscordbi.v$Version.$PlatformShort.zip"
+	$DbiZipPath = "$Out\$DbiZip"
+	if (!(Test-Path $DbiZipPath)) {
+		Remove-Item $Temp\* -recurse
+		Copy-Item "$MainBin\mscordbi.dll" $Temp
+		[io.compression.zipfile]::CreateFromDirectory($Temp, $DbiZipPath)
 	}
 }
 
@@ -66,10 +71,10 @@ function PluginRelease
 	Remove-Item $Temp\* -recurse
 	$PlugZip = "$Dir.v$Version.zip"
 	$PlugZipPath = "$Out\$PlugZip"
-	$PlugBin = "$Root\src\$Dir\bin\Release\net5.0\publish"
+	$PlugBin = "$Root\src\$Dir\bin\Release\net6.0\publish"
 	if (!(Test-Path $PlugBin)) 
 	{
-		$PlugBin = "$Root\src\$Dir\bin\Any CPU\Release\net5.0\publish"
+		$PlugBin = "$Root\src\$Dir\bin\Any CPU\Release\net6.0\publish"
 	}
 	if (Test-Path $PlugBin) 
 	{
@@ -146,6 +151,9 @@ PluginRelease plugin.validation.dns.googledns @(
 	"Google.Apis.Core.dll",
 	"Google.Apis.Dns.v1.dll",
 	"PKISharp.WACS.Plugins.ValidationPlugins.GoogleDns.dll"
+)
+PluginRelease plugin.validation.dns.ns1 @(
+	"PKISharp.WACS.Plugins.ValidationPlugins.NS1.dll"
 )
 PluginRelease plugin.store.keyvault @(
 	"Azure.Core.dll",

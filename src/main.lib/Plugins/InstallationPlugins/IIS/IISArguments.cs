@@ -16,6 +16,9 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         [CommandLine(Description = "Specify site to install new bindings to. Defaults to the source if that is an IIS site.")]
         public long? InstallationSiteId { get; set; }
 
+        [CommandLine(Obsolete = true, Description = "Specify site to install new bindings to. Defaults to the source if that is an IIS site.")]
+        public long? FtpSiteId { get; set; }
+
         [CommandLine(Name = SslPortParameterName, Description = "Port number to use for newly created HTTPS bindings. Defaults to " + IISClient.DefaultBindingPortFormat + ".")]
         public int? SSLPort { get; set; }
 
