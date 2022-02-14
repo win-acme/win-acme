@@ -121,6 +121,11 @@ PluginRelease plugin.validation.dns.route53 @(
 	"AWSSDK.Route53.dll",
 	"PKISharp.WACS.Plugins.ValidationPlugins.Route53.dll"
 )
+PluginRelease plugin.validation.dns.domeneshop @(
+	"Abstractions.Integrations.Domeneshop.Models.dll", 
+	"Abstractions.Integrations.Domeneshop.dll",
+	"PKISharp.WACS.Plugins.ValidationPlugins.Domeneshop.dll"
+)
 PluginRelease plugin.validation.dns.luadns @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.LuaDns.dll"
 )

@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29209.62
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32112.339
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{52ED90D7-705F-4568-A5BE-83E1B159F1C5}"
 	ProjectSection(SolutionItems) = preProject
@@ -52,6 +52,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.dns.googledns", "plugin.validation.dns.googledns\wacs.validation.dns.googledns.csproj", "{25DF1D2B-2E3E-4013-9A16-47625967A15E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.http.rest", "plugin.validation.http.rest\wacs.validation.http.rest.csproj", "{6C6DE6B2-F487-49F3-98FE-1E9EE0DF9615}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.dns.domeneshop", "plugin.validation.dns.domeneshop\wacs.validation.dns.domeneshop.csproj", "{7A700CA0-F563-4E23-A9DE-7C71A2882A47}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.dns.ns1", "plugin.validation.dns.ns1\wacs.validation.dns.ns1.csproj", "{E61EB99D-F39C-4402-9B4B-F6505E23573C}"
 EndProject
@@ -164,6 +166,12 @@ Global
 		{6C6DE6B2-F487-49F3-98FE-1E9EE0DF9615}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6C6DE6B2-F487-49F3-98FE-1E9EE0DF9615}.ReleasePluggable|Any CPU.ActiveCfg = Release|Any CPU
 		{6C6DE6B2-F487-49F3-98FE-1E9EE0DF9615}.ReleasePluggable|Any CPU.Build.0 = Release|Any CPU
+		{7A700CA0-F563-4E23-A9DE-7C71A2882A47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7A700CA0-F563-4E23-A9DE-7C71A2882A47}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7A700CA0-F563-4E23-A9DE-7C71A2882A47}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7A700CA0-F563-4E23-A9DE-7C71A2882A47}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7A700CA0-F563-4E23-A9DE-7C71A2882A47}.ReleasePluggable|Any CPU.ActiveCfg = Release|Any CPU
+		{7A700CA0-F563-4E23-A9DE-7C71A2882A47}.ReleasePluggable|Any CPU.Build.0 = Release|Any CPU
 		{E61EB99D-F39C-4402-9B4B-F6505E23573C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E61EB99D-F39C-4402-9B4B-F6505E23573C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E61EB99D-F39C-4402-9B4B-F6505E23573C}.Release|Any CPU.ActiveCfg = Release|Any CPU
