@@ -164,12 +164,12 @@ namespace PKISharp.WACS.Clients.IIS
             var updated = updater.AddOrUpdateBindings(identifiers, bindingOptions, oldThumbprint);
             if (updated > 0)
             {
-                _log.Information("Committing {count} {type} binding changes to IIS", updated, "https");
+                _log.Information("Committing {count} {type} binding changes to IIS while updating site {site}", updated, "https", bindingOptions.SiteId);
                 Commit();
             }
             else
             {
-                _log.Warning("No bindings have been changed");
+                _log.Information("No bindings have been changed while updating site {site}", bindingOptions.SiteId);
             }
         }
 

@@ -5,6 +5,7 @@ using FluentCloudflare.Extensions;
 using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Services;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Runtime.Versioning;
@@ -39,17 +40,27 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         private async Task<Zone> GetHostedZone(IAuthorizedSyntax context, string recordName)
         {
-            var zonesResp = await context.Zones.List()
-                .ParseAsync(_hc)
-                .ConfigureAwait(false);
-
-            if (!zonesResp.Success || (zonesResp.Result?.Count ?? 0) < 1)
+            var page = 0;
+            var allZones = new List<Zone>();
+            var totalCount = int.MaxValue;
+            while (allZones.Count < totalCount)
+            {
+                page++;
+                var zonesResp = await context.Zones.List().Page(page).ParseAsync(_hc).ConfigureAwait(false);
+                if (!zonesResp.Success || zonesResp.ResultInfo.Count == 0)
+                {
+                    break;
+                }
+                totalCount = zonesResp.ResultInfo.TotalCount;
+                allZones.AddRange(zonesResp.Unpack());
+            }
+          
+            if (allZones.Count == 0)
             {
                 _log.Error("No zones could be found using the Cloudflare API. " +
                     "Maybe you entered a wrong API Token?");
                 throw new Exception();
             }
-            var allZones = zonesResp.Unpack();
             var bestZone = FindBestMatch(allZones.ToDictionary(x => x.Name), recordName);
             if (bestZone == null)
             {

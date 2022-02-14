@@ -18,6 +18,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using PKISharp.WACS.DomainObjects;
 using System.Net;
+using System.Net.Http;
 
 namespace PKISharp.WACS.Clients.Acme
 {
@@ -83,8 +84,10 @@ namespace PKISharp.WACS.Clients.Acme
             httpClient.Timeout = new TimeSpan(0, 0, 10);
             try
             {
-                _log.Verbose("SecurityProtocol setting: {setting}", System.Net.ServicePointManager.SecurityProtocol);
-                _ = await httpClient.GetAsync("directory").ConfigureAwait(false);
+                _log.Verbose("SecurityProtocol setting: {setting}", ServicePointManager.SecurityProtocol);
+                var response = await httpClient.GetAsync("directory").ConfigureAwait(false);
+                await CheckNetworkResponse(response);
+
             }
             catch (Exception ex)
             {
@@ -95,15 +98,51 @@ namespace PKISharp.WACS.Clients.Acme
                 altClient.Timeout = new TimeSpan(0, 0, 10);
                 try
                 {
-                    _ = await altClient.GetAsync("directory").ConfigureAwait(false);
+                    var response = await altClient.GetAsync("directory").ConfigureAwait(false);
+                    await CheckNetworkResponse(response);
                 }
                 catch (Exception ex2)
                 {
-                    _log.Error(ex2, "Unable to connect to ACME server");
+                    _log.Error(ex2, "Unable to connect to ACME server at {uri}", _settings.BaseUri);
                     return;
                 }
             }
             _log.Debug("Connection OK!");
+        }
+
+        /// <summary>
+        /// Deep inspection of initial response
+        /// </summary>
+        /// <param name="response"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        internal async static Task CheckNetworkResponse(HttpResponseMessage response)
+        {
+            if (response == null)
+            {
+                throw new Exception($"Server returned emtpy response");
+            }
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new Exception($"Server returned status {response.StatusCode}:{response.ReasonPhrase}");
+            }
+            string? content;
+            try
+            {
+                content = await response.Content.ReadAsStringAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Unable to get response content", ex);
+            }
+            try
+            {
+                JsonConvert.DeserializeObject<acme.ServiceDirectory>(content);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Unable to parse response content", ex);
+            }
         }
 
         /// <summary>
@@ -118,13 +157,13 @@ namespace PKISharp.WACS.Clients.Acme
             var client = new AcmeProtocolClient(httpClient, usePostAsGet: _settings.Acme.PostAsGet);
             client.Directory = await EnsureServiceDirectory(client);
             // Try to load prexisting account
-            if (_accountManager.CurrentAccount != null && 
+            if (_accountManager.CurrentAccount != null &&
                 _accountManager.CurrentSigner != null)
             {
                 _log.Verbose("Using existing ACME account");
                 await client.ChangeAccountKeyAsync(_accountManager.CurrentSigner.JwsTool());
                 client.Account = _accountManager.CurrentAccount;
-            } 
+            }
             else
             {
                 _log.Verbose("No account found, creating new one");
@@ -193,7 +232,7 @@ namespace PKISharp.WACS.Clients.Acme
         private async Task SetupAccount(AcmeProtocolClient client)
         {
             // Accept the terms of service, if defined by the server
-            try 
+            try
             {
                 var (_, filename, content) = await client.GetTermsOfServiceAsync();
                 _log.Verbose("Terms of service downloaded");
@@ -204,7 +243,7 @@ namespace PKISharp.WACS.Clients.Acme
                         return;
                     }
                 }
-            } 
+            }
             catch (Exception ex)
             {
                 _log.Error(ex, "Error getting terms of service");
@@ -261,7 +300,7 @@ namespace PKISharp.WACS.Clients.Acme
                 if (!string.IsNullOrWhiteSpace(_accountArguments.EmailAddress))
                 {
                     await emailRegistration();
-                } 
+                }
                 else
                 {
                     var instruction = "ZeroSsl can be used either by setting up a new " +
@@ -274,9 +313,9 @@ namespace PKISharp.WACS.Clients.Acme
                         "How would you like to create the account?",
                         new List<Choice<Func<Task>>>()
                         {
-                            Choice.Create((Func<Task>)apiKeyRegistration, "API access key"),
-                            Choice.Create((Func<Task>)emailRegistration, "Email address"),
-                            Choice.Create<Func<Task>>(() => Task.CompletedTask, "Input EAB credentials directly")
+                           Choice.Create(apiKeyRegistration, "API access key"),
+                           Choice.Create(emailRegistration, "Email address"),
+                           Choice.Create<Func<Task>>(() => Task.CompletedTask, "Input EAB credentials directly")
                         });
                     await chosen.Invoke();
                 }
@@ -297,8 +336,8 @@ namespace PKISharp.WACS.Clients.Acme
                 {
                     eabKey = await _input.ReadPassword("Key (base64url encoded)");
                 }
-              
-            } 
+                contacts = await GetContacts(runLevel: RunLevel.Unattended);
+            }
             else
             {
                 contacts = await GetContacts();
@@ -313,12 +352,12 @@ namespace PKISharp.WACS.Clients.Acme
             {
                 // Some non-ACME compliant server may not support ES256 or other
                 // algorithms, so attempt fallback to RS256
-                if (apex.ProblemType == acme.ProblemType.BadSignatureAlgorithm && 
+                if (apex.ProblemType == acme.ProblemType.BadSignatureAlgorithm &&
                     signer.KeyType != "RS256")
                 {
                     signer = _accountManager.NewSigner("RS256");
                     await CreateAccount(client, signer, contacts, eabAlg, eabKid, eabKey);
-                } 
+                }
                 else
                 {
                     throw;
@@ -351,7 +390,7 @@ namespace PKISharp.WACS.Clients.Acme
                 throw new Exception("Client already has an account!");
             }
             ExternalAccountBinding? externalAccount = null;
-            if (!string.IsNullOrWhiteSpace(eabKey) && 
+            if (!string.IsNullOrWhiteSpace(eabKey) &&
                 !string.IsNullOrWhiteSpace(eabKid))
             {
                 externalAccount = new ExternalAccountBinding(
@@ -364,10 +403,10 @@ namespace PKISharp.WACS.Clients.Acme
                     client.Directory?.NewAccount ?? "");
             }
             await client.ChangeAccountKeyAsync(signer.JwsTool());
-            client.Account = await Retry(client, 
+            client.Account = await Retry(client,
                 () => client.CreateAccountAsync(
                     contacts,
-                    termsOfServiceAgreed: true, 
+                    termsOfServiceAgreed: true,
                     externalAccountBinding: externalAccount?.Payload() ?? null));
             _accountManager.CurrentSigner = signer;
             _accountManager.CurrentAccount = client.Account;
@@ -413,10 +452,13 @@ namespace PKISharp.WACS.Clients.Acme
         /// Get contact information
         /// </summary>
         /// <returns></returns>
-        private async Task<string[]> GetContacts(bool allowMultiple = true, string prefix = "mailto:")
+        private async Task<string[]> GetContacts(
+            bool allowMultiple = true,
+            string prefix = "mailto:",
+            RunLevel runLevel = RunLevel.Interactive)
         {
             var email = _accountArguments.EmailAddress;
-            if (string.IsNullOrWhiteSpace(email))
+            if (string.IsNullOrWhiteSpace(email) && runLevel.HasFlag(RunLevel.Interactive))
             {
                 var question = allowMultiple ?
                     "Enter email(s) for notifications about problems and abuse (comma-separated)" :
@@ -429,10 +471,10 @@ namespace PKISharp.WACS.Clients.Acme
                 newEmails = email.ParseCsv();
                 if (newEmails == null)
                 {
-                    return new string[] { };
+                    return Array.Empty<string>();
                 }
-            } 
-            else
+            }
+            else if (!string.IsNullOrWhiteSpace(email))
             {
                 newEmails.Add(email);
             }
@@ -487,14 +529,14 @@ namespace PKISharp.WACS.Clients.Acme
         internal async Task<OrderDetails> CreateOrder(IEnumerable<Identifier> identifiers)
         {
             var client = await GetClient();
-            var acmeIdentifiers = identifiers.Select(i => new acme.Identifier() { 
+            var acmeIdentifiers = identifiers.Select(i => new acme.Identifier() {
                 Type = i.Type switch
                 {
                     IdentifierType.DnsName => "dns", // rfc8555
                     IdentifierType.IpAddress => "ip", // rfc8738
                     _ => throw new NotImplementedException($"Identifier {i.Type} is not supported")
-                }, 
-                Value = i.Value 
+                },
+                Value = i.Value
             });
             return await Retry(client, () => client.CreateOrderAsync(acmeIdentifiers));
         }
@@ -529,7 +571,7 @@ namespace PKISharp.WACS.Clients.Acme
             {
                 details = await Retry(client, () => client.FinalizeOrderAsync(details.Payload.Finalize, csr));
                 await WaitForOrderStatus(details, OrderProcessing, true);
-            } 
+            }
             return details;
         }
 
@@ -619,7 +661,7 @@ namespace PKISharp.WACS.Clients.Acme
         {
             if (attempt == 0)
             {
-                await _requestLock.WaitAsync();  
+                await _requestLock.WaitAsync();
             }
             try
             {
@@ -643,7 +685,7 @@ namespace PKISharp.WACS.Clients.Acme
                 {
                     _log.Error("{detail}: {instance}", apex.ProblemDetail, apex.ProblemInstance);
                     throw;
-                } 
+                }
                 else
                 {
                     throw;
@@ -662,9 +704,9 @@ namespace PKISharp.WACS.Clients.Acme
         /// Get a new nonce to use by the client
         /// </summary>
         /// <returns></returns>
-        internal async Task GetNonce(AcmeProtocolClient client) => await Backoff(async () => { 
-            await client.GetNonceAsync(); 
-            return 1; 
+        internal async Task GetNonce(AcmeProtocolClient client) => await Backoff(async () => {
+            await client.GetNonceAsync();
+            return 1;
         });
 
         /// <summary>

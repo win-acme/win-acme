@@ -110,7 +110,7 @@ namespace PKISharp.WACS.Clients
                     {
                         _log.Information("Sending e-mail with subject {subject} to {_receiverAddress}", subject, receiverAddress);
                         var sender = new MailboxAddress(_senderName, _senderAddress);
-                        var receiver = new MailboxAddress(receiverAddress);
+                        var receiver = new MailboxAddress("Receiver", receiverAddress);
                         var message = new MimeMessage()
                         {
                             Sender = sender,

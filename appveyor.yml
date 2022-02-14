@@ -1,5 +1,5 @@
-version: 2.1.20.{build}
-image: Visual Studio 2019
+version: 2.1.21.{build}
+image: Visual Studio 2022
 platform: Any CPU
 shallow_clone: true
 dotnet_csproj:
@@ -21,12 +21,12 @@ before_build:
   - cmd: dotnet --version
 build_script:
   - cmd: dotnet pack ./src/main/wacs.csproj -c "ReleasePluggable"
-  - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-x64 /p:PublishSingleFile=true /p:PublishTrimmed=true
-  - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-x86 /p:PublishSingleFile=true /p:PublishTrimmed=true
-  - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-arm64 /p:PublishSingleFile=true /p:PublishTrimmed=true
-  - cmd: dotnet publish ./src/main/wacs.csproj -c "ReleasePluggable" -r win-x64 /p:PublishSingleFile=true
-  - cmd: dotnet publish ./src/main/wacs.csproj -c "ReleasePluggable" -r win-x86 /p:PublishSingleFile=true
-  - cmd: dotnet publish ./src/main/wacs.csproj -c "ReleasePluggable" -r win-arm64 /p:PublishSingleFile=true
+  - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-x64 --self-contained /p:PublishSingleFile=true /p:PublishTrimmed=true /p:IncludeNativeLibrariesForSelfExtract=true
+  - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-x86 --self-contained /p:PublishSingleFile=true /p:PublishTrimmed=true /p:IncludeNativeLibrariesForSelfExtract=true
+  - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-arm64 --self-contained /p:PublishSingleFile=true /p:PublishTrimmed=true /p:IncludeNativeLibrariesForSelfExtract=true
+  - cmd: dotnet publish ./src/main/wacs.csproj -c "ReleasePluggable" -r win-x64 --self-contained /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true
+  - cmd: dotnet publish ./src/main/wacs.csproj -c "ReleasePluggable" -r win-x86 --self-contained /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true
+  - cmd: dotnet publish ./src/main/wacs.csproj -c "ReleasePluggable" -r win-arm64 --self-contained /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true
   - cmd: dotnet publish ./src/plugin.validation.dns.azure/wacs.validation.dns.azure.csproj -c Release
   - cmd: dotnet publish ./src/plugin.validation.dns.dreamhost/wacs.validation.dns.dreamhost.csproj -c Release
   - cmd: dotnet publish ./src/plugin.validation.dns.route53/wacs.validation.dns.route53.csproj -c Release
@@ -36,6 +36,7 @@ build_script:
   - cmd: dotnet publish ./src/plugin.validation.dns.transip/wacs.validation.dns.transip.csproj -c Release
   - cmd: dotnet publish ./src/plugin.validation.dns.godaddy/wacs.validation.dns.godaddy.csproj -c Release
   - cmd: dotnet publish ./src/plugin.validation.dns.googledns/wacs.validation.dns.googledns.csproj -c Release
+  - cmd: dotnet publish ./src/plugin.validation.dns.ns1/wacs.validation.dns.ns1.csproj -c Release
   - cmd: dotnet publish ./src/plugin.store.keyvault/wacs.store.keyvault.csproj -c Release
   - cmd: dotnet publish ./src/plugin.validation.http.rest/wacs.validation.http.rest.csproj -c Release
 test_script:
