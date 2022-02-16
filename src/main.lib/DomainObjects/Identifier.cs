@@ -25,6 +25,17 @@ namespace PKISharp.WACS.DomainObjects
             Value = value;
             Type = identifierType;
         }
+        public static Identifier Parse(ACMESharp.Protocol.Resources.Identifier identifier, bool? wildcard = null)
+        {
+            return identifier.Type switch
+            {
+                "ip" => new IpIdentifier(identifier.Value),
+                "dns" => new DnsIdentifier(wildcard == true ? $"*.{identifier.Value}" : identifier.Value),
+                _ => new UnknownIdentifier(identifier.Value)
+            };
+        }
+        public static Identifier Parse(ACMESharp.Protocol.Resources.Authorization authorization) =>
+            Parse(authorization.Identifier, authorization.Wildcard);
 
         public virtual Identifier Unicode(bool unicode) => this;
 

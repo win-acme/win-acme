@@ -2,6 +2,7 @@
 using ACMESharp.Protocol.Resources;
 using Autofac;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using System.Collections.Generic;
 
@@ -12,14 +13,13 @@ namespace PKISharp.WACS.Context
         public ValidationContextParameters(
             Authorization authorization,
             TargetPart targetPart,
-            string challengeType,
-            string pluginName,
+            ValidationPluginOptions options,
             bool orderValid)
         {
             TargetPart = targetPart;
             Authorization = authorization;
-            ChallengeType = challengeType;
-            PluginName = pluginName;
+            ChallengeType = options.ChallengeType;
+            PluginName = options.Name;
             OrderValid = orderValid;
         }
         public bool OrderValid { get; }
