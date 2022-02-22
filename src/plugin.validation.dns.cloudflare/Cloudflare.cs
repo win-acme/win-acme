@@ -46,7 +46,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             while (allZones.Count < totalCount)
             {
                 page++;
-                var zonesResp = await context.Zones.List().Page(page).ParseAsync(_hc).ConfigureAwait(false);
+                var zonesResp = await context.Zones.List().PerPage(50).Page(page).ParseAsync(_hc).ConfigureAwait(false);
                 if (!zonesResp.Success || zonesResp.ResultInfo.Count == 0)
                 {
                     break;
