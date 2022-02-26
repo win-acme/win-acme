@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Base.Options;
 
 namespace PKISharp.WACS
 {
@@ -25,7 +26,7 @@ namespace PKISharp.WACS
         private readonly ExceptionHandler _exceptionHandler;
 
         public RenewalValidator(
-            IAutofacBuilder scopeBuilder, 
+            IAutofacBuilder scopeBuilder,
             ISettingsService settings,
             ILogService log,
             IValidationOptionsService validationOptions,
@@ -61,88 +62,126 @@ namespace PKISharp.WACS
             {
                 return;
             }
-
-            // Select global or local validation option for each identifier
-            // validation is grouped by each plugin that needs to do something
-            // for the order.
-            var mapping = execution.Target.Parts.
-                SelectMany(p => p.Identifiers.Select(i => new 
-                { 
-                    part = p, 
-                    identifier = i,
-                    options = _validationOptions.GetValidationOptions(i) ?? execution.Renewal.ValidationPluginOptions
-                })).
-                GroupBy(g => g.options).
-                Select(g => new
+            
+            // Map authorisations to plugins that are going to execute them
+            var mapping = new Dictionary<ValidationPluginOptions, List<acme.Authorization>>();
+            var add = (ValidationPluginOptions o, acme.Authorization a) => {
+                if (mapping.ContainsKey(o))
                 {
-                    options = g.Key,
-                    scope = _scopeBuilder.Validation(execution.Scope, g.Key),
-                    identifiers = g.Select(i => new 
-                    { 
-                        i.identifier,
-                        i.part,
-                        authorizations = authorizations.Where(a => Identifier.Parse(a) == i.identifier),
-                    })
-                }).
-                Select(g => new
-                {
-                    g.options,
-                    g.scope,
-                    g.identifiers,
-                    plugin = g.scope.Resolve<IValidationPlugin>()
-                });
-
-            var unmatched = authorizations.Where(a => !mapping.Any(m => m.identifiers.Any(i => i.authorizations.Contains(a))));
-            foreach (var unmatch in unmatched)
-            {
-                _log.Warning("Unable to map authoration {unmatch} to target", unmatch.Identifier);
-            }
-
-            foreach (var group in mapping)
-            {
-                if (group.plugin == null)
-                {
-                    _log.Error("Validation plugin {name} not found or not created", group.options.Name);
-                    execution.Result.AddErrorMessage($"Validation plugin {group.options.Name} not found or not created", !orderValid);
-                    return;
-                }
-                var (disabled, disabledReason) = group.plugin.Disabled;
-                if (disabled)
-                {
-                    _log.Error("Validation plugin {name} is not available. {disabledReason}", group.options.Name, disabledReason);
-                    execution.Result.AddErrorMessage($"Validation plugin {group.options.Name} is not available", !orderValid);
-                    return;
-                }
-
-                var plugin = execution.Scope.Resolve<IPluginService>();
-                var match = plugin.GetFactories<IValidationPluginOptionsFactory>(execution.Scope).First(vp => vp.OptionsType.PluginId() == group.options.Plugin);
-                foreach (var identifier in group.identifiers)
-                {
-                    var dummyTarget = new Target(string.Empty, identifier.identifier, new[] { new TargetPart(new[] { identifier.identifier }) });
-                    if (!match.CanValidate(dummyTarget)) 
-                    {
-                        _log.Error("Validation plugin {name} cannot validate identifier {identifier}", group.options.Name, identifier.identifier.Value);
-                        execution.Result.AddErrorMessage($"Validation plugin {group.options.Name} cannot validate identifier {identifier.identifier.Value}", !orderValid);
-                        return;
-                    }
-                }
-
-                var contexts = group.identifiers.
-                    SelectMany(t => t.authorizations.
-                    Select(a => new ValidationContextParameters(a, t.part, group.options, orderValid))).ToList();
-
-                if (_settings.Validation.DisableMultiThreading != false ||
-                    group.plugin.Parallelism == ParallelOperations.None)
-                {
-                    await SerialValidation(execution, contexts.ToList());
+                    mapping[o].Add(a);
                 }
                 else
                 {
-                    await ParallelValidation(group.plugin.Parallelism, group.scope, execution, contexts);
+                    mapping.Add(o, new List<acme.Authorization>() { a });
+                }
+            };
+            foreach (var authorization in authorizations)
+            {
+                var globalOptions = _validationOptions.GetValidationOptions(Identifier.Parse(authorization));
+                if (globalOptions != null && IsValid(execution.Scope, authorization, globalOptions))
+                {
+                    add(globalOptions, authorization);
+                } 
+                else if (IsValid(execution.Scope, authorization, execution.Renewal.ValidationPluginOptions))
+                {
+                    add(execution.Renewal.ValidationPluginOptions, authorization);
+                }
+                else
+                {
+                    _log.Error("No plugin found that can challenge for {authorisation}", authorization.Identifier.Value);
+                    execution.Result.AddErrorMessage($"No plugin found that can challenge for {authorization.Identifier.Value}", !orderValid);
+                    return;
+                }
+            }
+
+            // Execute them
+            foreach (var group in mapping)
+            {
+                var scope = _scopeBuilder.Validation(execution.Scope, group.Key);
+                var plugin = scope.Resolve<IValidationPlugin>();
+                var contexts = group.Value.Select(a =>
+                {
+                    var targetPart = execution.Target.Parts.FirstOrDefault(p => p.Identifiers.Any(i => i == Identifier.Parse(a)));
+                    if (targetPart == null)
+                    {
+                        throw new InvalidOperationException("Authorisation found that doesn't match target");
+                    }
+                    return new ValidationContextParameters(a, targetPart, group.Key, orderValid);
+                }).ToList();
+                if (_settings.Validation.DisableMultiThreading != false || plugin.Parallelism == ParallelOperations.None)
+                {
+                    await SerialValidation(execution, contexts);
+                }
+                else
+                {
+                    await ParallelValidation(plugin.Parallelism, scope, execution, contexts);
                 }
             }
         }
 
+        /// <summary>
+        /// Get instances of IValidationPlugin and IValidationPluginOptionsFactory
+        /// based on an instance of ValidationPluginOptions.
+        /// TODO: more cache here
+        /// </summary>
+        /// <param name="scope"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        private (IValidationPlugin?, IValidationPluginOptionsFactory?) GetInstances(ILifetimeScope scope, ValidationPluginOptions options)
+        {
+            var validationScope = _scopeBuilder.Validation(scope, options);
+            try
+            {
+                var validationPlugin = validationScope.Resolve<IValidationPlugin>();
+                var pluginService = scope.Resolve<IPluginService>();
+                var match = pluginService.
+                    GetFactories<IValidationPluginOptionsFactory>(scope).
+                    FirstOrDefault(vp => vp.OptionsType.PluginId() == options.Plugin);
+                return (validationPlugin, match);
+            } 
+            catch (Exception ex)
+            {
+                _log.Error(ex, $"Unable to resolve plugin {options.Name}");
+                return (null, null);
+            }
+        }
+
+        /// <summary>
+        /// Will the selected validation plugin be able to validate the 
+        /// authorisation?
+        /// </summary>
+        /// <param name="authorization"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        private bool IsValid(ILifetimeScope scope, acme.Authorization authorization, ValidationPluginOptions options)
+        {
+            var (plugin, match) = GetInstances(scope, options);
+            if (plugin == null || match == null)
+            {
+                _log.Warning("Validation plugin {name} not found or not created", options.Name);
+                return false;
+            }
+            var (disabled, disabledReason) = plugin.Disabled;
+            if (disabled)
+            {
+                _log.Warning("Validation plugin {name} is not available. {disabledReason}", options.Name, disabledReason);
+                return false;
+            }
+
+            var identifier = Identifier.Parse(authorization);
+            var dummyTarget = new Target(identifier);
+            if (!match.CanValidate(dummyTarget))
+            {
+                _log.Warning("Validation plugin {name} cannot validate identifier {identifier}", options.Name, identifier.Value);
+                return false;
+            }
+            if (!authorization.Challenges.Any(x => x.Type == options.ChallengeType))
+            {
+                _log.Warning("No challenge of type {options.ChallengeType} available", options.Name, identifier.Value);
+                return false;
+            }
+            return true;
+        }
         /// <summary>
         /// Handle multiple validations in parallel 
         /// </summary>
@@ -245,7 +284,7 @@ namespace PKISharp.WACS
                 _log.Verbose("Handle authorization {n}/{m}",
                     parameters.IndexOf(parameter) + 1,
                     parameters.Count);
-                using var identifierScope = _scopeBuilder.Validation(context.Scope, context.Renewal.ValidationPluginOptions);
+                using var identifierScope = _scopeBuilder.Validation(context.Scope, parameter.Options);
                 await ParallelValidation(ParallelOperations.None, identifierScope, context, new List<ValidationContextParameters> { parameter });
                 if (!context.Result.Success)
                 {

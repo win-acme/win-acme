@@ -80,13 +80,6 @@ namespace PKISharp.WACS
                 return new RenewResult($"Source plugin generated invalid source");
             }
 
-            // Check if our validation plugin is (still) up to the task
-            var validationPlugin = es.Resolve<IValidationPluginOptionsFactory>();
-            if (!validationPlugin.CanValidate(target))
-            {
-                return new RenewResult($"Validation plugin is unable to validate the source. A wildcard host was introduced into a HTTP validated renewal.");
-            }
-
             // Create one or more orders based on the target
             var orderPlugin = es.Resolve<IOrderPlugin>();
             var orders = orderPlugin.Split(renewal, target);
