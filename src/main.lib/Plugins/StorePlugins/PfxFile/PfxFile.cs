@@ -75,6 +75,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     {
                         key = bcPfx.GetKey(alias);
                         chain = bcPfx.GetCertificateChain(alias);
+                        break;
                     }
                 }
                 using var fs = new FileInfo(dest).OpenWrite();
