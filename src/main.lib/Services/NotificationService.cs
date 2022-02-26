@@ -169,7 +169,7 @@ namespace PKISharp.WACS.Services
             try
             {
                 var infos = _certificateService.CachedInfos(renewal);
-                if (infos == null || infos.Count() == 0)
+                if (infos == null || !infos.Any())
                 {
                     return "Unknown";
                 }

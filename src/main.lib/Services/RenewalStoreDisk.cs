@@ -194,6 +194,6 @@ namespace PKISharp.WACS.Services
         /// <param name="renewal"></param>
         /// <param name="configPath"></param>
         /// <returns></returns>
-        private FileInfo RenewalFile(Renewal renewal, string configPath) => new FileInfo(Path.Combine(configPath, $"{renewal.Id}.renewal.json"));
+        private static FileInfo RenewalFile(Renewal renewal, string configPath) => new(Path.Combine(configPath, $"{renewal.Id}.renewal.json"));
     }
 }

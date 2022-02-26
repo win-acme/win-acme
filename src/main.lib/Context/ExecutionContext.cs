@@ -14,7 +14,9 @@ namespace PKISharp.WACS.Context
         public RenewResult Result { get; private set; }
         public Target Target => Order.Target;
         public Renewal Renewal => Order.Renewal;
-
+        public CertificateInfo? PreviousCertificate { get; set; }
+        public CertificateInfo? NewCertificate { get; set; }
+        public string OrderName => Order.FriendlyNamePart ?? "Main";
         public ExecutionContext(ILifetimeScope scope, Order order, RunLevel runLevel, RenewResult result)
         {
             Scope = scope;

@@ -143,13 +143,14 @@ namespace PKISharp.WACS.Services
                 return null;
             }
 
-            var fileName = GetPath(order.Renewal, $"-{CacheKey(order, 2)}{PfxPostFix}");
-            var fileCache = cachedInfos.Where(x => x.CacheFile?.FullName == fileName).FirstOrDefault();
-            if (fileCache == null)
+            var cacheVersion = MaxCacheKeyVersion;
+            var fileCache = default(CertificateInfo);
+            while (fileCache == null && MaxCacheKeyVersion > 0)
             {
-                fileName = GetPath(order.Renewal, $"-{CacheKey(order, 1)}{PfxPostFix}");
+                var fileName = GetPath(order.Renewal, $"-{CacheKey(order, cacheVersion)}{PfxPostFix}");
                 fileCache = cachedInfos.Where(x => x.CacheFile?.FullName == fileName).FirstOrDefault();
-            }
+                cacheVersion--;
+            } 
             if (fileCache == null)
             {
                 var legacyFile = GetPath(order.Renewal, PfxPostFixLegacy);
@@ -165,6 +166,12 @@ namespace PKISharp.WACS.Services
             return fileCache;
         }
 
+        /// <summary>
+        /// All cached files available for a specific renewal, which
+        /// may include multiple orders
+        /// </summary>
+        /// <param name="renewal"></param>
+        /// <returns></returns>
         public IEnumerable<CertificateInfo> CachedInfos(Renewal renewal)
         {
             var ret = new List<CertificateInfo>();
@@ -189,6 +196,18 @@ namespace PKISharp.WACS.Services
         }
 
         /// <summary>
+        /// All cached certificates for a specific order within a specific renewal
+        /// </summary>
+        /// <param name="renewal"></param>
+        /// <param name="order"></param>
+        /// <returns></returns>
+        public IEnumerable<CertificateInfo> CachedInfos(Renewal renewal, Order order)
+        {
+            var ret = CachedInfos(renewal);
+            return ret.Where(r => r.CacheFile!.Name.Contains($"-{order.CacheKeyPart ?? "main"}-")).ToList();
+        }
+
+        /// <summary>
         /// See if the information in the certificate matches
         /// that of the specified target. Used to figure out whether
         /// or not the cache is out of date.
@@ -204,6 +223,13 @@ namespace PKISharp.WACS.Services
         }
 
         /// <summary>
+        /// Latest version of the cache key generation algorithm
+        /// to make sure that future releases don't invalidate 
+        /// the entire cache on upgrades.
+        /// </summary>
+        public const int MaxCacheKeyVersion = 3;
+
+        /// <summary>
         /// To check if it's possible to reuse a previously retrieved
         /// certificate we create a hash of its key properties and included
         /// that hash in the file name. If we get the same hash on a 
@@ -212,7 +238,7 @@ namespace PKISharp.WACS.Services
         /// <param name="renewal"></param>
         /// <param name="target"></param>
         /// <returns></returns>
-        private static string CacheKey(Order order, int version = 2)
+        private static string CacheKey(Order order, int version = MaxCacheKeyVersion)
         {
             // Check if we can reuse a cached certificate and/or order
             // based on currently active set of parameters and shape of 
@@ -229,7 +255,12 @@ namespace PKISharp.WACS.Services
             _ = order.Renewal.CsrPluginOptions != null ?
                 cacheKeyBuilder.Append(JsonConvert.SerializeObject(order.Renewal.CsrPluginOptions)) :
                 cacheKeyBuilder.Append('-');
-            return cacheKeyBuilder.ToString().SHA1();
+            var key = cacheKeyBuilder.ToString().SHA1();
+            if (version > 2)
+            {
+                key = $"{order.CacheKeyPart ?? "main"}-{key}";
+            }
+            return key;
         }
 
         /// <summary>
@@ -451,7 +482,6 @@ namespace PKISharp.WACS.Services
             var text = Encoding.UTF8.GetString(bytes);
             var pfx = new bc.Pkcs.Pkcs12Store();
             var startIndex = 0;
-            var endIndex = 0;
             const string startString = "-----BEGIN CERTIFICATE-----";
             const string endString = "-----END CERTIFICATE-----";
             while (true)
@@ -461,7 +491,7 @@ namespace PKISharp.WACS.Services
                 {
                     break;
                 }
-                endIndex = text.IndexOf(endString, startIndex);
+                var endIndex = text.IndexOf(endString, startIndex);
                 if (endIndex < 0)
                 {
                     break;
@@ -600,15 +630,12 @@ namespace PKISharp.WACS.Services
         /// <returns></returns>
         public string ReuseKeyPath(Order order) {
             // Backwards compatible with existing keys, which are not split per order yet.
-           
             var keyFile = new FileInfo(GetPath(order.Renewal, $".keys"));
-            if (!keyFile.Exists)
+            var cacheKeyVersion = 1;
+            while (!keyFile.Exists && cacheKeyVersion <= MaxCacheKeyVersion)
             {
-                keyFile = new FileInfo(GetPath(order.Renewal, $"-{CacheKey(order, 2)}.keys"));
-            }
-            if (!keyFile.Exists)
-            {
-                keyFile = new FileInfo(GetPath(order.Renewal, $"-{CacheKey(order, 1)}.keys"));
+                keyFile = new FileInfo(GetPath(order.Renewal, $"-{CacheKey(order, cacheKeyVersion)}.keys"));
+                cacheKeyVersion++;
             }
             return keyFile.FullName;
         }

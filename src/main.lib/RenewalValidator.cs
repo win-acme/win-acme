@@ -56,7 +56,7 @@ namespace PKISharp.WACS
 
             // Get authorization details
             var authorizationUris = execution.Order.Details.Payload.Authorizations.ToList();
-            var authorizationTasks = authorizationUris.Select(authorizationUri => GetAuthorization(execution, authorizationUri, orderValid));
+            var authorizationTasks = authorizationUris.Select(authorizationUri => GetAuthorization(execution, authorizationUri));
             var authorizations = (await Task.WhenAll(authorizationTasks)).OfType<acme.Authorization>().ToList();
             if (!execution.Result.Success)
             {
@@ -300,7 +300,7 @@ namespace PKISharp.WACS
         /// <param name="authorizationUri"></param>
         /// <param name="options"></param>
         /// <returns></returns>
-        private async Task<acme.Authorization?> GetAuthorization(ExecutionContext context, string authorizationUri, bool orderValid)
+        private async Task<acme.Authorization?> GetAuthorization(ExecutionContext context, string authorizationUri)
         {
             // Get authorization challenge details from server
             var client = context.Scope.Resolve<AcmeClient>();
@@ -311,7 +311,7 @@ namespace PKISharp.WACS
             }
             catch
             {
-                context.Result.AddErrorMessage($"Unable to get authorization details from {authorizationUri}", !orderValid);
+                context.Result.AddErrorMessage($"Unable to get authorization details from {authorizationUri}", !context.Order.Valid);
                 return null;
             }
             return authorization;

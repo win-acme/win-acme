@@ -136,6 +136,14 @@ namespace PKISharp.WACS
             return result;
         }
 
+        /// <summary>
+        /// Check if a renewal should run
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="orders"></param>
+        /// <param name="renewal"></param>
+        /// <param name="runLevel"></param>
+        /// <returns></returns>
         private bool ShouldRun(ILifetimeScope target, IEnumerable<Order> orders, Renewal renewal, RunLevel runLevel)
         {
             // Check if renewal is needed
@@ -183,65 +191,99 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private async Task<RenewResult> ExecuteRenewal(ILifetimeScope execute, List<Order> orders, RunLevel runLevel)
         {
+            // Build context
             var result = new RenewResult();
-            foreach (var order in orders)
+            var orderContexts = orders.Select(order => new ExecutionContext(execute, order, runLevel, result)).ToList();
+            var certificateService = execute.Resolve<ICertificateService>();
+            foreach (var order in orderContexts)
             {
-                _log.Verbose("Handle order {n}/{m}: {friendly}", 
-                    orders.IndexOf(order) + 1,
-                    orders.Count,
-                    order.FriendlyNamePart ?? "Main");
-
-                // Create the execution context
-                var context = new ExecutionContext(execute, order, runLevel, result);
-                await ExecuteOrder(context, runLevel);
-            }
-            return result;
-        }
-
-        /// <summary>
-        /// Steps to take on succesful (re)authorization
-        /// </summary>
-        /// <param name="partialTarget"></param>
-        private async Task ExecuteOrder(ExecutionContext context, RunLevel runLevel)
-        {
-            try
-            {
-                // Get the previously issued certificate in this renewal
-                // regardless of the fact that it may have another shape
-                // (e.g. different SAN names or common name etc.). This
+                // Get the previously issued certificates in this renewal
+                // sub order regardless of the fact that it may have another
+                // shape (e.g. different SAN names or common name etc.). This
                 // means we cannot use the cache key for it.
-                var certificateService = context.Scope.Resolve<ICertificateService>();
-
-                // Before we do anything, lock down the previously issued 
-                // certificate
-                var previousCertificate = certificateService.
-                    CachedInfos(context.Renewal).
+                order.PreviousCertificate = certificateService.
+                    CachedInfos(order.Renewal, order.Order).
                     OrderByDescending(x => x.Certificate.NotBefore).
                     FirstOrDefault();
 
                 // Get the existing certificate matching the order description
                 // this may not be the same as the previous certificate
-                var newCertificate = 
-                    GetFromCache(context, runLevel) ??
-                    await GetFromServer(context, runLevel);
-                if (newCertificate == null)
+                order.NewCertificate = GetFromCache(order, runLevel);
+            }
+
+            // Run validations for order that couldn't be retrieved from cache
+            foreach (var order in orderContexts)
+            {
+                if (order.NewCertificate == null)
                 {
-                    context.Result.AddErrorMessage("No certificate generated");
-                    return;
+                    _log.Verbose("Ordering part {n}/{m} ({friendly})",
+                         orderContexts.IndexOf(order) + 1,
+                         orderContexts.Count,
+                         order.OrderName);
+                    // Get the certificate from the server
+                    order.NewCertificate = await GetFromServer(order, runLevel);
                 }
-  
-                // Store the date the certificate will expire
-                if (context.Result.ExpireDate == null ||
-                    context.Result.ExpireDate > newCertificate.Certificate.NotAfter)
+                else
                 {
-                    context.Result.ExpireDate = newCertificate.Certificate.NotAfter;
+                    _log.Verbose("Skip ordering part {n}/{m}: ({friendly}) due to available cache",
+                         orderContexts.IndexOf(order) + 1,
+                         orderContexts.Count,
+                         order.OrderName);
+                }
+            }
+
+            foreach (var order in orderContexts)
+            {
+                _log.Verbose("Processing order {n}/{m}: {friendly}",
+                   orderContexts.IndexOf(order) + 1,
+                   orderContexts.Count,
+                   order.OrderName);
+
+                if (order.NewCertificate == null)
+                {
+                    order.Result.AddErrorMessage($"No certificate generated for order {order.OrderName}");
+                    continue;
+                }
+
+                // Store the date the certificate will expire
+                if (order.Result.ExpireDate == null ||
+                    order.Result.ExpireDate > order.NewCertificate.Certificate.NotAfter)
+                {
+                    order.Result.ExpireDate = order.NewCertificate.Certificate.NotAfter;
                 };
-                context.Result.AddThumbprint(newCertificate.Certificate.Thumbprint);
+                order.Result.AddThumbprint(order.NewCertificate.Certificate.Thumbprint);
+
+                // Create the execution context
+                await ExecuteOrder(order);
+
+                // Don't process the rest of the orders if one of them fails
+                if (order.Result.Abort || !order.Result.Success)
+                {
+                    break;
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Run a single order that's part of the renewal 
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="runLevel"></param>
+        /// <returns></returns>
+        private async Task ExecuteOrder(ExecutionContext context)
+        {
+            try
+            {
+                if (context.NewCertificate == null)
+                {
+                    throw new InvalidOperationException();
+                }
 
                 // Early escape for testing validation only
                 if (context.Renewal.New &&
                     context.RunLevel.HasFlag(RunLevel.Test) &&
-                    !await _input.PromptYesNo($"[--test] Do you want to install the certificate?", true))
+                    !await _input.PromptYesNo($"[--test] Do you want to install the certificate for order {context.OrderName}?", true))
                 {
                     context.Result.Abort = true;
                     return;
@@ -261,18 +303,18 @@ namespace PKISharp.WACS
                     throw new InvalidOperationException("Store plugin/option count mismatch");
                 }
 
-                if (!await HandleStoreAdd(context, newCertificate, storePluginOptions, storePlugins)) 
+                if (!await HandleStoreAdd(context, context.NewCertificate, storePluginOptions, storePlugins)) 
                 {
                     return;
                 }
-                if (!await HandleInstall(context, newCertificate, previousCertificate, storePlugins))
+                if (!await HandleInstall(context, context.NewCertificate, context.PreviousCertificate, storePlugins))
                 {
                     return;
                 }
-                if (previousCertificate != null && 
-                    newCertificate.Certificate.Thumbprint != previousCertificate.Certificate.Thumbprint)
+                if (context.PreviousCertificate != null &&
+                    context.NewCertificate.Certificate.Thumbprint != context.PreviousCertificate.Certificate.Thumbprint)
                 {
-                    await HandleStoreRemove(context, previousCertificate, storePluginOptions, storePlugins);
+                    await HandleStoreRemove(context, context.PreviousCertificate, storePluginOptions, storePlugins);
                 }
             }
             catch (Exception ex)
@@ -316,7 +358,12 @@ namespace PKISharp.WACS
                 return cachedCertificate;
         }
 
-
+        /// <summary>
+        /// Get a certificate from the server
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="runLevel"></param>
+        /// <returns></returns>
         private async Task<CertificateInfo?> GetFromServer(ExecutionContext context, RunLevel runLevel)
         {
             // Place the order
