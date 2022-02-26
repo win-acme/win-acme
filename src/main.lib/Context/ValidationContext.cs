@@ -18,13 +18,11 @@ namespace PKISharp.WACS.Context
         {
             TargetPart = targetPart;
             Authorization = authorization;
-            ChallengeType = options.ChallengeType;
-            PluginName = options.Name;
+            Options = options;
             OrderValid = orderValid;
         }
         public bool OrderValid { get; }
-        public string ChallengeType { get; }
-        public string PluginName { get; }
+        public ValidationPluginOptions Options { get; }
         public TargetPart TargetPart { get; }
         public Authorization Authorization { get; }
     }
@@ -40,8 +38,8 @@ namespace PKISharp.WACS.Context
             TargetPart = parameters.TargetPart;
             Authorization = parameters.Authorization;
             Scope = scope;
-            ChallengeType = parameters.ChallengeType;
-            PluginName = parameters.PluginName;
+            ChallengeType = parameters.Options.ChallengeType;
+            PluginName = parameters.Options.Name;
             ValidationPlugin = scope.Resolve<IValidationPlugin>();
             if (parameters.OrderValid)
             {
