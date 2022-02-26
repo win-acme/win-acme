@@ -351,12 +351,9 @@ namespace PKISharp.WACS
             }
 
             // Run validations
-            var orderValid = 
-                context.Order.Details.Payload.Status == AcmeClient.OrderValid ||
-                context.Order.Details.Payload.Status == AcmeClient.OrderReady;
-            if (!orderValid || runLevel.HasFlag(RunLevel.Test) || runLevel.HasFlag(RunLevel.IgnoreCache))
+            if (!context.Order.Valid || runLevel.HasFlag(RunLevel.Test) || runLevel.HasFlag(RunLevel.IgnoreCache))
             {
-                await _validator.AuthorizeOrder(context, orderValid);
+                await _validator.AuthorizeOrder(context);
                 if (!context.Result.Success)
                 {
                     return null;

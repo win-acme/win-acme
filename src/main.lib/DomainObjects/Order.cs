@@ -1,4 +1,5 @@
-﻿using acme = ACMESharp.Protocol;
+﻿using PKISharp.WACS.Clients.Acme;
+using acme = ACMESharp.Protocol;
 
 namespace PKISharp.WACS.DomainObjects
 {
@@ -21,6 +22,16 @@ namespace PKISharp.WACS.DomainObjects
             Renewal = renewal;
             CacheKeyPart = cacheKeyPart;
             FriendlyNamePart = friendlyNamePart;
+        }
+
+        public bool Valid
+        {
+            get
+            {
+                return Details != null &&
+                    (Details.Payload.Status == AcmeClient.OrderValid ||
+                     Details.Payload.Status == AcmeClient.OrderReady);
+            }
         }
 
         public string FriendlyNameBase

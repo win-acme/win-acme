@@ -47,7 +47,7 @@ namespace PKISharp.WACS
         /// <param name="result"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        public async Task AuthorizeOrder(ExecutionContext execution, bool orderValid)
+        public async Task AuthorizeOrder(ExecutionContext execution)
         {
             if (execution.Order.Details == null)
             {
@@ -89,7 +89,7 @@ namespace PKISharp.WACS
                 else
                 {
                     _log.Error("No plugin found that can challenge for {authorisation}", authorization.Identifier.Value);
-                    execution.Result.AddErrorMessage($"No plugin found that can challenge for {authorization.Identifier.Value}", !orderValid);
+                    execution.Result.AddErrorMessage($"No plugin found that can challenge for {authorization.Identifier.Value}", !execution.Order.Valid);
                     return;
                 }
             }
@@ -106,7 +106,7 @@ namespace PKISharp.WACS
                     {
                         throw new InvalidOperationException("Authorisation found that doesn't match target");
                     }
-                    return new ValidationContextParameters(a, targetPart, group.Key, orderValid);
+                    return new ValidationContextParameters(a, targetPart, group.Key, execution.Order.Valid);
                 }).ToList();
                 if (_settings.Validation.DisableMultiThreading != false || plugin.Parallelism == ParallelOperations.None)
                 {
