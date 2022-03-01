@@ -168,7 +168,7 @@ namespace PKISharp.WACS
                 // If renewal is not needed at the root level
                 // it may be needed at the order level due to
                 // change in target. Here we check this.
-                if (orders.Any(x => _certificateService.CachedInfo(x) == null))
+                if (!orders.Any(x => _certificateService.CachedInfo(x) == null))
                 {
                     // For sure now that we don't need to run so abort this execution
                     _log.Information("Renewal {renewal} is due after {date}", renewal.LastFriendlyName, renewal.GetDueDate());
