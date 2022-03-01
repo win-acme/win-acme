@@ -47,7 +47,7 @@ namespace PKISharp.WACS
         /// <param name="result"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        public async Task AuthorizeOrder(ExecutionContext execution)
+        public async Task AuthorizeOrder(OrderContext execution)
         {
             if (execution.Order.Details == null)
             {
@@ -77,14 +77,17 @@ namespace PKISharp.WACS
             };
             foreach (var authorization in authorizations)
             {
+                var nativeOptions = execution.Renewal.ValidationPluginOptions;
                 var globalOptions = _validationOptions.GetValidationOptions(Identifier.Parse(authorization));
-                if (globalOptions != null && IsValid(execution.Scope, authorization, globalOptions))
+                if (globalOptions != null && 
+                    IsValid(execution.Scope, authorization, globalOptions))
                 {
                     add(globalOptions, authorization);
                 } 
-                else if (IsValid(execution.Scope, authorization, execution.Renewal.ValidationPluginOptions))
+                else if ((globalOptions == null || nativeOptions.Plugin != globalOptions.Plugin) && 
+                    IsValid(execution.Scope, authorization, nativeOptions))
                 {
-                    add(execution.Renewal.ValidationPluginOptions, authorization);
+                    add(nativeOptions, authorization);
                 }
                 else
                 {
@@ -186,7 +189,7 @@ namespace PKISharp.WACS
         /// Handle multiple validations in parallel 
         /// </summary>
         /// <returns></returns>
-        private async Task ParallelValidation(ParallelOperations level, ILifetimeScope scope, ExecutionContext context, List<ValidationContextParameters> parameters)
+        private async Task ParallelValidation(ParallelOperations level, ILifetimeScope scope, OrderContext context, List<ValidationContextParameters> parameters)
         {
             var contexts = parameters.Select(parameter => new ValidationContext(scope, parameter)).ToList();
             var plugin = contexts.First().ValidationPlugin;
@@ -277,7 +280,7 @@ namespace PKISharp.WACS
         /// <param name="context"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        private async Task SerialValidation(ExecutionContext context, IList<ValidationContextParameters> parameters)
+        private async Task SerialValidation(OrderContext context, IList<ValidationContextParameters> parameters)
         {
             foreach (var parameter in parameters)
             {
@@ -300,7 +303,7 @@ namespace PKISharp.WACS
         /// <param name="authorizationUri"></param>
         /// <param name="options"></param>
         /// <returns></returns>
-        private async Task<acme.Authorization?> GetAuthorization(ExecutionContext context, string authorizationUri)
+        private async Task<acme.Authorization?> GetAuthorization(OrderContext context, string authorizationUri)
         {
             // Get authorization challenge details from server
             var client = context.Scope.Resolve<AcmeClient>();

@@ -28,6 +28,7 @@ namespace PKISharp.WACS
         private readonly ILogService _log;
         private readonly IInputService _input;
         private readonly ISettingsService _settings;
+        private readonly ICertificateService _certificateService;
         private readonly ExceptionHandler _exceptionHandler;
         private readonly RenewalValidator _validator;
 
@@ -37,6 +38,7 @@ namespace PKISharp.WACS
             ILogService log,
             IInputService input,
             ISettingsService settings,
+            ICertificateService certificateService,
             RenewalValidator validator,
             ExceptionHandler exceptionHandler, 
             IContainer container)
@@ -48,6 +50,7 @@ namespace PKISharp.WACS
             _input = input;
             _settings = settings;
             _exceptionHandler = exceptionHandler;
+            _certificateService = certificateService;
             _container = container;
         }
 
@@ -63,6 +66,7 @@ namespace PKISharp.WACS
             _log.Reset();
             using var ts = _scopeBuilder.Target(_container, renewal, runLevel);
             using var es = _scopeBuilder.Execution(ts, renewal, runLevel);
+
             // Generate the target
             var targetPlugin = es.Resolve<ITargetPlugin>();
             var (disabled, disabledReason) = targetPlugin.Disabled;
@@ -87,28 +91,10 @@ namespace PKISharp.WACS
             {
                 return new RenewResult("Order plugin failed to create order(s)");
             }
-            _log.Verbose("Targeted convert into {n} order(s)", orders.Count());
+            _log.Verbose("Source converted into {n} order(s)", orders.Count());
 
-            // Test if this renewal should run right now
-            if (!ShouldRun(es, orders, renewal, runLevel))
-            {
-                return new RenewResult() { Abort = true };
-            }
-
-            // If at this point we haven't retured already with an error/abort
-            // actually execute the renewal
-            var preScript = _settings.Execution?.DefaultPreExecutionScript;
-            var scriptClient = es.Resolve<ScriptClient>();
-            if (!string.IsNullOrWhiteSpace(preScript))
-            {
-                await scriptClient.RunScript(preScript, $"{renewal.Id}");
-            }
-            var result = await ExecuteRenewal(es, orders.ToList(), runLevel);
-            var postScript = _settings.Execution?.DefaultPostExecutionScript;
-            if (!string.IsNullOrWhiteSpace(postScript))
-            {
-                await scriptClient.RunScript(postScript, $"{renewal.Id}");
-            }
+            /// Start to check the renewal
+            var result = await HandleOrders(es, renewal, orders.ToList(), runLevel);
 
             // Configure task scheduler
             var setupTaskScheduler = _args.SetupTaskScheduler;
@@ -137,47 +123,32 @@ namespace PKISharp.WACS
         }
 
         /// <summary>
-        /// Check if a renewal should run
+        /// Test if a renewal is needed
         /// </summary>
-        /// <param name="target"></param>
-        /// <param name="orders"></param>
         /// <param name="renewal"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        private bool ShouldRun(ILifetimeScope target, IEnumerable<Order> orders, Renewal renewal, RunLevel runLevel)
+        internal bool ShouldRunRenewal(Renewal renewal, RunLevel runLevel)
         {
-            // Check if renewal is needed
+            if (renewal.New)
+            {
+                return true;
+            }
             if (!runLevel.HasFlag(RunLevel.ForceRenew) && !renewal.Updated)
             {
                 _log.Verbose("Checking {renewal}", renewal.LastFriendlyName);
                 if (!renewal.IsDue())
                 {
-                    var cs = target.Resolve<ICertificateService>();
-                    var abort = true;
-                    foreach (var order in orders)
-                    {
-                        var cache = cs.CachedInfo(order);
-                        if (cache == null && !renewal.New)
-                        {
-                            _log.Information(LogType.All, "Renewal {renewal} running prematurely due to source change", renewal.LastFriendlyName);
-                            abort = false;
-                            break;
-                        }
-                    }
-                    if (abort)
-                    {
-                        _log.Information("Renewal {renewal} is due after {date}", renewal.LastFriendlyName, renewal.GetDueDate());
-                        return false;
-                    }
+                    return false;
                 }
                 else if (!renewal.New)
                 {
-                    _log.Information(LogType.All, "Renewing certificate {renewal}", renewal.LastFriendlyName);
+                    _log.Information(LogType.All, "Renewing {renewal}", renewal.LastFriendlyName);
                 }
             }
             else if (runLevel.HasFlag(RunLevel.ForceRenew))
             {
-                _log.Information(LogType.All, "Force renewing certificate {renewal}", renewal.LastFriendlyName);
+                _log.Information(LogType.All, "Force renewing {renewal}", renewal.LastFriendlyName);
             }
             return true;
         }
@@ -189,19 +160,80 @@ namespace PKISharp.WACS
         /// <param name="orders"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        private async Task<RenewResult> ExecuteRenewal(ILifetimeScope execute, List<Order> orders, RunLevel runLevel)
+        private async Task<RenewResult> HandleOrders(ILifetimeScope execute, Renewal renewal, List<Order> orders, RunLevel runLevel)
         {
+            // Check if renewal is needed at the root level
+            if (!ShouldRunRenewal(renewal, runLevel))
+            {
+                // If renewal is not needed at the root level
+                // it may be needed at the order level due to
+                // change in target. Here we check this.
+                if (orders.Any(x => _certificateService.CachedInfo(x) == null))
+                {
+                    // For sure now that we don't need to run so abort this execution
+                    _log.Information("Renewal {renewal} is due after {date}", renewal.LastFriendlyName, renewal.GetDueDate());
+                    return new RenewResult() { Abort = true };
+                } 
+                else
+                {
+                    _log.Information(LogType.All, "Renewal {renewal} running prematurely due to source change", renewal.LastFriendlyName);
+                }
+            }
+
+            // If at this point we haven't retured already with an error/abort
+            // actually execute the renewal
+
+            // Run the pre-execution script, e.g. to re-configure
+            // local firewall rules, since now it's (almost) sure
+            // that we're going to do something. Actually we may
+            // still be able to read all certificates from cache,
+            // but that's the exception rather than the rule.
+            var preScript = _settings.Execution?.DefaultPreExecutionScript;
+            var scriptClient = execute.Resolve<ScriptClient>();
+            if (!string.IsNullOrWhiteSpace(preScript))
+            {
+                await scriptClient.RunScript(preScript, $"{renewal.Id}");
+            }
+
             // Build context
             var result = new RenewResult();
-            var orderContexts = orders.Select(order => new ExecutionContext(execute, order, runLevel, result)).ToList();
-            var certificateService = execute.Resolve<ICertificateService>();
+            var orderContexts = orders.Select(order => new OrderContext(execute, order, runLevel, result)).ToList();
+
+            // Get the certificates from cache or server
+            await ExecuteOrders(orderContexts, runLevel);
+
+            // Handle all the store/install steps
+            await ProcessOrders(orderContexts);
+
+            // Run the post-execution script. Note that this is different
+            // from the script installation plugin, which is handled
+            // in the previous step. This is only meant to undo any
+            // (firewall?) changes made by the pre-execution script.
+            var postScript = _settings.Execution?.DefaultPostExecutionScript;
+            if (!string.IsNullOrWhiteSpace(postScript))
+            {
+                await scriptClient.RunScript(postScript, $"{renewal.Id}");
+            }
+
+            // Return final result
+            return result;
+        }
+
+        /// <summary>
+        /// Get the certificates, if not from cache then from the server
+        /// </summary>
+        /// <param name="orderContexts"></param>
+        /// <param name="runLevel"></param>
+        /// <returns></returns>
+        private async Task ExecuteOrders(List<OrderContext> orderContexts, RunLevel runLevel)
+        {
             foreach (var order in orderContexts)
             {
                 // Get the previously issued certificates in this renewal
                 // sub order regardless of the fact that it may have another
                 // shape (e.g. different SAN names or common name etc.). This
                 // means we cannot use the cache key for it.
-                order.PreviousCertificate = certificateService.
+                order.PreviousCertificate = _certificateService.
                     CachedInfos(order.Renewal, order.Order).
                     OrderByDescending(x => x.Certificate.NotBefore).
                     FirstOrDefault();
@@ -231,7 +263,16 @@ namespace PKISharp.WACS
                          order.OrderName);
                 }
             }
+        }
 
+        /// <summary>
+        /// Handle install/store steps
+        /// </summary>
+        /// <param name="orderContexts"></param>
+        /// <returns></returns>
+        private async Task ProcessOrders(List<OrderContext> orderContexts)
+        {
+            // Process store/install steps
             foreach (var order in orderContexts)
             {
                 _log.Verbose("Processing order {n}/{m}: {friendly}",
@@ -254,7 +295,7 @@ namespace PKISharp.WACS
                 order.Result.AddThumbprint(order.NewCertificate.Certificate.Thumbprint);
 
                 // Create the execution context
-                await ExecuteOrder(order);
+                await ProcessOrder(order);
 
                 // Don't process the rest of the orders if one of them fails
                 if (order.Result.Abort || !order.Result.Success)
@@ -262,7 +303,6 @@ namespace PKISharp.WACS
                     break;
                 }
             }
-            return result;
         }
 
         /// <summary>
@@ -271,7 +311,7 @@ namespace PKISharp.WACS
         /// <param name="context"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        private async Task ExecuteOrder(ExecutionContext context)
+        private async Task ProcessOrder(OrderContext context)
         {
             try
             {
@@ -330,10 +370,9 @@ namespace PKISharp.WACS
         /// <param name="context"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        private CertificateInfo? GetFromCache(ExecutionContext context, RunLevel runLevel)
+        private CertificateInfo? GetFromCache(OrderContext context, RunLevel runLevel)
         {
-            var certificateService = context.Scope.Resolve<ICertificateService>();
-            var cachedCertificate = certificateService.CachedInfo(context.Order);
+            var cachedCertificate = _certificateService.CachedInfo(context.Order);
             if (cachedCertificate == null || cachedCertificate.CacheFile == null)
             {
                 return null;
@@ -364,13 +403,12 @@ namespace PKISharp.WACS
         /// <param name="context"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        private async Task<CertificateInfo?> GetFromServer(ExecutionContext context, RunLevel runLevel)
+        private async Task<CertificateInfo?> GetFromServer(OrderContext context, RunLevel runLevel)
         {
             // Place the order
-            var certificateService = context.Scope.Resolve<ICertificateService>();
             var orderManager = context.Scope.Resolve<OrderManager>();
             context.Order.KeyPath = context.Order.Renewal.CsrPluginOptions?.ReusePrivateKey == true
-                ? certificateService.ReuseKeyPath(context.Order) : null;
+                ? _certificateService.ReuseKeyPath(context.Order) : null;
             context.Order.Details = await orderManager.GetOrCreate(context.Order, runLevel);
 
             // Sanity checks
@@ -408,7 +446,7 @@ namespace PKISharp.WACS
             }
 
             // Request the certificate
-            return await certificateService.RequestCertificate(csrPlugin, context.RunLevel, context.Order);
+            return await _certificateService.RequestCertificate(csrPlugin, context.RunLevel, context.Order);
         }
 
         /// <summary>
@@ -418,7 +456,7 @@ namespace PKISharp.WACS
         /// <param name="newCertificate"></param>
         /// <returns></returns>
         private async Task<bool> HandleStoreAdd(
-            ExecutionContext context, 
+            OrderContext context, 
             CertificateInfo newCertificate, 
             List<StorePluginOptions> storePluginOptions, 
             List<IStorePlugin> storePlugins)
@@ -466,7 +504,7 @@ namespace PKISharp.WACS
         /// <param name="storePlugins"></param>
         /// <returns></returns>
         private async Task HandleStoreRemove(
-            ExecutionContext context,
+            OrderContext context,
             CertificateInfo previousCertificate,
             List<StorePluginOptions> storePluginOptions,
             List<IStorePlugin> storePlugins)
@@ -497,7 +535,7 @@ namespace PKISharp.WACS
         /// <param name="previousCertificate"></param>
         /// <returns></returns>
         private async Task<bool> HandleInstall(
-            ExecutionContext context,
+            OrderContext context,
             CertificateInfo newCertificate, 
             CertificateInfo? previousCertificate, 
             IEnumerable<IStorePlugin> storePlugins)

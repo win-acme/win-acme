@@ -12,7 +12,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         public ExecutionSettings Execution => new();
         public ProxySettings Proxy => new();
         public CacheSettings Cache => new();
-        public ScheduledTaskSettings ScheduledTask => new();
+        public ScheduledTaskSettings ScheduledTask => new() { RenewalDays = 55, RenewalMinimumValidDays = 10 };
         public NotificationSettings Notification => new();
         public SecuritySettings Security => new();
         public ClientSettings Client => new();

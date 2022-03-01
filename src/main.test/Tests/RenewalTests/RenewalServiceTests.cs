@@ -1,16 +1,9 @@
 ﻿using Autofac;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using PKISharp.WACS.Configuration;
-using real = PKISharp.WACS.Services;
-using mock = PKISharp.WACS.UnitTests.Mock.Services;
-using PKISharp.WACS.Clients.IIS;
-using PKISharp.WACS.Plugins.Resolvers;
-using PKISharp.WACS.Clients.Acme;
-using PKISharp.WACS.Clients;
-using PKISharp.WACS.Clients.DNS;
-using System.Linq;
-using System.Collections.Generic;
 using PKISharp.WACS.UnitTests.Mock;
+using System.Collections.Generic;
+using System.Linq;
+using real = PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.UnitTests.Tests.RenewalTests
 {
