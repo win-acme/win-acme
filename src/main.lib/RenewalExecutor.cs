@@ -243,6 +243,19 @@ namespace PKISharp.WACS
                 order.NewCertificate = GetFromCache(order, runLevel);
             }
 
+            // Group validations of multiple order together
+            // as to maximize the potential gains in parallelization
+            var fromServer = orderContexts.Where(x => x.NewCertificate == null).ToList();
+            foreach (var order in fromServer)
+            {
+                await CreateOrder(order);
+            }
+
+            // Validate all orders that need it
+            var alwaysTryValidation = runLevel.HasFlag(RunLevel.Test) || runLevel.HasFlag(RunLevel.IgnoreCache);
+            var validationRequired = fromServer.Where(x => x.Order.Details != null && (x.Order.Valid == false || alwaysTryValidation));
+            await _validator.AuthorizeOrders(validationRequired);
+
             // Run validations for order that couldn't be retrieved from cache
             foreach (var order in orderContexts)
             {
@@ -253,7 +266,7 @@ namespace PKISharp.WACS
                          orderContexts.Count,
                          order.OrderName);
                     // Get the certificate from the server
-                    order.NewCertificate = await GetFromServer(order, runLevel);
+                    order.NewCertificate = await GetFromServer(order);
                 }
                 else
                 {
@@ -398,31 +411,39 @@ namespace PKISharp.WACS
         }
 
         /// <summary>
+        /// Get the order from cache or place a new one at the server
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        private async Task CreateOrder(OrderContext context)
+        {
+            _log.Verbose("Obtain order details for {order}", context.OrderName);
+
+            // Place the order
+            var orderManager = context.Scope.Resolve<OrderManager>();
+            context.Order.KeyPath = context.Order.Renewal.CsrPluginOptions?.ReusePrivateKey == true
+                ? _certificateService.ReuseKeyPath(context.Order) : null;
+            context.Order.Details = await orderManager.GetOrCreate(context.Order, context.RunLevel);
+
+            // Sanity checks
+            if (context.Order.Details == null)
+            {
+                context.Result.AddErrorMessage($"Unable to create order {context.OrderName}");
+            }
+            else if (context.Order.Details.Payload.Status == AcmeClient.OrderInvalid)
+            {
+                context.Result.AddErrorMessage($"Created order {context.OrderName} was invalid");
+            }
+        }
+
+        /// <summary>
         /// Get a certificate from the server
         /// </summary>
         /// <param name="context"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        private async Task<CertificateInfo?> GetFromServer(OrderContext context, RunLevel runLevel)
+        private async Task<CertificateInfo?> GetFromServer(OrderContext context)
         {
-            // Place the order
-            var orderManager = context.Scope.Resolve<OrderManager>();
-            context.Order.KeyPath = context.Order.Renewal.CsrPluginOptions?.ReusePrivateKey == true
-                ? _certificateService.ReuseKeyPath(context.Order) : null;
-            context.Order.Details = await orderManager.GetOrCreate(context.Order, runLevel);
-
-            // Sanity checks
-            if (context.Order.Details == null)
-            {
-                context.Result.AddErrorMessage($"Unable to create order");
-                return null;
-            }
-            if (context.Order.Details.Payload.Status == AcmeClient.OrderInvalid)
-            {
-                context.Result.AddErrorMessage($"Created order was invalid");
-                return null;
-            }
-
             // Generate the CSR plugin
             var csrPlugin = context.Target.CsrBytes == null ? context.Scope.Resolve<ICsrPlugin>() : null;
             if (csrPlugin != null)
@@ -431,16 +452,6 @@ namespace PKISharp.WACS
                 if (disabled)
                 {
                     context.Result.AddErrorMessage($"CSR plugin is not available. {disabledReason}");
-                    return null;
-                }
-            }
-
-            // Run validations
-            if (!context.Order.Valid || runLevel.HasFlag(RunLevel.Test) || runLevel.HasFlag(RunLevel.IgnoreCache))
-            {
-                await _validator.AuthorizeOrder(context);
-                if (!context.Result.Success)
-                {
                     return null;
                 }
             }

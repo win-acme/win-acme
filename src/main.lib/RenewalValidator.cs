@@ -40,6 +40,19 @@ namespace PKISharp.WACS
         }
 
         /// <summary>
+        /// Authorize multiple orders at once
+        /// </summary>
+        /// <param name="validationRequired"></param>
+        /// <returns></returns>
+        internal async Task AuthorizeOrders(IEnumerable<OrderContext> validationRequired)
+        {
+            foreach (var val in validationRequired)
+            {
+                await AuthorizeOrder(val);
+            }
+        }
+
+        /// <summary>
         /// Answer all the challenges in the order
         /// </summary>
         /// <param name="execute"></param>
@@ -47,7 +60,7 @@ namespace PKISharp.WACS
         /// <param name="result"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        public async Task AuthorizeOrder(OrderContext execution)
+        internal async Task AuthorizeOrder(OrderContext execution)
         {
             if (execution.Order.Details == null)
             {
@@ -92,7 +105,7 @@ namespace PKISharp.WACS
                 else
                 {
                     _log.Error("No plugin found that can challenge for {authorisation}", authorization.Identifier.Value);
-                    execution.Result.AddErrorMessage($"No plugin found that can challenge for {authorization.Identifier.Value}", !execution.Order.Valid);
+                    execution.Result.AddErrorMessage($"No plugin found that can challenge for {authorization.Identifier.Value}", execution.Order.Valid != true);
                     return;
                 }
             }
@@ -109,7 +122,7 @@ namespace PKISharp.WACS
                     {
                         throw new InvalidOperationException("Authorisation found that doesn't match target");
                     }
-                    return new ValidationContextParameters(a, targetPart, group.Key, execution.Order.Valid);
+                    return new ValidationContextParameters(a, targetPart, group.Key, execution.Order.Valid == true);
                 }).ToList();
                 if (_settings.Validation.DisableMultiThreading != false || plugin.Parallelism == ParallelOperations.None)
                 {
@@ -274,6 +287,7 @@ namespace PKISharp.WACS
             }
         }
 
+
         /// <summary>
         /// Handle validation in serial order
         /// </summary>
@@ -303,7 +317,7 @@ namespace PKISharp.WACS
         /// <param name="authorizationUri"></param>
         /// <param name="options"></param>
         /// <returns></returns>
-        private async Task<acme.Authorization?> GetAuthorization(OrderContext context, string authorizationUri)
+        private static async Task<acme.Authorization?> GetAuthorization(OrderContext context, string authorizationUri)
         {
             // Get authorization challenge details from server
             var client = context.Scope.Resolve<AcmeClient>();
@@ -314,7 +328,7 @@ namespace PKISharp.WACS
             }
             catch
             {
-                context.Result.AddErrorMessage($"Unable to get authorization details from {authorizationUri}", !context.Order.Valid);
+                context.Result.AddErrorMessage($"Unable to get authorization details from {authorizationUri}", context.Order.Valid != true);
                 return null;
             }
             return authorization;

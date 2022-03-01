@@ -24,15 +24,10 @@ namespace PKISharp.WACS.DomainObjects
             FriendlyNamePart = friendlyNamePart;
         }
 
-        public bool Valid
-        {
-            get
-            {
-                return Details != null &&
-                    (Details.Payload.Status == AcmeClient.OrderValid ||
-                     Details.Payload.Status == AcmeClient.OrderReady);
-            }
-        }
+        public bool? Valid => Details == null ? 
+            null : 
+            Details.Payload.Status == AcmeClient.OrderValid || 
+            Details.Payload.Status == AcmeClient.OrderReady;
 
         public string FriendlyNameBase
         {
