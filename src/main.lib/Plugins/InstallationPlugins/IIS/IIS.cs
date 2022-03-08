@@ -105,7 +105,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                                 WithPort(_options.NewBindingPort.Value);
                         }
                         bindingOptions = bindingOptions.WithSiteId(part.SiteId!.Value);
-                        _iisClient.UpdateHttpSite(httpIdentifiers, bindingOptions, newCertificate, oldCertificate);
+                        _iisClient.UpdateHttpSite(httpIdentifiers, bindingOptions, oldCertificate?.Certificate.GetCertHash(), newCertificate.SanNames);
                         if (certificateStore != null) 
                         {
                             _iisClient.UpdateFtpSite(0, newCertificate, oldCertificate);
@@ -114,7 +114,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                     case IISSiteType.Ftp:
                         // Update FTP site
                         _iisClient.UpdateFtpSite(part.SiteId!.Value, newCertificate, oldCertificate);
-                        _iisClient.UpdateHttpSite(httpIdentifiers, bindingOptions, newCertificate, oldCertificate);
+                        _iisClient.UpdateHttpSite(httpIdentifiers, bindingOptions, oldCertificate?.Certificate.GetCertHash(), newCertificate.SanNames);
                         break;
                     default:
                         _log.Error("Unknown site type");

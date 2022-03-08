@@ -94,10 +94,10 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
         public bool HasFtpSites => Sites.Any(x => x.Type == IISSiteType.Ftp);
         public bool HasWebSites => Sites.Any(x => x.Type == IISSiteType.Web);
 
-        public void UpdateHttpSite(IEnumerable<Identifier> identifiers, BindingOptions bindingOptions, CertificateInfo newCertificate, CertificateInfo? oldCertificate)
+        public void UpdateHttpSite(IEnumerable<Identifier> identifiers, BindingOptions bindingOptions, byte[]? oldCertificate = null, IEnumerable<Identifier>? allIdentifiers = null)
         {
             var updater = new IISHttpBindingUpdater<MockSite, MockBinding>(this, _log);
-            var updated = updater.AddOrUpdateBindings(identifiers, bindingOptions, newCertificate, oldCertificate);
+            var updated = updater.AddOrUpdateBindings(identifiers, bindingOptions, allIdentifiers, oldCertificate);
             if (updated > 0)
             {
                 _log.Information("Committing {count} {type} binding changes to IIS while updating site {site}", updated, "https", bindingOptions.SiteId);

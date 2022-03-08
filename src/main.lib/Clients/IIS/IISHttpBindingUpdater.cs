@@ -39,8 +39,8 @@ namespace PKISharp.WACS.Clients.IIS
         public int AddOrUpdateBindings(
             IEnumerable<Identifier> identifiers,
             BindingOptions bindingOptions,
-            CertificateInfo newCertificate, 
-            CertificateInfo? oldCertificate)
+            IEnumerable<Identifier>? allIdentifiers, 
+            byte[]? oldCertificate)
         {
             // Helper function to get updated sites
             IEnumerable<(TSite site, TBinding binding)> GetAllSites() => _client.Sites.
@@ -60,7 +60,7 @@ namespace PKISharp.WACS.Clients.IIS
                 if (oldCertificate != null)
                 {
                     var siteBindings = allBindings.
-                        Where(sb => StructuralComparisons.StructuralEqualityComparer.Equals(sb.binding.CertificateHash, oldCertificate.Certificate.GetCertHash())).
+                        Where(sb => StructuralComparisons.StructuralEqualityComparer.Equals(sb.binding.CertificateHash, oldCertificate)).
                         ToList();
 
                     // Update all bindings created using the previous certificate
@@ -70,8 +70,7 @@ namespace PKISharp.WACS.Clients.IIS
                         {
                             // Only update if the old binding actually matches
                             // with the new certificate
-                            var newIdentifiers = newCertificate.SanNames;
-                            if (newIdentifiers.Any(i => Fits(binding, i, SSLFlags.None) > 0))
+                            if ((allIdentifiers ?? identifiers).Any(i => Fits(binding, i, SSLFlags.None) > 0))
                             {
                                 found.Add(binding);
                                 if (UpdateBinding(site, binding, bindingOptions))
