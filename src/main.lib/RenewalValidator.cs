@@ -44,11 +44,24 @@ namespace PKISharp.WACS
         /// </summary>
         /// <param name="validationRequired"></param>
         /// <returns></returns>
-        internal async Task AuthorizeOrders(IEnumerable<OrderContext> validationRequired)
+        internal async Task AuthorizeOrders(IEnumerable<OrderContext> validationRequired, RunLevel runLevel)
         {
             foreach (var val in validationRequired)
             {
-                await AuthorizeOrder(val);
+                if (val.Order.Details == null)
+                {
+                    throw new InvalidOperationException();
+                }
+
+                // Get authorization details
+                var authorizationUris = val.Order.Details.Payload.Authorizations.ToList();
+                var authorizationTasks = authorizationUris.Select(authorizationUri => GetAuthorization(val, authorizationUri));
+                var authorizations = (await Task.WhenAll(authorizationTasks)).OfType<acme.Authorization>().ToList();
+                if (val.Result.Success == false)
+                {
+                    return;
+                }
+                await RunAuthorizations(authorizations.Select(x => new AuthorisationContext(val, x)).ToList(), runLevel);
             }
         }
 
@@ -60,52 +73,38 @@ namespace PKISharp.WACS
         /// <param name="result"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        internal async Task AuthorizeOrder(OrderContext execution)
+        internal async Task RunAuthorizations(IEnumerable<AuthorisationContext> authorisations, RunLevel runLevel)
         {
-            if (execution.Order.Details == null)
-            {
-                throw new InvalidOperationException();
-            }
-
-            // Get authorization details
-            var authorizationUris = execution.Order.Details.Payload.Authorizations.ToList();
-            var authorizationTasks = authorizationUris.Select(authorizationUri => GetAuthorization(execution, authorizationUri));
-            var authorizations = (await Task.WhenAll(authorizationTasks)).OfType<acme.Authorization>().ToList();
-            if (!execution.Result.Success)
-            {
-                return;
-            }
-            
             // Map authorisations to plugins that are going to execute them
-            var mapping = new Dictionary<ValidationPluginOptions, List<acme.Authorization>>();
-            var add = (ValidationPluginOptions o, acme.Authorization a) => {
+            var mapping = new Dictionary<ValidationPluginOptions, List<AuthorisationContext>>();
+            var add = (ValidationPluginOptions o, AuthorisationContext a) => {
                 if (mapping.ContainsKey(o))
                 {
                     mapping[o].Add(a);
                 }
                 else
                 {
-                    mapping.Add(o, new List<acme.Authorization>() { a });
+                    mapping.Add(o, new List<AuthorisationContext>() { a });
                 }
             };
-            foreach (var authorization in authorizations)
+            foreach (var context in authorisations)
             {
-                var nativeOptions = execution.Renewal.ValidationPluginOptions;
-                var globalOptions = _validationOptions.GetValidationOptions(Identifier.Parse(authorization));
+                var nativeOptions = context.Order.Renewal.ValidationPluginOptions;
+                var globalOptions = _validationOptions.GetValidationOptions(Identifier.Parse(context.Authorization));
                 if (globalOptions != null && 
-                    IsValid(execution.Scope, authorization, globalOptions))
+                    IsValid(context, globalOptions))
                 {
-                    add(globalOptions, authorization);
-                } 
-                else if ((globalOptions == null || nativeOptions.Plugin != globalOptions.Plugin) && 
-                    IsValid(execution.Scope, authorization, nativeOptions))
+                    add(globalOptions, context);
+                }
+                else if ((globalOptions == null || nativeOptions.Plugin != globalOptions.Plugin) &&
+                    IsValid(context, nativeOptions))
                 {
-                    add(nativeOptions, authorization);
+                    add(nativeOptions, context);
                 }
                 else
                 {
-                    _log.Error("No plugin found that can challenge for {authorisation}", authorization.Identifier.Value);
-                    execution.Result.AddErrorMessage($"No plugin found that can challenge for {authorization.Identifier.Value}", execution.Order.Valid != true);
+                    _log.Error("No plugin found that can challenge for {authorisation}", context.Authorization.Identifier.Value);
+                    context.Order.Result.AddErrorMessage($"No plugin found that can challenge for {context.Authorization.Identifier.Value}", context.Order.Order.Valid != true);
                     return;
                 }
             }
@@ -113,24 +112,24 @@ namespace PKISharp.WACS
             // Execute them
             foreach (var group in mapping)
             {
-                var scope = _scopeBuilder.Validation(execution.Scope, group.Key);
-                var plugin = scope.Resolve<IValidationPlugin>();
+                var validationScope = _scopeBuilder.Validation(group.Value.First().Order.ExecutionScope, group.Key);
+                var plugin = validationScope.Resolve<IValidationPlugin>();
                 var contexts = group.Value.Select(a =>
                 {
-                    var targetPart = execution.Target.Parts.FirstOrDefault(p => p.Identifiers.Any(i => i == Identifier.Parse(a)));
+                    var targetPart = a.Order.Target.Parts.FirstOrDefault(p => p.Identifiers.Any(i => i == Identifier.Parse(a.Authorization.Identifier)));
                     if (targetPart == null)
                     {
                         throw new InvalidOperationException("Authorisation found that doesn't match target");
                     }
-                    return new ValidationContextParameters(a, targetPart, group.Key, execution.Order.Valid == true);
+                    return new ValidationContextParameters(a, targetPart, group.Key);
                 }).ToList();
                 if (_settings.Validation.DisableMultiThreading != false || plugin.Parallelism == ParallelOperations.None)
                 {
-                    await SerialValidation(execution, contexts);
+                    await SerialValidation(contexts);
                 }
                 else
                 {
-                    await ParallelValidation(plugin.Parallelism, scope, execution, contexts);
+                    await ParallelValidation(plugin.Parallelism, validationScope, contexts, runLevel);
                 }
             }
         }
@@ -169,9 +168,9 @@ namespace PKISharp.WACS
         /// <param name="authorization"></param>
         /// <param name="options"></param>
         /// <returns></returns>
-        private bool IsValid(ILifetimeScope scope, acme.Authorization authorization, ValidationPluginOptions options)
+        private bool IsValid(AuthorisationContext context, ValidationPluginOptions options)
         {
-            var (plugin, match) = GetInstances(scope, options);
+            var (plugin, match) = GetInstances(context.Order.ExecutionScope, options);
             if (plugin == null || match == null)
             {
                 _log.Warning("Validation plugin {name} not found or not created", options.Name);
@@ -184,14 +183,14 @@ namespace PKISharp.WACS
                 return false;
             }
 
-            var identifier = Identifier.Parse(authorization);
+            var identifier = Identifier.Parse(context.Authorization.Identifier);
             var dummyTarget = new Target(identifier);
             if (!match.CanValidate(dummyTarget))
             {
                 _log.Warning("Validation plugin {name} cannot validate identifier {identifier}", options.Name, identifier.Value);
                 return false;
             }
-            if (!authorization.Challenges.Any(x => x.Type == options.ChallengeType))
+            if (!context.Authorization.Challenges.Any(x => x.Type == options.ChallengeType))
             {
                 _log.Warning("No challenge of type {options.ChallengeType} available", options.Name, identifier.Value);
                 return false;
@@ -202,9 +201,9 @@ namespace PKISharp.WACS
         /// Handle multiple validations in parallel 
         /// </summary>
         /// <returns></returns>
-        private async Task ParallelValidation(ParallelOperations level, ILifetimeScope scope, OrderContext context, List<ValidationContextParameters> parameters)
+        private async Task ParallelValidation(ParallelOperations level, ILifetimeScope validationScope, List<ValidationContextParameters> parameters, RunLevel runLevel)
         {
-            var contexts = parameters.Select(parameter => new ValidationContext(scope, parameter)).ToList();
+            var contexts = parameters.Select(parameter => new ValidationContext(validationScope, parameter)).ToList();
             var plugin = contexts.First().ValidationPlugin;
             try
             {
@@ -213,13 +212,9 @@ namespace PKISharp.WACS
                 {
                     // Parallel
                     _log.Verbose("Handle {n} preparation(s)", contexts.Count);
-                    var prepareTasks = contexts.Select(vc => PrepareChallengeAnswer(vc, context.RunLevel));
+                    var prepareTasks = contexts.Select(vc => PrepareChallengeAnswer(vc, runLevel));
                     await Task.WhenAll(prepareTasks);
-                    foreach (var ctx in contexts)
-                    {
-                        TransferErrors(ctx, context.Result);
-                    }
-                    if (!context.Result.Success)
+                    if (contexts.Any(x => x.Result.Success == false))
                     {
                         return;
                     }
@@ -229,9 +224,8 @@ namespace PKISharp.WACS
                     // Serial
                     foreach (var ctx in contexts)
                     {
-                        await PrepareChallengeAnswer(ctx, context.RunLevel);
-                        TransferErrors(ctx, context.Result);
-                        if (!context.Result.Success)
+                        await PrepareChallengeAnswer(ctx, runLevel);
+                        if (ctx.Result.Success == false)
                         {
                             return;
                         }
@@ -242,7 +236,10 @@ namespace PKISharp.WACS
                 var commited = await CommitValidation(plugin);
                 if (!commited)
                 {
-                    context.Result.AddErrorMessage("Commit failed");
+                    foreach (var ctx in contexts)
+                    {
+                        ctx.Result.AddErrorMessage("Commit failed");
+                    }
                     return;
                 }
 
@@ -256,11 +253,7 @@ namespace PKISharp.WACS
                         _log.Verbose("Handle {n} answers(s)", contextsWithChallenges.Count);
                         var answerTasks = contextsWithChallenges.Select(vc => AnswerChallenge(vc));
                         await Task.WhenAll(answerTasks);
-                        foreach (var ctx in contextsWithChallenges)
-                        {
-                            TransferErrors(ctx, context.Result);
-                        }
-                        if (!context.Result.Success)
+                        if (contextsWithChallenges.Any(x => x.Result.Success == false))
                         {
                             return;
                         }
@@ -271,8 +264,7 @@ namespace PKISharp.WACS
                         foreach (var ctx in contextsWithChallenges)
                         {
                             await AnswerChallenge(ctx);
-                            TransferErrors(ctx, context.Result);
-                            if (!context.Result.Success)
+                            if (ctx.Result.Success == false)
                             {
                                 return;
                             }
@@ -294,16 +286,16 @@ namespace PKISharp.WACS
         /// <param name="context"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        private async Task SerialValidation(OrderContext context, IList<ValidationContextParameters> parameters)
+        private async Task SerialValidation(IList<ValidationContextParameters> parameters)
         {
             foreach (var parameter in parameters)
             {
                 _log.Verbose("Handle authorization {n}/{m}",
                     parameters.IndexOf(parameter) + 1,
                     parameters.Count);
-                using var identifierScope = _scopeBuilder.Validation(context.Scope, parameter.Options);
-                await ParallelValidation(ParallelOperations.None, identifierScope, context, new List<ValidationContextParameters> { parameter });
-                if (!context.Result.Success)
+                using var validationScope = _scopeBuilder.Validation(parameter.OrderContext.ExecutionScope, parameter.Options);
+                await ParallelValidation(ParallelOperations.None, validationScope, new List<ValidationContextParameters> { parameter }, parameter.OrderContext.RunLevel);
+                if (parameter.OrderContext.Result.Success == false)
                 {
                     break;
                 }
@@ -320,7 +312,7 @@ namespace PKISharp.WACS
         private static async Task<acme.Authorization?> GetAuthorization(OrderContext context, string authorizationUri)
         {
             // Get authorization challenge details from server
-            var client = context.Scope.Resolve<AcmeClient>();
+            var client = context.ExecutionScope.Resolve<AcmeClient>();
             acme.Authorization? authorization;
             try
             {
@@ -333,19 +325,6 @@ namespace PKISharp.WACS
             }
             return authorization;
         }
-
-        /// <summary>
-        /// Move errors from a validation context up to the renewal result
-        /// </summary>
-        /// <param name="from"></param>
-        /// <param name="to"></param>
-        /// <param name="prefix"></param>
-        private void TransferErrors(ValidationContext from, RenewResult to)
-        {
-            from.ErrorMessages.ForEach(e => to.AddErrorMessage($"[{from.Label}] {e}", from.Success != true));
-            from.ErrorMessages.Clear();
-        }
-
 
         /// <summary>
         /// Make sure we have authorization for every host in target
@@ -361,16 +340,14 @@ namespace PKISharp.WACS
             var client = context.Scope.Resolve<AcmeClient>();
             try
             {
-                if (context.Authorization.Status == AcmeClient.AuthorizationValid)
+                if (context.Valid)
                 {
-                    context.Success = true;
                     _log.Information("[{identifier}] Cached authorization result: {Status}", context.Label, context.Authorization.Status);
                     if (!runLevel.HasFlag(RunLevel.Test) && !runLevel.HasFlag(RunLevel.IgnoreCache))
                     {
                         return;
                     }
                     _log.Information("[{identifier}] Handling challenge anyway because --test and/or --force is active", context.Label);
-
                 }
 
                 _log.Information("[{identifier}] Authorizing...", context.Label);
@@ -379,7 +356,7 @@ namespace PKISharp.WACS
                 var challenge = context.Authorization.Challenges.FirstOrDefault(c => string.Equals(c.Type, context.ChallengeType, StringComparison.InvariantCultureIgnoreCase));
                 if (challenge == null)
                 {
-                    if (context.Success == true)
+                    if (context.Result.Success == true)
                     {
                         var usedType = context.Authorization.Challenges.
                             Where(x => x.Status == AcmeClient.ChallengeValid).
@@ -395,7 +372,7 @@ namespace PKISharp.WACS
                         _log.Error("[{identifier}] Expected challenge type {type} not available.",
                             context.Label,
                             context.ChallengeType);
-                        context.AddErrorMessage("Expected challenge type not available", context.Success == false);
+                        context.Result.AddErrorMessage("Expected challenge type not available", !context.Valid);
                         return;
                     }
                 }
@@ -409,7 +386,7 @@ namespace PKISharp.WACS
                         // be valid.
                         if (!runLevel.HasFlag(RunLevel.Test) && !runLevel.HasFlag(RunLevel.IgnoreCache))
                         {
-                            _log.Information("[{identifier}] Cached challenge result: {Status}", context.Label, context.Authorization.Status);
+                            _log.Information("[{identifier}] Cached challenge result: {Status}", !context.Valid);
                             return;
                         }
                     }
@@ -430,7 +407,7 @@ namespace PKISharp.WACS
                 catch (Exception ex)
                 {
                     _log.Error(ex, "[{identifier}] Error preparing for challenge answer", context.Label);
-                    context.AddErrorMessage("Error preparing for challenge answer", context.Success == false);
+                    context.Result.AddErrorMessage("Error preparing for challenge answer", !context.Valid);
                     return;
                 }
             }
@@ -438,7 +415,7 @@ namespace PKISharp.WACS
             {
                 _log.Error("[{identifier}] Error preparing challenge answer", context.Label);
                 var message = _exceptionHandler.HandleException(ex);
-                context.AddErrorMessage(message, context.Success == false);
+                context.Result.AddErrorMessage(message, !context.Valid);
             }
         }
 
@@ -467,12 +444,11 @@ namespace PKISharp.WACS
                         _log.Error("[{identifier}] {Error}", validationContext.Label, updatedChallenge.Error.ToString());
 
                     }
-                    validationContext.AddErrorMessage("Validation failed", validationContext.Success != true);
+                    validationContext.Result.AddErrorMessage("Validation failed", !validationContext.Valid);
                     return;
                 }
                 else
                 {
-                    validationContext.Success = true;
                     _log.Information("[{identifier}] Authorization result: {Status}", validationContext.Label, updatedChallenge.Status);
                     return;
                 }
@@ -481,7 +457,7 @@ namespace PKISharp.WACS
             {
                 _log.Error("[{identifier}] Error submitting challenge answer", validationContext.Label);
                 var message = _exceptionHandler.HandleException(ex);
-                validationContext.AddErrorMessage(message, validationContext.Success != true);
+                validationContext.Result.AddErrorMessage(message, !validationContext.Valid);
             }
         }
 

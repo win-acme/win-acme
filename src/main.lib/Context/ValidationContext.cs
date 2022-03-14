@@ -1,27 +1,26 @@
 ﻿using ACMESharp.Authorizations;
 using ACMESharp.Protocol.Resources;
 using Autofac;
+using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
-using System.Collections.Generic;
 
 namespace PKISharp.WACS.Context
 {
     public class ValidationContextParameters
     {
         public ValidationContextParameters(
-            Authorization authorization,
+            AuthorisationContext authorization,
             TargetPart targetPart,
-            ValidationPluginOptions options,
-            bool orderValid)
+            ValidationPluginOptions options)
         {
             TargetPart = targetPart;
-            Authorization = authorization;
+            OrderContext = authorization.Order;
+            Authorization = authorization.Authorization;
             Options = options;
-            OrderValid = orderValid;
         }
-        public bool OrderValid { get; }
+        public OrderContext OrderContext { get; }
         public ValidationPluginOptions Options { get; }
         public TargetPart TargetPart { get; }
         public Authorization Authorization { get; }
@@ -37,41 +36,25 @@ namespace PKISharp.WACS.Context
             Label = (parameters.Authorization.Wildcard == true ? "*." : "") + Identifier;
             TargetPart = parameters.TargetPart;
             Authorization = parameters.Authorization;
+            Result = parameters.OrderContext.Result;
             Scope = scope;
             ChallengeType = parameters.Options.ChallengeType;
             PluginName = parameters.Options.Name;
             ValidationPlugin = scope.Resolve<IValidationPlugin>();
-            if (parameters.OrderValid)
-            {
-                Success = true;
-            }
+            Valid = parameters.Authorization.Status == AcmeClient.AuthorizationValid;
         }
+        public bool Valid { get; }
         public ILifetimeScope Scope { get; }
         public string Identifier { get; }
         public string Label { get; }
         public string ChallengeType { get; }
         public string PluginName { get; }
+        public RenewResult Result { get; }
         public TargetPart? TargetPart { get; }
         public Authorization Authorization { get; }
         public Challenge? Challenge { get; set; }
         public IChallengeValidationDetails? ChallengeDetails { get; set; }
         public IValidationPlugin ValidationPlugin { get; set; }
-        public bool? Success { get; set; }
-        public List<string> ErrorMessages { get; } = new List<string>();
-        public void AddErrorMessage(string? value, bool fatal = true)
-        {
-            if (value != null)
-            {
-                if (!ErrorMessages.Contains(value))
-                {
-                    ErrorMessages.Add(value);
-                }
-            }
-            if (fatal)
-            {
-                Success = false;
-            }
-        }
     }
 
 }

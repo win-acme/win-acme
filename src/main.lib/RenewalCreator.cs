@@ -222,7 +222,7 @@ namespace PKISharp.WACS
             {
                 _exceptionHandler.HandleException(message: $"Create certificate cancelled");
             }
-            else if (!result.Success)
+            else if (result.Success != true)
             {
                 if (runLevel.HasFlag(RunLevel.Interactive) &&
                     await _input.PromptYesNo("Create certificate failed, retry?", false))

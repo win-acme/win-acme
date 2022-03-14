@@ -100,7 +100,7 @@ namespace PKISharp.WACS
             var setupTaskScheduler = _args.SetupTaskScheduler;
             if (!setupTaskScheduler && !_args.NoTaskScheduler)
             {
-                setupTaskScheduler = result.Success && !result.Abort && (renewal.New || renewal.Updated);
+                setupTaskScheduler = result.Success == true && !result.Abort && (renewal.New || renewal.Updated);
             }
             if (setupTaskScheduler && runLevel.HasFlag(RunLevel.Test))
             {
@@ -254,12 +254,12 @@ namespace PKISharp.WACS
             // Validate all orders that need it
             var alwaysTryValidation = runLevel.HasFlag(RunLevel.Test) || runLevel.HasFlag(RunLevel.IgnoreCache);
             var validationRequired = fromServer.Where(x => x.Order.Details != null && (x.Order.Valid == false || alwaysTryValidation));
-            await _validator.AuthorizeOrders(validationRequired);
+            await _validator.AuthorizeOrders(validationRequired, runLevel);
 
             // Run validations for order that couldn't be retrieved from cache
             foreach (var order in orderContexts)
             {
-                if (!order.Result.Success)
+                if (order.Result.Success == false)
                 {
                     _log.Verbose("Order {n}/{m} ({friendly}): validation error",
                          orderContexts.IndexOf(order) + 1,
@@ -318,7 +318,7 @@ namespace PKISharp.WACS
                 await ProcessOrder(order);
 
                 // Don't process the rest of the orders if one of them fails
-                if (order.Result.Abort || !order.Result.Success)
+                if (order.Result.Abort || order.Result.Success == false)
                 {
                     break;
                 }
@@ -354,7 +354,7 @@ namespace PKISharp.WACS
                     Where(x => x is not NullStoreOptions).
                     ToList();
                 var storePlugins = storePluginOptions.
-                    Select(x => context.Scope.Resolve(x.Instance, new TypedParameter(x.GetType(), x))).
+                    Select(x => context.ExecutionScope.Resolve(x.Instance, new TypedParameter(x.GetType(), x))).
                     OfType<IStorePlugin>().
                     Where(x => x is not INull).
                     ToList();
@@ -375,6 +375,12 @@ namespace PKISharp.WACS
                     context.NewCertificate.Certificate.Thumbprint != context.PreviousCertificate.Certificate.Thumbprint)
                 {
                     await HandleStoreRemove(context, context.PreviousCertificate, storePluginOptions, storePlugins);
+                }
+
+                // Made it to the end!
+                if (context.Result.Success == null)
+                {
+                    context.Result.Success = true;
                 }
             }
             catch (Exception ex)
@@ -427,7 +433,7 @@ namespace PKISharp.WACS
             _log.Verbose("Obtain order details for {order}", context.OrderName);
 
             // Place the order
-            var orderManager = context.Scope.Resolve<OrderManager>();
+            var orderManager = context.ExecutionScope.Resolve<OrderManager>();
             context.Order.KeyPath = context.Order.Renewal.CsrPluginOptions?.ReusePrivateKey == true
                 ? _certificateService.ReuseKeyPath(context.Order) : null;
             context.Order.Details = await orderManager.GetOrCreate(context.Order, context.RunLevel);
@@ -452,7 +458,7 @@ namespace PKISharp.WACS
         private async Task<CertificateInfo?> GetFromServer(OrderContext context)
         {
             // Generate the CSR plugin
-            var csrPlugin = context.Target.CsrBytes == null ? context.Scope.Resolve<ICsrPlugin>() : null;
+            var csrPlugin = context.Target.CsrBytes == null ? context.ExecutionScope.Resolve<ICsrPlugin>() : null;
             if (csrPlugin != null)
             {
                 var (disabled, disabledReason) = csrPlugin.Disabled;
@@ -565,7 +571,7 @@ namespace PKISharp.WACS
                 for (var i = 0; i < steps; i++)
                 {
                     var installOptions = context.Renewal.InstallationPluginOptions[i];
-                    var installPlugin = (IInstallationPlugin)context.Scope.Resolve(
+                    var installPlugin = (IInstallationPlugin)context.ExecutionScope.Resolve(
                         installOptions.Instance,
                         new TypedParameter(installOptions.GetType(), installOptions));
 

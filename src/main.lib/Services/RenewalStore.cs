@@ -65,7 +65,7 @@ namespace PKISharp.WACS.Services
 
             // Set next date
             renewal.History.Add(result);
-            if (result.Success)
+            if (result.Success != true)
             {
                 var date = renewal.GetDueDate();
                 if (date != null)

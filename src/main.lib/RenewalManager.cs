@@ -354,10 +354,10 @@ namespace PKISharp.WACS
                     () => Task.FromResult(current.Where(x => !x.IsDue())),
                     "Filter by due status (remove due)"),
                 Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
-                    () => Task.FromResult(current.Where(x => !x.History.Last().Success)),
+                    () => Task.FromResult(current.Where(x => x.History.Last().Success != true)),
                     "Filter by error status (keep errors)"),
                 Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
-                    () => Task.FromResult(current.Where(x => x.History.Last().Success)),
+                    () => Task.FromResult(current.Where(x => x.History.Last().Success == true)),
                     "Filter by error status (remove errors)"),
                 Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
                     () => Task.FromResult(current),
@@ -504,7 +504,7 @@ namespace PKISharp.WACS
                 if (!result.Abort)
                 {
                     _renewalStore.Save(renewal, result);
-                    if (result.Success)
+                    if (result.Success == true)
                     {
                         await notification.NotifySuccess(renewal, _log.Lines);
                         return true;
@@ -577,7 +577,7 @@ namespace PKISharp.WACS
                 _input.Show("File", $"{renewal.Id}.renewal.json");
                 _input.Show("FriendlyName", string.IsNullOrEmpty(renewal.FriendlyName) ? $"[Auto] {renewal.LastFriendlyName}" : renewal.FriendlyName);
                 _input.Show(".pfx password", renewal.PfxPassword?.Value);
-                var expires = renewal.History.Where(x => x.Success).FirstOrDefault()?.ExpireDate;
+                var expires = renewal.History.Where(x => x.Success == true).FirstOrDefault()?.ExpireDate;
                 if (expires == null)
                 {
                     _input.Show("Expires", "Unknown");
@@ -595,7 +595,7 @@ namespace PKISharp.WACS
                 {
                     _input.Show("Renewal due", _input.FormatDate(dueDate.Value));
                 }
-                _input.Show("Renewed", $"{renewal.History.Where(x => x.Success).Count()} times");
+                _input.Show("Renewed", $"{renewal.History.Where(x => x.Success == true).Count()} times");
                 _input.CreateSpace();
                 renewal.TargetPluginOptions.Show(_input);
                 renewal.ValidationPluginOptions.Show(_input);
@@ -651,7 +651,7 @@ namespace PKISharp.WACS
             await _input.WritePagedList(
                  _renewalStore.Renewals.Select(x => Choice.Create<Renewal?>(x,
                     description: x.ToString(_input),
-                    color: x.History.Last().Success ?
+                    color: x.History.Last().Success == true ?
                             x.IsDue() ?
                                 ConsoleColor.DarkYellow :
                                 ConsoleColor.Green :

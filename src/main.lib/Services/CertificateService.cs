@@ -145,7 +145,7 @@ namespace PKISharp.WACS.Services
 
             var cacheVersion = MaxCacheKeyVersion;
             var fileCache = default(CertificateInfo);
-            while (fileCache == null && MaxCacheKeyVersion > 0)
+            while (fileCache == null && cacheVersion > 0)
             {
                 var fileName = GetPath(order.Renewal, $"-{CacheKey(order, cacheVersion)}{PfxPostFix}");
                 fileCache = cachedInfos.Where(x => x.CacheFile?.FullName == fileName).FirstOrDefault();

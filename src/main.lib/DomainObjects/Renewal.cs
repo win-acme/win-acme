@@ -89,7 +89,7 @@ namespace PKISharp.WACS.DomainObjects
 
         public DateTime? GetDueDate()
         {
-            var lastSuccess = History.LastOrDefault(x => x.Success);
+            var lastSuccess = History.LastOrDefault(x => x.Success == true);
             if (lastSuccess != null)
             {
                 var firstOccurance = History.First(x => x.ThumbprintSummary == lastSuccess.ThumbprintSummary);
@@ -167,8 +167,8 @@ namespace PKISharp.WACS.DomainObjects
         /// <returns></returns>
         public string ToString(IInputService? inputService)
         {
-            var success = History.FindAll(x => x.Success).Count;
-            var errors = History.AsEnumerable().Reverse().TakeWhile(x => !x.Success);
+            var success = History.FindAll(x => x.Success == true).Count;
+            var errors = History.AsEnumerable().Reverse().TakeWhile(x => x.Success == false);
             var ret = $"{LastFriendlyName} - renewed {success} time{(success != 1 ? "s" : "")}";
             var due = IsDue();
             var dueDate = GetDueDate();
