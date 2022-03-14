@@ -259,9 +259,16 @@ namespace PKISharp.WACS
             // Run validations for order that couldn't be retrieved from cache
             foreach (var order in orderContexts)
             {
-                if (order.NewCertificate == null)
+                if (!order.Result.Success)
                 {
-                    _log.Verbose("Ordering part {n}/{m} ({friendly})",
+                    _log.Verbose("Order {n}/{m} ({friendly}): validation error",
+                         orderContexts.IndexOf(order) + 1,
+                         orderContexts.Count,
+                         order.OrderName);
+                } 
+                else if (order.NewCertificate == null)
+                {
+                    _log.Verbose("Order {n}/{m} ({friendly}): processing...",
                          orderContexts.IndexOf(order) + 1,
                          orderContexts.Count,
                          order.OrderName);
@@ -270,7 +277,7 @@ namespace PKISharp.WACS
                 }
                 else
                 {
-                    _log.Verbose("Skip ordering part {n}/{m}: ({friendly}) due to available cache",
+                    _log.Verbose("Order {n}/{m} ({friendly}): handle from cache",
                          orderContexts.IndexOf(order) + 1,
                          orderContexts.Count,
                          order.OrderName);
