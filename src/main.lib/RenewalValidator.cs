@@ -46,7 +46,7 @@ namespace PKISharp.WACS
         /// <returns></returns>
         internal async Task AuthorizeOrders(IEnumerable<OrderContext> orderContexts, RunLevel runLevel)
         {
-            var contextTasks = new List<Task<AuthorisationContext>>();
+            var contextTasks = new List<Task<AuthorizationContext>>();
             foreach (var orderContext in orderContexts)
             {
                 if (orderContext.Order.Details == null)
@@ -59,7 +59,7 @@ namespace PKISharp.WACS
                 var authorizationTasks = authorizationUris.Select(async uri =>
                 {
                     var auth = await GetAuthorization(orderContext, uri);
-                    return new AuthorisationContext(orderContext, auth);
+                    return new AuthorizationContext(orderContext, auth);
                 });
                 contextTasks.AddRange(authorizationTasks);
             }
@@ -85,18 +85,18 @@ namespace PKISharp.WACS
         /// <param name="result"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        internal async Task RunAuthorizations(IEnumerable<AuthorisationContext> authorisationContexts, RunLevel runLevel)
+        internal async Task RunAuthorizations(IEnumerable<AuthorizationContext> authorisationContexts, RunLevel runLevel)
         {
             // Map authorisations to plugins that are going to execute them
-            var mapping = new Dictionary<ValidationPluginOptions, List<AuthorisationContext>>();
-            var add = (ValidationPluginOptions o, AuthorisationContext a) => {
+            var mapping = new Dictionary<ValidationPluginOptions, List<AuthorizationContext>>();
+            var add = (ValidationPluginOptions o, AuthorizationContext a) => {
                 if (mapping.ContainsKey(o))
                 {
                     mapping[o].Add(a);
                 }
                 else
                 {
-                    mapping.Add(o, new List<AuthorisationContext>() { a });
+                    mapping.Add(o, new List<AuthorizationContext>() { a });
                 }
             };
             foreach (var authorisationContext in authorisationContexts)
@@ -184,7 +184,7 @@ namespace PKISharp.WACS
         /// <param name="authorization"></param>
         /// <param name="options"></param>
         /// <returns></returns>
-        private bool IsValid(AuthorisationContext context, ValidationPluginOptions options)
+        private bool IsValid(AuthorizationContext context, ValidationPluginOptions options)
         {
             var (plugin, match) = GetInstances(context.Order.ExecutionScope, options);
             if (plugin == null || match == null)

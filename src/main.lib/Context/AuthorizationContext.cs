@@ -2,12 +2,12 @@
 
 namespace PKISharp.WACS.Context
 {
-    public class AuthorisationContext
+    public class AuthorizationContext
     {
         public Authorization? Authorization { get; }
         public OrderContext Order { get; }
 
-        public AuthorisationContext(OrderContext order, Authorization? authorization)
+        public AuthorizationContext(OrderContext order, Authorization? authorization)
         {
             Order = order;
             Authorization = authorization;

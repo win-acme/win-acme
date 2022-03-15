@@ -11,7 +11,7 @@ namespace PKISharp.WACS.Context
     public class ValidationContextParameters
     {
         public ValidationContextParameters(
-            AuthorisationContext authorization,
+            AuthorizationContext authorization,
             TargetPart targetPart,
             ValidationPluginOptions options)
         {
