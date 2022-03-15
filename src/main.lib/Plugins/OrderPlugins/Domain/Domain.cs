@@ -39,7 +39,7 @@ namespace PKISharp.WACS.Plugins.OrderPlugins
                     var sourceParts = target.Parts.Where(p => p.GetIdentifiers(true).Contains(host));
                     if (!ret.ContainsKey(domain))
                     {
-                        var filteredParts = sourceParts.Select(p => new TargetPart(new List<Identifier> { host }) { SiteId = p.SiteId }).ToList();
+                        var filteredParts = sourceParts.Select(p => new TargetPart(new List<Identifier> { host }) { SiteId = p.SiteId, SiteType = p.SiteType }).ToList();
                         var newTarget = new Target(
                             target.FriendlyName ?? "",
                             target.CommonName,
