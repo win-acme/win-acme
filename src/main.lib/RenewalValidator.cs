@@ -42,27 +42,39 @@ namespace PKISharp.WACS
         /// <summary>
         /// Authorize multiple orders at once
         /// </summary>
-        /// <param name="validationRequired"></param>
+        /// <param name="orderContexts"></param>
         /// <returns></returns>
-        internal async Task AuthorizeOrders(IEnumerable<OrderContext> validationRequired, RunLevel runLevel)
+        internal async Task AuthorizeOrders(IEnumerable<OrderContext> orderContexts, RunLevel runLevel)
         {
-            foreach (var val in validationRequired)
+            var contextTasks = new List<Task<AuthorisationContext>>();
+            foreach (var orderContext in orderContexts)
             {
-                if (val.Order.Details == null)
+                if (orderContext.Order.Details == null)
                 {
                     throw new InvalidOperationException();
                 }
-
+                
                 // Get authorization details
-                var authorizationUris = val.Order.Details.Payload.Authorizations.ToList();
-                var authorizationTasks = authorizationUris.Select(authorizationUri => GetAuthorization(val, authorizationUri));
-                var authorizations = (await Task.WhenAll(authorizationTasks)).OfType<acme.Authorization>().ToList();
-                if (val.Result.Success == false)
+                var authorizationUris = orderContext.Order.Details.Payload.Authorizations.ToList();
+                var authorizationTasks = authorizationUris.Select(async uri =>
                 {
-                    return;
-                }
-                await RunAuthorizations(authorizations.Select(x => new AuthorisationContext(val, x)).ToList(), runLevel);
+                    var auth = await GetAuthorization(orderContext, uri);
+                    return new AuthorisationContext(orderContext, auth);
+                });
+                contextTasks.AddRange(authorizationTasks);
             }
+            
+            // Run all GetAuthorisations in parallel
+            var authorizations = await Task.WhenAll(contextTasks);
+
+            // Stop if any of them has failed
+            if (orderContexts.Any(x => x.Result.Success == false))
+            {
+                return;
+            }
+
+            // Actually run them
+            await RunAuthorizations(authorizations, runLevel);
         }
 
         /// <summary>
@@ -73,7 +85,7 @@ namespace PKISharp.WACS
         /// <param name="result"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        internal async Task RunAuthorizations(IEnumerable<AuthorisationContext> authorisations, RunLevel runLevel)
+        internal async Task RunAuthorizations(IEnumerable<AuthorisationContext> authorisationContexts, RunLevel runLevel)
         {
             // Map authorisations to plugins that are going to execute them
             var mapping = new Dictionary<ValidationPluginOptions, List<AuthorisationContext>>();
@@ -87,41 +99,45 @@ namespace PKISharp.WACS
                     mapping.Add(o, new List<AuthorisationContext>() { a });
                 }
             };
-            foreach (var context in authorisations)
+            foreach (var authorisationContext in authorisationContexts)
             {
-                var nativeOptions = context.Order.Renewal.ValidationPluginOptions;
-                var globalOptions = _validationOptions.GetValidationOptions(Identifier.Parse(context.Authorization));
-                if (globalOptions != null && 
-                    IsValid(context, globalOptions))
+                if (authorisationContext.Authorization == null)
                 {
-                    add(globalOptions, context);
+                    throw new InvalidOperationException();
+                }
+                var nativeOptions = authorisationContext.Order.Renewal.ValidationPluginOptions;
+                var globalOptions = _validationOptions.GetValidationOptions(Identifier.Parse(authorisationContext.Authorization));
+                if (globalOptions != null && 
+                    IsValid(authorisationContext, globalOptions))
+                {
+                    add(globalOptions, authorisationContext);
                 }
                 else if ((globalOptions == null || nativeOptions.Plugin != globalOptions.Plugin) &&
-                    IsValid(context, nativeOptions))
+                    IsValid(authorisationContext, nativeOptions))
                 {
-                    add(nativeOptions, context);
+                    add(nativeOptions, authorisationContext);
                 }
                 else
                 {
-                    _log.Error("No plugin found that can challenge for {authorisation}", context.Authorization.Identifier.Value);
-                    context.Order.Result.AddErrorMessage($"No plugin found that can challenge for {context.Authorization.Identifier.Value}", context.Order.Order.Valid != true);
+                    _log.Error("No plugin found that can challenge for {authorisation}", authorisationContext.Authorization.Identifier.Value);
+                    authorisationContext.Order.Result.AddErrorMessage($"No plugin found that can challenge for {authorisationContext.Authorization.Identifier.Value}", authorisationContext.Order.Order.Valid != true);
                     return;
                 }
             }
 
-            // Execute them
+            // Execute them per group, where one group means one validation plugin
             foreach (var group in mapping)
             {
                 var validationScope = _scopeBuilder.Validation(group.Value.First().Order.ExecutionScope, group.Key);
                 var plugin = validationScope.Resolve<IValidationPlugin>();
-                var contexts = group.Value.Select(a =>
+                var contexts = group.Value.Select(context =>
                 {
-                    var targetPart = a.Order.Target.Parts.FirstOrDefault(p => p.Identifiers.Any(i => i == Identifier.Parse(a.Authorization.Identifier)));
+                    var targetPart = context.Order.Target.Parts.FirstOrDefault(p => p.Identifiers.Any(i => i == Identifier.Parse(context.Authorization!.Identifier)));
                     if (targetPart == null)
                     {
                         throw new InvalidOperationException("Authorisation found that doesn't match target");
                     }
-                    return new ValidationContextParameters(a, targetPart, group.Key);
+                    return new ValidationContextParameters(context, targetPart, group.Key);
                 }).ToList();
                 if (_settings.Validation.DisableMultiThreading != false || plugin.Parallelism == ParallelOperations.None)
                 {
