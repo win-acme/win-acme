@@ -14,10 +14,10 @@ namespace PKISharp.WACS.Services
     internal class RenewalStoreDisk : RenewalStore
     {
         public RenewalStoreDisk(
-            ISettingsService settings, ILogService log,
-            IInputService input, PasswordGenerator password,
+            ISettingsService settings, ILogService log, 
+            IInputService input, PasswordGenerator password, IDueDateService dueDate,
             IPluginService plugin, ICertificateService certificateService) :
-            base(settings, log, input, password, plugin, certificateService) { }
+            base(settings, log, input, password, plugin, dueDate, certificateService) { }
 
         /// <summary>
         /// Local cache to prevent superfluous reading and
@@ -124,7 +124,7 @@ namespace PKISharp.WACS.Services
                         _log.Error("Unable to read renewal {renewal}: {reason}", rj.Name, ex.Message);
                     }
                 }
-                _renewalsCache = list.OrderBy(x => x.GetDueDate()).ToList();
+                _renewalsCache = list.OrderBy(x => _dueDateService.DueDate(x)).ToList();
             }
             return _renewalsCache;
         }
@@ -185,7 +185,7 @@ namespace PKISharp.WACS.Services
                     renewal.Updated = false;
                 }
             });
-            _renewalsCache = list.Where(x => !x.Deleted).OrderBy(x => x.GetDueDate()).ToList();
+            _renewalsCache = list.Where(x => !x.Deleted).OrderBy(x => _dueDateService.DueDate(x)).ToList();
         }
 
         /// <summary>

@@ -87,39 +87,6 @@ namespace PKISharp.WACS.DomainObjects
         [JsonProperty(PropertyName = "PfxPasswordProtected")]
         public ProtectedString? PfxPassword { get; set; }
 
-        public DateTime? GetDueDate()
-        {
-            var lastSuccess = History.LastOrDefault(x => x.Success == true);
-            if (lastSuccess != null)
-            {
-                var firstOccurance = History.First(x => x.ThumbprintSummary == lastSuccess.ThumbprintSummary);
-                var defaultDueDate = firstOccurance.
-                    Date.
-                    AddDays(Settings.RenewalDays).
-                    ToLocalTime();
-                if (lastSuccess.ExpireDate == null)
-                {
-                    return defaultDueDate;
-                }
-                var minDays = Settings.RenewalMinimumValidDays ?? 7;
-                var expireBasedDueDate = lastSuccess.
-                    ExpireDate.
-                    Value.
-                    AddDays(minDays * -1).
-                    ToLocalTime();
-
-                return expireBasedDueDate < defaultDueDate ?
-                    expireBasedDueDate : 
-                    defaultDueDate;
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        public bool IsDue() => GetDueDate() == null || GetDueDate() < DateTime.Now;
-
         /// <summary>
         /// Store information about TargetPlugin
         /// </summary>
@@ -159,29 +126,32 @@ namespace PKISharp.WACS.DomainObjects
         /// Pretty format
         /// </summary>
         /// <returns></returns>
-        public override string ToString() => ToString(null);
+        public override string ToString() => ToString(null, null);
 
         /// <summary>
         /// Pretty format
         /// </summary>
         /// <returns></returns>
-        public string ToString(IInputService? inputService)
+        public string ToString(IDueDateService? dueDateService, IInputService? inputService)
         {
             var success = History.FindAll(x => x.Success == true).Count;
             var errors = History.AsEnumerable().Reverse().TakeWhile(x => x.Success == false);
             var ret = $"{LastFriendlyName} - renewed {success} time{(success != 1 ? "s" : "")}";
-            var due = IsDue();
-            var dueDate = GetDueDate();
-            if (inputService == null)
-            {
-                ret += due ? ", due now" : dueDate == null ? "" : $", due after {dueDate}";
-            }
-            else
-            {
-                ret += due ? ", due now" : dueDate == null ? "" : $", due after {inputService.FormatDate(dueDate.Value)}";
-            }
 
-            if (errors.Count() > 0)
+            if (dueDateService != null)
+            {
+                var due = dueDateService.IsDue(this);
+                var dueDate = dueDateService.DueDate(this);
+                if (inputService == null)
+                {
+                    ret += due ? ", due now" : dueDate == null ? "" : $", due after {dueDate}";
+                }
+                else
+                {
+                    ret += due ? ", due now" : dueDate == null ? "" : $", due after {inputService.FormatDate(dueDate.Value)}";
+                }
+            }
+            if (errors.Any())
             {
                 var messages = errors.SelectMany(x => x.ErrorMessages).Where(x => !string.IsNullOrEmpty(x));
                 ret += $", {errors.Count()} error{(errors.Count() != 1 ? "s" : "")} like \"{messages.FirstOrDefault() ?? "[null]"}\"";

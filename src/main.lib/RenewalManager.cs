@@ -26,12 +26,13 @@ namespace PKISharp.WACS
         private readonly RenewalExecutor _renewalExecutor;
         private readonly RenewalCreator _renewalCreator;
         private readonly ISettingsService _settings;
+        private readonly IDueDateService _dueDate;
 
         public RenewalManager(
             ArgumentsParser arguments, MainArguments args,
             IRenewalStore renewalStore, IContainer container,
             IInputService input, ILogService log,
-            ISettingsService settings,
+            ISettingsService settings, IDueDateService dueDate,
             IAutofacBuilder autofacBuilder, ExceptionHandler exceptionHandler,
             RenewalCreator renewalCreator,
             RenewalExecutor renewalExecutor)
@@ -47,6 +48,7 @@ namespace PKISharp.WACS
             _exceptionHandler = exceptionHandler;
             _renewalExecutor = renewalExecutor;
             _renewalCreator = renewalCreator;
+            _dueDate = dueDate;
         }
 
         /// <summary>
@@ -88,9 +90,9 @@ namespace PKISharp.WACS
                     displayHiddenLabel = displayHidden != 1 ? "renewals" : "renewal";
                 }
                 var choices = displayRenewals.Select(x => Choice.Create<Renewal?>(x,
-                                  description: x.ToString(_input),
+                                  description: x.ToString(_dueDate, _input),
                                   color: x.History.LastOrDefault()?.Success ?? false ?
-                                          x.IsDue() ?
+                                          _dueDate.IsDue(x) ?
                                               ConsoleColor.DarkYellow :
                                               ConsoleColor.Green :
                                           ConsoleColor.Red)).ToList();
@@ -325,10 +327,10 @@ namespace PKISharp.WACS
                     () => current.OrderByDescending(x => x.LastFriendlyName),
                     "Sort by friendly name (descending)"),
                 Choice.Create<Func<IEnumerable<Renewal>>>(
-                    () => current.OrderBy(x => x.GetDueDate()),
+                    () => current.OrderBy(x => _dueDate.DueDate(x)),
                     "Sort by due date"),
                 Choice.Create<Func<IEnumerable<Renewal>>>(
-                    () => current.OrderByDescending(x => x.GetDueDate()),
+                    () => current.OrderByDescending(x => _dueDate.DueDate(x)),
                     "Sort by due date (descending)")
             };
             var chosen = await _input.ChooseFromMenu("How would you like to sort the renewals list?", options);
@@ -348,10 +350,10 @@ namespace PKISharp.WACS
                     () => FilterRenewalsByFriendlyName(current),
                     "Filter by friendly name"),
                 Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
-                    () => Task.FromResult(current.Where(x => x.IsDue())),
+                    () => Task.FromResult(current.Where(x => _dueDate.IsDue(x))),
                     "Filter by due status (keep due)"),
                 Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
-                    () => Task.FromResult(current.Where(x => !x.IsDue())),
+                    () => Task.FromResult(current.Where(x => !_dueDate.IsDue(x))),
                     "Filter by due status (remove due)"),
                 Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
                     () => Task.FromResult(current.Where(x => x.History.Last().Success != true)),
@@ -586,7 +588,7 @@ namespace PKISharp.WACS
                 {
                     _input.Show("Expires", _input.FormatDate(expires.Value));
                 }
-                var dueDate = renewal.GetDueDate();
+                var dueDate = _dueDate.DueDate(renewal);
                 if (dueDate == null)
                 {
                     _input.Show("Renewal due", "Now");
@@ -650,9 +652,9 @@ namespace PKISharp.WACS
         {
             await _input.WritePagedList(
                  _renewalStore.Renewals.Select(x => Choice.Create<Renewal?>(x,
-                    description: x.ToString(_input),
+                    description: x.ToString(_dueDate, _input),
                     color: x.History.Last().Success == true ?
-                            x.IsDue() ?
+                            _dueDate.IsDue(x) ?
                                 ConsoleColor.DarkYellow :
                                 ConsoleColor.Green :
                             ConsoleColor.Red)));

@@ -18,6 +18,7 @@ namespace PKISharp.WACS.Services
         internal IPluginService _plugin;
         internal ICertificateService _certificateService;
         internal IInputService _inputService;
+        internal IDueDateService _dueDateService;
         internal PasswordGenerator _passwordGenerator;
 
         public RenewalStore(
@@ -26,6 +27,7 @@ namespace PKISharp.WACS.Services
             IInputService input,
             PasswordGenerator password,
             IPluginService plugin,
+            IDueDateService dueDateService,
             ICertificateService certificateService)
         {
             _log = log;
@@ -34,6 +36,7 @@ namespace PKISharp.WACS.Services
             _passwordGenerator = password;
             _settings = settings;
             _certificateService = certificateService;
+            _dueDateService = dueDateService;
             _log.Debug("Renewal period: {RenewalDays} days", _settings.ScheduledTask.RenewalDays);
         }
 
@@ -65,12 +68,12 @@ namespace PKISharp.WACS.Services
 
             // Set next date
             renewal.History.Add(result);
-            if (result.Success != true)
+            if (result.Success == true)
             {
-                var date = renewal.GetDueDate();
+                var date = _dueDateService.DueDate(renewal);
                 if (date != null)
                 {
-                    _log.Information(LogType.All, "Next renewal scheduled at {date}", _inputService.FormatDate(date.Value));
+                    _log.Information(LogType.All, "Next renewal due at {date}", _inputService.FormatDate(date.Value));
                 }
             }
             renewal.Updated = true;

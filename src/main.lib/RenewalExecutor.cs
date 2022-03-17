@@ -29,6 +29,7 @@ namespace PKISharp.WACS
         private readonly IInputService _input;
         private readonly ISettingsService _settings;
         private readonly ICertificateService _certificateService;
+        private readonly IDueDateService _dueDate;
         private readonly ExceptionHandler _exceptionHandler;
         private readonly RenewalValidator _validator;
 
@@ -39,6 +40,7 @@ namespace PKISharp.WACS
             IInputService input,
             ISettingsService settings,
             ICertificateService certificateService,
+            IDueDateService dueDate,
             RenewalValidator validator,
             ExceptionHandler exceptionHandler, 
             IContainer container)
@@ -52,6 +54,7 @@ namespace PKISharp.WACS
             _exceptionHandler = exceptionHandler;
             _certificateService = certificateService;
             _container = container;
+            _dueDate = dueDate;
         }
 
         /// <summary>
@@ -137,7 +140,7 @@ namespace PKISharp.WACS
             if (!runLevel.HasFlag(RunLevel.ForceRenew) && !renewal.Updated)
             {
                 _log.Verbose("Checking {renewal}", renewal.LastFriendlyName);
-                if (!renewal.IsDue())
+                if (!_dueDate.IsDue(renewal))
                 {
                     return false;
                 }
@@ -171,7 +174,7 @@ namespace PKISharp.WACS
                 if (!orders.Any(x => _certificateService.CachedInfo(x) == null))
                 {
                     // For sure now that we don't need to run so abort this execution
-                    _log.Information("Renewal {renewal} is due after {date}", renewal.LastFriendlyName, renewal.GetDueDate());
+                    _log.Information("Renewal {renewal} is due after {date}", renewal.LastFriendlyName, _dueDate.IsDue(renewal));
                     return new RenewResult() { Abort = true };
                 } 
                 else

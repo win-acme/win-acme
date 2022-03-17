@@ -17,20 +17,21 @@ namespace PKISharp.WACS.Host
 {
     internal partial class Wacs
     {
-        private readonly ILogService _log;
+        private readonly IAutofacBuilder _scopeBuilder;
+        private readonly IDueDateService _dueDateService;
         private readonly IInputService _input;
-        private readonly ArgumentsParser _arguments;
-        private readonly IRenewalStore _renewalStore;
-        private readonly ISettingsService _settings;
         private readonly ILifetimeScope _container;
+        private readonly ILogService _log;
+        private readonly ISettingsService _settings;
+        private readonly IRenewalStore _renewalStore;
+        private readonly IUserRoleService _userRoleService;
+        private readonly ArgumentsParser _arguments;
+        private readonly ExceptionHandler _exceptionHandler;
         private readonly MainArguments _args;
         private readonly RenewalManager _renewalManager;
         private readonly RenewalCreator _renewalCreator;
-        private readonly IAutofacBuilder _scopeBuilder;
-        private readonly ExceptionHandler _exceptionHandler;
-        private readonly IUserRoleService _userRoleService;
-        private readonly TaskSchedulerService _taskScheduler;
         private readonly SecretServiceManager _secretServiceManager;
+        private readonly TaskSchedulerService _taskScheduler;
 
         public Wacs(
             IContainer container, 
@@ -39,6 +40,7 @@ namespace PKISharp.WACS.Host
             ILogService logService,
             ISettingsService settingsService,
             IUserRoleService userRoleService,
+            IDueDateService dueDateService,
             TaskSchedulerService taskSchedulerService,
             SecretServiceManager secretServiceManager)
         {
@@ -51,6 +53,7 @@ namespace PKISharp.WACS.Host
             _userRoleService = userRoleService;
             _taskScheduler = taskSchedulerService;
             _secretServiceManager = secretServiceManager;
+            _dueDateService = dueDateService;
 
             if (!string.IsNullOrWhiteSpace(_settings.UI.TextEncoding))
             {
@@ -245,7 +248,7 @@ namespace PKISharp.WACS.Host
         private async Task MainMenu()
         {
             var total = _renewalStore.Renewals.Count();
-            var due = _renewalStore.Renewals.Count(x => x.IsDue());
+            var due = _renewalStore.Renewals.Count(x => _dueDateService.IsDue(x));
             var error = _renewalStore.Renewals.Count(x => !x.History.LastOrDefault()?.Success ?? false);
             var (allowIIS, allowIISReason) = _userRoleService.AllowIIS;
             var options = new List<Choice<Func<Task>>>

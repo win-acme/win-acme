@@ -1,5 +1,4 @@
-﻿using ACMESharp.Protocol;
-using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
 using System.Collections.Generic;
 using System.Threading.Tasks;
