@@ -46,7 +46,7 @@ namespace PKISharp.WACS
         /// <returns></returns>
         internal async Task AuthorizeOrders(IEnumerable<OrderContext> orderContexts, RunLevel runLevel)
         {
-            var contextTasks = new List<Task<AuthorizationContext>>();
+            var contextTasks = new List<Task<AuthorizationContext?>>();
             foreach (var orderContext in orderContexts)
             {
                 if (orderContext.Order.Details == null)
@@ -59,7 +59,11 @@ namespace PKISharp.WACS
                 var authorizationTasks = authorizationUris.Select(async uri =>
                 {
                     var auth = await GetAuthorization(orderContext, uri);
-                    return new AuthorizationContext(orderContext, auth);
+                    if (auth != null)
+                    {
+                        return new AuthorizationContext(orderContext, auth);
+                    }
+                    return null;
                 });
                 contextTasks.AddRange(authorizationTasks);
             }
@@ -74,7 +78,7 @@ namespace PKISharp.WACS
             }
 
             // Actually run them
-            await RunAuthorizations(authorizations, runLevel);
+            await RunAuthorizations(authorizations.OfType<AuthorizationContext>(), runLevel);
         }
 
         /// <summary>
