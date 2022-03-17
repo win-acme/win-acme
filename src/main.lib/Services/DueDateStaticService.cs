@@ -7,8 +7,18 @@ namespace PKISharp.WACS.Services
     internal class DueDateStaticService : IDueDateService
     {
         private readonly ISettingsService _settings;
+        private readonly ICertificateService _certificateService;
+        private readonly ILogService _logService;
 
-        public DueDateStaticService(ISettingsService settings) => _settings = settings;
+        public DueDateStaticService(
+            ISettingsService settings,
+            ICertificateService certificateService,
+            ILogService logService)
+        {
+            _settings = settings;
+            _certificateService = certificateService;
+            _logService = logService;
+        }
 
         public DateTime? DueDate(Renewal renewal)
         {
@@ -41,14 +51,20 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        public DateTime? DueDate(Renewal renewal, Order order) => DueDate(renewal);
-
         public bool IsDue(Renewal renewal)
         {
             var dueDate = DueDate(renewal);
             return dueDate == null || dueDate < DateTime.Now;
         }
 
-        public bool IsDue(Renewal renewal, Order order) => IsDue(renewal);
+        public bool IsDue(Order order)
+        {
+            if (_certificateService.CachedInfo(order) == null)
+            {
+                _logService.Information(LogType.All, "Renewal {renewal} running prematurely due to source change in order {order}", order.Renewal.LastFriendlyName, order.FriendlyNamePart);
+                return true;
+            }
+            return IsDue(order.Renewal);
+        }
     }
 }

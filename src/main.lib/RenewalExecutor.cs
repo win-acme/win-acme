@@ -165,22 +165,22 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private async Task<RenewResult> HandleOrders(ILifetimeScope execute, Renewal renewal, List<Order> orders, RunLevel runLevel)
         {
+            // Build context
+            var result = new RenewResult();
+            var orderContexts = orders.Select(order => new OrderContext(execute, order, runLevel, _dueDate.IsDue(order), result)).ToList();
+
             // Check if renewal is needed at the root level
             if (!ShouldRunRenewal(renewal, runLevel))
             {
                 // If renewal is not needed at the root level
                 // it may be needed at the order level due to
                 // change in target. Here we check this.
-                if (!orders.Any(x => _certificateService.CachedInfo(x) == null))
+                if (!orderContexts.Any(x => x.Due))
                 {
                     // For sure now that we don't need to run so abort this execution
-                    _log.Information("Renewal {renewal} is due after {date}", renewal.LastFriendlyName, _dueDate.IsDue(renewal));
+                    _log.Information("Renewal {renewal} is due after {date}", renewal.LastFriendlyName, _dueDate.DueDate(renewal));
                     return new RenewResult() { Abort = true };
                 } 
-                else
-                {
-                    _log.Information(LogType.All, "Renewal {renewal} running prematurely due to source change", renewal.LastFriendlyName);
-                }
             }
 
             // If at this point we haven't retured already with an error/abort
@@ -198,9 +198,19 @@ namespace PKISharp.WACS
                 await scriptClient.RunScript(preScript, $"{renewal.Id}");
             }
 
-            // Build context
-            var result = new RenewResult();
-            var orderContexts = orders.Select(order => new OrderContext(execute, order, runLevel, result)).ToList();
+            // Only process orders that are due. In the normal
+            // case when using static due dates this will be all 
+            // the orders. But when using the random due dates,
+            // this could only be a part of them.
+            orderContexts = orderContexts.Where(x => x.Due).ToList();
+            if (orders.Count > orderContexts.Count)
+            {
+                _log.Information("{n} of {m} orders are due to run", orderContexts.Count, orders.Count);
+            } 
+            else
+            {
+                _log.Debug("{n} of {m} orders are due to run", orderContexts.Count, orders.Count);
+            }
 
             // Get the certificates from cache or server
             await ExecuteOrders(orderContexts, runLevel);
