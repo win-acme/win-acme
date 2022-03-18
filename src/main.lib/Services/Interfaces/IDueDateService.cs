@@ -13,11 +13,20 @@ namespace PKISharp.WACS.Services
         public DateTime? DueDate(Renewal renewal);
 
         /// <summary>
-        /// Is the renewal currently due?
+        /// Is the renewal currently (over)due? 
+        /// This influences the GUI.
         /// </summary>
         /// <param name="renewal"></param>
         /// <returns></returns>
         public bool IsDue(Renewal renewal);
+
+        /// <summary>
+        /// Should the renewal run?
+        /// This influences the execution.
+        /// </summary>
+        /// <param name="renewal"></param>
+        /// <returns></returns>
+        public bool ShouldRun(Renewal renewal);
 
         /// <summary>
         /// Is the order currently due?
@@ -25,6 +34,6 @@ namespace PKISharp.WACS.Services
         /// <param name="renewal"></param>
         /// <param name="order"></param>
         /// <returns></returns>
-        public bool IsDue(Order order);
+        public bool ShouldRun(Order order);
     }
 }

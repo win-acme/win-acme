@@ -35,6 +35,7 @@
   },
   "ScheduledTask": {
     "RenewalDays": 55,
+    "RenewalDaysRange": 0,
     "RenewalMinimumValidDays": null,
     "RandomDelay": "04:00:00",
     "StartBoundary": "09:00:00",

@@ -195,7 +195,7 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterType<ScriptClient>().SingleInstance();
             _ = builder.RegisterType<LookupClientProvider>().SingleInstance();
             _ = builder.RegisterType<CertificateService>().As<ICertificateService>().SingleInstance();
-            _ = builder.RegisterType<DueDateStaticService>().As<IDueDateService>().SingleInstance();
+            _ = builder.RegisterType<DueDateRandomService>().As<IDueDateService>().SingleInstance();
             _ = builder.RegisterType<SecretServiceManager>().SingleInstance();
             _ = builder.RegisterType<JsonSecretService>().As<ISecretService>().SingleInstance();
             _ = builder.RegisterType<TaskSchedulerService>().SingleInstance();

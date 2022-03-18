@@ -182,14 +182,31 @@ namespace PKISharp.WACS.Configuration.Settings
         public int? RenewalMinimumValidDays { get; set; }
 
         /// <summary>
+        /// To spread service load, program run time and/or to minimize 
+        /// downtime, those managing a large amount of renewals may want
+        /// to spread them out of the course of multiple days/weeks. 
+        /// The number of days specified here will be substracted from
+        /// RenewalDays to create a range in which the renewal will
+        /// be processed. E.g. if RenewalDays is 66 and RenewalDaysRange
+        /// is 10, the renewal will be processed between 45 and 55 days
+        /// after issuing. 
+        /// 
+        /// If you use an order plugin to split your renewal into 
+        /// multiple orders, orders may run on different days.
+        /// </summary>
+        public int? RenewalDaysRange { get; set; }
+
+        /// <summary>
         /// Configures random time to wait for starting 
         /// the scheduled task.
         /// </summary>
         public TimeSpan RandomDelay { get; set; }
+
         /// <summary>
         /// Configures start time for the scheduled task.
         /// </summary>
         public TimeSpan StartBoundary { get; set; }
+
         /// <summary>
         /// Configures time after which the scheduled 
         /// task will be terminated if it hangs for

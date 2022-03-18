@@ -140,13 +140,9 @@ namespace PKISharp.WACS
             if (!runLevel.HasFlag(RunLevel.ForceRenew) && !renewal.Updated)
             {
                 _log.Verbose("Checking {renewal}", renewal.LastFriendlyName);
-                if (!_dueDate.IsDue(renewal))
+                if (!_dueDate.ShouldRun(renewal))
                 {
                     return false;
-                }
-                else if (!renewal.New)
-                {
-                    _log.Information(LogType.All, "Renewing {renewal}", renewal.LastFriendlyName);
                 }
             }
             else if (runLevel.HasFlag(RunLevel.ForceRenew))
@@ -154,6 +150,22 @@ namespace PKISharp.WACS
                 _log.Information(LogType.All, "Force renewing {renewal}", renewal.LastFriendlyName);
             }
             return true;
+        }
+
+        /// <summary>
+        /// Return abort result
+        /// </summary>
+        /// <param name="renewal"></param>
+        /// <returns></returns>
+        internal RenewResult Abort(Renewal renewal)
+        {
+            var dueDate = _dueDate.DueDate(renewal);
+            if (dueDate != null)
+            {
+                // For sure now that we don't need to run so abort this execution
+                _log.Information("Renewal {renewal} is due after {date}", renewal.LastFriendlyName, _input.FormatDate(dueDate.Value));
+            }
+            return new RenewResult() { Abort = true };
         }
 
         /// <summary>
@@ -167,7 +179,7 @@ namespace PKISharp.WACS
         {
             // Build context
             var result = new RenewResult();
-            var orderContexts = orders.Select(order => new OrderContext(execute, order, runLevel, _dueDate.IsDue(order), result)).ToList();
+            var orderContexts = orders.Select(order => new OrderContext(execute, order, runLevel, _dueDate.ShouldRun(order), result)).ToList();
 
             // Check if renewal is needed at the root level
             if (!ShouldRunRenewal(renewal, runLevel))
@@ -175,12 +187,36 @@ namespace PKISharp.WACS
                 // If renewal is not needed at the root level
                 // it may be needed at the order level due to
                 // change in target. Here we check this.
-                if (!orderContexts.Any(x => x.Due))
+                if (!orderContexts.Any(x => x.ShouldRun))
                 {
-                    // For sure now that we don't need to run so abort this execution
-                    _log.Information("Renewal {renewal} is due after {date}", renewal.LastFriendlyName, _dueDate.DueDate(renewal));
-                    return new RenewResult() { Abort = true };
+                    return Abort(renewal);
                 } 
+            }
+
+            // Only process orders that are due. In the normal
+            // case when using static due dates this will be all 
+            // the orders. But when using the random due dates,
+            // this could only be a part of them.
+            if (!runLevel.HasFlag(RunLevel.IgnoreCache) && !renewal.New)
+            {
+                orderContexts = orderContexts.Where(x => x.ShouldRun).ToList();
+            }
+            if (!orderContexts.Any())
+            {
+                _log.Debug("None of the orders are currently due to run", orderContexts.Count, orders.Count);
+                return Abort(renewal);
+            } 
+            if (!renewal.New)
+            {
+                _log.Information(LogType.All, "Renewing {renewal}", renewal.LastFriendlyName);
+            }
+            if (orders.Count > orderContexts.Count)
+            {
+                _log.Information("{n} of {m} orders are due to run", orderContexts.Count, orders.Count);
+            }
+            else
+            {
+                _log.Debug("{n} of {m} orders are due to run", orderContexts.Count, orders.Count);
             }
 
             // If at this point we haven't retured already with an error/abort
@@ -198,19 +234,6 @@ namespace PKISharp.WACS
                 await scriptClient.RunScript(preScript, $"{renewal.Id}");
             }
 
-            // Only process orders that are due. In the normal
-            // case when using static due dates this will be all 
-            // the orders. But when using the random due dates,
-            // this could only be a part of them.
-            orderContexts = orderContexts.Where(x => x.Due).ToList();
-            if (orders.Count > orderContexts.Count)
-            {
-                _log.Information("{n} of {m} orders are due to run", orderContexts.Count, orders.Count);
-            } 
-            else
-            {
-                _log.Debug("{n} of {m} orders are due to run", orderContexts.Count, orders.Count);
-            }
 
             // Get the certificates from cache or server
             await ExecuteOrders(orderContexts, runLevel);

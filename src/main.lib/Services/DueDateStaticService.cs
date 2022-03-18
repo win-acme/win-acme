@@ -6,9 +6,10 @@ namespace PKISharp.WACS.Services
 {
     internal class DueDateStaticService : IDueDateService
     {
-        private readonly ISettingsService _settings;
-        private readonly ICertificateService _certificateService;
-        private readonly ILogService _logService;
+        protected const int DefaultMinValidDays = 7;
+        protected readonly ISettingsService _settings;
+        protected readonly ICertificateService _certificateService;
+        protected readonly ILogService _logService;
 
         public DueDateStaticService(
             ISettingsService settings,
@@ -34,7 +35,7 @@ namespace PKISharp.WACS.Services
                 {
                     return defaultDueDate;
                 }
-                var minDays = _settings.ScheduledTask.RenewalMinimumValidDays ?? 7;
+                var minDays = _settings.ScheduledTask.RenewalMinimumValidDays ?? DefaultMinValidDays;
                 var expireBasedDueDate = lastSuccess.
                     ExpireDate.
                     Value.
@@ -51,20 +52,27 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        public bool IsDue(Renewal renewal)
+        public virtual bool ShouldRun(Renewal renewal) => IsDue(renewal);
+
+        public virtual bool IsDue(Renewal renewal)
         {
             var dueDate = DueDate(renewal);
             return dueDate == null || dueDate < DateTime.Now;
         }
 
-        public bool IsDue(Order order)
+        public virtual bool ShouldRun(Order order)
         {
+            var renewalDue = IsDue(order.Renewal);
+            if (renewalDue)
+            {
+                return true;
+            }
             if (_certificateService.CachedInfo(order) == null)
             {
                 _logService.Information(LogType.All, "Renewal {renewal} running prematurely due to source change in order {order}", order.Renewal.LastFriendlyName, order.FriendlyNamePart);
                 return true;
             }
-            return IsDue(order.Renewal);
+            return false;
         }
     }
 }

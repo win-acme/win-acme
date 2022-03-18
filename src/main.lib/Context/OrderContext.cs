@@ -17,14 +17,14 @@ namespace PKISharp.WACS.Context
         public CertificateInfo? PreviousCertificate { get; set; }
         public CertificateInfo? NewCertificate { get; set; }
         public string OrderName => Order.FriendlyNamePart ?? "Main";
-        public bool Due { get; set; }
-        public OrderContext(ILifetimeScope executionScope, Order order, RunLevel runLevel, bool due, RenewResult result)
+        public bool ShouldRun { get; set; }
+        public OrderContext(ILifetimeScope executionScope, Order order, RunLevel runLevel, bool shouldRun, RenewResult result)
         {
             ExecutionScope = executionScope;
             Order = order;
             RunLevel = runLevel;
             Result = result;
-            Due = due;
+            ShouldRun = shouldRun;
         }
     }
 }
