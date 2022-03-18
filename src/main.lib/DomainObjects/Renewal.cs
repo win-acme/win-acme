@@ -19,14 +19,13 @@ namespace PKISharp.WACS.DomainObjects
     [DebuggerDisplay("Renewal {Id}: {FriendlyName}")]
     public class Renewal
     {
-        internal static Renewal Create(string? id, ScheduledTaskSettings settings, PasswordGenerator generator)
+        internal static Renewal Create(string? id, PasswordGenerator generator)
         {
             var ret = new Renewal
             {
                 New = true,
                 Id = string.IsNullOrEmpty(id) ? ShortGuid.NewGuid().ToString() : id,
-                PfxPassword = new ProtectedString(generator.Generate()),
-                Settings = settings
+                PfxPassword = new ProtectedString(generator.Generate())
             };
             return ret;
         }
@@ -48,14 +47,6 @@ namespace PKISharp.WACS.DomainObjects
         /// </summary>
         [JsonIgnore]
         internal bool Deleted { get; set; }
-
-        /// <summary>
-        /// Current renewal days setting, stored 
-        /// here as a shortcut because its not 
-        /// otherwise available to the instance
-        /// </summary>
-        [JsonIgnore]
-        internal ScheduledTaskSettings Settings { get; set; } = new ScheduledTaskSettings();
 
         /// <summary>
         /// Is this renewal new
