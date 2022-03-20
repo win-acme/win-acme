@@ -494,7 +494,7 @@ namespace PKISharp.WACS
         private async Task<CertificateInfo?> GetFromServer(OrderContext context)
         {
             // Generate the CSR plugin
-            var csrPlugin = context.Target.CsrBytes == null ? context.ExecutionScope.Resolve<ICsrPlugin>() : null;
+            var csrPlugin = context.Target.UserCsrBytes == null ? context.ExecutionScope.Resolve<ICsrPlugin>() : null;
             if (csrPlugin != null)
             {
                 var (disabled, disabledReason) = csrPlugin.Disabled;

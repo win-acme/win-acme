@@ -143,7 +143,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 defaultParam2: defaultParam2,
                 defaultType: typeof(SelfHostingOptionsFactory),
                 nullResult: new NullValidationFactory(),
-                unusable: (c) => (!c.CanValidate(target), "Unsuppored target. Most likely this is because you have included a wildcard identifier (*.example.com), which requires DNS validation."),
+                unusable: (c) => (!c.CanValidate(target), "Unsupported source. Most likely this is because you have included a wildcard identifier (*.example.com), which requires DNS validation."),
                 className: "validation");
         }
 
@@ -159,6 +159,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 defaultParam1: _arguments.Order,
                 defaultType: typeof(SingleOptionsFactory),
                 nullResult: new NullOrderOptionsFactory(),
+                unusable: (c) => (!c.CanProcess(target), "Unsupported source. Most likely this is because you are using a custom CSR which doesn't allow the order to be split."),
                 className: "order");
         }
 

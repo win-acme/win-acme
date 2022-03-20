@@ -175,7 +175,7 @@ namespace PKISharp.WACS
             }
 
             // Choose the CSR plugin
-            if (initialTarget.CsrBytes != null)
+            if (initialTarget.UserCsrBytes != null)
             {
                 tempRenewal.CsrPluginOptions = null;
             }
