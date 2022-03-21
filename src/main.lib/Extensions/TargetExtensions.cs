@@ -1,7 +1,6 @@
 ﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 
 namespace PKISharp.WACS.Extensions

@@ -82,10 +82,6 @@ namespace PKISharp.WACS
             {
                 return new RenewResult($"Source plugin did not generate source");
             }
-            if (!target.IsValid(_log)) 
-            { 
-                return new RenewResult($"Source plugin generated invalid source");
-            }
 
             // Create one or more orders based on the target
             var orderPlugin = es.Resolve<IOrderPlugin>();
@@ -95,6 +91,13 @@ namespace PKISharp.WACS
                 return new RenewResult("Order plugin failed to create order(s)");
             }
             _log.Verbose("Source converted into {n} order(s)", orders.Count());
+            foreach (var order in orders)
+            {
+                if (!order.Target.IsValid(_log))
+                {
+                    return new RenewResult($"Source plugin generated invalid source");
+                }
+            }
 
             /// Start to check the renewal
             var result = await HandleOrders(es, renewal, orders.ToList(), runLevel);
@@ -197,7 +200,7 @@ namespace PKISharp.WACS
             // case when using static due dates this will be all 
             // the orders. But when using the random due dates,
             // this could only be a part of them.
-            if (!runLevel.HasFlag(RunLevel.IgnoreCache) && !renewal.New)
+            if (!runLevel.HasFlag(RunLevel.IgnoreCache) && !renewal.New && !renewal.Updated)
             {
                 orderContexts = orderContexts.Where(x => x.ShouldRun).ToList();
             }
@@ -214,10 +217,6 @@ namespace PKISharp.WACS
             {
                 _log.Information("{n} of {m} orders are due to run", orderContexts.Count, orders.Count);
             }
-            else
-            {
-                _log.Debug("{n} of {m} orders are due to run", orderContexts.Count, orders.Count);
-            }
 
             // If at this point we haven't retured already with an error/abort
             // actually execute the renewal
@@ -233,7 +232,6 @@ namespace PKISharp.WACS
             {
                 await scriptClient.RunScript(preScript, $"{renewal.Id}");
             }
-
 
             // Get the certificates from cache or server
             await ExecuteOrders(orderContexts, runLevel);
@@ -292,8 +290,8 @@ namespace PKISharp.WACS
             var validationRequired = fromServer.Where(x => x.Order.Details != null && (x.Order.Valid == false || alwaysTryValidation));
             await _validator.AuthorizeOrders(validationRequired, runLevel);
 
-            // Run validations for order that couldn't be retrieved from cache
-            foreach (var order in orderContexts)
+            // Download all the orders in parallel
+            await Task.WhenAll(orderContexts.Select(async order =>
             {
                 if (order.Result.Success == false)
                 {
@@ -301,14 +299,13 @@ namespace PKISharp.WACS
                          orderContexts.IndexOf(order) + 1,
                          orderContexts.Count,
                          order.OrderName);
-                } 
+                }
                 else if (order.NewCertificate == null)
                 {
                     _log.Verbose("Order {n}/{m} ({friendly}): processing...",
                          orderContexts.IndexOf(order) + 1,
                          orderContexts.Count,
                          order.OrderName);
-                    // Get the certificate from the server
                     order.NewCertificate = await GetFromServer(order);
                 }
                 else
@@ -318,7 +315,7 @@ namespace PKISharp.WACS
                          orderContexts.Count,
                          order.OrderName);
                 }
-            }
+            }));
         }
 
         /// <summary>
@@ -379,7 +376,7 @@ namespace PKISharp.WACS
                 // Early escape for testing validation only
                 if (context.Renewal.New &&
                     context.RunLevel.HasFlag(RunLevel.Test) &&
-                    !await _input.PromptYesNo($"[--test] Do you want to install the certificate for order {context.OrderName}?", true))
+                    !await _input.PromptYesNo($"[--test] Store and install the certificate for order {context.OrderName}?", true))
                 {
                     context.Result.Abort = true;
                     return;
@@ -611,7 +608,7 @@ namespace PKISharp.WACS
                         installOptions.Instance,
                         new TypedParameter(installOptions.GetType(), installOptions));
 
-                    if (!(installPlugin is INull))
+                    if (installPlugin is not NullInstallation)
                     {
                         if (steps > 1)
                         {
