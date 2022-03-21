@@ -132,6 +132,7 @@ namespace PKISharp.WACS
             // Execute them per group, where one group means one validation plugin
             foreach (var group in mapping)
             {
+                var multipleOrders = group.Value.Any(x => x.Order != group.Value.First().Order);
                 var validationScope = _scopeBuilder.Validation(group.Value.First().Order.ExecutionScope, group.Key);
                 var plugin = validationScope.Resolve<IValidationPlugin>();
                 var contexts = group.Value.Select(context =>
@@ -145,7 +146,7 @@ namespace PKISharp.WACS
                 }).ToList();
                 if (_settings.Validation.DisableMultiThreading != false || plugin.Parallelism == ParallelOperations.None)
                 {
-                    await SerialValidation(contexts);
+                    await SerialValidation(contexts, breakOnError: !multipleOrders);
                 }
                 else
                 {
@@ -306,7 +307,7 @@ namespace PKISharp.WACS
         /// <param name="context"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        private async Task SerialValidation(IList<ValidationContextParameters> parameters)
+        private async Task SerialValidation(IList<ValidationContextParameters> parameters, bool breakOnError)
         {
             foreach (var parameter in parameters)
             {
@@ -315,7 +316,7 @@ namespace PKISharp.WACS
                     parameters.Count);
                 using var validationScope = _scopeBuilder.Validation(parameter.OrderContext.ExecutionScope, parameter.Options);
                 await ParallelValidation(ParallelOperations.None, validationScope, new List<ValidationContextParameters> { parameter }, parameter.OrderContext.RunLevel);
-                if (parameter.OrderContext.Result.Success == false)
+                if (breakOnError && parameter.OrderContext.Result.Success == false)
                 {
                     break;
                 }
