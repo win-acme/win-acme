@@ -16,7 +16,10 @@ namespace PKISharp.WACS.Services
             var previous = _certificateService.CachedInfo(order);
             if (previous == null)
             {
-                _logService.Information(LogType.All, "Renewal {renewal} running prematurely due to source change in order {order}", order.Renewal.LastFriendlyName, order.FriendlyNamePart);
+                if (!order.Renewal.New)
+                {
+                    _logService.Information(LogType.All, "Renewal {renewal} running prematurely due to source change in order {order}", order.Renewal.LastFriendlyName, order.FriendlyNamePart);
+                }
                 return true;
             }
 
