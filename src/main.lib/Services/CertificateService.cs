@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using ACMESharp;
+using Newtonsoft.Json;
 using Org.BouncyCastle.Crypto;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.DomainObjects;
@@ -332,7 +333,15 @@ namespace PKISharp.WACS.Services
 
             // Download the certificate from the server
             _log.Information("Downloading certificate {friendlyName}", order.FriendlyNameIntermediate);
-            var certInfo = await _client.GetCertificate(order.Details);
+            var certInfo = default(AcmeCertificate);
+            try
+            {
+                certInfo = await _client.GetCertificate(order.Details);
+            } 
+            catch (Exception ex)
+            {
+                throw new Exception($"Unable to get certificate", ex);
+            }
             if (certInfo == null || certInfo.Certificate == null)
             {
                 throw new Exception($"Unable to get certificate");

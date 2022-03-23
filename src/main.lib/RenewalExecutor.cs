@@ -503,7 +503,15 @@ namespace PKISharp.WACS
             }
 
             // Request the certificate
-            return await _certificateService.RequestCertificate(csrPlugin, context.RunLevel, context.Order);
+            try
+            {
+                return await _certificateService.RequestCertificate(csrPlugin, context.RunLevel, context.Order);
+            } 
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error requesting certificate {friendlyName}", context.Order.FriendlyNameIntermediate);
+                return null;
+            }
         }
 
         /// <summary>
