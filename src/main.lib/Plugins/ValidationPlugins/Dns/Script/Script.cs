@@ -111,7 +111,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             // thus it's functionally equivalant.
             if (escapeToken && (ret.Contains(" {Token} ") || ret.EndsWith(" {Token}")))
             {
-                ret.Replace("{Token}", "\"{Token}\"");
+                ret = ret.Replace("{Token}", "\"{Token}\"");
             }
             ret = ret.Replace("{Token}", token);
             return ret;
