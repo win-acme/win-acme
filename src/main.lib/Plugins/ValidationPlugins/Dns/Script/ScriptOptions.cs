@@ -15,5 +15,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public string? CreateScriptArguments { get; set; }
         public string? DeleteScript { get; set; }
         public string? DeleteScriptArguments { get; set; }
+        public int? Parallelism { get; set; }
     }
 }
