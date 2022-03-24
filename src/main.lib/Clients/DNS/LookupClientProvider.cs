@@ -138,8 +138,8 @@ namespace PKISharp.WACS.Clients.DNS
                 // Example: _acme-challenge.sub.example.co.uk
                 domainName = domainName.TrimEnd('.');
 
-                // First domain we should try to ask is the tld (e.g. co.uk)
-                var rootDomain = _domainParser.GetTLD(domainName);
+                // First domain we should try to ask is the tld (e.g. example.co.uk)
+                var rootDomain = _domainParser.GetRegisterableDomain(domainName);
                 var testZone = rootDomain;
                 var client = GetDefaultClient(round);
 
