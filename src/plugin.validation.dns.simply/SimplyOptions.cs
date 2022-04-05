@@ -16,7 +16,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
 
         public string? Account { get; set; }
 
-        [JsonProperty(propertyName: "SecretSafe")]
         public ProtectedString? ApiKey { get; set; }
     }
 }
