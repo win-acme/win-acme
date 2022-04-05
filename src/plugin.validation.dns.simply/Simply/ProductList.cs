@@ -3,9 +3,9 @@ using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Simply
 {
-    public class DnsRecordList
+    public class ProductList
     {
-        [JsonPropertyName("records")]
-        public List<DnsRecord> Records { get; set; }
+        [JsonPropertyName("products")]
+        public List<Product> Products { get; set; }
     }
 }

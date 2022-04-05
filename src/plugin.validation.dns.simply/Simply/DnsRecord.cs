@@ -2,7 +2,7 @@
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Simply
 {
-    internal class DnsRecord
+    public class DnsRecord
     {
         [JsonPropertyName("record_id")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
@@ -22,7 +22,5 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Simply
 
         [JsonPropertyName("ttl")]
         public int Ttl { get; set; }
-
-        public string GetHostname(string objectId) => Name + "." + objectId;
     }
 }
