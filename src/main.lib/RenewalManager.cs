@@ -563,7 +563,7 @@ namespace PKISharp.WACS
             var chosen = await _input.ChooseFromMenu("Which step do you want to edit?", options);
             if (chosen != Steps.None)
             {
-                await _renewalCreator.SetupRenewal(RunLevel.Interactive | RunLevel.Advanced, chosen, renewal);
+                await _renewalCreator.SetupRenewal(RunLevel.Interactive | RunLevel.Advanced | RunLevel.ForceRenew, chosen, renewal);
             }
         }
 
