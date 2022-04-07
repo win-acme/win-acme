@@ -8,7 +8,6 @@ namespace PKISharp.WACS.Configuration.Arguments
         public override bool Active(string[] args)
         {
             return
-                !string.IsNullOrEmpty(FriendlyName) ||
                 !string.IsNullOrEmpty(Installation) ||
                 !string.IsNullOrEmpty(Store) ||
                 !string.IsNullOrEmpty(Order) ||
