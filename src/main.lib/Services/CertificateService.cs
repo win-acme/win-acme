@@ -549,12 +549,42 @@ namespace PKISharp.WACS.Services
         }
 
         /// <summary>
+        /// Cache loading the .pfx file from disk and parsing the certificate
+        /// this is a serious performance win in cases were lots of certificates
+        /// are create from a single order.
+        /// </summary>
+        /// <param name="pfxFileInfo"></param>
+        /// <param name="password"></param>
+        /// <returns></returns>
+        private CertificateInfo FromCache(FileInfo pfxFileInfo, string? password)
+        {
+            var key = pfxFileInfo.FullName;
+            if (_infoCache.ContainsKey(key))
+            {
+                if (_infoCache[key].CacheFile?.LastWriteTime == pfxFileInfo.LastWriteTime)
+                {
+                    return _infoCache[key];
+                }
+                else
+                {
+                    _infoCache[key] = GetInfo(pfxFileInfo, password);
+                }
+            }
+            else
+            {
+                _infoCache.Add(key, GetInfo(pfxFileInfo, password));
+            }
+            return _infoCache[key];
+        }
+        private readonly Dictionary<string, CertificateInfo> _infoCache = new();
+
+        /// <summary>
         /// Load certificate information from cache
         /// </summary>
         /// <param name="pfxFileInfo"></param>
         /// <param name="password"></param>
         /// <returns></returns>
-        private static CertificateInfo FromCache(FileInfo pfxFileInfo, string? password)
+        private static CertificateInfo GetInfo(FileInfo pfxFileInfo, string? password)
         {
             var rawCollection = ReadAsCollection(pfxFileInfo, password);
             var list = rawCollection.OfType<X509Certificate2>().ToList();
