@@ -1,5 +1,4 @@
-﻿using ACMESharp.Protocol;
-using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
@@ -15,7 +14,6 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         public CertificateInfo? CachedInfo(Order order) => null;
         public IEnumerable<CertificateInfo> CachedInfos(Renewal renewal) => new List<CertificateInfo>();
         public IEnumerable<CertificateInfo> CachedInfos(Renewal renewal, Order order) => new List<CertificateInfo>();
-        public string CacheKey(Order order) => "";
         public void Delete(Renewal renewal) {}
 
         public void Encrypt() { }
