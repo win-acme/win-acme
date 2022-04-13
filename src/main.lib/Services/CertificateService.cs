@@ -585,7 +585,7 @@ namespace PKISharp.WACS.Services
         /// <param name="pfxFileInfo"></param>
         /// <param name="password"></param>
         /// <returns></returns>
-        private CertificateInfo GetInfo(FileInfo pfxFileInfo, string? password)
+        private static CertificateInfo GetInfo(FileInfo pfxFileInfo, string? password)
         {
             var rawCollection = ReadAsCollection(pfxFileInfo, password);
             var list = rawCollection.OfType<X509Certificate2>().ToList();
@@ -625,10 +625,8 @@ namespace PKISharp.WACS.Services
         /// <param name="source"></param>
         /// <param name="password"></param>
         /// <returns></returns>
-        private X509Certificate2Collection ReadAsCollection(FileInfo source, string? password)
+        private static X509Certificate2Collection ReadAsCollection(FileInfo source, string? password)
         {
-            var timer = new Stopwatch();
-            timer.Start();
             // Flags used for the X509Certificate2 as 
             var externalFlags =
                 X509KeyStorageFlags.MachineKeySet |
@@ -636,8 +634,6 @@ namespace PKISharp.WACS.Services
                 X509KeyStorageFlags.Exportable;
             var ret = new X509Certificate2Collection();
             ret.Import(source.FullName, password, externalFlags);
-            _log.Verbose("Needed {ms}ms to parse {file}", timer.ElapsedMilliseconds, source.FullName);
-            timer.Stop();
             return ret;
         }
 
