@@ -86,8 +86,12 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 WithIP(bindingIp).
                 WithPort(bindingPort).
                 WithStore(storeName).
-                WithFlags(inputFlags).
-                WithThumbprint(newCert);
+                WithFlags(inputFlags);
+
+            if (!inputFlags.HasFlag(SSLFlags.CentralSsl))
+            {
+                bindingOptions = bindingOptions.WithThumbprint(newCert);
+            }
 
             var httpOnlySite = iis.GetSite(httpOnlyId);
             iis.UpdateHttpSite(new[] { new DnsIdentifier(testHost) }, bindingOptions, oldCert1);
@@ -97,7 +101,10 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
             Assert.AreEqual(testHost, newBinding.Host);
             Assert.AreEqual("https", newBinding.Protocol);
             Assert.AreEqual(storeName, newBinding.CertificateStoreName);
-            Assert.AreEqual(newCert, newBinding.CertificateHash);
+            if (!expectedFlags.HasFlag(SSLFlags.CentralSsl) && iisVersion > 7)
+            {
+                Assert.AreEqual(newCert, newBinding.CertificateHash);
+            }
             Assert.AreEqual(bindingPort, newBinding.Port);
             Assert.AreEqual(bindingIp, newBinding.IP);
             Assert.AreEqual(expectedFlags, newBinding.SSLFlags);
