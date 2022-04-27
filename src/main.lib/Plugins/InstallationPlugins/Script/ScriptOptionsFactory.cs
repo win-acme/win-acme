@@ -21,7 +21,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         private ArgumentResult<string?> Script => _arguments.
             GetString<ScriptArguments>(x => x.Script).
             Validate(x => Task.FromResult(x.ValidFile(_log)), "invalid path").
-            Validate(x => Task.FromResult(x!.EndsWith(".ps1") || x!.EndsWith(".exe") || x!.EndsWith(".bat")), "invalid extension").
+            Validate(x => Task.FromResult(x!.EndsWith(".ps1") || x!.EndsWith(".exe") || x!.EndsWith(".bat") || x!.EndsWith(".cmd")), "invalid extension").
             Required();
 
         private ArgumentResult<string?> Parameters => _arguments.

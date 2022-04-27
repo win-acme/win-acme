@@ -139,9 +139,11 @@ namespace PKISharp.WACS.Services
         /// <returns></returns>
         public CertificateInfo? CachedInfo(Order order)
         {
+            _log.Debug("Reading certificate cache");
             var cachedInfos = CachedInfos(order.Renewal);
             if (!cachedInfos.Any())
             {
+                _log.Debug("No cache files found for renewal");
                 return null;
             }
 
@@ -150,7 +152,12 @@ namespace PKISharp.WACS.Services
             while (fileCache == null && cacheVersion > 0)
             {
                 var fileName = GetPath(order.Renewal, $"-{CacheKey(order, cacheVersion)}{PfxPostFix}");
+                fileName = GetPath(order.Renewal, $"-{CacheKey(order, 1)}{PfxPostFix}");
                 fileCache = cachedInfos.Where(x => x.CacheFile?.FullName == fileName).FirstOrDefault();
+                if (fileCache == null)
+                {
+                    _log.Verbose("v{current} cache key not found, fall back to v{next}", cacheVersion, cacheVersion - 1);
+                }
                 cacheVersion--;
             } 
             if (fileCache == null)
@@ -162,7 +169,15 @@ namespace PKISharp.WACS.Services
                     if (Match(candidate, order.Target))
                     {
                         fileCache = candidate;
+                    } 
+                    else
+                    {
+                        _log.Verbose("v0 cache found but not matched");
                     }
+                } 
+                else
+                {
+                    _log.Debug("No cached certificate could be found");
                 }
             }
             return fileCache;
