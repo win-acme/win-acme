@@ -170,6 +170,7 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterInstance(settingsService).As<ISettingsService>();
             _ = builder.RegisterInstance(pluginService).As<IPluginService>();
             _ = builder.RegisterType<UserRoleService>().As<IUserRoleService>().SingleInstance();
+            _ = builder.RegisterType<ValidationOptionsService>().As<IValidationOptionsService>().SingleInstance();
             _ = builder.RegisterType<InputService>().As<IInputService>().SingleInstance();
             _ = builder.RegisterType<ProxyService>().As<IProxyService>().SingleInstance();
             _ = builder.RegisterType<UpdateClient>().SingleInstance();
@@ -194,6 +195,7 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterType<ScriptClient>().SingleInstance();
             _ = builder.RegisterType<LookupClientProvider>().SingleInstance();
             _ = builder.RegisterType<CertificateService>().As<ICertificateService>().SingleInstance();
+            _ = builder.RegisterType<DueDateRandomService>().As<IDueDateService>().SingleInstance();
             _ = builder.RegisterType<SecretServiceManager>().SingleInstance();
             _ = builder.RegisterType<JsonSecretService>().As<ISecretService>().SingleInstance();
             _ = builder.RegisterType<TaskSchedulerService>().SingleInstance();

@@ -1,5 +1,6 @@
 ﻿using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System.Threading.Tasks;
 
@@ -26,6 +27,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _scriptClient = client;
             _domainParseService = domainParseService;
         }
+
+        public override ParallelOperations Parallelism => (ParallelOperations)(_options.Parallelism ?? 0);
 
         public override async Task<bool> CreateRecord(DnsValidationRecord record)
         {
@@ -111,7 +114,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             // thus it's functionally equivalant.
             if (escapeToken && (ret.Contains(" {Token} ") || ret.EndsWith(" {Token}")))
             {
-                ret.Replace("{Token}", "\"{Token}\"");
+                ret = ret.Replace("{Token}", "\"{Token}\"");
             }
             ret = ret.Replace("{Token}", token);
             return ret;

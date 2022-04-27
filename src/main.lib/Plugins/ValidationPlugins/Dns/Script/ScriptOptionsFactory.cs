@@ -12,6 +12,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     internal class ScriptOptionsFactory : ValidationPluginOptionsFactory<Script, ScriptOptions>
     {
         private readonly ILogService _log;
+        private readonly ISettingsService _settings;
         private readonly ArgumentsInputService _arguments;
 
         public override bool Match(string name)
@@ -23,9 +24,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             };
         }
 
-        public ScriptOptionsFactory(ILogService log, ArgumentsInputService arguments) : base(Constants.Dns01ChallengeType)
+        public ScriptOptionsFactory(
+            ILogService log, 
+            ISettingsService settings,
+            ArgumentsInputService arguments) : base(Constants.Dns01ChallengeType)
         {
             _log = log;
+            _settings = settings;   
             _arguments = arguments;
         }
 
@@ -48,6 +53,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         private ArgumentResult<string?> DeleteScriptArguments => _arguments.
             GetString<ScriptArguments>(x => x.DnsDeleteScriptArguments).            
             WithDefault(Script.DefaultDeleteArguments).
+            DefaultAsNull();
+
+        private ArgumentResult<int?> Parallelism => _arguments.
+            GetInt<ScriptArguments>(x => x.DnsScriptParallelism).
+            WithDefault(0).
+            Validate(x => Task.FromResult(x!.Value is >= 0 and <= 3), "invalid value").
             DefaultAsNull();
 
         public override async Task<ScriptOptions?> Aquire(Target target, IInputService input, RunLevel runLevel)
@@ -82,6 +93,20 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             {
                 ret.DeleteScriptArguments = await DeleteScriptArguments.Interactive(input).GetValue();
             }
+
+            if (_settings.Validation.DisableMultiThreading != false)
+            {
+                ret.Parallelism = await input.ChooseFromMenu(
+                    "Enable parallel execution?",
+                    new List<Choice<int?>>()
+                    {
+                        Choice.Create<int?>(null, "Run everything one by one (default)"),
+                        Choice.Create<int?>(1, "Allow multiple instances of the script to run at the same time"),
+                        Choice.Create<int?>(2, "Allow multiple records to be validated at the same time"),
+                        Choice.Create<int?>(3, "Allow both modes of parallelism")
+                    });
+            }
+
             return ret;
         }
 
@@ -94,6 +119,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             ProcessScripts(ret, commonScript, createScript, deleteScript);
             ret.DeleteScriptArguments = await DeleteScriptArguments.GetValue();
             ret.CreateScriptArguments = await CreateScriptArguments.GetValue();
+            ret.Parallelism = await Parallelism.GetValue();
             return ret;
         }
 

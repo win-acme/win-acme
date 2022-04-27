@@ -16,8 +16,9 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         public MockRenewalStore(
           ISettingsService settings, ILogService log,
           IInputService input, PasswordGenerator password,
+          IDueDateService dueDate,
           IPluginService plugin, ICertificateService certificateService) :
-          base(settings, log, input, password, plugin, certificateService)
+          base(settings, log, input, password, plugin, dueDate, certificateService)
         {
             _renewalsCache = new List<Renewal>
             {

@@ -13,7 +13,7 @@ namespace PKISharp.WACS.DomainObjects
         [JsonIgnore]
         public bool Abort { get; set; }
 
-        public bool Success { get; set; }
+        public bool? Success { get; set; }
 
         public string? ErrorMessage { set => AddErrorMessage(value); }
 
@@ -50,11 +50,7 @@ namespace PKISharp.WACS.DomainObjects
         public string ThumbprintSummary => string.Join("|", Thumbprints.OrderBy(x => x));
         public List<string> ErrorMessages { get; set; } = new List<string>();
 
-        public RenewResult() 
-        {
-            Success = true;
-            Date = DateTime.UtcNow;
-        }
+        public RenewResult() => Date = DateTime.UtcNow;
 
         public RenewResult(string error) : this()
         {
@@ -63,7 +59,7 @@ namespace PKISharp.WACS.DomainObjects
         }
 
         public override string ToString() => $"{Date} " +
-            $"- {(Success ? "Success" : "Error")}" +
+            $"- {(Success == true ? "Success" : "Error")}" +
             $"{(Thumbprints.Count == 0 ? "" : $" - Thumbprint {string.Join(", ", Thumbprints)}")}" +
             $"{(ErrorMessages.Count == 0 ? "" : $" - {string.Join(", ", ErrorMessages.Select(x => x.ReplaceNewLines()))}")}";
     }

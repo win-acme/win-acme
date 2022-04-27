@@ -4,8 +4,10 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using bc = Org.BouncyCastle;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
@@ -53,8 +55,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         public async Task Save(CertificateInfo input)
         {
-            _log.Information("Copying certificate to the pfx folder");
             var dest = PathForIdentifier(input.CommonName.Value);
+            _log.Information("Copying certificate to the pfx folder {dest}", dest);
             try
             {
                 var collection = new X509Certificate2Collection
@@ -62,7 +64,24 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     input.Certificate
                 };
                 collection.AddRange(input.Chain.ToArray());
-                await File.WriteAllBytesAsync(dest, collection.Export(X509ContentType.Pfx, _password)!);
+                var ms = new MemoryStream(collection.Export(X509ContentType.Pfx)!);
+                var bcPfx = new bc.Pkcs.Pkcs12Store(ms, Array.Empty<char>());
+                var aliases = bcPfx.Aliases.OfType<string>().ToList();
+                var key = default(bc.Pkcs.AsymmetricKeyEntry);
+                var chain = default(bc.Pkcs.X509CertificateEntry[]);
+                foreach (var alias in aliases)
+                {
+                    if (bcPfx.IsKeyEntry(alias))
+                    {
+                        key = bcPfx.GetKey(alias);
+                        chain = bcPfx.GetCertificateChain(alias);
+                        break;
+                    }
+                }
+                using var fs = new FileInfo(dest).OpenWrite();
+                bcPfx = new bc.Pkcs.Pkcs12Store();
+                bcPfx.SetKeyEntry(input.CommonName.Value, key, chain);
+                bcPfx.Save(fs, _password?.ToCharArray(), new bc.Security.SecureRandom());
             }
             catch (Exception ex)
             {

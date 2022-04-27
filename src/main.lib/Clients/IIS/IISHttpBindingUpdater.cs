@@ -39,7 +39,8 @@ namespace PKISharp.WACS.Clients.IIS
         public int AddOrUpdateBindings(
             IEnumerable<Identifier> identifiers,
             BindingOptions bindingOptions,
-            byte[]? oldThumbprint)
+            IEnumerable<Identifier>? allIdentifiers, 
+            byte[]? oldCertificate)
         {
             // Helper function to get updated sites
             IEnumerable<(TSite site, TBinding binding)> GetAllSites() => _client.Sites.
@@ -51,15 +52,25 @@ namespace PKISharp.WACS.Clients.IIS
                 var allBindings = GetAllSites();
                 var bindingsUpdated = 0;
                 var found = allBindings.
-                    Where(sb => StructuralComparisons.StructuralEqualityComparer.Equals(sb.binding.CertificateHash, bindingOptions.Thumbprint)).
+                    Where(sb =>
+                    {
+                        if (sb.binding.CertificateHash == null)
+                        {
+                            return sb.binding.SSLFlags.HasFlag(SSLFlags.CentralSsl);
+                        } 
+                        else
+                        {
+                            return StructuralComparisons.StructuralEqualityComparer.Equals(sb.binding.CertificateHash, bindingOptions.Thumbprint);
+                        }
+                    }).
                     Select(sb => sb.binding).
                     OfType<IIISBinding>().
                     ToList();
 
-                if (oldThumbprint != null)
+                if (oldCertificate != null)
                 {
                     var siteBindings = allBindings.
-                        Where(sb => StructuralComparisons.StructuralEqualityComparer.Equals(sb.binding.CertificateHash, oldThumbprint)).
+                        Where(sb => StructuralComparisons.StructuralEqualityComparer.Equals(sb.binding.CertificateHash, oldCertificate)).
                         ToList();
 
                     // Update all bindings created using the previous certificate
@@ -69,7 +80,7 @@ namespace PKISharp.WACS.Clients.IIS
                         {
                             // Only update if the old binding actually matches
                             // with the new certificate
-                            if (identifiers.Any(i => Fits(binding, i, SSLFlags.None) > 0))
+                            if ((allIdentifiers ?? identifiers).Any(i => Fits(binding, i, SSLFlags.None) > 0))
                             {
                                 found.Add(binding);
                                 if (UpdateBinding(site, binding, bindingOptions))

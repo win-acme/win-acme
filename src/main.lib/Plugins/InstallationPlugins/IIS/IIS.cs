@@ -76,8 +76,6 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 } 
             }
 
-            var oldThumb = oldCertificate?.Certificate?.GetCertHash();
-            var newThumb = newCertificate.Certificate.GetCertHash();
             foreach (var part in source.Parts)
             {
                 var httpIdentifiers = part.Identifiers.OfType<DnsIdentifier>();
@@ -88,7 +86,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                     ? bindingOptions.
                         WithFlags(SSLFlags.CentralSsl)
                     : bindingOptions.
-                        WithThumbprint(newThumb).
+                        WithThumbprint(newCertificate.Certificate.GetCertHash()).
                         WithStore(newCertificate.StoreInfo[typeof(CertificateStore)].Path);
 
                 switch (part.SiteType)
@@ -107,7 +105,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                                 WithPort(_options.NewBindingPort.Value);
                         }
                         bindingOptions = bindingOptions.WithSiteId(part.SiteId!.Value);
-                        _iisClient.UpdateHttpSite(httpIdentifiers, bindingOptions, oldThumb);
+                        _iisClient.UpdateHttpSite(httpIdentifiers, bindingOptions, oldCertificate?.Certificate.GetCertHash(), newCertificate.SanNames);
                         if (certificateStore != null) 
                         {
                             _iisClient.UpdateFtpSite(0, newCertificate, oldCertificate);
@@ -116,7 +114,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                     case IISSiteType.Ftp:
                         // Update FTP site
                         _iisClient.UpdateFtpSite(part.SiteId!.Value, newCertificate, oldCertificate);
-                        _iisClient.UpdateHttpSite(httpIdentifiers, bindingOptions, oldThumb);
+                        _iisClient.UpdateHttpSite(httpIdentifiers, bindingOptions, oldCertificate?.Certificate.GetCertHash(), newCertificate.SanNames);
                         break;
                     default:
                         _log.Error("Unknown site type");

@@ -9,6 +9,15 @@ namespace PKISharp.WACS.DomainObjects
     [DebuggerDisplay("TargetPart: ({Identifiers.Count} host(s) - IIS: {IIS})")]
     public class TargetPart
     {
+        public TargetPart(Identifier identifier)
+        {
+            if (identifier == null)
+            {
+                throw new ArgumentNullException(nameof(identifier));
+            }
+            Identifiers = new List<Identifier>() { identifier };
+        }
+
         public TargetPart(IEnumerable<Identifier>? identifiers)
         {
             if (identifiers == null)
@@ -17,6 +26,7 @@ namespace PKISharp.WACS.DomainObjects
             }
             Identifiers = identifiers.ToList();
         }
+
         /// <summary>
         /// Optional IIS site ID that sourced these hostnames
         /// </summary>

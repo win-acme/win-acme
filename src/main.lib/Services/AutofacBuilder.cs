@@ -95,7 +95,7 @@ namespace PKISharp.WACS.Services
             var resolver = runLevel.HasFlag(RunLevel.Interactive)
                 ? main.Resolve<InteractiveResolver>(new TypedParameter(typeof(RunLevel), runLevel))
                 : (IResolver)main.Resolve<UnattendedResolver>();
-            return main.BeginLifetimeScope(builder =>
+            return main.BeginLifetimeScope("config", builder =>
             {
                 builder.Register(c => runLevel).As<RunLevel>();
                 builder.Register(c => resolver).As<IResolver>();
@@ -116,7 +116,7 @@ namespace PKISharp.WACS.Services
             var resolver = runLevel.HasFlag(RunLevel.Interactive)
                 ? main.Resolve<InteractiveResolver>(new TypedParameter(typeof(RunLevel), runLevel))
                 : (IResolver)main.Resolve<UnattendedResolver>();
-            return main.BeginLifetimeScope(builder =>
+            return main.BeginLifetimeScope("target", builder =>
             {
                 builder.RegisterInstance(renewal.TargetPluginOptions).As(renewal.TargetPluginOptions.GetType());
                 builder.RegisterInstance(renewal.TargetPluginOptions).As(renewal.TargetPluginOptions.GetType().BaseType!);
@@ -136,7 +136,7 @@ namespace PKISharp.WACS.Services
         /// <returns></returns>
         public ILifetimeScope Execution(ILifetimeScope target, Renewal renewal, RunLevel runLevel)
         {
-            return target.BeginLifetimeScope(builder =>
+            return target.BeginLifetimeScope("execution", builder =>
             {
                 builder.Register(c => runLevel).As<RunLevel>();
                 builder.RegisterType<FindPrivateKey>().SingleInstance();
@@ -155,21 +155,7 @@ namespace PKISharp.WACS.Services
                     {
                         builder.RegisterInstance(renewal.OrderPluginOptions).As(renewal.OrderPluginOptions.GetType());
                     }
-                    builder.RegisterInstance(renewal.ValidationPluginOptions).As(renewal.ValidationPluginOptions.GetType());
                     builder.RegisterInstance(renewal.TargetPluginOptions).As(renewal.TargetPluginOptions.GetType());
-
-                    // Find factory based on options
-                    builder.Register(x =>
-                    {
-                        var plugin = x.Resolve<IPluginService>();
-                        var match = plugin.GetFactories<IValidationPluginOptionsFactory>(target).First(vp => vp.OptionsType.PluginId() == renewal.ValidationPluginOptions.Plugin);
-                        if (match == null)
-                        {
-                            return new NullValidationFactory();
-                        }
-                        return match;
-                    }).As<IValidationPluginOptionsFactory>().SingleInstance();
-
                     if (renewal.CsrPluginOptions != null)
                     {
                         builder.RegisterType(renewal.CsrPluginOptions.Instance).As<ICsrPlugin>().SingleInstance();
@@ -182,7 +168,6 @@ namespace PKISharp.WACS.Services
                     {
                         builder.RegisterType<Plugins.OrderPlugins.Single>().As<IOrderPlugin>().SingleInstance();
                     }
-                    builder.RegisterType(renewal.ValidationPluginOptions.Instance).As<IValidationPlugin>().SingleInstance();
                     builder.RegisterType(renewal.TargetPluginOptions.Instance).As<ITargetPlugin>().SingleInstance();
                     foreach (var i in renewal.InstallationPluginOptions)
                     {
@@ -206,9 +191,10 @@ namespace PKISharp.WACS.Services
         /// <returns></returns>
         public ILifetimeScope Validation(ILifetimeScope execution, ValidationPluginOptions options)
         {
-            return execution.BeginLifetimeScope(builder =>
+            return execution.BeginLifetimeScope("validation", builder =>
             {
                 builder.RegisterType<HttpValidationParameters>();
+                builder.RegisterInstance(options).As(options.GetType());
                 builder.RegisterType(options.Instance).
                     As<IValidationPlugin>().
                     SingleInstance();

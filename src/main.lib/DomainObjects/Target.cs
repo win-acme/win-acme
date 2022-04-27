@@ -13,6 +13,13 @@ namespace PKISharp.WACS.DomainObjects
         public Target(string friendlyName, string commonName, IEnumerable<TargetPart> parts) : 
             this(friendlyName, new DnsIdentifier(commonName), parts) { }
 
+        public Target(Identifier identifier)
+        {
+            FriendlyName = identifier.Value;
+            CommonName = identifier;
+            Parts = new[] { new TargetPart(identifier) };
+        }
+
         public Target(string friendlyName, Identifier commonName, IEnumerable<TargetPart> parts)
         {
             FriendlyName = friendlyName;

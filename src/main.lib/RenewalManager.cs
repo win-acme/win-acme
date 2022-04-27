@@ -26,12 +26,13 @@ namespace PKISharp.WACS
         private readonly RenewalExecutor _renewalExecutor;
         private readonly RenewalCreator _renewalCreator;
         private readonly ISettingsService _settings;
+        private readonly IDueDateService _dueDate;
 
         public RenewalManager(
             ArgumentsParser arguments, MainArguments args,
             IRenewalStore renewalStore, IContainer container,
             IInputService input, ILogService log,
-            ISettingsService settings,
+            ISettingsService settings, IDueDateService dueDate,
             IAutofacBuilder autofacBuilder, ExceptionHandler exceptionHandler,
             RenewalCreator renewalCreator,
             RenewalExecutor renewalExecutor)
@@ -47,6 +48,7 @@ namespace PKISharp.WACS
             _exceptionHandler = exceptionHandler;
             _renewalExecutor = renewalExecutor;
             _renewalCreator = renewalCreator;
+            _dueDate = dueDate;
         }
 
         /// <summary>
@@ -88,9 +90,9 @@ namespace PKISharp.WACS
                     displayHiddenLabel = displayHidden != 1 ? "renewals" : "renewal";
                 }
                 var choices = displayRenewals.Select(x => Choice.Create<Renewal?>(x,
-                                  description: x.ToString(_input),
+                                  description: x.ToString(_dueDate, _input),
                                   color: x.History.LastOrDefault()?.Success ?? false ?
-                                          x.IsDue() ?
+                                          _dueDate.IsDue(x) ?
                                               ConsoleColor.DarkYellow :
                                               ConsoleColor.Green :
                                           ConsoleColor.Red)).ToList();
@@ -325,10 +327,10 @@ namespace PKISharp.WACS
                     () => current.OrderByDescending(x => x.LastFriendlyName),
                     "Sort by friendly name (descending)"),
                 Choice.Create<Func<IEnumerable<Renewal>>>(
-                    () => current.OrderBy(x => x.GetDueDate()),
+                    () => current.OrderBy(x => _dueDate.DueDate(x)),
                     "Sort by due date"),
                 Choice.Create<Func<IEnumerable<Renewal>>>(
-                    () => current.OrderByDescending(x => x.GetDueDate()),
+                    () => current.OrderByDescending(x => _dueDate.DueDate(x)),
                     "Sort by due date (descending)")
             };
             var chosen = await _input.ChooseFromMenu("How would you like to sort the renewals list?", options);
@@ -348,16 +350,16 @@ namespace PKISharp.WACS
                     () => FilterRenewalsByFriendlyName(current),
                     "Filter by friendly name"),
                 Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
-                    () => Task.FromResult(current.Where(x => x.IsDue())),
+                    () => Task.FromResult(current.Where(x => _dueDate.IsDue(x))),
                     "Filter by due status (keep due)"),
                 Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
-                    () => Task.FromResult(current.Where(x => !x.IsDue())),
+                    () => Task.FromResult(current.Where(x => !_dueDate.IsDue(x))),
                     "Filter by due status (remove due)"),
                 Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
-                    () => Task.FromResult(current.Where(x => !x.History.Last().Success)),
+                    () => Task.FromResult(current.Where(x => x.History.Last().Success != true)),
                     "Filter by error status (keep errors)"),
                 Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
-                    () => Task.FromResult(current.Where(x => x.History.Last().Success)),
+                    () => Task.FromResult(current.Where(x => x.History.Last().Success == true)),
                     "Filter by error status (remove errors)"),
                 Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
                     () => Task.FromResult(current),
@@ -504,7 +506,7 @@ namespace PKISharp.WACS
                 if (!result.Abort)
                 {
                     _renewalStore.Save(renewal, result);
-                    if (result.Success)
+                    if (result.Success == true)
                     {
                         await notification.NotifySuccess(renewal, _log.Lines);
                         return true;
@@ -561,7 +563,7 @@ namespace PKISharp.WACS
             var chosen = await _input.ChooseFromMenu("Which step do you want to edit?", options);
             if (chosen != Steps.None)
             {
-                await _renewalCreator.SetupRenewal(RunLevel.Interactive | RunLevel.Advanced, chosen, renewal);
+                await _renewalCreator.SetupRenewal(RunLevel.Interactive | RunLevel.Advanced | RunLevel.ForceRenew, chosen, renewal);
             }
         }
 
@@ -577,7 +579,7 @@ namespace PKISharp.WACS
                 _input.Show("File", $"{renewal.Id}.renewal.json");
                 _input.Show("FriendlyName", string.IsNullOrEmpty(renewal.FriendlyName) ? $"[Auto] {renewal.LastFriendlyName}" : renewal.FriendlyName);
                 _input.Show(".pfx password", renewal.PfxPassword?.Value);
-                var expires = renewal.History.Where(x => x.Success).FirstOrDefault()?.ExpireDate;
+                var expires = renewal.History.Where(x => x.Success == true).FirstOrDefault()?.ExpireDate;
                 if (expires == null)
                 {
                     _input.Show("Expires", "Unknown");
@@ -586,7 +588,7 @@ namespace PKISharp.WACS
                 {
                     _input.Show("Expires", _input.FormatDate(expires.Value));
                 }
-                var dueDate = renewal.GetDueDate();
+                var dueDate = _dueDate.DueDate(renewal);
                 if (dueDate == null)
                 {
                     _input.Show("Renewal due", "Now");
@@ -595,7 +597,7 @@ namespace PKISharp.WACS
                 {
                     _input.Show("Renewal due", _input.FormatDate(dueDate.Value));
                 }
-                _input.Show("Renewed", $"{renewal.History.Where(x => x.Success).Count()} times");
+                _input.Show("Renewed", $"{renewal.History.Where(x => x.Success == true).Count()} times");
                 _input.CreateSpace();
                 renewal.TargetPluginOptions.Show(_input);
                 renewal.ValidationPluginOptions.Show(_input);
@@ -650,9 +652,9 @@ namespace PKISharp.WACS
         {
             await _input.WritePagedList(
                  _renewalStore.Renewals.Select(x => Choice.Create<Renewal?>(x,
-                    description: x.ToString(_input),
-                    color: x.History.Last().Success ?
-                            x.IsDue() ?
+                    description: x.ToString(_dueDate, _input),
+                    color: x.History.Last().Success == true ?
+                            _dueDate.IsDue(x) ?
                                 ConsoleColor.DarkYellow :
                                 ConsoleColor.Green :
                             ConsoleColor.Red)));

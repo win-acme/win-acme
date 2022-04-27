@@ -90,8 +90,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             {
                 Refresh(context.TargetPart);
             }
-            WriteAuthorizationFile(challenge);
-            WriteWebConfig(challenge);
+            await WriteAuthorizationFile(challenge);
+            await WriteWebConfig(challenge);
             _log.Information("Answer should now be browsable at {answerUri}", challenge.HttpResourceUrl);
             if (_runLevel.HasFlag(RunLevel.Test) && _renewal.New)
             {
@@ -156,14 +156,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// </summary>
         /// <param name="answerPath">where the answerFile should be located</param>
         /// <param name="fileContents">the contents of the file to write</param>
-        private void WriteAuthorizationFile(Http01ChallengeValidationDetails challenge)
+        private async Task WriteAuthorizationFile(Http01ChallengeValidationDetails challenge)
         {
             if (_path == null)
             {
                 throw new InvalidOperationException("No path specified for HttpValidation");
             }
             var path = CombinePath(_path, challenge.HttpResourcePath);
-            WriteFile(path, challenge.HttpResourceValue);
+            await WriteFile(path, challenge.HttpResourceValue);
             if (!_filesWritten.Contains(path))
             {
                 _filesWritten.Add(path);
@@ -176,7 +176,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="target"></param>
         /// <param name="answerPath"></param>
         /// <param name="token"></param>
-        private void WriteWebConfig(Http01ChallengeValidationDetails challenge)
+        private async Task WriteWebConfig(Http01ChallengeValidationDetails challenge)
         {
             if (_path == null)
             {
@@ -190,11 +190,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                     var destination = CombinePath(_path, challenge.HttpResourcePath.Replace(partialPath, "web.config"));
                     if (!_filesWritten.Contains(destination))
                     {
-                        var content = GetWebConfig().Value;
+                        var content = HttpValidation<TOptions, TPlugin>.GetWebConfig().Value;
                         if (content != null)
                         {
                             _log.Debug("Writing web.config");
-                            WriteFile(destination, content);
+                            await WriteFile(destination, content);
                             _filesWritten.Add(destination);
                         }
 
@@ -211,7 +211,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// Get the template for the web.config
         /// </summary>
         /// <returns></returns>
-        private Lazy<string?> GetWebConfig() => new Lazy<string?>(() => {
+        private static Lazy<string?> GetWebConfig() => new Lazy<string?>(() => {
             try
             {
                 return File.ReadAllText(HttpValidation<TOptions, TPlugin>.TemplateWebConfig);

@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using ACMESharp;
+using Newtonsoft.Json;
 using Org.BouncyCastle.Crypto;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.DomainObjects;
@@ -7,6 +8,7 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
@@ -145,17 +147,21 @@ namespace PKISharp.WACS.Services
                 return null;
             }
 
-            var fileName = GetPath(order.Renewal, $"-{CacheKey(order, 2)}{PfxPostFix}");
-            var fileCache = cachedInfos.Where(x => x.CacheFile?.FullName == fileName).FirstOrDefault();
-            if (fileCache == null)
+            var cacheVersion = MaxCacheKeyVersion;
+            var fileCache = default(CertificateInfo);
+            while (fileCache == null && cacheVersion > 0)
             {
-                _log.Verbose("v2 cache key not found, fall back to v1");
+                var fileName = GetPath(order.Renewal, $"-{CacheKey(order, cacheVersion)}{PfxPostFix}");
                 fileName = GetPath(order.Renewal, $"-{CacheKey(order, 1)}{PfxPostFix}");
                 fileCache = cachedInfos.Where(x => x.CacheFile?.FullName == fileName).FirstOrDefault();
-            }
+                if (fileCache == null)
+                {
+                    _log.Verbose("v{current} cache key not found, fall back to v{next}", cacheVersion, cacheVersion - 1);
+                }
+                cacheVersion--;
+            } 
             if (fileCache == null)
             {
-                _log.Verbose("v1 cache key not found, fall back to v0");
                 var legacyFile = GetPath(order.Renewal, PfxPostFixLegacy);
                 var candidate = cachedInfos.Where(x => x.CacheFile?.FullName == legacyFile).FirstOrDefault();
                 if (candidate != null)
@@ -177,6 +183,12 @@ namespace PKISharp.WACS.Services
             return fileCache;
         }
 
+        /// <summary>
+        /// All cached files available for a specific renewal, which
+        /// may include multiple orders
+        /// </summary>
+        /// <param name="renewal"></param>
+        /// <returns></returns>
         public IEnumerable<CertificateInfo> CachedInfos(Renewal renewal)
         {
             var ret = new List<CertificateInfo>();
@@ -201,6 +213,18 @@ namespace PKISharp.WACS.Services
         }
 
         /// <summary>
+        /// All cached certificates for a specific order within a specific renewal
+        /// </summary>
+        /// <param name="renewal"></param>
+        /// <param name="order"></param>
+        /// <returns></returns>
+        public IEnumerable<CertificateInfo> CachedInfos(Renewal renewal, Order order)
+        {
+            var ret = CachedInfos(renewal);
+            return ret.Where(r => r.CacheFile!.Name.Contains($"-{order.CacheKeyPart ?? "main"}-")).ToList();
+        }
+
+        /// <summary>
         /// See if the information in the certificate matches
         /// that of the specified target. Used to figure out whether
         /// or not the cache is out of date.
@@ -216,6 +240,13 @@ namespace PKISharp.WACS.Services
         }
 
         /// <summary>
+        /// Latest version of the cache key generation algorithm
+        /// to make sure that future releases don't invalidate 
+        /// the entire cache on upgrades.
+        /// </summary>
+        public const int MaxCacheKeyVersion = 3;
+
+        /// <summary>
         /// To check if it's possible to reuse a previously retrieved
         /// certificate we create a hash of its key properties and included
         /// that hash in the file name. If we get the same hash on a 
@@ -224,7 +255,7 @@ namespace PKISharp.WACS.Services
         /// <param name="renewal"></param>
         /// <param name="target"></param>
         /// <returns></returns>
-        private static string CacheKey(Order order, int version = 2)
+        private static string CacheKey(Order order, int version = MaxCacheKeyVersion)
         {
             // Check if we can reuse a cached certificate and/or order
             // based on currently active set of parameters and shape of 
@@ -241,7 +272,12 @@ namespace PKISharp.WACS.Services
             _ = order.Renewal.CsrPluginOptions != null ?
                 cacheKeyBuilder.Append(JsonConvert.SerializeObject(order.Renewal.CsrPluginOptions)) :
                 cacheKeyBuilder.Append('-');
-            return cacheKeyBuilder.ToString().SHA1();
+            var key = cacheKeyBuilder.ToString().SHA1();
+            if (version > 2)
+            {
+                key = $"{order.CacheKeyPart ?? "main"}-{key}";
+            }
+            return key;
         }
 
         /// <summary>
@@ -313,7 +349,15 @@ namespace PKISharp.WACS.Services
 
             // Download the certificate from the server
             _log.Information("Downloading certificate {friendlyName}", order.FriendlyNameIntermediate);
-            var certInfo = await _client.GetCertificate(order.Details);
+            var certInfo = default(AcmeCertificate);
+            try
+            {
+                certInfo = await _client.GetCertificate(order.Details);
+            } 
+            catch (Exception ex)
+            {
+                throw new Exception($"Unable to get certificate", ex);
+            }
             if (certInfo == null || certInfo.Certificate == null)
             {
                 throw new Exception($"Unable to get certificate");
@@ -460,10 +504,10 @@ namespace PKISharp.WACS.Services
         private X509Certificate2Collection ParseCertificate(byte[] bytes, string friendlyName, AsymmetricKeyParameter? pk)
         {
             // Build pfx archive including any intermediates provided
+            _log.Verbose("Parsing certificate from {bytes} bytes received", bytes.Length);
             var text = Encoding.UTF8.GetString(bytes);
             var pfx = new bc.Pkcs.Pkcs12Store();
             var startIndex = 0;
-            var endIndex = 0;
             const string startString = "-----BEGIN CERTIFICATE-----";
             const string endString = "-----END CERTIFICATE-----";
             while (true)
@@ -473,13 +517,14 @@ namespace PKISharp.WACS.Services
                 {
                     break;
                 }
-                endIndex = text.IndexOf(endString, startIndex);
+                var endIndex = text.IndexOf(endString, startIndex);
                 if (endIndex < 0)
                 {
                     break;
                 }
                 endIndex += endString.Length;
                 var pem = text[startIndex..endIndex];
+                _log.Verbose("Parsing PEM data at range {startIndex}..{endIndex}", startIndex, endIndex);
                 var bcCertificate = _pemService.ParsePem<bc.X509.X509Certificate>(pem);
                 if (bcCertificate != null)
                 {
@@ -500,9 +545,16 @@ namespace PKISharp.WACS.Services
                 }
                 else
                 {
-                    _log.Warning("PEM data from index {0} to {1} could not be parsed as X509Certificate", startIndex, endIndex);
+                    _log.Warning("PEM data at range {startIndex}..{endIndex} could not be parsed as X509Certificate", startIndex, endIndex);
                 }
 
+                // This should never happen, but is a sanity check
+                // not to get stuck in an infinite loop
+                if (endIndex <= startIndex)
+                {
+                    _log.Error("Infinite loop detected, aborting");
+                    break;
+                }
                 startIndex = endIndex;
             }
 
@@ -522,12 +574,42 @@ namespace PKISharp.WACS.Services
         }
 
         /// <summary>
+        /// Cache loading the .pfx file from disk and parsing the certificate
+        /// this is a serious performance win in cases were lots of certificates
+        /// are create from a single order.
+        /// </summary>
+        /// <param name="pfxFileInfo"></param>
+        /// <param name="password"></param>
+        /// <returns></returns>
+        private CertificateInfo FromCache(FileInfo pfxFileInfo, string? password)
+        {
+            var key = pfxFileInfo.FullName;
+            if (_infoCache.ContainsKey(key))
+            {
+                if (_infoCache[key].CacheFile?.LastWriteTime == pfxFileInfo.LastWriteTime)
+                {
+                    return _infoCache[key];
+                }
+                else
+                {
+                    _infoCache[key] = GetInfo(pfxFileInfo, password);
+                }
+            }
+            else
+            {
+                _infoCache.Add(key, GetInfo(pfxFileInfo, password));
+            }
+            return _infoCache[key];
+        }
+        private readonly Dictionary<string, CertificateInfo> _infoCache = new();
+
+        /// <summary>
         /// Load certificate information from cache
         /// </summary>
         /// <param name="pfxFileInfo"></param>
         /// <param name="password"></param>
         /// <returns></returns>
-        private static CertificateInfo FromCache(FileInfo pfxFileInfo, string? password)
+        private static CertificateInfo GetInfo(FileInfo pfxFileInfo, string? password)
         {
             var rawCollection = ReadAsCollection(pfxFileInfo, password);
             var list = rawCollection.OfType<X509Certificate2>().ToList();
@@ -612,15 +694,12 @@ namespace PKISharp.WACS.Services
         /// <returns></returns>
         public string ReuseKeyPath(Order order) {
             // Backwards compatible with existing keys, which are not split per order yet.
-           
             var keyFile = new FileInfo(GetPath(order.Renewal, $".keys"));
-            if (!keyFile.Exists)
+            var cacheKeyVersion = 1;
+            while (!keyFile.Exists && cacheKeyVersion <= MaxCacheKeyVersion)
             {
-                keyFile = new FileInfo(GetPath(order.Renewal, $"-{CacheKey(order, 2)}.keys"));
-            }
-            if (!keyFile.Exists)
-            {
-                keyFile = new FileInfo(GetPath(order.Renewal, $"-{CacheKey(order, 1)}.keys"));
+                keyFile = new FileInfo(GetPath(order.Renewal, $"-{CacheKey(order, cacheKeyVersion)}.keys"));
+                cacheKeyVersion++;
             }
             return keyFile.FullName;
         }

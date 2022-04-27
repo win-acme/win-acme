@@ -22,6 +22,7 @@ namespace PKISharp.WACS
         private readonly ISettingsService _settings;
         private readonly IContainer _container;
         private readonly IAutofacBuilder _scopeBuilder;
+        private readonly IDueDateService _dueDate;
         private readonly ExceptionHandler _exceptionHandler;
         private readonly RenewalExecutor _renewalExecution;
         private readonly NotificationService _notification;
@@ -31,7 +32,7 @@ namespace PKISharp.WACS
             IRenewalStore renewalStore, IContainer container,
             IInputService input, ILogService log, 
             ISettingsService settings, IAutofacBuilder autofacBuilder,
-            NotificationService notification,
+            NotificationService notification, IDueDateService dueDateService,
             ExceptionHandler exceptionHandler, RenewalExecutor renewalExecutor)
         {
             _passwordGenerator = passwordGenerator;
@@ -45,6 +46,7 @@ namespace PKISharp.WACS
             _exceptionHandler = exceptionHandler;
             _renewalExecution = renewalExecutor;
             _notification = notification;
+            _dueDate = dueDateService;
         }
 
         /// <summary>
@@ -76,7 +78,7 @@ namespace PKISharp.WACS
             if (runLevel.HasFlag(RunLevel.Interactive) && (temp.Id != existing.Id) && temp.New)
             {
                 _input.CreateSpace();
-                _input.Show("Existing renewal", existing.ToString(_input));
+                _input.Show("Existing renewal", existing.ToString(_dueDate, _input));
                 if (!await _input.PromptYesNo($"Overwrite settings?", true))
                 {
                     return temp;
@@ -117,7 +119,7 @@ namespace PKISharp.WACS
             _log.Information(LogType.All, "Running in mode: {runLevel}", runLevel);
             if (tempRenewal == null)
             {
-                tempRenewal = Renewal.Create(_args.Id, _settings.ScheduledTask, _passwordGenerator);
+                tempRenewal = Renewal.Create(_args.Id, _passwordGenerator);
             } 
             using var configScope = _scopeBuilder.Configuration(_container, tempRenewal, runLevel);
 
@@ -173,7 +175,7 @@ namespace PKISharp.WACS
             }
 
             // Choose the CSR plugin
-            if (initialTarget.CsrBytes != null)
+            if (initialTarget.UserCsrBytes != null)
             {
                 tempRenewal.CsrPluginOptions = null;
             }
@@ -222,7 +224,7 @@ namespace PKISharp.WACS
             {
                 _exceptionHandler.HandleException(message: $"Create certificate cancelled");
             }
-            else if (!result.Success)
+            else if (result.Success != true)
             {
                 if (runLevel.HasFlag(RunLevel.Interactive) &&
                     await _input.PromptYesNo("Create certificate failed, retry?", false))

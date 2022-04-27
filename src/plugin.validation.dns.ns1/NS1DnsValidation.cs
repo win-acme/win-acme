@@ -64,8 +64,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 _log.Warning($"No record with name {record.Authority.Domain} was created");
                 return;
             }
-            _zonesMap.Remove(record.Authority.Domain);
-
+            _ = _zonesMap.Remove(record.Authority.Domain);
             var result = await _client.DeleteRecord(zone, record.Authority.Domain, "TXT");
             if (!result)
             {

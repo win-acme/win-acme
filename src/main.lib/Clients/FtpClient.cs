@@ -1,8 +1,13 @@
-﻿using PKISharp.WACS.Configuration;
+﻿using FluentFTP;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Services;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Clients
 {
@@ -23,109 +28,70 @@ namespace PKISharp.WACS.Clients
             }
         }
 
-        private FtpWebRequest CreateRequest(string ftpPath)
+        private FluentFTP.FtpClient _cacheClient;
+        private async Task<FluentFTP.FtpClient> CreateClient(Uri uri)
         {
-            var ftpUri = new Uri(ftpPath);
-            var scheme = ftpUri.Scheme;
-            if (ftpUri.Scheme == "ftps")
+            if (_cacheClient == null || 
+                !_cacheClient.IsConnected || 
+                !_cacheClient.IsAuthenticated)
             {
-                scheme = "ftp";
+                var port = uri.Port == -1 ? 21 : uri.Port;
+                var client = new FluentFTP.FtpClient(uri.Host, port, Credential?.UserName, Credential?.Password);
+                client.ValidateAnyCertificate = true;
+                await client.AutoConnectAsync();
+                _cacheClient = client;
+                _log.Information("Established connection with ftp server at {host}:{port}, encrypted: {enc}", uri.Host, port, _cacheClient.IsEncrypted);
             }
-            var ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + ftpUri.AbsolutePath;
-            var request = (FtpWebRequest)WebRequest.Create(ftpConnection);
-            if (Credential != null)
-            {
-                request.Credentials = Credential;
-            }
-            if (ftpUri.Scheme == "ftps")
-            {
-                request.EnableSsl = true;
-                request.UsePassive = true;
-            }
-            return request;
+            return _cacheClient;
         }
 
-        public void Upload(string ftpPath, string content)
+        public async Task Upload(string ftpPath, string content)
         {
-            EnsureDirectories(ftpPath);
             var stream = new MemoryStream();
             using var writer = new StreamWriter(stream);
             writer.Write(content);
             writer.Flush();
             stream.Position = 0;
 
-            var request = CreateRequest(ftpPath);
-            request.Method = WebRequestMethods.Ftp.UploadFile;
-
-            using (var requestStream = request.GetRequestStream())
+            var uri = new Uri(ftpPath);
+            var client = await CreateClient(uri);
+            var status = await client.UploadAsync(stream, uri.PathAndQuery, FtpRemoteExists.Overwrite, true);
+            if (status == FtpStatus.Success)
             {
-                stream.CopyTo(requestStream);
+                _log.Debug("Upload {ftpPath} status {StatusDescription}", ftpPath, status);
             }
-            using var response = (FtpWebResponse)request.GetResponse();
-            _log.Verbose("Upload {ftpPath} status {StatusDescription}", ftpPath, response.StatusDescription?.Trim() ?? "(null)");
-        }
-
-        private void EnsureDirectories(string ftpPath)
-        {
-            var ftpUri = new Uri(ftpPath);
-            var directories = ftpUri.AbsolutePath.Split('/');
-            var path = ftpUri.Scheme + "://" + ftpUri.Host + ":" + (ftpUri.Port == -1 ? 21 : ftpUri.Port) + "/";
-            if (directories.Length > 1)
+            else
             {
-                for (var i = 1; i < (directories.Length - 1); i++)
-                {
-                    path = path + directories[i] + "/";
-                    var request = CreateRequest(path);
-                    request.Method = WebRequestMethods.Ftp.MakeDirectory;
-                    try
-                    {
-                        using var response = (FtpWebResponse)request.GetResponse();
-                        _log.Verbose("Create {path} status {StatusDescription}", path, response.StatusDescription?.Trim() ?? "(null)");
-                    }
-                    catch (Exception ex)
-                    {
-                        _log.Verbose("Create {path} failed, may already exist ({Message})", path, ex.Message);
-                    }
-                }
+                _log.Warning("Upload {ftpPath} status {StatusDescription}", ftpPath, status);
             }
         }
 
-        public string GetFiles(string ftpPath)
+        public async Task<IEnumerable<string>> GetFiles(string ftpPath)
         {
-            var request = CreateRequest(ftpPath);
-            request.Method = WebRequestMethods.Ftp.ListDirectory;
-            string names;
-            using (var response = (FtpWebResponse)request.GetResponse())
+            var uri = new Uri(ftpPath);
+            var client = await CreateClient(uri);
+            var list = await client.GetListingAsync(uri.PathAndQuery);
+            if (list == null)
             {
-                var responseStream = response.GetResponseStream();
-                using var reader = new StreamReader(responseStream);
-                names = reader.ReadToEnd();
+                return new List<string>();
             }
-
-            names = names.Trim();
-            _log.Verbose("Files in path {ftpPath}: {@names}", ftpPath, names);
-            return names;
+            return list.Select(x => x.Name);
         }
 
-        public void Delete(string ftpPath, FileType fileType)
+        public async Task DeleteFolder(string ftpPath)
         {
-            var request = CreateRequest(ftpPath);
-            if (fileType == FileType.File)
-            {
-                request.Method = WebRequestMethods.Ftp.DeleteFile;
-            }
-            else if (fileType == FileType.Directory)
-            {
-                request.Method = WebRequestMethods.Ftp.RemoveDirectory;
-            }
-            using var response = (FtpWebResponse)request.GetResponse();
-            _log.Verbose("Delete {ftpPath} status {StatusDescription}", ftpPath, response.StatusDescription?.Trim());
+            var uri = new Uri(ftpPath);
+            var client = await CreateClient(uri);
+            await client.DeleteDirectoryAsync(uri.PathAndQuery);
+            _log.Debug("Delete folder {ftpPath}", ftpPath);
         }
 
-        public enum FileType
+        public async Task DeleteFile(string ftpPath)
         {
-            File,
-            Directory
+            var uri = new Uri(ftpPath);
+            var client = await CreateClient(uri);
+            await client.DeleteFileAsync(uri.PathAndQuery);
+            _log.Debug("Delete file {ftpPath}", ftpPath);
         }
     }
 }
