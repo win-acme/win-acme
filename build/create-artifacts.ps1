@@ -152,6 +152,9 @@ PluginRelease plugin.validation.dns.googledns @(
 	"Google.Apis.Dns.v1.dll",
 	"PKISharp.WACS.Plugins.ValidationPlugins.GoogleDns.dll"
 )
+PluginRelease plugin.validation.dns.simply @(
+	"PKISharp.WACS.Plugins.ValidationPlugins.Simply.dll"
+)
 PluginRelease plugin.validation.dns.ns1 @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.NS1.dll"
 )
