@@ -55,7 +55,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\main.lib\wacs.lib.csproj" />
-    <ProjectReference Include="..\plugin.validation.dns.transip\wacs.validation.dns.transip.csproj" />
   </ItemGroup>
 
   <ItemGroup>
