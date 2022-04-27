@@ -489,6 +489,7 @@ namespace PKISharp.WACS.Services
         private X509Certificate2Collection ParseCertificate(byte[] bytes, string friendlyName, AsymmetricKeyParameter? pk)
         {
             // Build pfx archive including any intermediates provided
+            _log.Verbose("Parsing certificate from {bytes} bytes received", bytes.Length);
             var text = Encoding.UTF8.GetString(bytes);
             var pfx = new bc.Pkcs.Pkcs12Store();
             var startIndex = 0;
@@ -508,6 +509,7 @@ namespace PKISharp.WACS.Services
                 }
                 endIndex += endString.Length;
                 var pem = text[startIndex..endIndex];
+                _log.Verbose("Parsing PEM data at range {startIndex}..{endIndex}", startIndex, endIndex);
                 var bcCertificate = _pemService.ParsePem<bc.X509.X509Certificate>(pem);
                 if (bcCertificate != null)
                 {
@@ -528,9 +530,16 @@ namespace PKISharp.WACS.Services
                 }
                 else
                 {
-                    _log.Warning("PEM data from index {0} to {1} could not be parsed as X509Certificate", startIndex, endIndex);
+                    _log.Warning("PEM data at range {startIndex}..{endIndex} could not be parsed as X509Certificate", startIndex, endIndex);
                 }
 
+                // This should never happen, but is a sanity check
+                // not to get stuck in an infinite loop
+                if (endIndex <= startIndex)
+                {
+                    _log.Error("Infinite loop detected, aborting");
+                    break;
+                }
                 startIndex = endIndex;
             }
 
