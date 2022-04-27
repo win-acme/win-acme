@@ -24,7 +24,7 @@ namespace PKISharp.WACS.Context
             Order = order;
             RunLevel = runLevel;
             Result = result;
-            ShouldRun = shouldRun;
+            ShouldRun = runLevel.HasFlag(RunLevel.ForceRenew) || shouldRun;
         }
     }
 }

@@ -170,6 +170,22 @@ namespace PKISharp.WACS
                             WarnAboutRenewalArguments();
                             foreach (var renewal in selectedRenewals)
                             {
+                                var runLevel = RunLevel.Interactive;
+                                if (_args.Force)
+                                {
+                                    runLevel |= RunLevel.IgnoreCache;
+                                }
+                                await ProcessRenewal(renewal, runLevel);
+                            }
+                        },
+                        $"Run {selectionLabel} (normal)", "R",
+                        @disabled: (none, "No renewals selected.")));
+                options.Add(
+                    Choice.Create<Func<Task>>(
+                        async () => {
+                            WarnAboutRenewalArguments();
+                            foreach (var renewal in selectedRenewals)
+                            {
                                 var runLevel = RunLevel.Interactive | RunLevel.ForceRenew;
                                 if (_args.Force)
                                 {
@@ -178,7 +194,7 @@ namespace PKISharp.WACS
                                 await ProcessRenewal(renewal, runLevel);
                             }
                         },
-                        $"Run {selectionLabel}", "R",
+                        $"Run {selectionLabel} (forced)", "Z",
                         @disabled: (none, "No renewals selected.")));
                 options.Add(
                     Choice.Create<Func<Task>>(
