@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.Context;
+using PKISharp.WACS.DomainObjects;
 using System;
 using System.Linq;
 
@@ -69,7 +70,7 @@ namespace PKISharp.WACS.Services
             }
             if (_certificateService.CachedInfo(order) == null)
             {
-                _logService.Information(LogType.All, "Renewal {renewal} running prematurely due to source change in order {order}", order.Renewal.LastFriendlyName, order.FriendlyNamePart);
+                _logService.Information(LogType.All, "Renewal {renewal} running prematurely due to source change in order {order}", order.Renewal.LastFriendlyName, order.FriendlyNamePart ?? OrderContext.DefaultOrderName);
                 return true;
             }
             return false;

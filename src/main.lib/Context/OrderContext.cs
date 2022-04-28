@@ -8,6 +8,7 @@ namespace PKISharp.WACS.Context
     /// </summary>
     public class OrderContext
     {
+        public const string DefaultOrderName = "Main";
         public ILifetimeScope ExecutionScope { get; private set; }
         public Order Order { get; private set; }
         public RunLevel RunLevel { get; private set; }
@@ -16,7 +17,7 @@ namespace PKISharp.WACS.Context
         public Renewal Renewal => Order.Renewal;
         public CertificateInfo? PreviousCertificate { get; set; }
         public CertificateInfo? NewCertificate { get; set; }
-        public string OrderName => Order.FriendlyNamePart ?? "Main";
+        public string OrderName => Order.FriendlyNamePart ?? DefaultOrderName;
         public bool ShouldRun { get; set; }
         public OrderContext(ILifetimeScope executionScope, Order order, RunLevel runLevel, bool shouldRun, RenewResult result)
         {
