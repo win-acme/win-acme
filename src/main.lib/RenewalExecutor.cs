@@ -182,10 +182,17 @@ namespace PKISharp.WACS
         {
             // Build context
             var result = new RenewResult();
-            var orderContexts = orders.Select(order => new OrderContext(execute, order, runLevel, _dueDate.ShouldRun(order), result)).ToList();
-
+            var orderContexts = orders.Select(order => new OrderContext(execute, order, runLevel, result)).ToList();
+            
             // Check if renewal is needed at the root level
-            if (!ShouldRunRenewal(renewal, runLevel))
+            var mainDue = !ShouldRunRenewal(renewal, runLevel);
+
+            // Check individual orders
+            _ = orderContexts.All(o => o.ShouldRun =
+                runLevel.HasFlag(RunLevel.ForceRenew) ||
+                _dueDate.ShouldRun(o.Order));
+
+            if (!mainDue)
             {
                 // If renewal is not needed at the root level
                 // it may be needed at the order level due to
@@ -194,7 +201,7 @@ namespace PKISharp.WACS
                 {
                     return Abort(renewal);
                 } 
-            }
+            } 
 
             // Only process orders that are due. In the normal
             // case when using static due dates this will be all 
@@ -209,7 +216,7 @@ namespace PKISharp.WACS
                 _log.Debug("None of the orders are currently due to run", orderContexts.Count, orders.Count);
                 return Abort(renewal);
             } 
-            if (!renewal.New)
+            if (!renewal.New && !runLevel.HasFlag(RunLevel.ForceRenew))
             {
                 _log.Information(LogType.All, "Renewing {renewal}", renewal.LastFriendlyName);
             }
