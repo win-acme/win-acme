@@ -470,7 +470,6 @@ namespace PKISharp.WACS.Services
             var selected = options[0];
             if (options.Count > 1)
             {
-
                 _log.Debug("Found {n} version(s) of the certificate", options.Count);
                 foreach (var option in options)
                 {
@@ -567,8 +566,7 @@ namespace PKISharp.WACS.Services
             tempPfx.Import(
                 pfxStreamReader.ReadBytes((int)pfxStream.Length),
                 null,
-                X509KeyStorageFlags.MachineKeySet |
-                X509KeyStorageFlags.PersistKeySet |
+                X509KeyStorageFlags.EphemeralKeySet |
                 X509KeyStorageFlags.Exportable);
             return tempPfx;
         }
@@ -653,8 +651,7 @@ namespace PKISharp.WACS.Services
         {
             // Flags used for the X509Certificate2 as 
             var externalFlags =
-                X509KeyStorageFlags.MachineKeySet |
-                X509KeyStorageFlags.PersistKeySet |
+                X509KeyStorageFlags.EphemeralKeySet |
                 X509KeyStorageFlags.Exportable;
             var ret = new X509Certificate2Collection();
             ret.Import(source.FullName, password, externalFlags);

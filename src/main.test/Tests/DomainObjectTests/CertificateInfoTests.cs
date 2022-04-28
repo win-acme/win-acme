@@ -17,8 +17,7 @@ namespace PKISharp.WACS.UnitTests.Tests.CertificateInfoTests
             tempPfx.Import(
                 Convert.FromBase64String(cloudFlare),
                 null,
-                X509KeyStorageFlags.MachineKeySet |
-                X509KeyStorageFlags.PersistKeySet |
+                X509KeyStorageFlags.EphemeralKeySet |
                 X509KeyStorageFlags.Exportable);
             var certinfo = new CertificateInfo(tempPfx[0]);
             Assert.IsNotNull(certinfo);

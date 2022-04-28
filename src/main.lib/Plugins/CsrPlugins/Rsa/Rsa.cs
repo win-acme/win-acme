@@ -42,30 +42,36 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         [SupportedOSPlatform("windows")]
         public override Task<X509Certificate2> PostProcess(X509Certificate2 original)
         {
-            var privateKey = original.GetRSAPrivateKey();
+
+            using var privateKey = original.GetRSAPrivateKey();
             if (privateKey == null)
             {
                 return Task.FromResult(original);
             }
+
+            // https://github.com/dotnet/runtime/issues/36899
+            var pwd = Guid.NewGuid().ToString();
+            using var tempRsa = RSA.Create();
+            var pbeParameters = new PbeParameters(PbeEncryptionAlgorithm.Aes256Cbc, HashAlgorithmName.SHA256, 10);
+            tempRsa.ImportEncryptedPkcs8PrivateKey(pwd, privateKey.ExportEncryptedPkcs8PrivateKey(pwd, pbeParameters), out var read);
+
             try
             {
                 var cspParameters = new CspParameters
                 {
                     KeyContainerName = Guid.NewGuid().ToString(),
                     KeyNumber = 1,
-                    Flags = CspProviderFlags.UseMachineKeyStore,
+                    Flags = CspProviderFlags.NoPrompt,
                     ProviderType = 12 // Microsoft RSA SChannel Cryptographic Provider
                 };
                 var rsaProvider = new RSACryptoServiceProvider(cspParameters);
-                var parameters = privateKey.ExportParameters(true);
+                var parameters = tempRsa.ExportParameters(true);
                 rsaProvider.ImportParameters(parameters);
 
                 var tempPfx = new X509Certificate2(
                     original.Export(X509ContentType.Cert),
                     "", 
-                    X509KeyStorageFlags.MachineKeySet |
-                    X509KeyStorageFlags.PersistKeySet |
-                    X509KeyStorageFlags.Exportable);
+                    X509KeyStorageFlags.EphemeralKeySet);
                 tempPfx = tempPfx.CopyWithPrivateKey(rsaProvider);
                 return Task.FromResult(tempPfx);
             }
