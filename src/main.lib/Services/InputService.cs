@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Terminal.Gui;
 
 namespace PKISharp.WACS.Services
 {
@@ -374,6 +375,23 @@ namespace PKISharp.WACS.Services
             {
                 throw new Exception("Default option is disabled");
             }
+
+            Application.Init();
+            var top = Application.Top;
+            var win = new Window(what) { 
+                Width = Dim.Fill(), 
+                Height = Dim.Fill() 
+            };
+            var menu = new MenuBar(new MenuBarItem[] {
+                new MenuBarItem ("_File", new MenuItem [] {
+                    new MenuItem ("_Quit", "", () => {
+                        Application.RequestStop ();
+                    })
+                }),
+            });
+            top.Add(menu, win);
+            Application.Run();
+            Application.Shutdown();
 
             await WritePagedList(choices);
 

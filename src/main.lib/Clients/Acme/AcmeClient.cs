@@ -86,7 +86,7 @@ namespace PKISharp.WACS.Clients.Acme
             {
                 _log.Verbose("SecurityProtocol setting: {setting}", ServicePointManager.SecurityProtocol);
                 var response = await httpClient.GetAsync("directory").ConfigureAwait(false);
-                await CheckNetworkResponse(response);
+                await CheckNetworkResponse(response).ConfigureAwait(false);
 
             }
             catch (Exception ex)

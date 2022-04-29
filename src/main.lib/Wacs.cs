@@ -277,7 +277,7 @@ namespace PKISharp.WACS.Host
                     () => { _args.CloseOnFinish = true; _args.Test = false; return Task.CompletedTask; }, 
                     "Quit", "Q")
             };
-            var chosen = await _input.ChooseFromMenu("Please choose from the menu", options);
+            var chosen = await _input.ChooseFromMenu("Please choose from the menu", options).ConfigureAwait(true);
             await chosen.Invoke();
         }
 

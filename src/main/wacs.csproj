@@ -68,6 +68,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Terminal.Gui" Version="1.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="settings.json" Pack="true" PackagePath="settings_default.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
