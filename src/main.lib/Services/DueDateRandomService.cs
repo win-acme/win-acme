@@ -28,7 +28,7 @@ namespace PKISharp.WACS.Services
             // Check if the certificate was actually installed
             // succesfully before we decided to use it as a 
             // reference point.
-            var latestDueDate = DueDate(order.Renewal) ?? DateTime.Now;
+            var latestDueDate = DateTime.Now;
             var history = order.Renewal.History.Where(x =>
                 x.Success == true &&
                 x.Thumbprints.Contains(previous.Certificate.Thumbprint));
@@ -44,7 +44,7 @@ namespace PKISharp.WACS.Services
             }
 
             // Randomize over the course of 10 days
-            var earliestDueDate = latestDueDate.AddDays(_settings.ScheduledTask.RenewalDaysRange ?? 0); 
+            var earliestDueDate = latestDueDate.AddDays((_settings.ScheduledTask.RenewalDaysRange ?? 0) * -1); 
             if (earliestDueDate > DateTime.Now)
             {
                 return false;
