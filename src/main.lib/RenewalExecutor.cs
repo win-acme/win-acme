@@ -183,14 +183,15 @@ namespace PKISharp.WACS
             // Build context
             var result = new RenewResult();
             var orderContexts = orders.Select(order => new OrderContext(execute, order, runLevel, result)).ToList();
-            
+
             // Check if renewal is needed at the root level
             var mainDue = !ShouldRunRenewal(renewal, runLevel);
 
             // Check individual orders
-            _ = orderContexts.All(o => o.ShouldRun =
-                runLevel.HasFlag(RunLevel.ForceRenew) ||
-                _dueDate.ShouldRun(o.Order));
+            foreach (var o in orderContexts)
+            {
+                o.ShouldRun = runLevel.HasFlag(RunLevel.ForceRenew) || _dueDate.ShouldRun(o.Order);
+            }
 
             if (!mainDue)
             {
