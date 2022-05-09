@@ -39,10 +39,14 @@ namespace PKISharp.WACS.Plugins.OrderPlugins
                     var sourceParts = target.Parts.Where(p => p.GetIdentifiers(true).Contains(host));
                     if (!ret.ContainsKey(domain))
                     {
-                        var filteredParts = sourceParts.Select(p => new TargetPart(new List<Identifier> { host }) { SiteId = p.SiteId, SiteType = p.SiteType }).ToList();
+                        var filteredParts = sourceParts.Select(p =>
+                            new TargetPart(new List<Identifier> { host }) {
+                                SiteId = p.SiteId, 
+                                SiteType = p.SiteType 
+                            }).ToList();
                         var newTarget = new Target(
                             target.FriendlyName ?? "",
-                            target.CommonName,
+                            host,
                             filteredParts);
                         var newOrder = new Order(
                             renewal, 
@@ -54,14 +58,16 @@ namespace PKISharp.WACS.Plugins.OrderPlugins
                     }
                     else
                     {
-                        var existingOrder = ret[domain];
                         var existingParts = parts[domain];
-                        foreach (var x in sourceParts)
+                        foreach (var sourcePart in sourceParts)
                         {
-                            var existingPart = existingParts.Where(x => x.SiteId == x.SiteId).FirstOrDefault();
+                            var existingPart = existingParts.Where(x => sourcePart.SiteId == x.SiteId).FirstOrDefault();
                             if (existingPart == null)
                             {
-                                existingPart = new TargetPart(new[] { host });
+                                existingPart = new TargetPart(new[] { host } ) {
+                                    SiteId = sourcePart.SiteId,
+                                    SiteType = sourcePart.SiteType
+                                };
                                 existingParts.Add(existingPart);
                             } 
                             else if (!existingPart.Identifiers.Contains(host))
