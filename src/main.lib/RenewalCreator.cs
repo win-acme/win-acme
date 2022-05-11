@@ -222,7 +222,7 @@ namespace PKISharp.WACS
             var result = await _renewalExecution.HandleRenewal(renewal, runLevel);
             if (result.Abort)
             {
-                _exceptionHandler.HandleException(message: $"Create certificate cancelled");
+                _log.Information($"Create certificate cancelled");
             }
             else if (result.Success != true)
             {
