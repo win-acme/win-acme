@@ -53,8 +53,14 @@ namespace PKISharp.WACS.Host
             {
                 // Load instance of the main class and start the program
                 AllowInstanceToRun(container);
-                var wacs = container.Resolve<Wacs>(new TypedParameter(typeof(IContainer), container));
-                Environment.ExitCode = await wacs.Start().ConfigureAwait(false);
+                logFrame.Enter += async (x) =>
+                {
+                    var wacs = container.Resolve<Wacs>(new TypedParameter(typeof(IContainer), container));
+                    await wacs.Start().ConfigureAwait(false);
+                };
+                Application.Run();
+
+                Environment.ExitCode = 0;
             } 
             catch (Exception ex)
             {
@@ -129,6 +135,8 @@ namespace PKISharp.WACS.Host
             Console.WriteLine(" Unhandled exception caught: " + ex.Message);
         }
 
+        internal static FrameView logFrame;
+
         /// <summary>
         /// Configure dependency injection 
         /// </summary>
@@ -136,12 +144,33 @@ namespace PKISharp.WACS.Host
         /// <returns></returns>
         internal static IContainer? GlobalScope(string[] args)
         {
+            Application.Init();
+            var top = Application.Top;
+            logFrame = new FrameView("Log")
+            {
+                X = Pos.Center(),
+                Y = Pos.Center(),
+                Width = Dim.Fill(1),
+                Height = Dim.Fill(1)
+            };
+            var log = new ListView()
+            {
+                X = Pos.Center(),
+                Y = Pos.Center(),
+                Width = Dim.Fill(1),
+                Height = Dim.Fill(1)
+            };
+            logFrame.Add(log);
+            top.Add(logFrame);
+ 
+
             var builder = new ContainerBuilder();
-            var logger = new LogService();
+            var logger = new LogService(log);
             if (Verbose)
             {
                 logger.SetVerbose();
             }
+          
             // Not used but should be called anyway because it 
             // checks if we're not running as dotnet.exe and also
             // prints some verbose messages that are interesting

@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Terminal.Gui;
 
 namespace PKISharp.WACS.Services
 {
@@ -28,7 +29,7 @@ namespace PKISharp.WACS.Services
         public IEnumerable<MemoryEntry> Lines => _lines.AsEnumerable();
         public void Reset() => _lines.Clear();
 
-        public LogService()
+        public LogService(ListView target)
         {
             // Custom configuration support
             ConfigurationPath = Path.Combine(VersionService.BasePath, "serilog.json");
@@ -46,21 +47,11 @@ namespace PKISharp.WACS.Services
                     (ConsoleTheme)AnsiConsoleTheme.Code : 
                     SystemConsoleTheme.Literate;
 
-                _screenLogger = new LoggerConfiguration()
-                    .MinimumLevel.ControlledBy(_levelSwitch)
-                    .Enrich.FromLogContext()
-                    .Filter.ByIncludingOnly(x => { Dirty = true; return true; })
-                    .WriteTo.Console(
-                        outputTemplate: " {Message:l}{NewLine}", 
-                        theme: theme)
-                    .CreateLogger();
                 _debugScreenLogger = new LoggerConfiguration()
                     .MinimumLevel.ControlledBy(_levelSwitch)
                     .Enrich.FromLogContext()
                     .Filter.ByIncludingOnly(x => { Dirty = true; return true; })
-                    .WriteTo.Console(
-                        outputTemplate: " [{Level:u4}] {Message:l}{NewLine}{Exception}", 
-                        theme: theme)
+                    .WriteTo.Terminal(target)
                     .CreateLogger();
             }
             catch (Exception ex)

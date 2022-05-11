@@ -360,7 +360,7 @@ namespace PKISharp.WACS.Services
         /// Print a (paged) list of choices for the user to choose from
         /// </summary>
         /// <param name="choices"></param>
-        public async Task<T> ChooseFromMenu<T>(string what, List<Choice<T>> choices, Func<string, Choice<T>>? unexpected = null)
+        public Task<T> ChooseFromMenu<T>(string what, List<Choice<T>> choices, Func<string, Choice<T>>? unexpected = null)
         {
             if (!choices.Any())
             {
@@ -376,62 +376,39 @@ namespace PKISharp.WACS.Services
                 throw new Exception("Default option is disabled");
             }
 
-            Application.Init();
             var top = Application.Top;
-            var win = new Window(what) { 
-                Width = Dim.Fill(), 
-                Height = Dim.Fill() 
-            };
-            var menu = new MenuBar(new MenuBarItem[] {
-                new MenuBarItem ("_File", new MenuItem [] {
-                    new MenuItem ("_Quit", "", () => {
-                        Application.RequestStop ();
-                    })
-                }),
-            });
-            top.Add(menu, win);
-            Application.Run();
-            Application.Shutdown();
-
-            await WritePagedList(choices);
+            var promise = new TaskCompletionSource<T>();
 
             Choice<T>? selected = null;
-            do
+            var frame = new FrameView(what)
             {
-                var choice = await RequestString(what);
-                if (string.IsNullOrWhiteSpace(choice))
+                X = Pos.Center(),
+                Y = Pos.Center(),
+                Width = Dim.Fill(20),
+                Height = Dim.Fill(10)
+            };
+            var items = new ListView(choices.Select(c => c.Description).ToList())
+            {
+                
+                X = 0,
+                Y = 0,
+                Width = Dim.Fill(20),
+                Height = Dim.Fill(10),
+                AllowsMarking = false,
+                ColorScheme = Colors.TopLevel,
+                
+            };
+            items.OpenSelectedItem +=
+                x =>
                 {
-                    selected = choices.
-                        Where(c => c.Default).
-                        FirstOrDefault();
-                }
-                else
-                {
-                    selected = choices.
-                        Where(t => string.Equals(t.Command, choice, StringComparison.InvariantCultureIgnoreCase)).
-                        FirstOrDefault();
-
-                    if (selected == null)
-                    {
-                        selected = choices.
-                            Where(t => string.Equals(t.Description, choice, StringComparison.InvariantCultureIgnoreCase)).
-                            FirstOrDefault();
-                    }
-
-                    if (selected != null && selected.Disabled)
-                    {
-                        var disabledReason = selected.DisabledReason ?? "Run as Administator to enable all features.";
-                        _log.Warning($"The option you have chosen is currently disabled. {disabledReason}");
-                        selected = null;
-                    }
-
-                    if (selected == null && unexpected != null)
-                    {
-                        selected = unexpected(choice);
-                    }
-                }
-            } while (selected == null);
-            return selected.Item;
+                    selected = choices[items.SelectedItem];
+                    top.Remove(frame);
+                    promise.SetResult(selected.Item);
+                };
+            frame.Add(items);
+            top.Add(frame);
+            frame.SetFocus();
+            return promise.Task;
         }
 
         /// <summary>
