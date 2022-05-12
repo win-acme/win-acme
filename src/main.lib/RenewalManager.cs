@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
@@ -246,6 +247,7 @@ namespace PKISharp.WACS
                         Choice.Create<Func<Task>>(
                           async () => selectedRenewals = await FilterRenewalsById(selectedRenewals, unexpected)));
                 await chosen.Invoke();
+                _container.Resolve<IIISClient>().Refresh();
             }
             while (!quit);
         }
