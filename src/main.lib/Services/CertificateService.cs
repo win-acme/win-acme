@@ -90,9 +90,9 @@ namespace PKISharp.WACS.Services
         /// Delete cached files related to a specific renewal
         /// </summary>
         /// <param name="renewal"></param>
-        private void ClearCache(Renewal renewal, string prefix = "*", string postfix = "*") 
+        private void ClearCache(string pattern)
         {
-            foreach (var f in _cache.EnumerateFiles($"{prefix}{renewal.Id}{postfix}"))
+            foreach (var f in _cache.EnumerateFiles(pattern))
             {
                 if (f.LastWriteTime < DateTime.Now.AddDays(_settings.Cache.ReuseDays * -1))
                 {
@@ -108,7 +108,16 @@ namespace PKISharp.WACS.Services
                 }
             }
         }
-        void ICertificateService.Delete(Renewal renewal) => ClearCache(renewal);
+
+        /// <summary>
+        /// Delete cached files related to a specific order
+        /// </summary>
+        /// <param name="renewal"></param>
+        private void ClearCache(Order order, string postfix = "*") => 
+            ClearCache($"{order.Renewal.Id}-{order.CacheKeyPart}-{postfix}");
+
+        void ICertificateService.Delete(Renewal renewal) => 
+            ClearCache($"{renewal.Id}*");
 
         /// <summary>
         /// Encrypt or decrypt the cached private keys
@@ -326,7 +335,7 @@ namespace PKISharp.WACS.Services
             }
 
             // Store CSR for future reference
-            ClearCache(order.Renewal, postfix: $"*{CsrPostFix}");
+            ClearCache(order, postfix: $"*{CsrPostFix}");
             var csrPath = GetPath(order.Renewal, $"-{cacheKey}{CsrPostFix}");
             await File.WriteAllTextAsync(csrPath, _pemService.GetPem("CERTIFICATE REQUEST", order.Target.CsrBytes));
             _log.Debug("CSR stored at {path} in certificate cache folder {folder}", Path.GetFileName(csrPath), Path.GetDirectoryName(csrPath));
@@ -383,8 +392,8 @@ namespace PKISharp.WACS.Services
             }
             var selected = Select(alternatives);
 
-            ClearCache(order.Renewal, postfix: $"*{PfxPostFix}");
-            ClearCache(order.Renewal, postfix: $"*{PfxPostFixLegacy}");
+            ClearCache(order, postfix: $"*{PfxPostFix}");
+            ClearCache($"{order.Renewal.Id}*{PfxPostFixLegacy}");
             await File.WriteAllBytesAsync(pfxFileInfo.FullName, selected.Export(X509ContentType.Pfx, order.Renewal.PfxPassword?.Value)!);
             _log.Debug("Certificate written to cache file {path} in certificate cache folder {folder}. It will be " +
                 "reused when renewing within {x} day(s) as long as the --source and --csr parameters remain the same and " +
