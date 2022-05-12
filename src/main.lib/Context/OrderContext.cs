@@ -1,11 +1,13 @@
 ﻿using Autofac;
 using PKISharp.WACS.DomainObjects;
+using System.Diagnostics;
 
 namespace PKISharp.WACS.Context
 {
     /// <summary>
     /// Common objects used throughout the renewal process
     /// </summary>
+    [DebuggerDisplay("{Order.CacheKeyPart}")]
     public class OrderContext
     {
         public const string DefaultOrderName = "Main";

@@ -1,8 +1,10 @@
 ﻿using PKISharp.WACS.Clients.Acme;
+using System.Diagnostics;
 using acme = ACMESharp.Protocol;
 
 namespace PKISharp.WACS.DomainObjects
 {
+    [DebuggerDisplay("{CacheKeyPart}")]
     public class Order
     {
         public string? CacheKeyPart { get; set; }
