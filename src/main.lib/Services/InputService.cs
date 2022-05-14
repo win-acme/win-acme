@@ -380,12 +380,12 @@ namespace PKISharp.WACS.Services
             var promise = new TaskCompletionSource<T>();
 
             Choice<T>? selected = null;
-            var frame = new FrameView(what)
+            var frame = new Dialog(what)
             {
-                X = Pos.Center(),
+                X = 0,
                 Y = Pos.Center(),
-                Width = Dim.Fill(20),
-                Height = Dim.Fill(10)
+                Width = Dim.Percent(50),
+                Height = Dim.Fill(0)
             };
             var items = new ListView(choices.Select(c => c.Description).ToList())
             {
@@ -403,11 +403,13 @@ namespace PKISharp.WACS.Services
                 {
                     selected = choices[items.SelectedItem];
                     top.Remove(frame);
+                    Application.Refresh();
                     promise.SetResult(selected.Item);
                 };
             frame.Add(items);
             top.Add(frame);
             frame.SetFocus();
+            Application.Refresh();
             return promise.Task;
         }
 

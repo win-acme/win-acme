@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Services
                     if (evt.Properties.TryGetValue(pt.PropertyName, out var propertyValue))
                     {
                         driver.SetAttribute(Colors.TopLevel.Normal);
-                        driver.AddStr(propertyValue.ToString()); 
+                        driver.AddStr(propertyValue.ToString().Trim('"')); 
                         driver.SetAttribute(Colors.TopLevel.Disabled);
                     } 
                     else
@@ -63,7 +63,7 @@ namespace PKISharp.WACS.Services
         public void Emit(LogEvent logEvent)
         {
             _data.Add(logEvent);
-            _list.MoveDown();
+            _list.MoveEnd();
         }
     }
 }

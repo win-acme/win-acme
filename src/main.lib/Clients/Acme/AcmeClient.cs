@@ -85,8 +85,8 @@ namespace PKISharp.WACS.Clients.Acme
             try
             {
                 _log.Verbose("SecurityProtocol setting: {setting}", ServicePointManager.SecurityProtocol);
-                var response = await httpClient.GetAsync("directory").ConfigureAwait(false);
-                await CheckNetworkResponse(response).ConfigureAwait(false);
+                var response = await httpClient.GetAsync("directory");
+                await CheckNetworkResponse(response);
 
             }
             catch (Exception ex)
@@ -98,7 +98,7 @@ namespace PKISharp.WACS.Clients.Acme
                 altClient.Timeout = new TimeSpan(0, 0, 10);
                 try
                 {
-                    var response = await altClient.GetAsync("directory").ConfigureAwait(false);
+                    var response = await altClient.GetAsync("directory");
                     await CheckNetworkResponse(response);
                 }
                 catch (Exception ex2)

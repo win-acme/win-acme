@@ -90,7 +90,7 @@ namespace PKISharp.WACS.Host
         public async Task<int> Start()
         {
             // Show informational message and start-up diagnostics
-            await ShowBanner().ConfigureAwait(false);
+            await ShowBanner();
 
             // Version display (handled by ShowBanner in constructor)
             if (_args.Version)
@@ -205,7 +205,7 @@ namespace PKISharp.WACS.Host
             {
                 _log.Information("Connecting to {ACME}...", _settings.BaseUri);
                 var client = _container.Resolve<AcmeClient>();
-                await client.CheckNetwork().ConfigureAwait(false);
+                await client.CheckNetwork();
             }
             if (_userRoleService.IsAdmin)
             {
@@ -277,7 +277,7 @@ namespace PKISharp.WACS.Host
                     () => { _args.CloseOnFinish = true; _args.Test = false; return Task.CompletedTask; }, 
                     "Quit", "Q")
             };
-            var chosen = await _input.ChooseFromMenu("Please choose from the menu", options).ConfigureAwait(true);
+            var chosen = await _input.ChooseFromMenu("Please choose from the menu", options);
             await chosen.Invoke();
         }
 

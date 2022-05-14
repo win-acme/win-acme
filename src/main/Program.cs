@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Host
 
         private static bool Verbose { get; set; }
 
-        private async static Task Main(string[] args)
+        private static Task Main(string[] args)
         {
             // Error handling
             AppDomain.CurrentDomain.UnhandledException += 
@@ -41,7 +41,7 @@ namespace PKISharp.WACS.Host
             if (container == null)
             {
                 FriendlyClose();
-                return;
+                return Task.CompletedTask;
             }
 
 
@@ -53,14 +53,15 @@ namespace PKISharp.WACS.Host
             {
                 // Load instance of the main class and start the program
                 AllowInstanceToRun(container);
-                logFrame.Enter += async (x) =>
+                Application.Top.Loaded += async () =>
                 {
                     var wacs = container.Resolve<Wacs>(new TypedParameter(typeof(IContainer), container));
-                    await wacs.Start().ConfigureAwait(false);
+                    Environment.ExitCode = await wacs.Start();
+                    Application.RequestStop();
                 };
-                Application.Run();
-
-                Environment.ExitCode = 0;
+                Application.Init();
+                Application.Run(Application.Top);
+                Application.Shutdown();
             } 
             catch (Exception ex)
             {
@@ -69,6 +70,7 @@ namespace PKISharp.WACS.Host
                 {
                     Console.WriteLine(ex.StackTrace);
                 }
+                Application.Shutdown();
                 FriendlyClose();
             } 
             finally
@@ -80,6 +82,7 @@ namespace PKISharp.WACS.Host
                     _globalMutex.Dispose();
                 }
             }
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -135,7 +138,7 @@ namespace PKISharp.WACS.Host
             Console.WriteLine(" Unhandled exception caught: " + ex.Message);
         }
 
-        internal static FrameView logFrame;
+        internal static FrameView? logFrame;
 
         /// <summary>
         /// Configure dependency injection 
@@ -148,21 +151,35 @@ namespace PKISharp.WACS.Host
             var top = Application.Top;
             logFrame = new FrameView("Log")
             {
-                X = Pos.Center(),
+                X = Pos.Percent(50),
                 Y = Pos.Center(),
-                Width = Dim.Fill(1),
-                Height = Dim.Fill(1)
+                Width = Dim.Percent(50),
+                Height = Dim.Fill()
             };
             var log = new ListView()
             {
                 X = Pos.Center(),
                 Y = Pos.Center(),
-                Width = Dim.Fill(1),
-                Height = Dim.Fill(1)
+                Width = Dim.Fill(),
+                Height = Dim.Fill()
             };
             logFrame.Add(log);
             top.Add(logFrame);
- 
+
+            var _scrollBar = new ScrollBarView(log, true);
+            _scrollBar.ChangedPosition += () => {
+                log.TopItem = _scrollBar.Position;
+                if (log.TopItem != _scrollBar.Position)
+                {
+                    _scrollBar.Position = log.TopItem;
+                }
+                log.SetNeedsDisplay();
+            };
+            log.DrawContent += (e) => {
+                _scrollBar.Size = log.Source.Count - 1;
+                _scrollBar.Position = log.TopItem;
+                _scrollBar.Refresh();
+            };
 
             var builder = new ContainerBuilder();
             var logger = new LogService(log);
