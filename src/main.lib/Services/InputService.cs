@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.Configuration.Arguments;
+﻿using Autofac.Features.AttributeFilters;
+using PKISharp.WACS.Configuration.Arguments;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,14 +15,23 @@ namespace PKISharp.WACS.Services
         private readonly MainArguments _arguments;
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
+        private readonly FrameView _inputFrame;
+        private readonly FrameView _displayFrame;
         private const string _cancelCommand = "C";
         private bool _dirty;
 
-        public InputService(MainArguments arguments, ISettingsService settings, ILogService log)
+        public InputService(
+            MainArguments arguments, 
+            ISettingsService settings, 
+            ILogService log,
+            [KeyFilter("display")] FrameView displayFrame,
+            [KeyFilter("input")] FrameView inputFrame)
         {
             _log = log;
             _arguments = arguments;
             _settings = settings;
+            _inputFrame = inputFrame;
+            _displayFrame = displayFrame; 
         }
 
         private void Validate(string what)
@@ -158,93 +168,75 @@ namespace PKISharp.WACS.Services
 
         public Task<string> RequestString(string what, bool multiline = false)
         {
-            Validate(what);
-            CreateSpace();
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.Write($" {what}: ");
-            Console.ResetColor();
-
-            // Copied from http://stackoverflow.com/a/16638000
-            var bufferSize = 16384;
-            var inputStream = Console.OpenStandardInput(bufferSize);
-            Console.SetIn(new StreamReader(inputStream, Console.InputEncoding, false, bufferSize));
-
-            int top = default;
-            int left = default;
-            if (!Console.IsOutputRedirected)
+            var promise = new TaskCompletionSource<string>();
+            var dialog = new Dialog();
+            var input = new TextField()
             {
-                top = Console.CursorTop;
-                left = Console.CursorLeft;
+                X = Pos.Center(),
+                Y = Pos.Center(),
+                Width = Dim.Percent(80),
+                Height = Dim.Percent(30)
+            };
+
+            var done = new Button("Ok");
+            var closeAndReturn = () =>
+            {
+                _inputFrame.Remove(dialog);
+                promise.TrySetResult(input.Text?.ToString() ?? string.Empty);
             }
-
-            var ret = new StringBuilder();
-            do
+;
+            done.Clicked += closeAndReturn;
+            input.KeyPress += (x) =>
             {
-                var line = Console.ReadLine();
-                if (string.IsNullOrWhiteSpace(line))
+                if (x.KeyEvent.Key.HasFlag(Key.Enter))
                 {
-                    break;
+                    x.Handled = true;
+                    closeAndReturn();
                 }
-                ret.AppendLine(line);
-            }
-            while (multiline);
+            };
+            //(e) => { 
+            //    if (e.KeyEvent.Key.HasFlag(Key.Enter)) { 
+            //        closeAndReturn(); 
+            //    } 
+            //};
 
-            var answer = ret.ToString();
-            if (string.IsNullOrWhiteSpace(answer))
+            dialog = new Dialog(what, done)
             {
-                if (!Console.IsOutputRedirected)
-                {
-                    Console.SetCursorPosition(left, top);
-                }
-                Console.WriteLine("<Enter>");
-                Console.WriteLine();
-                return Task.FromResult(string.Empty);
-            }
-            else
-            {
-                Console.WriteLine();
-                return Task.FromResult(answer.Trim());
-            }
+                Width = Dim.Fill(),
+                Height = Dim.Fill()
+            };
+            dialog.Add(input);
+            _inputFrame.Add(dialog);
+            input.SetFocus();
+            Application.Refresh();
+            return promise.Task;
+
         }
 
         public Task<bool> PromptYesNo(string message, bool defaultChoice)
         {
-            Validate(message);
-            CreateSpace();
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.Write($" {message} ");
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            if (defaultChoice)
+            var promise = new TaskCompletionSource<bool>();
+            var dialog = default(Dialog);
+            var yes = new Button("Yes", is_default: defaultChoice);
+            yes.Clicked += () =>
             {
-                Console.Write($"(y*/n) ");
-            }
-            else
+                _inputFrame.Remove(dialog);
+                promise.SetResult(true);
+            };
+            var no = new Button("No", is_default: !defaultChoice);
+            no.Clicked += () => {
+                _inputFrame.Remove(dialog);
+                promise.SetResult(false);
+            };
+            dialog = new Dialog(message, yes, no)
             {
-                Console.Write($"(y/n*) ");
-            }
-            Console.ResetColor();
-            while (true)
-            {
-                var response = Console.ReadKey(true);
-                switch (response.Key)
-                {
-                    case ConsoleKey.Enter:
-                        Console.WriteLine($"- <Enter>");
-                        Console.WriteLine();
-                        return Task.FromResult(defaultChoice);
-                }
-                switch (response.KeyChar.ToString().ToLower())
-                {
-                    case "y":
-                        Console.WriteLine("- yes");
-                        Console.WriteLine();
-                        return Task.FromResult(true);
-                    case "n":
-                        Console.WriteLine("- no");
-                        Console.WriteLine();
-                        return Task.FromResult(false);
-                }
-            }
+                Width = Dim.Fill(),
+                Height = Dim.Fill()
+            };       
+            _inputFrame.Add(dialog);
+            dialog.SetFocus();
+            Application.Refresh();
+            return promise.Task;
         }
 
         // Replaces the characters of the typed in password with asterisks
@@ -376,24 +368,22 @@ namespace PKISharp.WACS.Services
                 throw new Exception("Default option is disabled");
             }
 
-            var top = Application.Top;
             var promise = new TaskCompletionSource<T>();
 
             Choice<T>? selected = null;
-            var frame = new Dialog(what)
+            var dialog = new Dialog(what)
             {
-                X = 0,
                 Y = Pos.Center(),
-                Width = Dim.Percent(50),
-                Height = Dim.Fill(0)
+                Width = Dim.Fill(),
+                Height = Dim.Fill()
             };
             var items = new ListView(choices.Select(c => c.Description).ToList())
             {
                 
                 X = 0,
                 Y = 0,
-                Width = Dim.Fill(20),
-                Height = Dim.Fill(10),
+                Width = Dim.Fill(0),
+                Height = Dim.Fill(0),
                 AllowsMarking = false,
                 ColorScheme = Colors.TopLevel,
                 
@@ -402,13 +392,13 @@ namespace PKISharp.WACS.Services
                 x =>
                 {
                     selected = choices[items.SelectedItem];
-                    top.Remove(frame);
+                    _inputFrame.Remove(dialog);
                     Application.Refresh();
                     promise.SetResult(selected.Item);
                 };
-            frame.Add(items);
-            top.Add(frame);
-            frame.SetFocus();
+            dialog.Add(items);
+            _inputFrame.Add(dialog);
+            dialog.SetFocus();
             Application.Refresh();
             return promise.Task;
         }
@@ -417,71 +407,25 @@ namespace PKISharp.WACS.Services
         /// Print a (paged) list of targets for the user to choose from
         /// </summary>
         /// <param name="listItems"></param>
-        public async Task WritePagedList(IEnumerable<Choice> listItems)
+        public Task WritePagedList(IEnumerable<Choice> listItems)
         {
-            var currentIndex = 0;
-            var currentPage = 0;
-            CreateSpace();
-            if (!listItems.Any())
+            var items = new ListView(listItems.Select(c => c.Description).ToList())
             {
-                Console.WriteLine($" [empty] ");
-                Console.WriteLine();
-                return;
-            }
 
-            while (currentIndex <= listItems.Count() - 1)
-            {
-                // Paging
-                if (currentIndex > 0)
-                {
-                    if (await Continue())
-                    {
-                        currentPage += 1;
-                    }
-                    else
-                    {
-                        return;
-                    }
-                }
-                var page = listItems.
-                    Skip(currentPage * _settings.UI.PageSize).
-                    Take(_settings.UI.PageSize);
-                foreach (var target in page)
-                {
-                    if (target.Command == null)
-                    {
-                        target.Command = (currentIndex + 1).ToString();
-                    }
+                X = 0,
+                Y = 0,
+                Width = Dim.Fill(0),
+                Height = Dim.Fill(0),
+                AllowsMarking = false,
+                ColorScheme = Colors.TopLevel,
 
-                    if (!string.IsNullOrEmpty(target.Command))
-                    {
-                        Console.ForegroundColor = target.Default ? 
-                            ConsoleColor.Green : 
-                            target.Disabled ?
-                                ConsoleColor.DarkGray : 
-                                ConsoleColor.White;
-                        Console.Write($" {target.Command}: ");
-                        Console.ResetColor();
-                    }
-                    else
-                    {
-                        Console.Write($" * ");
-                    }
+            };
 
-                    if (target.Disabled)
-                    {
-                        Console.ForegroundColor = ConsoleColor.DarkGray;
-                    } 
-                    else if (target.Color.HasValue)
-                    {
-                        Console.ForegroundColor = target.Color.Value;
-                    }
-                    Console.WriteLine(target.Description);
-                    Console.ResetColor();
-                    currentIndex++;
-                }
-            }
-            Console.WriteLine();
+            _displayFrame.Add(items);
+            Application.Refresh();
+            return Task.CompletedTask;
+
+
         }
 
         public string FormatDate(DateTime date) => date.ToString(_settings.UI.DateFormat);

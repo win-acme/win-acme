@@ -78,7 +78,7 @@ namespace PKISharp.WACS.Services
                 {
                     try
                     {
-                        _memoryCache = await File.ReadAllTextAsync(_file.FullName);
+                        _memoryCache = await File.ReadAllTextAsync(_file.FullName).ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
@@ -141,11 +141,11 @@ namespace PKISharp.WACS.Services
                 if (!_cache.IsCacheValid())
                 {
                     ruleData = await LoadFromUrl(_fileUrl);
-                    await _cache.SetAsync(ruleData);
+                    await _cache.SetAsync(ruleData).ConfigureAwait(false);
                 }
                 else
                 {
-                    ruleData = await _cache.GetAsync();
+                    ruleData = await _cache.GetAsync().ConfigureAwait(false);
                 }
                 var rules = ruleParser.ParseRules(ruleData);
                 return rules;

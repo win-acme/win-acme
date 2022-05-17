@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using Autofac.Features.AttributeFilters;
 using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Clients.DNS;
@@ -60,7 +61,7 @@ namespace PKISharp.WACS.Host
                     Application.RequestStop();
                 };
                 Application.Init();
-                Application.Run(Application.Top);
+                Application.Run();
                 Application.Shutdown();
             } 
             catch (Exception ex)
@@ -166,8 +167,38 @@ namespace PKISharp.WACS.Host
             logFrame.Add(log);
             top.Add(logFrame);
 
+            var programFrame = new FrameView()
+            {
+                X = 0,
+                Y = Pos.Center(),
+                Width = Dim.Percent(50),
+                Height = Dim.Fill()
+            }; 
+            top.Add(programFrame);
+
+            var inputFrame = new FrameView("Input")
+            {
+                X = 0,
+                Y = 0,
+                Width = Dim.Fill(),
+                Height = Dim.Percent(50),
+                CanFocus = true
+            };
+            programFrame.Add(inputFrame);
+
+            var displayFrame = new FrameView("Display")
+            {
+                X = 0,
+                Y = Pos.Percent(50),
+                Width = Dim.Fill(),
+                Height = Dim.Percent(50),
+                CanFocus = false
+            };
+            programFrame.Add(displayFrame);
+
             var _scrollBar = new ScrollBarView(log, true);
-            _scrollBar.ChangedPosition += () => {
+            _scrollBar.ChangedPosition += () =>
+            {
                 log.TopItem = _scrollBar.Position;
                 if (log.TopItem != _scrollBar.Position)
                 {
@@ -175,7 +206,8 @@ namespace PKISharp.WACS.Host
                 }
                 log.SetNeedsDisplay();
             };
-            log.DrawContent += (e) => {
+            log.DrawContent += (e) =>
+            {
                 _scrollBar.Size = log.Source.Count - 1;
                 _scrollBar.Position = log.TopItem;
                 _scrollBar.Refresh();
@@ -209,8 +241,10 @@ namespace PKISharp.WACS.Host
             {
                 return null;
             }
-            logger.SetDiskLoggingPath(settingsService.Client.LogPath!);
 
+            logger.SetDiskLoggingPath(settingsService.Client.LogPath!);
+            _ = builder.RegisterInstance(inputFrame).Keyed<FrameView>("input");
+            _ = builder.RegisterInstance(displayFrame).Keyed<FrameView>("display");
             _ = builder.RegisterInstance(argumentsParser);
             _ = builder.RegisterInstance(mainArguments);
             _ = builder.RegisterInstance(logger).As<ILogService>();
@@ -218,7 +252,7 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterInstance(pluginService).As<IPluginService>();
             _ = builder.RegisterType<UserRoleService>().As<IUserRoleService>().SingleInstance();
             _ = builder.RegisterType<ValidationOptionsService>().As<IValidationOptionsService>().SingleInstance();
-            _ = builder.RegisterType<InputService>().As<IInputService>().SingleInstance();
+            _ = builder.RegisterType<InputService>().As<IInputService>().SingleInstance().WithAttributeFiltering();
             _ = builder.RegisterType<ProxyService>().As<IProxyService>().SingleInstance();
             _ = builder.RegisterType<UpdateClient>().SingleInstance();
             _ = builder.RegisterType<PasswordGenerator>().SingleInstance();
