@@ -17,6 +17,7 @@ namespace PKISharp.WACS.Services
         private readonly ISettingsService _settings;
         private readonly FrameView _inputFrame;
         private readonly FrameView _displayFrame;
+        private Dialog _showDialog;
         private const string _cancelCommand = "C";
         private bool _dirty;
 
@@ -31,7 +32,8 @@ namespace PKISharp.WACS.Services
             _arguments = arguments;
             _settings = settings;
             _inputFrame = inputFrame;
-            _displayFrame = displayFrame; 
+            _displayFrame = displayFrame;
+            _showDialog = new Dialog() { Width = Dim.Fill(), Height = Dim.Fill() };
         }
 
         private void Validate(string what)
@@ -42,6 +44,13 @@ namespace PKISharp.WACS.Services
             }
         }
 
+        private void HideShow()
+        {
+            if (_showDialog.SuperView != null)
+            {
+                _showDialog.SuperView.Remove(_showDialog);
+            }
+        }
         public void CreateSpace()
         {
             if (_log.Dirty || _dirty)
@@ -52,122 +61,45 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        public Task<bool> Continue(string message = "Press <Space> to continue...")
-        {
-            Validate(message);
-            CreateSpace();
-            Console.Write($" {message} ");
-            while (true)
-            {
-                var response = Console.ReadKey(true);
-                switch (response.Key)
-                {
-                    case ConsoleKey.Spacebar:
-                        Console.SetCursorPosition(0, Console.CursorTop);
-                        Console.Write(new string(' ', Console.WindowWidth));
-                        Console.SetCursorPosition(0, Console.CursorTop);
-                        return Task.FromResult(true);
-                }
-            }
-        }
-
         public Task<bool> Wait(string message = "Press <Enter> to continue...")
         {
-            Validate(message);
-            CreateSpace();
-            Console.Write($" {message} ");
-            while (true)
+            HideShow();
+            var promise = new TaskCompletionSource<bool>();
+            var dialog = default(Dialog);
+            var yes = new Button("Continue", is_default: true);
+            yes.Clicked += () =>
             {
-                var response = Console.ReadKey(true);
-                switch (response.Key)
-                {
-                    case ConsoleKey.Enter:
-                        Console.WriteLine();
-                        Console.WriteLine();
-                        return Task.FromResult(true);
-                    case ConsoleKey.Escape:
-                        Console.WriteLine();
-                        Console.WriteLine();
-                        return Task.FromResult(false);
-                    default:
-                        _log.Verbose("Unexpected key {key} pressed", response.Key);
-                        continue;
-                }
-            }
+                _inputFrame.Remove(dialog);
+                promise.SetResult(true);
+            };
+            dialog = new Dialog(message, yes)
+            {
+                Width = Dim.Fill(),
+                Height = Dim.Fill()
+            };
+            _inputFrame.Add(dialog);
+            dialog.SetFocus();
+            Application.Refresh();
+            return promise.Task;
         }
 
         public void Show(string? label, string? value, int level = 0)
         {
-            var hasLabel = !string.IsNullOrEmpty(label);
-            if (hasLabel)
+            if (_showDialog.SuperView == null)
             {
-                Console.ForegroundColor = ConsoleColor.White;
-                if (level > 0)
-                {
-                    Console.Write($"  - {label}");
-                }
-                else
-                {
-                    Console.Write($" {label}");
-                }
-                Console.ResetColor();
+                _showDialog.RemoveAll();
+                _displayFrame.Add(_showDialog);
             }
-
-            if (!string.IsNullOrWhiteSpace(value))
-            {
-                var offset = 0;
-                if (hasLabel)
-                {
-                    offset = Math.Max(20, label!.Length + 2);
-                    Console.Write(":");
-                }
-                WriteMultiline(offset, value);
-            }
-            else
-            {
-                if (!Console.IsOutputRedirected)
-                {
-                    Console.SetCursorPosition(15, Console.CursorTop);
-                }
-                Console.WriteLine($"-----------------------------------------------------------------");
-            }
-
-            _dirty = true;
-        }
-
-        private static void WriteMultiline(int startPos, string value)
-        {
-            var step = 79 - startPos;
-            var sentences = value.Split('\n');
-            foreach (var sentence in sentences)
-            {
-                var pos = 0;
-                var words = sentence.Split(' ');
-                while (pos < words.Length)
-                {
-                    var line = "";
-                    if (words[pos].Length + 1 >= step)
-                    {
-                        line = words[pos++];
-                    }
-                    else
-                    {
-                        while (pos < words.Length && line.Length + words[pos].Length + 1 < step)
-                        {
-                            line += words[pos++] + " ";
-                        }
-                    }
-                    if (!Console.IsOutputRedirected)
-                    {
-                        Console.SetCursorPosition(startPos, Console.CursorTop);
-                    }
-                    Console.WriteLine($" {line.TrimEnd()}");
-                }
-            }
+            var lastPos = _showDialog.Subviews.Last().Subviews.LastOrDefault();
+            var y = lastPos != null ? lastPos.Y + 1 : 0;
+            var labelText = new Label($"{label}: ") { Y = y };
+            _showDialog.Add(labelText);
+            _showDialog.Add(new Label(value) { Y = y, X = Pos.AnchorEnd(value?.Length ?? 0 + 1) });
         }
 
         public Task<string> RequestString(string what, bool multiline = false)
         {
+            HideShow();
             var promise = new TaskCompletionSource<string>();
             var dialog = new Dialog();
             var input = new TextField()
@@ -182,13 +114,13 @@ namespace PKISharp.WACS.Services
             var closeAndReturn = () =>
             {
                 _inputFrame.Remove(dialog);
+                HideShow();
                 promise.TrySetResult(input.Text?.ToString() ?? string.Empty);
-            }
-;
+            };
             done.Clicked += closeAndReturn;
             input.KeyPress += (x) =>
             {
-                if (x.KeyEvent.Key.HasFlag(Key.Enter))
+                if (x.KeyEvent.Key == Key.Enter)
                 {
                     x.Handled = true;
                     closeAndReturn();
@@ -221,11 +153,13 @@ namespace PKISharp.WACS.Services
             yes.Clicked += () =>
             {
                 _inputFrame.Remove(dialog);
+                HideShow();
                 promise.SetResult(true);
             };
             var no = new Button("No", is_default: !defaultChoice);
             no.Clicked += () => {
                 _inputFrame.Remove(dialog);
+                HideShow();
                 promise.SetResult(false);
             };
             dialog = new Dialog(message, yes, no)
@@ -328,7 +262,7 @@ namespace PKISharp.WACS.Services
                 cancel.Default = true;
             }
             baseChoices.Add(cancel);
-            return await ChooseFromMenu(what, baseChoices);
+            return await ChooseFromMenu(what, baseChoices).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -393,6 +327,7 @@ namespace PKISharp.WACS.Services
                 {
                     selected = choices[items.SelectedItem];
                     _inputFrame.Remove(dialog);
+                    HideShow();
                     Application.Refresh();
                     promise.SetResult(selected.Item);
                 };

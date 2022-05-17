@@ -14,6 +14,7 @@ using PKISharp.WACS.Plugins.ValidationPlugins;
 using PKISharp.WACS.Services.Legacy;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Services
 {
@@ -99,8 +100,8 @@ namespace PKISharp.WACS.Services
             {
                 builder.Register(c => runLevel).As<RunLevel>();
                 builder.Register(c => resolver).As<IResolver>();
-                builder.Register(c => resolver.GetTargetPlugin(main).Result).As<ITargetPluginOptionsFactory>().SingleInstance();
-                builder.Register(c => resolver.GetCsrPlugin(main).Result).As<ICsrPluginOptionsFactory>().SingleInstance();
+                builder.Register(c => resolver.GetTargetPlugin(main)).As<Task<ITargetPluginOptionsFactory>>().SingleInstance();
+                builder.Register(c => resolver.GetCsrPlugin(main)).As<Task<ICsrPluginOptionsFactory>>().SingleInstance();
             });
         }
 
@@ -122,8 +123,8 @@ namespace PKISharp.WACS.Services
                 builder.RegisterInstance(renewal.TargetPluginOptions).As(renewal.TargetPluginOptions.GetType().BaseType!);
                 builder.RegisterType(renewal.TargetPluginOptions.Instance).As<ITargetPlugin>().SingleInstance();
                 builder.Register(c => c.Resolve<ITargetPlugin>().Generate().Result).As<Target>().SingleInstance();
-                builder.Register(c => resolver.GetValidationPlugin(main, c.Resolve<Target>()).Result).As<IValidationPluginOptionsFactory>().SingleInstance();
-                builder.Register(c => resolver.GetOrderPlugin(main, c.Resolve<Target>()).Result).As<IOrderPluginOptionsFactory>().SingleInstance();
+                builder.Register(c => resolver.GetValidationPlugin(main, c.Resolve<Target>())).As<Task<IValidationPluginOptionsFactory>>().SingleInstance();
+                builder.Register(c => resolver.GetOrderPlugin(main, c.Resolve<Target>())).As<Task<IOrderPluginOptionsFactory>>().SingleInstance();
             });
         }
 

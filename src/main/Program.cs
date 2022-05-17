@@ -155,7 +155,11 @@ namespace PKISharp.WACS.Host
                 X = Pos.Percent(50),
                 Y = Pos.Center(),
                 Width = Dim.Percent(50),
-                Height = Dim.Fill()
+                Height = Dim.Fill(),
+                Border = new Border()
+                {
+                    BorderStyle = BorderStyle.Rounded
+                }
             };
             var log = new ListView()
             {
@@ -172,7 +176,8 @@ namespace PKISharp.WACS.Host
                 X = 0,
                 Y = Pos.Center(),
                 Width = Dim.Percent(50),
-                Height = Dim.Fill()
+                Height = Dim.Fill(),
+                Border = new Border() { BorderThickness = new Thickness(0) }
             }; 
             top.Add(programFrame);
 
@@ -182,7 +187,8 @@ namespace PKISharp.WACS.Host
                 Y = 0,
                 Width = Dim.Fill(),
                 Height = Dim.Percent(50),
-                CanFocus = true
+                CanFocus = true,
+                Border = new Border() { BorderThickness = new Thickness(0) }
             };
             programFrame.Add(inputFrame);
 
@@ -192,7 +198,8 @@ namespace PKISharp.WACS.Host
                 Y = Pos.Percent(50),
                 Width = Dim.Fill(),
                 Height = Dim.Percent(50),
-                CanFocus = false
+                CanFocus = false,
+                Border = new Border() { BorderThickness = new Thickness(0) }
             };
             programFrame.Add(displayFrame);
 

@@ -407,7 +407,8 @@ namespace PKISharp.WACS
             where TOptions : class
         {
             // Choose the options factory
-            var optionsFactory = scope.Resolve<TOptionsFactory>();
+            var optionsFactoryTask = scope.Resolve<Task<TOptionsFactory>>();
+            var optionsFactory = await optionsFactoryTask.ConfigureAwait(false);
             if (optionsFactory is INull)
             {
                 _exceptionHandler.HandleException(message: $"No {name} plugin could be selected");
