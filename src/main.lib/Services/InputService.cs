@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Timers;
 using Terminal.Gui;
 
 namespace PKISharp.WACS.Services
@@ -18,12 +19,14 @@ namespace PKISharp.WACS.Services
         private readonly FrameView _inputFrame;
         private readonly FrameView _displayFrame;
         private Dialog _showDialog;
+        private Dialog _loadDialog;
+        private Dialog? _progressDialog;
         private const string _cancelCommand = "C";
         private bool _dirty;
 
         public InputService(
-            MainArguments arguments, 
-            ISettingsService settings, 
+            MainArguments arguments,
+            ISettingsService settings,
             ILogService log,
             [KeyFilter("display")] FrameView displayFrame,
             [KeyFilter("input")] FrameView inputFrame)
@@ -49,6 +52,10 @@ namespace PKISharp.WACS.Services
             if (_showDialog.SuperView != null)
             {
                 _showDialog.SuperView.Remove(_showDialog);
+            }
+            if (_progressDialog?.SuperView != null)
+            {
+                _progressDialog.SuperView.Remove(_progressDialog);
             }
         }
         public void CreateSpace()
@@ -97,7 +104,7 @@ namespace PKISharp.WACS.Services
             _showDialog.Add(new Label(value) { Y = y, X = Pos.AnchorEnd(value?.Length ?? 0 + 1) });
         }
 
-        public Task<string> RequestString(string what, bool multiline = false)
+        public Task<string> RequestString(string what, bool multiline = false, bool secret = false)
         {
             HideShow();
             var promise = new TaskCompletionSource<string>();
@@ -107,7 +114,8 @@ namespace PKISharp.WACS.Services
                 X = Pos.Center(),
                 Y = Pos.Center(),
                 Width = Dim.Percent(80),
-                Height = Dim.Percent(30)
+                Height = Dim.Percent(30),
+                Secret = secret
             };
 
             var done = new Button("Ok");
@@ -139,8 +147,10 @@ namespace PKISharp.WACS.Services
             };
             dialog.Add(input);
             _inputFrame.Add(dialog);
+            dialog.SetFocus();
             input.SetFocus();
-            Application.Refresh();
+            Application.Driver.SetCursorVisibility(CursorVisibility.VerticalFix);
+            Application.MainLoop.Driver.Wakeup();
             return promise.Task;
 
         }
@@ -166,7 +176,7 @@ namespace PKISharp.WACS.Services
             {
                 Width = Dim.Fill(),
                 Height = Dim.Fill()
-            };       
+            };
             _inputFrame.Add(dialog);
             dialog.SetFocus();
             Application.Refresh();
@@ -175,63 +185,8 @@ namespace PKISharp.WACS.Services
 
         // Replaces the characters of the typed in password with asterisks
         // More info: http://rajeshbailwal.blogspot.com/2012/03/password-in-c-console-application.html
-        public async Task<string?> ReadPassword(string what)
-        {
-            Validate(what);
-            CreateSpace();
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.Write($" {what}: ");
-            Console.ResetColor();
-            var password = new StringBuilder();
-            try
-            {
-                var info = Console.ReadKey(true);
-                while (info.Key != ConsoleKey.Enter)
-                {
-                    if (info.Key != ConsoleKey.Backspace)
-                    {
-                        Console.Write("*");
-                        password.Append(info.KeyChar);
-                    }
-                    else if (info.Key == ConsoleKey.Backspace)
-                    {
-                        if (password.Length > 0)
-                        {
-                            // remove one character from the list of password characters
-                            password.Remove(password.Length - 1, 1);
-                            // get the location of the cursor
-                            var pos = Console.CursorLeft;
-                            // move the cursor to the left by one character
-                            Console.SetCursorPosition(pos - 1, Console.CursorTop);
-                            // replace it with space
-                            Console.Write(" ");
-                            // move the cursor to the left by one character again
-                            Console.SetCursorPosition(pos - 1, Console.CursorTop);
-                        }
-                    }
-                    info = Console.ReadKey(true);
-                }
-                // add a new line because user pressed enter at the end of their password
-                Console.WriteLine();
-                _dirty = true;
-                _log.Dirty = true;
-            }
-            catch (Exception ex)
-            {
-                _log.Error("Error reading Password: {@ex}", ex);
-            }
+        public async Task<string?> ReadPassword(string what) => await RequestString(what, secret: true);
 
-            // Return null instead of emtpy string to save storage
-            var ret = password.ToString();
-            if (string.IsNullOrEmpty(ret))
-            {
-                return null;
-            }
-            else
-            {
-                return ret;
-            }
-        }
 
         /// <summary>
         /// Version of the picker where null may be returned
@@ -270,9 +225,9 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="targets"></param>
         public async Task<T> ChooseRequired<S, T>(
-            string what, 
-            IEnumerable<S> options, 
-            Func<S, Choice<T>> creator) 
+            string what,
+            IEnumerable<S> options,
+            Func<S, Choice<T>> creator)
         {
             var baseChoices = options.Select(creator).ToList();
             if (!baseChoices.Any(x => !x.Disabled))
@@ -313,14 +268,14 @@ namespace PKISharp.WACS.Services
             };
             var items = new ListView(choices.Select(c => c.Description).ToList())
             {
-                
+
                 X = 0,
                 Y = 0,
                 Width = Dim.Fill(0),
                 Height = Dim.Fill(0),
                 AllowsMarking = false,
                 ColorScheme = Colors.TopLevel,
-                
+
             };
             items.OpenSelectedItem +=
                 x =>
@@ -364,6 +319,31 @@ namespace PKISharp.WACS.Services
         }
 
         public string FormatDate(DateTime date) => date.ToString(_settings.UI.DateFormat);
+        Task<string> IInputService.RequestString(string what, bool multiline) => RequestString(what, multiline);
+        void IInputService.Progress(string label) {
+            if (_progressDialog == null)
+            {
+                _progressDialog = new Dialog() { Width = Dim.Fill(), Height = Dim.Fill() };
+                _progressDialog.Add(new Label(label) { Y = Pos.Percent(20) });
+                var x = new ProgressBar() { 
+                    Y = Pos.Percent(30),
+                    Width = Dim.Fill(),
+                    Height = 1,
+                    ColorScheme = Colors.Error
+                };
+                _progressDialog.Add(x);
+                var t = new Timer(250);
+                t.Elapsed += (c,e) => { 
+                    x.Pulse(); 
+                    Application.MainLoop.Driver.Wakeup();
+                };
+                t.Start();
+            }
+            if (_progressDialog.SuperView == null)
+            {
+                _displayFrame.Add(_progressDialog);
+            }            
+        }
     }
 
 }

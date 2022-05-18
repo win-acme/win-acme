@@ -80,5 +80,10 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         }
 
         public void CreateSpace() { }
+
+        public void Progress(string label)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

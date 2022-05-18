@@ -14,6 +14,7 @@ namespace PKISharp.WACS.Services
         Task<string> RequestString(string what, bool multiline = false);
         void CreateSpace();
         void Show(string? label, string? value = null, int level = 0);
+        void Progress(string label);
         Task<bool> Wait(string message = "Press <Enter> to continue");
         Task WritePagedList(IEnumerable<Choice> listItems);
         string FormatDate(DateTime date);

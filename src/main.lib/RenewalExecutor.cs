@@ -65,6 +65,7 @@ namespace PKISharp.WACS
         /// <returns></returns>
         public async Task<RenewResult> HandleRenewal(Renewal renewal, RunLevel runLevel)
         {
+            _input.Progress($"Running renewal {renewal.Id}");
             _input.CreateSpace();
             _log.Reset();
             using var ts = _scopeBuilder.Target(_container, renewal, runLevel);
