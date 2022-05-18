@@ -280,6 +280,17 @@ namespace PKISharp.WACS
                     OrderByDescending(x => x.Certificate.NotBefore).
                     FirstOrDefault();
 
+                if (order.PreviousCertificate == null)
+                {
+                    // Fallback to legacy cache file name without
+                    // order name part
+                    order.PreviousCertificate = _certificateService.
+                       CachedInfos(order.Renewal).
+                       Where(c => !orderContexts.Any(o => c.CacheFile!.Name.Contains($"-{o.Order.CacheKeyPart ?? "main"}-"))).
+                       OrderByDescending(x => x.Certificate.NotBefore).
+                       FirstOrDefault();
+                }
+
                 // Get the existing certificate matching the order description
                 // this may not be the same as the previous certificate
                 order.NewCertificate = GetFromCache(order, runLevel);

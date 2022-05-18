@@ -71,7 +71,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
                 var tempPfx = new X509Certificate2(
                     original.Export(X509ContentType.Cert),
                     "", 
-                    X509KeyStorageFlags.EphemeralKeySet);
+                    X509KeyStorageFlags.EphemeralKeySet | X509KeyStorageFlags.Exportable);
                 tempPfx = tempPfx.CopyWithPrivateKey(rsaProvider);
                 return Task.FromResult(tempPfx);
             }
