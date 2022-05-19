@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Clients
@@ -15,6 +14,7 @@ namespace PKISharp.WACS.Clients
     {
         private NetworkCredential? Credential { get; set; }
         private readonly ILogService _log;
+        private FluentFTP.FtpClient? _cacheClient;
 
         public FtpClient(
             NetworkCredentialOptions? options,
@@ -28,7 +28,6 @@ namespace PKISharp.WACS.Clients
             }
         }
 
-        private FluentFTP.FtpClient _cacheClient;
         private async Task<FluentFTP.FtpClient> CreateClient(Uri uri)
         {
             if (_cacheClient == null || 
