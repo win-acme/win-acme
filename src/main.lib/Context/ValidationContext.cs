@@ -18,12 +18,14 @@ namespace PKISharp.WACS.Context
             TargetPart = targetPart;
             OrderContext = authorization.Order;
             Authorization = authorization.Authorization;
+            Label = authorization.Label;
             Options = options;
         }
         public OrderContext OrderContext { get; }
         public ValidationPluginOptions Options { get; }
         public TargetPart TargetPart { get; }
         public Authorization Authorization { get; }
+        public string Label { get; }
     }
 
     public class ValidationContext
@@ -33,7 +35,7 @@ namespace PKISharp.WACS.Context
             ValidationContextParameters parameters)
         {
             Identifier = parameters.Authorization.Identifier.Value;
-            Label = (parameters.Authorization.Wildcard == true ? "*." : "") + Identifier;
+            Label = parameters.Label;
             TargetPart = parameters.TargetPart;
             Authorization = parameters.Authorization;
             Result = parameters.OrderContext.Result;

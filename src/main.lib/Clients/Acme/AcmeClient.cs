@@ -553,6 +553,12 @@ namespace PKISharp.WACS.Clients.Acme
             return await Retry(client, () => client.GetAuthorizationDetailsAsync(url));
         }
 
+        internal async Task DeactivateAuthorization(string url)
+        {
+            var client = await GetClient();
+            await Retry(client, () => client.DeactivateAuthorizationAsync(url));
+        }
+
         /// <summary>
         /// https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.1.3
         /// </summary>

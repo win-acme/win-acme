@@ -6,11 +6,14 @@ namespace PKISharp.WACS.Context
     {
         public Authorization Authorization { get; }
         public OrderContext Order { get; }
-
-        public AuthorizationContext(OrderContext order, Authorization authorization)
+        public string Uri { get; }
+        public string Label { get; }
+        public AuthorizationContext(OrderContext order, Authorization authorization, string uri)
         {
             Order = order;
             Authorization = authorization;
+            Uri = uri;
+            Label = authorization.Wildcard == true ? "*." : "" + authorization.Identifier.Value;
         }
     }
 }

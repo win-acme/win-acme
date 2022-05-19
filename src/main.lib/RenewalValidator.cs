@@ -24,11 +24,13 @@ namespace PKISharp.WACS
         private readonly ISettingsService _settings;
         private readonly IValidationOptionsService _validationOptions;
         private readonly ExceptionHandler _exceptionHandler;
+        private readonly AcmeClient _acmeClient;
 
         public RenewalValidator(
             IAutofacBuilder scopeBuilder,
             ISettingsService settings,
             ILogService log,
+            AcmeClient acmeClient,
             IValidationOptionsService validationOptions,
             ExceptionHandler exceptionHandler)
         {
@@ -37,6 +39,7 @@ namespace PKISharp.WACS
             _validationOptions = validationOptions;
             _exceptionHandler = exceptionHandler;
             _settings = settings;
+            _acmeClient = acmeClient; 
         }
 
         /// <summary>
@@ -61,7 +64,7 @@ namespace PKISharp.WACS
                     var auth = await GetAuthorization(orderContext, uri);
                     if (auth != null)
                     {
-                        return new AuthorizationContext(orderContext, auth);
+                        return new AuthorizationContext(orderContext, auth, uri);
                     }
                     return null;
                 });
@@ -132,17 +135,19 @@ namespace PKISharp.WACS
             // Execute them per group, where one group means one validation plugin
             foreach (var group in mapping)
             {
-                var multipleOrders = group.Value.Any(x => x.Order != group.Value.First().Order);
-                var validationScope = _scopeBuilder.Validation(group.Value.First().Order.ExecutionScope, group.Key);
+                var pluginOptions = group.Key;
+                var authorizations = group.Value;
+                var multipleOrders = authorizations.Any(x => x.Order != authorizations.First().Order);
+                var validationScope = _scopeBuilder.Validation(authorizations.First().Order.ExecutionScope, pluginOptions);
                 var plugin = validationScope.Resolve<IValidationPlugin>();
-                var contexts = group.Value.Select(context =>
+                var contexts = authorizations.Select(context =>
                 {
                     var targetPart = context.Order.Target.Parts.FirstOrDefault(p => p.Identifiers.Any(i => i == Identifier.Parse(context.Authorization)));
                     if (targetPart == null)
                     {
                         throw new InvalidOperationException("Authorisation found that doesn't match target");
                     }
-                    return new ValidationContextParameters(context, targetPart, group.Key);
+                    return new ValidationContextParameters(context, targetPart, pluginOptions);
                 }).ToList();
                 if (_settings.Validation.DisableMultiThreading != false || plugin.Parallelism == ParallelOperations.None)
                 {
@@ -152,6 +157,24 @@ namespace PKISharp.WACS
                 {
                     await ParallelValidation(plugin.Parallelism, validationScope, contexts, runLevel);
                 }
+                try
+                {
+                    // Deactivate any remaining authorizations that are still pending
+                    // due to an error. This prevents users from running into the rate 
+                    // limit of 300 pending authorizations.
+                    var deactivateTasks = authorizations.
+                            Where(a => a.Authorization.Status == AcmeClient.AuthorizationPending).
+                            Select(a => { 
+                                _log.Information("[{identifier}] Deactivating pending authorization", a.Label);
+                                return _acmeClient.DeactivateAuthorization(a.Uri);
+                            });
+                    await Task.WhenAll(deactivateTasks);
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, $"Unable to deactivate authorizations");
+                }
+
             }
         }
 
