@@ -94,17 +94,14 @@ namespace PKISharp.WACS.Services
         {
             foreach (var f in _cache.EnumerateFiles(pattern))
             {
-                if (f.LastWriteTime < DateTime.Now.AddDays(_settings.Cache.ReuseDays * -1))
+                _log.Verbose("Deleting {file} from {folder}", f.Name, _cache.FullName);
+                try
                 {
-                    _log.Verbose("Deleting {file} from {folder}", f.Name, _cache.FullName);
-                    try
-                    {
-                        f.Delete();
-                    }
-                    catch (Exception ex)
-                    {
-                        _log.Warning("Error deleting {file} from {folder}: {message}", f.Name, _cache.FullName, ex.Message);
-                    }
+                    f.Delete();
+                }
+                catch (Exception ex)
+                {
+                    _log.Warning("Error deleting {file} from {folder}: {message}", f.Name, _cache.FullName, ex.Message);
                 }
             }
         }
