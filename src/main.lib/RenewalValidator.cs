@@ -486,13 +486,16 @@ namespace PKISharp.WACS
                     if (updatedChallenge.Error != null)
                     {
                         _log.Error("[{identifier}] {Error}", validationContext.Label, updatedChallenge.Error.ToString());
-
                     }
                     validationContext.Result.AddErrorMessage("Validation failed", !validationContext.Valid);
                     return;
                 }
                 else
                 {
+                    // Propagate valid state up to the Authorization
+                    // This assumption might prove wrong if future 
+                    // server implementations require multiple challenges
+                    validationContext.Authorization.Status = AcmeClient.AuthorizationValid;
                     _log.Information("[{identifier}] Authorization result: {Status}", validationContext.Label, updatedChallenge.Status);
                     return;
                 }

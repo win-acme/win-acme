@@ -181,8 +181,7 @@ namespace PKISharp.WACS
         private async Task<RenewResult> HandleOrders(ILifetimeScope execute, Renewal renewal, List<Order> orders, RunLevel runLevel)
         {
             // Build context
-            var result = new RenewResult();
-            var orderContexts = orders.Select(order => new OrderContext(execute, order, runLevel, result)).ToList();
+            var orderContexts = orders.Select(order => new OrderContext(execute, order, runLevel)).ToList();
 
             // Check if renewal is needed at the root level
             var mainDue = !ShouldRunRenewal(renewal, runLevel);
@@ -258,7 +257,12 @@ namespace PKISharp.WACS
             }
 
             // Return final result
-            return result;
+            var combined = new RenewResult();
+            combined.Thumbprints.AddRange(orderContexts.SelectMany(o => o.Result.Thumbprints).Distinct());
+            combined.ErrorMessages.AddRange(orderContexts.SelectMany(o => o.Result.ErrorMessages).Distinct());
+            combined.ExpireDate = orderContexts.Min(o => o.Result.ExpireDate);
+            combined.Success = orderContexts.All(o => o.Result.Success == true);
+            return combined;
         }
 
         /// <summary>
@@ -314,7 +318,7 @@ namespace PKISharp.WACS
             {
                 if (order.Result.Success == false)
                 {
-                    _log.Verbose("Order {n}/{m} ({friendly}): validation error",
+                    _log.Verbose("Order {n}/{m} ({friendly}): error",
                          orderContexts.IndexOf(order) + 1,
                          orderContexts.Count,
                          order.OrderName);
