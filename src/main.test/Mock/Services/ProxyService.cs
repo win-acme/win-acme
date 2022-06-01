@@ -9,7 +9,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
     {
         public SslProtocols SslProtocols { get => throw new System.NotImplementedException(); set => throw new System.NotImplementedException(); }
         public WindowsProxyUsePolicy ProxyType => throw new System.NotImplementedException();
-        public HttpClient GetHttpClient(bool checkSsl = true) => throw new System.NotImplementedException();
+        public HttpClient GetHttpClient(bool checkSsl = true) => new HttpClient();
         public HttpMessageHandler GetHttpMessageHandler() => throw new System.NotImplementedException();
         public IWebProxy? GetWebProxy() => throw new System.NotImplementedException();
     }
