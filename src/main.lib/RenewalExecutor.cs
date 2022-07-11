@@ -201,28 +201,30 @@ namespace PKISharp.WACS
                 {
                     return Abort(renewal);
                 } 
-            } 
+            }
 
             // Only process orders that are due. In the normal
             // case when using static due dates this will be all 
             // the orders. But when using the random due dates,
             // this could only be a part of them.
+            var allContexts = orderContexts;
+            var runnableContexts = orderContexts;
             if (!runLevel.HasFlag(RunLevel.IgnoreCache) && !renewal.New && !renewal.Updated)
             {
-                orderContexts = orderContexts.Where(x => x.ShouldRun).ToList();
+                runnableContexts = orderContexts.Where(x => x.ShouldRun).ToList();
             }
-            if (!orderContexts.Any())
+            if (!runnableContexts.Any())
             {
-                _log.Debug("None of the orders are currently due to run", orderContexts.Count, orders.Count);
+                _log.Debug("None of the orders are currently due to run");
                 return Abort(renewal);
             } 
             if (!renewal.New && !runLevel.HasFlag(RunLevel.ForceRenew))
             {
                 _log.Information(LogType.All, "Renewing {renewal}", renewal.LastFriendlyName);
             }
-            if (orders.Count > orderContexts.Count)
+            if (orders.Count > runnableContexts.Count)
             {
-                _log.Information("{n} of {m} orders are due to run", orderContexts.Count, orders.Count);
+                _log.Information("{n} of {m} orders are due to run", runnableContexts.Count, orders.Count);
             }
 
             // If at this point we haven't retured already with an error/abort
@@ -241,10 +243,10 @@ namespace PKISharp.WACS
             }
 
             // Get the certificates from cache or server
-            await ExecuteOrders(orderContexts, runLevel);
+            await ExecuteOrders(runnableContexts, allContexts, runLevel);
 
             // Handle all the store/install steps
-            await ProcessOrders(orderContexts);
+            await ProcessOrders(runnableContexts);
 
             // Run the post-execution script. Note that this is different
             // from the script installation plugin, which is handled
@@ -258,22 +260,22 @@ namespace PKISharp.WACS
 
             // Return final result
             var combined = new RenewResult();
-            combined.Thumbprints.AddRange(orderContexts.SelectMany(o => o.Result.Thumbprints).Distinct());
-            combined.ErrorMessages.AddRange(orderContexts.SelectMany(o => o.Result.ErrorMessages).Distinct());
-            combined.ExpireDate = orderContexts.Min(o => o.Result.ExpireDate);
-            combined.Success = orderContexts.All(o => o.Result.Success == true);
+            combined.Thumbprints.AddRange(runnableContexts.SelectMany(o => o.Result.Thumbprints).Distinct());
+            combined.ErrorMessages.AddRange(runnableContexts.SelectMany(o => o.Result.ErrorMessages).Distinct());
+            combined.ExpireDate = runnableContexts.Min(o => o.Result.ExpireDate);
+            combined.Success = runnableContexts.All(o => o.Result.Success == true);
             return combined;
         }
 
         /// <summary>
         /// Get the certificates, if not from cache then from the server
         /// </summary>
-        /// <param name="orderContexts"></param>
+        /// <param name="runnableContexts"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        private async Task ExecuteOrders(List<OrderContext> orderContexts, RunLevel runLevel)
+        private async Task ExecuteOrders(List<OrderContext> runnableContexts, List<OrderContext> allContexts, RunLevel runLevel)
         {
-            foreach (var order in orderContexts)
+            foreach (var order in runnableContexts)
             {
                 // Get the previously issued certificates in this renewal
                 // sub order regardless of the fact that it may have another
@@ -290,14 +292,14 @@ namespace PKISharp.WACS
                     // order name part
                     order.PreviousCertificate = _certificateService.
                        CachedInfos(order.Renewal).
-                       Where(c => !orderContexts.Any(o => c.CacheFile!.Name.Contains($"-{o.Order.CacheKeyPart ?? "main"}-"))).
+                       Where(c => !allContexts.Any(o => c.CacheFile!.Name.Contains($"-{o.Order.CacheKeyPart ?? "main"}-"))).
                        OrderByDescending(x => x.Certificate.NotBefore).
                        FirstOrDefault();
                 }
 
                 if (order.PreviousCertificate != null)
                 {
-                    _log.Verbose("Previous certificate found at {fi}", order.PreviousCertificate.CacheFile!.FullName);
+                    _log.Debug("Previous certificate found at {fi}", order.PreviousCertificate.CacheFile!.FullName);
                 }
 
                 // Get the existing certificate matching the order description
@@ -307,7 +309,7 @@ namespace PKISharp.WACS
 
             // Group validations of multiple order together
             // as to maximize the potential gains in parallelization
-            var fromServer = orderContexts.Where(x => x.NewCertificate == null).ToList();
+            var fromServer = runnableContexts.Where(x => x.NewCertificate == null).ToList();
             foreach (var order in fromServer)
             {
                 await CreateOrder(order);
@@ -319,28 +321,28 @@ namespace PKISharp.WACS
             await _validator.AuthorizeOrders(validationRequired, runLevel);
 
             // Download all the orders in parallel
-            await Task.WhenAll(orderContexts.Select(async order =>
+            await Task.WhenAll(runnableContexts.Select(async order =>
             {
                 if (order.Result.Success == false)
                 {
                     _log.Verbose("Order {n}/{m} ({friendly}): error",
-                         orderContexts.IndexOf(order) + 1,
-                         orderContexts.Count,
+                         runnableContexts.IndexOf(order) + 1,
+                         runnableContexts.Count,
                          order.OrderName);
                 }
                 else if (order.NewCertificate == null)
                 {
                     _log.Verbose("Order {n}/{m} ({friendly}): processing...",
-                         orderContexts.IndexOf(order) + 1,
-                         orderContexts.Count,
+                         runnableContexts.IndexOf(order) + 1,
+                         runnableContexts.Count,
                          order.OrderName);
                     order.NewCertificate = await GetFromServer(order);
                 }
                 else
                 {
                     _log.Verbose("Order {n}/{m} ({friendly}): handle from cache",
-                         orderContexts.IndexOf(order) + 1,
-                         orderContexts.Count,
+                         runnableContexts.IndexOf(order) + 1,
+                         runnableContexts.Count,
                          order.OrderName);
                 }
             }));
