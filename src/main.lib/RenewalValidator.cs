@@ -236,7 +236,7 @@ namespace PKISharp.WACS
             }
             if (!context.Authorization.Challenges.Any(x => x.Type == options.ChallengeType))
             {
-                _log.Warning("No challenge of type {options.ChallengeType} available", options.Name, identifier.Value);
+                _log.Warning("No challenge of type {challengeType} available", options.ChallengeType);
                 return false;
             }
             return true;
