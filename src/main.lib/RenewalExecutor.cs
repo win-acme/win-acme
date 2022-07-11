@@ -184,7 +184,7 @@ namespace PKISharp.WACS
             var orderContexts = orders.Select(order => new OrderContext(execute, order, runLevel)).ToList();
 
             // Check if renewal is needed at the root level
-            var mainDue = !ShouldRunRenewal(renewal, runLevel);
+            var mainDue = ShouldRunRenewal(renewal, runLevel);
 
             // Check individual orders
             foreach (var o in orderContexts)
@@ -293,6 +293,11 @@ namespace PKISharp.WACS
                        Where(c => !orderContexts.Any(o => c.CacheFile!.Name.Contains($"-{o.Order.CacheKeyPart ?? "main"}-"))).
                        OrderByDescending(x => x.Certificate.NotBefore).
                        FirstOrDefault();
+                }
+
+                if (order.PreviousCertificate != null)
+                {
+                    _log.Verbose("Previous certificate found at {fi}", order.PreviousCertificate.CacheFile!.FullName);
                 }
 
                 // Get the existing certificate matching the order description
