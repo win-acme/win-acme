@@ -82,12 +82,20 @@ namespace PKISharp.WACS.Clients.Acme
             using var httpClient = _proxyService.GetHttpClient();
             httpClient.BaseAddress = _settings.BaseUri;
             httpClient.Timeout = new TimeSpan(0, 0, 10);
-            var success = await CheckNetworkUrl(httpClient, "directory") | await CheckNetworkUrl(httpClient, "");
+            var success = await CheckNetworkUrl(httpClient, "directory");
+            if (!success)
+            {
+                success = await CheckNetworkUrl(httpClient, "");
+            }
             if (!success)
             {
                 _log.Debug("Initial connection failed, retrying with TLS 1.2 forced");
                 _proxyService.SslProtocols = SslProtocols.Tls12;
-                success = await CheckNetworkUrl(httpClient, "directory") | await CheckNetworkUrl(httpClient, "");
+                success = await CheckNetworkUrl(httpClient, "directory");
+                if (!success)
+                {
+                    success = await CheckNetworkUrl(httpClient, "");
+                }
             }
             if (success)
             {
