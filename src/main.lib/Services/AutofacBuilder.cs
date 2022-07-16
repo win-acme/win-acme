@@ -169,14 +169,6 @@ namespace PKISharp.WACS.Services
                         builder.RegisterType<Plugins.OrderPlugins.Single>().As<IOrderPlugin>().SingleInstance();
                     }
                     builder.RegisterType(renewal.TargetPluginOptions.Instance).As<ITargetPlugin>().SingleInstance();
-                    foreach (var i in renewal.InstallationPluginOptions)
-                    {
-                        builder.RegisterInstance(i).As(i.GetType());
-                    }
-                    foreach (var i in renewal.StorePluginOptions)
-                    {
-                        builder.RegisterInstance(i).As(i.GetType());
-                    }
                 }
             });
         }
