@@ -190,6 +190,7 @@ namespace PKISharp.WACS
             foreach (var o in orderContexts)
             {
                 o.ShouldRun = runLevel.HasFlag(RunLevel.ForceRenew) || _dueDate.ShouldRun(o.Order);
+                _log.Verbose("Order {name} should run: {run}", o.OrderName, o.ShouldRun);
             }
 
             if (!mainDue)

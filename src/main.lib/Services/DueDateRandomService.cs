@@ -18,11 +18,16 @@ namespace PKISharp.WACS.Services
             var previous = _certificateService.CachedInfo(order);
             if (previous == null)
             {
+                _logService.Verbose("{name}: no cached information found", order.FriendlyNamePart);
                 if (!order.Renewal.New)
                 {
                     _logService.Information(LogType.All, "Renewal {renewal} running prematurely due to source change in order {order}", order.Renewal.LastFriendlyName, order.FriendlyNamePart ?? OrderContext.DefaultOrderName);
                 }
                 return true;
+            } 
+            else
+            {
+                _logService.Verbose("{name}: previous thumbprint {thumbprint}", order.FriendlyNamePart, previous.Certificate.Thumbprint);
             }
 
             // Check if the certificate was actually installed
@@ -41,10 +46,16 @@ namespace PKISharp.WACS.Services
                 latestDueDate = new DateTime(Math.Min(
                     previous.Certificate.NotBefore.AddDays(_settings.ScheduledTask.RenewalDays).Ticks,
                     previous.Certificate.NotAfter.AddDays(-1 * _settings.ScheduledTask.RenewalMinimumValidDays ?? DefaultMinValidDays).Ticks));
+            } 
+            else
+            {
+                _logService.Verbose("{name}: no historic success found");
             }
 
             // Randomize over the course of 10 days
-            var earliestDueDate = latestDueDate.AddDays((_settings.ScheduledTask.RenewalDaysRange ?? 0) * -1); 
+            var earliestDueDate = latestDueDate.AddDays((_settings.ScheduledTask.RenewalDaysRange ?? 0) * -1);
+            _logService.Verbose("{name}: latest due date {latestDueDate}", order.FriendlyNamePart, latestDueDate);
+            _logService.Verbose("{name}: earliest due date {earliestDueDate}", order.FriendlyNamePart, earliestDueDate);
             if (earliestDueDate > DateTime.Now)
             {
                 return false;
@@ -60,9 +71,15 @@ namespace PKISharp.WACS.Services
             var daysLeft = (latestDueDate - DateTime.Now).TotalDays;
             if (daysLeft <= 1)
             {
+                _logService.Verbose("{name}: less than a day left");
                 return true;
             }
-            return Random.Shared.NextDouble() < (1 / daysLeft);
+            if (Random.Shared.NextDouble() < (1 / daysLeft))
+            {
+                _logService.Verbose("{name}: randomly selected");
+                return true;
+            }
+            return false;
         }
     }
 }
