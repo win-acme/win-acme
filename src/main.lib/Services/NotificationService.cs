@@ -83,11 +83,13 @@ namespace PKISharp.WACS.Services
         internal async Task NotifyFailure(
             RunLevel runLevel, 
             Renewal renewal, 
-            List<string> errors,
+            RenewResult result,
             IEnumerable<MemoryEntry> log)
         {
             // Do not send emails when running interactively       
             _log.Error("Renewal for {friendlyName} failed, will retry on next run", renewal.LastFriendlyName);
+            var errors = result.ErrorMessages?.ToList() ?? new List<string>();
+            errors.AddRange(result.OrderResults?.SelectMany(o => o.ErrorMessages) ?? Enumerable.Empty<string>());
             if (errors.Count == 0)
             {
                 errors.Add("No specific error reason provided.");
@@ -106,7 +108,7 @@ namespace PKISharp.WACS.Services
 
         private string RenderLog(IEnumerable<MemoryEntry> log) => @$"<p>Log output:<ul><li>{string.Join("</li><li>", log.Select(x => RenderLogEntry(x)))}</ul></p>";
 
-        private string RenderLogEntry(MemoryEntry log)
+        private static string RenderLogEntry(MemoryEntry log)
         {
             var color = $"00000";
             switch (log.Level)

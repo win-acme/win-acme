@@ -12,31 +12,32 @@ namespace PKISharp.WACS.Services
 
         public override bool ShouldRun(Renewal renewal) => true;
 
-        public override bool ShouldRun(Order order)
+        public override bool ShouldRun(OrderContext order)
         {
             // Run any in nay case if a difference in source is detected.
-            var previous = _certificateService.CachedInfo(order);
+            var previous = _certificateService.CachedInfo(order.Order);
             if (previous == null)
             {
-                _logService.Verbose("{name}: no cached information found", order.FriendlyNamePart);
+                _logService.Verbose("{name}: no cached information found", order.OrderName);
                 if (!order.Renewal.New)
                 {
-                    _logService.Information(LogType.All, "Renewal {renewal} running prematurely due to source change in order {order}", order.Renewal.LastFriendlyName, order.FriendlyNamePart ?? OrderContext.DefaultOrderName);
+                    _logService.Information(LogType.All, "Renewal {renewal} running prematurely due to source change in order {order}", order.Renewal.LastFriendlyName, order.OrderName);
                 }
                 return true;
             } 
             else
             {
-                _logService.Verbose("{name}: previous thumbprint {thumbprint}", order.FriendlyNamePart, previous.Certificate.Thumbprint);
+                _logService.Verbose("{name}: previous thumbprint {thumbprint}", order.OrderName, previous.Certificate.Thumbprint);
             }
 
             // Check if the certificate was actually installed
             // succesfully before we decided to use it as a 
             // reference point.
             var latestDueDate = DateTime.Now;
-            var history = order.Renewal.History.Where(x =>
-                x.Success == true &&
-                x.Thumbprints.Contains(previous.Certificate.Thumbprint));
+            var history = order.Renewal.History.
+                Where(x => x.OrderResults?.Any(o => 
+                o.Success == true && 
+                o.Thumbprint == previous.Certificate.Thumbprint) ?? false);
             if (history.Any())
             {
                 // Latest date determined by the certificate validity
@@ -49,13 +50,13 @@ namespace PKISharp.WACS.Services
             } 
             else
             {
-                _logService.Verbose("{name}: no historic success found");
+                _logService.Verbose("{name}: no historic success found", order.OrderName);
             }
 
             // Randomize over the course of 10 days
             var earliestDueDate = latestDueDate.AddDays((_settings.ScheduledTask.RenewalDaysRange ?? 0) * -1);
-            _logService.Verbose("{name}: latest due date {latestDueDate}", order.FriendlyNamePart, latestDueDate);
-            _logService.Verbose("{name}: earliest due date {earliestDueDate}", order.FriendlyNamePart, earliestDueDate);
+            _logService.Verbose("{name}: latest due date {latestDueDate}", order.OrderName, latestDueDate);
+            _logService.Verbose("{name}: earliest due date {earliestDueDate}", order.OrderName, earliestDueDate);
             if (earliestDueDate > DateTime.Now)
             {
                 return false;
@@ -71,12 +72,12 @@ namespace PKISharp.WACS.Services
             var daysLeft = (latestDueDate - DateTime.Now).TotalDays;
             if (daysLeft <= 1)
             {
-                _logService.Verbose("{name}: less than a day left");
+                _logService.Verbose("{name}: less than a day left", order.OrderName);
                 return true;
             }
             if (Random.Shared.NextDouble() < (1 / daysLeft))
             {
-                _logService.Verbose("{name}: randomly selected");
+                _logService.Verbose("{name}: randomly selected", order.OrderName);
                 return true;
             }
             return false;

@@ -237,7 +237,7 @@ namespace PKISharp.WACS
                 {
                     _renewalStore.Save(renewal, result);
                 }
-                _exceptionHandler.HandleException(message: $"Create certificate failed: {string.Join("\n\t- ", result.ErrorMessages)}");
+                _exceptionHandler.HandleException(message: $"Create certificate failed");
             }
             else
             {

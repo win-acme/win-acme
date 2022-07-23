@@ -144,8 +144,7 @@ namespace PKISharp.WACS.DomainObjects
             }
             if (errors.Any())
             {
-                var messages = errors.SelectMany(x => x.ErrorMessages).Where(x => !string.IsNullOrEmpty(x));
-                ret += $", {errors.Count()} error{(errors.Count() != 1 ? "s" : "")} like \"{messages.FirstOrDefault() ?? "[null]"}\"";
+                ret += $", {errors.Count()} error{(errors.Count() != 1 ? "s" : "")}";
             }
             return ret;
         }

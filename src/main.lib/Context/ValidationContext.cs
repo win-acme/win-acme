@@ -5,6 +5,7 @@ using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
+using System;
 
 namespace PKISharp.WACS.Context
 {
@@ -38,7 +39,7 @@ namespace PKISharp.WACS.Context
             Label = parameters.Label;
             TargetPart = parameters.TargetPart;
             Authorization = parameters.Authorization;
-            Result = parameters.OrderContext.Result;
+            OrderResult = parameters.OrderContext.OrderResult;
             Scope = scope;
             ChallengeType = parameters.Options.ChallengeType;
             PluginName = parameters.Options.Name;
@@ -51,7 +52,7 @@ namespace PKISharp.WACS.Context
         public string Label { get; }
         public string ChallengeType { get; }
         public string PluginName { get; }
-        public RenewResult Result { get; }
+        public OrderResult OrderResult { get; }
         public TargetPart? TargetPart { get; }
         public Authorization Authorization { get; }
         public Challenge? Challenge { get; set; }

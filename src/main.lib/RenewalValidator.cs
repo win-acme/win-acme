@@ -75,7 +75,7 @@ namespace PKISharp.WACS
             var authorizations = await Task.WhenAll(contextTasks);
 
             // Stop if any of them has failed
-            if (orderContexts.Any(x => x.Result.Success == false))
+            if (orderContexts.Any(x => x.OrderResult.Success == false))
             {
                 return;
             }
@@ -127,7 +127,7 @@ namespace PKISharp.WACS
                 else
                 {
                     _log.Error("No plugin found that can challenge for {authorisation}", authorisationContext.Authorization.Identifier.Value);
-                    authorisationContext.Order.Result.AddErrorMessage($"No plugin found that can challenge for {authorisationContext.Authorization.Identifier.Value}", authorisationContext.Order.Order.Valid != true);
+                    authorisationContext.Order.OrderResult.AddErrorMessage($"No plugin found that can challenge for {authorisationContext.Authorization.Identifier.Value}", authorisationContext.Order.Order.Valid != true);
                     return;
                 }
             }
@@ -258,10 +258,6 @@ namespace PKISharp.WACS
                     _log.Verbose("Handle {n} preparation(s)", contexts.Count);
                     var prepareTasks = contexts.Select(vc => PrepareChallengeAnswer(vc, runLevel));
                     await Task.WhenAll(prepareTasks);
-                    if (contexts.Any(x => x.Result.Success == false))
-                    {
-                        return;
-                    }
                 }
                 else
                 {
@@ -269,20 +265,23 @@ namespace PKISharp.WACS
                     foreach (var ctx in contexts)
                     {
                         await PrepareChallengeAnswer(ctx, runLevel);
-                        if (ctx.Result.Success == false)
-                        {
-                            return;
-                        }
                     }
+                }
+
+                // Filter out failed contexts
+                contexts = contexts.Where(x => !x.OrderResult.Success == false).ToList();
+                if (!contexts.Any())
+                {
+                    return;
                 }
 
                 // Commit
                 var commited = await CommitValidation(plugin);
                 if (!commited)
                 {
-                    foreach (var ctx in contexts)
+                    foreach (var x in contexts)
                     {
-                        ctx.Result.AddErrorMessage("Commit failed");
+                        x.OrderResult.AddErrorMessage("Validation plugin commit stage failed");
                     }
                     return;
                 }
@@ -297,10 +296,6 @@ namespace PKISharp.WACS
                         _log.Verbose("Handle {n} answers(s)", contextsWithChallenges.Count);
                         var answerTasks = contextsWithChallenges.Select(vc => AnswerChallenge(vc));
                         await Task.WhenAll(answerTasks);
-                        if (contextsWithChallenges.Any(x => x.Result.Success == false))
-                        {
-                            return;
-                        }
                     }
                     else
                     {
@@ -308,10 +303,6 @@ namespace PKISharp.WACS
                         foreach (var ctx in contextsWithChallenges)
                         {
                             await AnswerChallenge(ctx);
-                            if (ctx.Result.Success == false)
-                            {
-                                return;
-                            }
                         }
                     }
                 }
@@ -338,8 +329,12 @@ namespace PKISharp.WACS
                     parameters.IndexOf(parameter) + 1,
                     parameters.Count);
                 using var validationScope = _scopeBuilder.Validation(parameter.OrderContext.ExecutionScope, parameter.Options);
-                await ParallelValidation(ParallelOperations.None, validationScope, new List<ValidationContextParameters> { parameter }, parameter.OrderContext.RunLevel);
-                if (breakOnError && parameter.OrderContext.Result.Success == false)
+                await ParallelValidation(
+                    ParallelOperations.None, 
+                    validationScope, 
+                    new List<ValidationContextParameters> { parameter }, 
+                    parameter.OrderContext.RunLevel);
+                if (breakOnError && parameter.OrderContext.OrderResult.Success == false)
                 {
                     break;
                 }
@@ -364,7 +359,7 @@ namespace PKISharp.WACS
             }
             catch
             {
-                context.Result.AddErrorMessage($"Unable to get authorization details from {authorizationUri}", context.Order.Valid != true);
+                context.OrderResult.AddErrorMessage($"Unable to get authorization details from {authorizationUri}", context.Order.Valid != true);
                 return null;
             }
             return authorization;
@@ -400,7 +395,7 @@ namespace PKISharp.WACS
                 var challenge = context.Authorization.Challenges.FirstOrDefault(c => string.Equals(c.Type, context.ChallengeType, StringComparison.InvariantCultureIgnoreCase));
                 if (challenge == null)
                 {
-                    if (context.Result.Success == true)
+                    if (context.OrderResult.Success == true)
                     {
                         var usedType = context.Authorization.Challenges.
                             Where(x => x.Status == AcmeClient.ChallengeValid).
@@ -416,7 +411,7 @@ namespace PKISharp.WACS
                         _log.Error("[{identifier}] Expected challenge type {type} not available.",
                             context.Label,
                             context.ChallengeType);
-                        context.Result.AddErrorMessage("Expected challenge type not available", !context.Valid);
+                        context.OrderResult.AddErrorMessage("Expected challenge type not available", !context.Valid);
                         return;
                     }
                 }
@@ -451,7 +446,7 @@ namespace PKISharp.WACS
                 catch (Exception ex)
                 {
                     _log.Error(ex, "[{identifier}] Error preparing for challenge answer", context.Label);
-                    context.Result.AddErrorMessage("Error preparing for challenge answer", !context.Valid);
+                    context.OrderResult.AddErrorMessage("Error preparing for challenge answer", !context.Valid);
                     return;
                 }
             }
@@ -459,7 +454,7 @@ namespace PKISharp.WACS
             {
                 _log.Error("[{identifier}] Error preparing challenge answer", context.Label);
                 var message = _exceptionHandler.HandleException(ex);
-                context.Result.AddErrorMessage(message, !context.Valid);
+                context.OrderResult.AddErrorMessage(message, !context.Valid);
             }
         }
 
@@ -487,7 +482,7 @@ namespace PKISharp.WACS
                     {
                         _log.Error("[{identifier}] {Error}", validationContext.Label, updatedChallenge.Error.ToString());
                     }
-                    validationContext.Result.AddErrorMessage("Validation failed", !validationContext.Valid);
+                    validationContext.OrderResult.AddErrorMessage("Validation failed", !validationContext.Valid);
                     return;
                 }
                 else
@@ -504,7 +499,7 @@ namespace PKISharp.WACS
             {
                 _log.Error("[{identifier}] Error submitting challenge answer", validationContext.Label);
                 var message = _exceptionHandler.HandleException(ex);
-                validationContext.Result.AddErrorMessage(message, !validationContext.Valid);
+                validationContext.OrderResult.AddErrorMessage(message, !validationContext.Valid);
             }
         }
 

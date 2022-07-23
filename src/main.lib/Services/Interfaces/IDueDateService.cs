@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.Context;
+using PKISharp.WACS.DomainObjects;
 using System;
 
 namespace PKISharp.WACS.Services
@@ -34,6 +35,6 @@ namespace PKISharp.WACS.Services
         /// <param name="renewal"></param>
         /// <param name="order"></param>
         /// <returns></returns>
-        public bool ShouldRun(Order order);
+        public bool ShouldRun(OrderContext order);
     }
 }

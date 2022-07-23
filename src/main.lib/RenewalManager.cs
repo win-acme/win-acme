@@ -531,7 +531,7 @@ namespace PKISharp.WACS
                     }
                     else
                     {
-                        await notification.NotifyFailure(runLevel, renewal, result.ErrorMessages, _log.Lines);
+                        await notification.NotifyFailure(runLevel, renewal, result, _log.Lines);
                         return false;
                     }
                 } 
@@ -543,7 +543,7 @@ namespace PKISharp.WACS
             catch (Exception ex)
             {
                 _exceptionHandler.HandleException(ex);
-                await notification.NotifyFailure(runLevel, renewal, new List<string> { ex.Message }, _log.Lines);
+                await notification.NotifyFailure(runLevel, renewal, new RenewResult(ex.Message), _log.Lines);
                 return false;
             }
         }
