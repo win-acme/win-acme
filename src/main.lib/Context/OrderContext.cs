@@ -22,12 +22,12 @@ namespace PKISharp.WACS.Context
         public CertificateInfo? NewCertificate { get; set; }
         public string OrderName => Order.FriendlyNamePart ?? DefaultOrderName;
         public bool ShouldRun { get; set; }
-        public OrderContext(ILifetimeScope executionScope, Order order, RenewResult renewResult, RunLevel runLevel)
+        public OrderContext(ILifetimeScope executionScope, Order order, RunLevel runLevel)
         {
             ExecutionScope = executionScope;
             Order = order;
             RunLevel = runLevel;
-            OrderResult = renewResult[OrderName];
+            OrderResult = new OrderResult(OrderName);
         }
     }
 }

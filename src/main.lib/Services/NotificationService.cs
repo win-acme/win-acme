@@ -89,7 +89,7 @@ namespace PKISharp.WACS.Services
             // Do not send emails when running interactively       
             _log.Error("Renewal for {friendlyName} failed, will retry on next run", renewal.LastFriendlyName);
             var errors = result.ErrorMessages?.ToList() ?? new List<string>();
-            errors.AddRange(result.OrderResults?.SelectMany(o => o.ErrorMessages) ?? Enumerable.Empty<string>());
+            errors.AddRange(result.OrderResults?.SelectMany(o => o.ErrorMessages ?? Enumerable.Empty<string>()) ?? Enumerable.Empty<string>());
             if (errors.Count == 0)
             {
                 errors.Add("No specific error reason provided.");

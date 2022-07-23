@@ -181,8 +181,7 @@ namespace PKISharp.WACS
         private async Task<RenewResult> HandleOrders(ILifetimeScope execute, Renewal renewal, List<Order> orders, RunLevel runLevel)
         {
             // Build context
-            var result = new RenewResult();
-            var orderContexts = orders.Select(order => new OrderContext(execute, order, result, runLevel)).ToList();
+            var orderContexts = orders.Select(order => new OrderContext(execute, order, runLevel)).ToList();
 
             // Check if renewal is needed at the root level
             var mainDue = ShouldRunRenewal(renewal, runLevel);
@@ -248,6 +247,8 @@ namespace PKISharp.WACS
             await ExecuteOrders(runnableContexts, allContexts, runLevel);
 
             // Handle all the store/install steps
+            var result = new RenewResult();
+            result.OrderResults = runnableContexts.Select(x => x.OrderResult).ToList();
             await ProcessOrders(runnableContexts, result);
 
             // Run the post-execution script. Note that this is different

@@ -73,29 +73,6 @@ namespace PKISharp.WACS.DomainObjects
             set => OrderResultsJson = value;
         }
 
-        /// <summary>
-        /// Get order result
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        public OrderResult this[string name]
-        {
-            get
-            {
-                if (OrderResultsJson == null)
-                {
-                    OrderResultsJson = new List<OrderResult>();
-                }
-                var ret = OrderResultsJson.FirstOrDefault(x => x.Name == name);
-                if (ret == null)
-                {
-                    ret = new OrderResult(name);
-                    OrderResultsJson.Add(ret);
-                }
-                return ret;
-            }
-        }
-
         [JsonProperty("Thumbprints")]
         private List<string>? ThumbprintsJson { get; set; }
 
