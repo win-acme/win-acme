@@ -323,10 +323,11 @@ namespace PKISharp.WACS
             {
                 if (order.OrderResult.Success == false)
                 {
-                    _log.Verbose("Order {n}/{m} ({friendly}): error",
+                    _log.Verbose("Order {n}/{m} ({friendly}): error {error}",
                          runnableContexts.IndexOf(order) + 1,
                          runnableContexts.Count,
-                         order.OrderName);
+                         order.OrderName,
+                         order.OrderResult.ErrorMessages?.FirstOrDefault() ?? "unknown");
                 }
                 else if (order.NewCertificate == null)
                 {

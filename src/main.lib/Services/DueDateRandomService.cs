@@ -7,8 +7,14 @@ namespace PKISharp.WACS.Services
 {
     internal class DueDateRandomService : DueDateStaticService
     {
-        public DueDateRandomService(ISettingsService settings, ICertificateService certificateService, ILogService logService) : 
-            base(settings, certificateService, logService) { }
+        private readonly IInputService _input;
+
+        public DueDateRandomService(
+            ISettingsService settings,
+            ICertificateService certificateService,
+            ILogService logService,
+            IInputService input) :
+            base(settings, certificateService, logService) => _input = input;
 
         public override bool ShouldRun(Renewal renewal) => true;
 
@@ -28,6 +34,7 @@ namespace PKISharp.WACS.Services
             else
             {
                 _logService.Verbose("{name}: previous thumbprint {thumbprint}", order.OrderName, previous.Certificate.Thumbprint);
+                _logService.Verbose("{name}: previous expires {thumbprint}", order.OrderName, _input.FormatDate(previous.Certificate.NotAfter));
             }
 
             // Check if the certificate was actually installed
@@ -55,8 +62,8 @@ namespace PKISharp.WACS.Services
 
             // Randomize over the course of 10 days
             var earliestDueDate = latestDueDate.AddDays((_settings.ScheduledTask.RenewalDaysRange ?? 0) * -1);
-            _logService.Verbose("{name}: latest due date {latestDueDate}", order.OrderName, latestDueDate);
-            _logService.Verbose("{name}: earliest due date {earliestDueDate}", order.OrderName, earliestDueDate);
+            _logService.Verbose("{name}: latest due date {latestDueDate}", order.OrderName, _input.FormatDate(latestDueDate));
+            _logService.Verbose("{name}: earliest due date {earliestDueDate}", order.OrderName, _input.FormatDate(earliestDueDate));
             if (earliestDueDate > DateTime.Now)
             {
                 return false;

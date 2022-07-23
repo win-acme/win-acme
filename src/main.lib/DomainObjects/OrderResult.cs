@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 
 namespace PKISharp.WACS.DomainObjects
@@ -36,12 +37,7 @@ namespace PKISharp.WACS.DomainObjects
 
         public List<string>? ErrorMessages { get; set; }
 
+        [JsonConstructor]
         public OrderResult(string name) => Name = name;
-
-        public OrderResult(string name, string error) : this(name)
-        {
-            Success = false;
-            AddErrorMessage(error);
-        }
     }
 }

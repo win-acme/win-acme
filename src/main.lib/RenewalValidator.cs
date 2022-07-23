@@ -269,7 +269,7 @@ namespace PKISharp.WACS
                 }
 
                 // Filter out failed contexts
-                contexts = contexts.Where(x => !x.OrderResult.Success == false).ToList();
+                contexts = contexts.Where(x => x.OrderResult.Success != false).ToList();
                 if (!contexts.Any())
                 {
                     return;
@@ -328,6 +328,11 @@ namespace PKISharp.WACS
                 _log.Verbose("Handle authorization {n}/{m}",
                     parameters.IndexOf(parameter) + 1,
                     parameters.Count);
+                if (!parameter.OrderContext.OrderResult.Success == false)
+                {
+                    _log.Verbose("Skip authorization because the order has already failed");
+                    continue;
+                }
                 using var validationScope = _scopeBuilder.Validation(parameter.OrderContext.ExecutionScope, parameter.Options);
                 await ParallelValidation(
                     ParallelOperations.None, 
