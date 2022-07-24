@@ -15,7 +15,21 @@ using PKISharp.WACS.Plugins.Base.Options;
 namespace PKISharp.WACS
 {
     /// <summary>
-    /// This part of the code handles the actual creation/renewal of ACME certificates
+    /// This part of the code handles answering validation challenges
+    /// 
+    /// Roughly there are three stages to this, with implementation 
+    /// details for three of them left to plugins to handle.
+    /// - Prepare: get ready to answer single challenge
+    /// - Commit: last call to get ready (useful for bundling 
+    ///   costly operations for multiple challenges)
+    /// - Submit: talk to the ACME service, letting it know 
+    ///   we're ready on our site and awaiting the response
+    /// - Cleanup: we're done (for better or worse), 
+    ///   delete temporary stuff.
+    ///   
+    /// We can handle multiple challenges in parallel if/when
+    /// the plugin indicates support for this, even if those 
+    /// challenges are coming from different orders in a renewal.
     /// </summary>
     internal class RenewalValidator
     {
@@ -43,11 +57,15 @@ namespace PKISharp.WACS
         }
 
         /// <summary>
-        /// Authorize multiple orders at once
+        /// Ensure that validation challenges for or more orders are completed.
+        /// This allows us to split the renewal into multiple orders 
+        /// (potentially hundreds), yet still use the parallel capabilities of
+        /// the plugins so save a lot of runtime.
         /// </summary>
         /// <param name="orderContexts"></param>
+        /// <param name="runLevel"></param>
         /// <returns></returns>
-        internal async Task AuthorizeOrders(IEnumerable<OrderContext> orderContexts, RunLevel runLevel)
+        internal async Task ValidateOrders(IEnumerable<OrderContext> orderContexts, RunLevel runLevel)
         {
             var contextTasks = new List<Task<AuthorizationContext?>>();
             foreach (var orderContext in orderContexts)
@@ -61,7 +79,7 @@ namespace PKISharp.WACS
                 var authorizationUris = orderContext.Order.Details.Payload.Authorizations.ToList();
                 var authorizationTasks = authorizationUris.Select(async uri =>
                 {
-                    var auth = await GetAuthorization(orderContext, uri);
+                    var auth = await GetAuthorizationDetails(orderContext, uri);
                     if (auth != null)
                     {
                         return new AuthorizationContext(orderContext, auth, uri);
@@ -70,40 +88,109 @@ namespace PKISharp.WACS
                 });
                 contextTasks.AddRange(authorizationTasks);
             }
-            
-            // Run all GetAuthorisations in parallel
+
+            // Run all GetAuthorizationDetails in parallel
             var authorizations = await Task.WhenAll(contextTasks);
 
             // Stop if any of them has failed
-            if (orderContexts.Any(x => x.OrderResult.Success == false))
+            if (orderContexts.Any(x => x.OrderResult.Success == false) || authorizations == null)
             {
                 return;
             }
 
-            // Actually run them
-            await RunAuthorizations(authorizations.OfType<AuthorizationContext>(), runLevel);
+            // Map contexts to plugins
+            var runnable = authorizations.OfType<AuthorizationContext>();
+            var mapping = CreateMapping(runnable);
+            if (mapping == null)
+            {
+                return;
+            }
+
+            // Actually run them for each mapped group
+            foreach (var group in mapping)
+            {
+                var options = group.Key;
+                var list = group.Value;
+                await RunAuthorizations(options, list, runLevel);
+            }
         }
 
         /// <summary>
-        /// Answer all the challenges in the order
+        /// Execute specific challenges as gathered by the caller.
+        /// Multiple validation plugins may be involved in this process,
+        /// because the IValidationOptionsService allows users to 
+        /// provide specific validation options for a domain, overruling
+        /// the options provided at the level of the renewal itself.
         /// </summary>
-        /// <param name="execute"></param>
-        /// <param name="order"></param>
-        /// <param name="result"></param>
+        /// <param name="authorisationContexts"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        internal async Task RunAuthorizations(IEnumerable<AuthorizationContext> authorisationContexts, RunLevel runLevel)
+        /// <exception cref="InvalidOperationException"></exception>
+        private async Task RunAuthorizations(ValidationPluginOptions pluginOptions, List<AuthorizationContext> authorizations, RunLevel runLevel)
         {
-            // Map authorisations to plugins that are going to execute them
-            var mapping = new Dictionary<ValidationPluginOptions, List<AuthorizationContext>>();
-            var add = (ValidationPluginOptions o, AuthorizationContext a) => {
-                if (mapping.ContainsKey(o))
+            // Execute them per group, where one group means one validation plugin
+            var multipleOrders = authorizations.Any(x => x.Order != authorizations.First().Order);
+            var validationScope = _scopeBuilder.Validation(authorizations.First().Order.ExecutionScope, pluginOptions);
+            var plugin = validationScope.Resolve<IValidationPlugin>();
+            var contexts = authorizations.Select(context =>
+            {
+                var targetPart = context.Order.Target.Parts.FirstOrDefault(p => p.Identifiers.Any(i => i == Identifier.Parse(context.Authorization).Unicode(true)));
+                if (targetPart == null)
                 {
-                    mapping[o].Add(a);
+                    throw new InvalidOperationException("Authorisation found that doesn't match target");
+                }
+                return new ValidationContextParameters(context, targetPart, pluginOptions);
+            }).ToList();
+
+            // Choose between parallel and serial execution
+            if (_settings.Validation.DisableMultiThreading != false || plugin.Parallelism == ParallelOperations.None)
+            {
+                await SerialValidation(contexts, breakOnError: !multipleOrders);
+            }
+            else
+            {
+                await ParallelValidation(plugin.Parallelism, validationScope, contexts, runLevel);
+            }
+
+            // Deactivate any remaining authorizations that are still pending
+            // due to an error. This prevents users from running into the rate 
+            // limit of 300 pending authorizations.
+            try
+            {
+                var deactivateTasks = authorizations.
+                        Where(a => a.Authorization.Status == AcmeClient.AuthorizationPending).
+                        Select(a => { 
+                            _log.Information("[{identifier}] Deactivating pending authorization", a.Label);
+                            return _acmeClient.DeactivateAuthorization(a.Uri);
+                        });
+                await Task.WhenAll(deactivateTasks);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, $"Unable to deactivate authorizations");
+            }
+        }
+
+        /// <summary>
+        /// Map authorization contexts to plugins that will handle them.
+        /// These can be locally defined (i.e. in the renewal, as is 
+        /// traditionally the case), or globally definied (i.e. in the 
+        /// yet to be implemented IValidationOptionsService). 
+        /// </summary>
+        /// <param name="authorisationContexts"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        private Dictionary<ValidationPluginOptions, List<AuthorizationContext>>? CreateMapping(IEnumerable<AuthorizationContext> authorisationContexts)
+        {
+            var ret = new Dictionary<ValidationPluginOptions, List<AuthorizationContext>>();
+            var add = (ValidationPluginOptions o, AuthorizationContext a) => {
+                if (ret.ContainsKey(o))
+                {
+                    ret[o].Add(a);
                 }
                 else
                 {
-                    mapping.Add(o, new List<AuthorizationContext>() { a });
+                    ret.Add(o, new List<AuthorizationContext>() { a });
                 }
             };
             foreach (var authorisationContext in authorisationContexts)
@@ -112,70 +199,34 @@ namespace PKISharp.WACS
                 {
                     throw new InvalidOperationException();
                 }
-                var nativeOptions = authorisationContext.Order.Renewal.ValidationPluginOptions;
-                var globalOptions = _validationOptions.GetValidationOptions(Identifier.Parse(authorisationContext.Authorization));
-                if (globalOptions != null && 
-                    IsValid(authorisationContext, globalOptions))
+                // Global options (from IValidationOptionsService)
+                // get priority over "native" or local options, which
+                // are specified at the level of the renewal
+                var localOptions = authorisationContext.Order.Renewal.ValidationPluginOptions;
+                var identifier = Identifier.Parse(authorisationContext.Authorization);
+                var globalOptions = _validationOptions.GetValidationOptions(identifier);
+                if (globalOptions != null &&
+                    CanValidate(authorisationContext, globalOptions))
                 {
+
                     add(globalOptions, authorisationContext);
                 }
-                else if ((globalOptions == null || nativeOptions.Plugin != globalOptions.Plugin) &&
-                    IsValid(authorisationContext, nativeOptions))
+                else if ((globalOptions == null || localOptions.Plugin != globalOptions.Plugin) &&
+                    CanValidate(authorisationContext, localOptions))
                 {
-                    add(nativeOptions, authorisationContext);
+                    add(localOptions, authorisationContext);
                 }
                 else
                 {
+                    // Sanity check, but can happen when a plugin is disabled
+                    // for example due to requiring admin rights and the program
+                    // not running as admin.
                     _log.Error("No plugin found that can challenge for {authorisation}", authorisationContext.Authorization.Identifier.Value);
                     authorisationContext.Order.OrderResult.AddErrorMessage($"No plugin found that can challenge for {authorisationContext.Authorization.Identifier.Value}", authorisationContext.Order.Order.Valid != true);
-                    return;
+                    return null;
                 }
             }
-
-            // Execute them per group, where one group means one validation plugin
-            foreach (var group in mapping)
-            {
-                var pluginOptions = group.Key;
-                var authorizations = group.Value;
-                var multipleOrders = authorizations.Any(x => x.Order != authorizations.First().Order);
-                var validationScope = _scopeBuilder.Validation(authorizations.First().Order.ExecutionScope, pluginOptions);
-                var plugin = validationScope.Resolve<IValidationPlugin>();
-                var contexts = authorizations.Select(context =>
-                {
-                    var targetPart = context.Order.Target.Parts.FirstOrDefault(p => p.Identifiers.Any(i => i == Identifier.Parse(context.Authorization).Unicode(true)));
-                    if (targetPart == null)
-                    {
-                        throw new InvalidOperationException("Authorisation found that doesn't match target");
-                    }
-                    return new ValidationContextParameters(context, targetPart, pluginOptions);
-                }).ToList();
-                if (_settings.Validation.DisableMultiThreading != false || plugin.Parallelism == ParallelOperations.None)
-                {
-                    await SerialValidation(contexts, breakOnError: !multipleOrders);
-                }
-                else
-                {
-                    await ParallelValidation(plugin.Parallelism, validationScope, contexts, runLevel);
-                }
-                try
-                {
-                    // Deactivate any remaining authorizations that are still pending
-                    // due to an error. This prevents users from running into the rate 
-                    // limit of 300 pending authorizations.
-                    var deactivateTasks = authorizations.
-                            Where(a => a.Authorization.Status == AcmeClient.AuthorizationPending).
-                            Select(a => { 
-                                _log.Information("[{identifier}] Deactivating pending authorization", a.Label);
-                                return _acmeClient.DeactivateAuthorization(a.Uri);
-                            });
-                    await Task.WhenAll(deactivateTasks);
-                }
-                catch (Exception ex)
-                {
-                    _log.Error(ex, $"Unable to deactivate authorizations");
-                }
-
-            }
+            return ret;
         }
 
         /// <summary>
@@ -206,13 +257,12 @@ namespace PKISharp.WACS
         }
 
         /// <summary>
-        /// Will the selected validation plugin be able to validate the 
-        /// authorisation?
+        /// Will the selected validation plugin be able to validate the authorisation?
         /// </summary>
         /// <param name="authorization"></param>
         /// <param name="options"></param>
         /// <returns></returns>
-        private bool IsValid(AuthorizationContext context, ValidationPluginOptions options)
+        private bool CanValidate(AuthorizationContext context, ValidationPluginOptions options)
         {
             var (plugin, match) = GetInstances(context.Order.ExecutionScope, options);
             if (plugin == null || match == null)
@@ -241,6 +291,7 @@ namespace PKISharp.WACS
             }
             return true;
         }
+
         /// <summary>
         /// Handle multiple validations in parallel 
         /// </summary>
@@ -256,7 +307,7 @@ namespace PKISharp.WACS
                 {
                     // Parallel
                     _log.Verbose("Handle {n} preparation(s)", contexts.Count);
-                    var prepareTasks = contexts.Select(vc => PrepareChallengeAnswer(vc, runLevel));
+                    var prepareTasks = contexts.Select(vc => Prepare(vc, runLevel));
                     await Task.WhenAll(prepareTasks);
                 }
                 else
@@ -264,7 +315,7 @@ namespace PKISharp.WACS
                     // Serial
                     foreach (var ctx in contexts)
                     {
-                        await PrepareChallengeAnswer(ctx, runLevel);
+                        await Prepare(ctx, runLevel);
                     }
                 }
 
@@ -276,7 +327,7 @@ namespace PKISharp.WACS
                 }
 
                 // Commit
-                var commited = await CommitValidation(plugin);
+                var commited = await Commit(plugin);
                 if (!commited)
                 {
                     foreach (var x in contexts)
@@ -294,15 +345,15 @@ namespace PKISharp.WACS
                     {
                         // Parallel
                         _log.Verbose("Handle {n} answers(s)", contextsWithChallenges.Count);
-                        var answerTasks = contextsWithChallenges.Select(vc => AnswerChallenge(vc));
-                        await Task.WhenAll(answerTasks);
+                        var submitTasks = contextsWithChallenges.Select(vc => Submit(vc));
+                        await Task.WhenAll(submitTasks);
                     }
                     else
                     {
                         // Serial
                         foreach (var ctx in contextsWithChallenges)
                         {
-                            await AnswerChallenge(ctx);
+                            await Submit(ctx);
                         }
                     }
                 }
@@ -310,13 +361,14 @@ namespace PKISharp.WACS
             finally
             {
                 // Cleanup
-                await CleanValidation(plugin);
+                await Cleanup(plugin);
             }
         }
 
-
         /// <summary>
-        /// Handle validation in serial order
+        /// Handle validation in serial order. This is basically a wrapper
+        /// around the ParellelValidation function, just sending the parameter
+        /// sets through there one by one.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="parameters"></param>
@@ -353,7 +405,7 @@ namespace PKISharp.WACS
         /// <param name="authorizationUri"></param>
         /// <param name="options"></param>
         /// <returns></returns>
-        private static async Task<acme.Authorization?> GetAuthorization(OrderContext context, string authorizationUri)
+        private static async Task<acme.Authorization?> GetAuthorizationDetails(OrderContext context, string authorizationUri)
         {
             // Get authorization challenge details from server
             var client = context.ExecutionScope.Resolve<AcmeClient>();
@@ -371,11 +423,12 @@ namespace PKISharp.WACS
         }
 
         /// <summary>
-        /// Make sure we have authorization for every host in target
+        /// Parse the challenge and prepare to answer it.
         /// </summary>
-        /// <param name="target"></param>
+        /// <param name="context"></param>
+        /// <param name="runLevel"></param>
         /// <returns></returns>
-        private async Task PrepareChallengeAnswer(ValidationContext context, RunLevel runLevel)
+        private async Task Prepare(ValidationContext context, RunLevel runLevel)
         {
             if (context.ValidationPlugin == null)
             {
@@ -464,11 +517,38 @@ namespace PKISharp.WACS
         }
 
         /// <summary>
-        /// Make sure we have authorization for every host in target
+        /// After the preparation state, commit the necessary changes.
+        /// E.g. for DNS validation, we might have gathered multiple
+        /// records that need to be created during the Prepare stage. 
+        /// At the Commit stage, the plugin can create them all at the 
+        /// same time so that we only have to wait for change propagation
+        /// once.
         /// </summary>
-        /// <param name="target"></param>
+        /// <param name="validationPlugin"></param>
         /// <returns></returns>
-        private async Task AnswerChallenge(ValidationContext validationContext)
+        private async Task<bool> Commit(IValidationPlugin validationPlugin)
+        {
+            try
+            {
+                _log.Verbose("Starting commit stage");
+                await validationPlugin.Commit();
+                _log.Verbose("Commit was succesful");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "An error occured while commiting validation configuration: {ex}", ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Tell the server that we are ready to answer the challenge,
+        /// and wait for it to respond with a valid/invalid status.
+        /// </summary>
+        /// <param name="validationContext"></param>
+        /// <returns></returns>
+        private async Task Submit(ValidationContext validationContext)
         {
             if (validationContext.Challenge == null)
             {
@@ -510,31 +590,12 @@ namespace PKISharp.WACS
 
         /// <summary>
         /// Clean up after (succesful or unsuccesful) validation attempt
+        /// e.g. delete temporary files and DNS records, close any 
+        /// listeners.
         /// </summary>
         /// <param name="validationContext"></param>
         /// <returns></returns>
-        private async Task<bool> CommitValidation(IValidationPlugin validationPlugin)
-        {
-            try
-            {
-                _log.Verbose("Starting commit stage");
-                await validationPlugin.Commit();
-                _log.Verbose("Commit was succesful");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "An error occured while commiting validation configuration: {ex}", ex.Message);
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Clean up after (succesful or unsuccesful) validation attempt
-        /// </summary>
-        /// <param name="validationContext"></param>
-        /// <returns></returns>
-        private async Task CleanValidation(IValidationPlugin validationPlugin)
+        private async Task Cleanup(IValidationPlugin validationPlugin)
         {
             try
             {

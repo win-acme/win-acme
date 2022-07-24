@@ -317,7 +317,7 @@ namespace PKISharp.WACS
             // Validate all orders that need it
             var alwaysTryValidation = runLevel.HasFlag(RunLevel.Test) || runLevel.HasFlag(RunLevel.IgnoreCache);
             var validationRequired = fromServer.Where(x => x.Order.Details != null && (x.Order.Valid == false || alwaysTryValidation));
-            await _validator.AuthorizeOrders(validationRequired, runLevel);
+            await _validator.ValidateOrders(validationRequired, runLevel);
 
             // Download all the orders in parallel
             await Task.WhenAll(runnableContexts.Select(async order =>
