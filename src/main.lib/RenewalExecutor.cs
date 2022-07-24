@@ -262,7 +262,7 @@ namespace PKISharp.WACS
             }
 
             // Return final result
-            result.Success = orderContexts.All(o => o.OrderResult.Success == true);
+            result.Success = runnableContexts.All(o => o.OrderResult.Success == true);
             return result;
         }
 
