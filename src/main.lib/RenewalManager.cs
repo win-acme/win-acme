@@ -643,7 +643,7 @@ namespace PKISharp.WACS
                 }
                 else
                 {
-                    _input.Show($"History (most recent {historyLimit} of {renewal.History.Count} entries)");
+                    _input.Show($"History ({historyLimit}/{renewal.History.Count})");
                    
                 }
                 await _input.WritePagedList(

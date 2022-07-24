@@ -120,6 +120,6 @@ namespace PKISharp.WACS.DomainObjects
         public override string ToString() => $"{Date} " +
             $"- {(Success == true ? "Success" : "Error")}" +
             $"{(Thumbprints.Count == 0 ? "" : $" - Thumbprint {string.Join(", ", Thumbprints)}")}" +
-            $"{(ErrorMessages?.Count == 0 ? "" : $" - {string.Join(", ", ErrorMessages!.Select(x => x.ReplaceNewLines()))}")}";
+            $"{((ErrorMessages?.Count ?? 0) == 0 ? "" : $" - {string.Join(", ", ErrorMessages!.Select(x => x.ReplaceNewLines()))}")}";
     }
 }
