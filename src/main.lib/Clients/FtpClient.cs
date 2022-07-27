@@ -72,7 +72,7 @@ namespace PKISharp.WACS.Clients
 
             var uri = new Uri(ftpPath);
             var client = await CreateClient(uri);
-            var status = await client.UploadAsync(stream, uri.PathAndQuery, FtpRemoteExists.Overwrite, true);
+            var status = await client.UploadStreamAsync(stream, uri.PathAndQuery, FtpRemoteExists.Overwrite, true);
             if (status == FtpStatus.Success)
             {
                 _log.Debug("Upload {ftpPath} status {StatusDescription}", ftpPath, status);
