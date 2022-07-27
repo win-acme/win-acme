@@ -59,6 +59,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.dns.ns1", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.dns.simply", "plugin.validation.dns.simply\wacs.validation.dns.simply.csproj", "{FD141C92-C8A7-46D5-B66C-19C4412F37A1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wacs.validation.dns.linode", "plugin.validation.dns.linode\wacs.validation.dns.linode.csproj", "{7B0F79E0-07F4-42D9-99F5-FFD780FD691C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -186,6 +188,12 @@ Global
 		{FD141C92-C8A7-46D5-B66C-19C4412F37A1}.Release|Any CPU.Build.0 = Release|Any CPU
 		{FD141C92-C8A7-46D5-B66C-19C4412F37A1}.ReleasePluggable|Any CPU.ActiveCfg = Release|Any CPU
 		{FD141C92-C8A7-46D5-B66C-19C4412F37A1}.ReleasePluggable|Any CPU.Build.0 = Release|Any CPU
+		{7B0F79E0-07F4-42D9-99F5-FFD780FD691C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B0F79E0-07F4-42D9-99F5-FFD780FD691C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B0F79E0-07F4-42D9-99F5-FFD780FD691C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B0F79E0-07F4-42D9-99F5-FFD780FD691C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B0F79E0-07F4-42D9-99F5-FFD780FD691C}.ReleasePluggable|Any CPU.ActiveCfg = Release|Any CPU
+		{7B0F79E0-07F4-42D9-99F5-FFD780FD691C}.ReleasePluggable|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
