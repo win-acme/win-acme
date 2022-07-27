@@ -37,6 +37,24 @@ namespace PKISharp.WACS.Clients
                 var port = uri.Port == -1 ? 21 : uri.Port;
                 var client = new FluentFTP.FtpClient(uri.Host, port, Credential?.UserName, Credential?.Password);
                 client.ValidateAnyCertificate = true;
+                client.OnLogEvent += (level, message) =>
+                {
+                    switch (level)
+                    {
+                        case FtpTraceLevel.Verbose:
+                            _log.Verbose("FTP: {message}", message);
+                            break;
+                        case FtpTraceLevel.Info:
+                            _log.Information("FTP: {message}", message);
+                            break;
+                        case FtpTraceLevel.Warn:
+                            _log.Warning("FTP: {message}", message);
+                            break;
+                        case FtpTraceLevel.Error:
+                            _log.Error("FTP: {message}", message);
+                            break;
+                    }
+                };
                 await client.AutoConnectAsync();
                 _cacheClient = client;
                 _log.Information("Established connection with ftp server at {host}:{port}, encrypted: {enc}", uri.Host, port, _cacheClient.IsEncrypted);
