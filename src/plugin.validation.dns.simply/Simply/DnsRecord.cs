@@ -9,13 +9,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Simply
         public int RecordId { get; set; }
 
         [JsonPropertyName("type")]
-        public string Type { get; set; }
+        public string? Type { get; set; }
 
         [JsonPropertyName("name")]
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         [JsonPropertyName("data")]
-        public string Data { get; set; }
+        public string? Data { get; set; }
 
         [JsonPropertyName("priority")]
         public int Priority { get; set; }

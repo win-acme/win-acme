@@ -33,6 +33,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             {
                 var recordName = record.Authority.Domain;
                 var product = await GetProductAsync(recordName);
+                if (product.Object == null)
+                {
+                    throw new InvalidOperationException();
+                }
                 await _client.CreateRecordAsync(product.Object, recordName, record.Value);
                 return true;
             } 
@@ -48,6 +52,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             {
                 var recordName = record.Authority.Domain;
                 var product = await GetProductAsync(recordName);
+                if (product.Object == null)
+                {
+                    throw new InvalidOperationException();
+                }
                 await _client.DeleteRecordAsync(product.Object, record.Authority.Domain, record.Value);
             }
             catch (Exception ex)
@@ -59,7 +67,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         private async Task<Product> GetProductAsync(string recordName)
         {
             var products = await _client.GetAllProducts();
-            var product = FindBestMatch(products.ToDictionary(x => x.Domain.NameIdn, x => x), recordName);
+            var product = FindBestMatch(products.ToDictionary(x => x.Domain?.NameIdn ?? "", x => x), recordName);
             if (product is null)
             {
                 throw new Exception($"Unable to find product for record '{recordName}'");
