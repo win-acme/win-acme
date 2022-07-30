@@ -612,7 +612,7 @@ namespace PKISharp.WACS.Services
         /// <param name="pfxFileInfo"></param>
         /// <param name="password"></param>
         /// <returns></returns>
-        private static CertificateInfo GetInfo(FileInfo pfxFileInfo, string? password)
+        internal static CertificateInfo GetInfo(FileInfo pfxFileInfo, string? password)
         {
             var rawCollection = ReadAsCollection(pfxFileInfo, password);
             var list = rawCollection.OfType<X509Certificate2>().ToList();
