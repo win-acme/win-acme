@@ -15,11 +15,13 @@
   </PropertyGroup>
   
   <ItemGroup>
+    <None Remove="Tests\CsrPluginTests\messedup.pfx" />
     <None Remove="Tests\CsrPluginTests\original.pfx" />
+    <None Remove="Tests\CsrPluginTests\working.pfx" />
   </ItemGroup>
   
   <ItemGroup>
-    <EmbeddedResource Include="Tests\CsrPluginTests\original.pfx" />
+    <EmbeddedResource Include="Tests\CsrPluginTests\working.pfx" />
   </ItemGroup>
   
   <ItemGroup>

@@ -181,7 +181,7 @@ namespace PKISharp.WACS
         private async Task<RenewResult> HandleOrders(ILifetimeScope execute, Renewal renewal, List<Order> orders, RunLevel runLevel)
         {
             // Build context
-            var orderContexts = orders.Select(order => new OrderContext(execute, order, runLevel)).ToList();
+            var orderContexts = orders.Select(order => new OrderContext(_scopeBuilder.Order(execute), order, runLevel)).ToList();
 
             // Check if renewal is needed at the root level
             var mainDue = ShouldRunRenewal(renewal, runLevel);
