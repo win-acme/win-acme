@@ -126,6 +126,7 @@ namespace PKISharp.WACS.Clients
                         await client.SendAsync(message);
                     }                       
                     await client.DisconnectAsync(true);
+                    _log.Information("Test message sent!");
                 }
                 catch (Exception ex)
                 {
@@ -150,7 +151,6 @@ namespace PKISharp.WACS.Clients
                 await Send("Test notification",
                     "<p>If you are reading this, it means you will receive notifications about critical errors in the future.</p>",
                     MessagePriority.Normal);
-                _log.Information("Test message sent!");
             }
         }
     }
