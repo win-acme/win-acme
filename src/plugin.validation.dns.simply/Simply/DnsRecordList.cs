@@ -6,6 +6,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Simply
     public class DnsRecordList
     {
         [JsonPropertyName("records")]
-        public List<DnsRecord> Records { get; set; }
+        public List<DnsRecord>? Records { get; set; }
     }
 }

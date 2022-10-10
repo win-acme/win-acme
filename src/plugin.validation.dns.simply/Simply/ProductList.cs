@@ -6,6 +6,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Simply
     public class ProductList
     {
         [JsonPropertyName("products")]
-        public List<Product> Products { get; set; }
+        public List<Product>? Products { get; set; }
     }
 }

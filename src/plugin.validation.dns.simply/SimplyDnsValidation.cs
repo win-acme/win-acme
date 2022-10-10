@@ -33,13 +33,16 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             {
                 var recordName = record.Authority.Domain;
                 var product = await GetProductAsync(recordName);
-                await _client.CreateRecordAsync(product.Object, recordName, record.Value);
-                return true;
+                if (product.Object != null)
+                {
+                    await _client.CreateRecordAsync(product.Object, recordName, record.Value);
+                    return true;
+                }
             } 
             catch
-            {
-                return false;
+            {  
             }
+            return false;
         }
 
         public override async Task DeleteRecord(DnsValidationRecord record)
@@ -48,7 +51,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             {
                 var recordName = record.Authority.Domain;
                 var product = await GetProductAsync(recordName);
-                await _client.DeleteRecordAsync(product.Object, record.Authority.Domain, record.Value);
+                if (product.Object != null)
+                {
+                    await _client.DeleteRecordAsync(product.Object, record.Authority.Domain, record.Value);
+                }
             }
             catch (Exception ex)
             {
@@ -59,12 +65,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         private async Task<Product> GetProductAsync(string recordName)
         {
             var products = await _client.GetAllProducts();
-            var product = FindBestMatch(products.ToDictionary(x => x.Domain.NameIdn, x => x), recordName);
+            var product = FindBestMatch(products.ToDictionary(x => x.Domain?.NameIdn ?? "unknown", x => x), recordName);
             if (product is null)
             {
                 throw new Exception($"Unable to find product for record '{recordName}'");
             }
-
             return product;
         }
     }
