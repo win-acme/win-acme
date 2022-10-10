@@ -28,15 +28,22 @@ namespace PKISharp.WACS.Clients
             }
         }
 
-        private async Task<FluentFTP.FtpClient> CreateClient(Uri uri)
+        private AsyncFtpClient? _cacheClient;
+        private async Task<AsyncFtpClient> CreateClient(Uri uri)
         {
             if (_cacheClient == null || 
                 !_cacheClient.IsConnected || 
                 !_cacheClient.IsAuthenticated)
             {
                 var port = uri.Port == -1 ? 21 : uri.Port;
-                var client = new FluentFTP.FtpClient(uri.Host, port, Credential?.UserName, Credential?.Password);
-                client.ValidateAnyCertificate = true;
+                var options = new FtpConfig()
+                {
+                    ValidateAnyCertificate = true,
+                };
+                var client = new AsyncFtpClient(uri.Host, port, options)
+                {
+                    Credentials = Credential
+                };
                 client.OnLogEvent += (level, message) =>
                 {
                     switch (level)
@@ -55,7 +62,7 @@ namespace PKISharp.WACS.Clients
                             break;
                     }
                 };
-                await client.AutoConnectAsync();
+                await client.AutoConnect();
                 _cacheClient = client;
                 _log.Information("Established connection with ftp server at {host}:{port}, encrypted: {enc}", uri.Host, port, _cacheClient.IsEncrypted);
             }
@@ -72,7 +79,7 @@ namespace PKISharp.WACS.Clients
 
             var uri = new Uri(ftpPath);
             var client = await CreateClient(uri);
-            var status = await client.UploadStreamAsync(stream, uri.PathAndQuery, FtpRemoteExists.Overwrite, true);
+            var status = await client.UploadStream(stream, uri.PathAndQuery, FtpRemoteExists.Overwrite, true);
             if (status == FtpStatus.Success)
             {
                 _log.Debug("Upload {ftpPath} status {StatusDescription}", ftpPath, status);
@@ -87,7 +94,7 @@ namespace PKISharp.WACS.Clients
         {
             var uri = new Uri(ftpPath);
             var client = await CreateClient(uri);
-            var list = await client.GetListingAsync(uri.PathAndQuery);
+            var list = await client.GetListing(uri.PathAndQuery);
             if (list == null)
             {
                 return new List<string>();
@@ -99,7 +106,7 @@ namespace PKISharp.WACS.Clients
         {
             var uri = new Uri(ftpPath);
             var client = await CreateClient(uri);
-            await client.DeleteDirectoryAsync(uri.PathAndQuery);
+            await client.DeleteDirectory(uri.PathAndQuery);
             _log.Debug("Delete folder {ftpPath}", ftpPath);
         }
 
@@ -107,7 +114,7 @@ namespace PKISharp.WACS.Clients
         {
             var uri = new Uri(ftpPath);
             var client = await CreateClient(uri);
-            await client.DeleteFileAsync(uri.PathAndQuery);
+            await client.DeleteFile(uri.PathAndQuery);
             _log.Debug("Delete file {ftpPath}", ftpPath);
         }
     }

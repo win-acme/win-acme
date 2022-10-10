@@ -41,9 +41,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 return true;
             } 
             catch
-            {
-                return false;
+            {  
             }
+            return false;
         }
 
         public override async Task DeleteRecord(DnsValidationRecord record)
@@ -72,7 +72,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             {
                 throw new Exception($"Unable to find product for record '{recordName}'");
             }
-
             return product;
         }
     }
