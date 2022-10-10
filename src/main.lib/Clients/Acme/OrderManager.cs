@@ -86,7 +86,7 @@ namespace PKISharp.WACS.Clients.Acme
                 }
                 else
                 {
-                    _log.Warning("Cached order available but not used due to missing private key");
+                    _log.Debug("Cached order available but not used.");
                 }
             }
             return await CreateOrder(cacheKey, order.Target);
