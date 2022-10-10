@@ -23,9 +23,6 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         private readonly FileInfo psPath;
         private readonly FileInfo psNamedPath;
         private readonly FileInfo psTrickyPath;
-        private readonly FileInfo psExit0;
-        private readonly FileInfo psExit1;
-        private readonly FileInfo psExitMinus1;
 
         public ScriptPluginTests()
         {
