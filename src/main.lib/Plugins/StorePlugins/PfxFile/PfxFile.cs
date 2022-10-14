@@ -65,23 +65,26 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 };
                 collection.AddRange(input.Chain.ToArray());
                 var ms = new MemoryStream(collection.Export(X509ContentType.Pfx)!);
-                var bcPfx = new bc.Pkcs.Pkcs12Store(ms, Array.Empty<char>());
-                var aliases = bcPfx.Aliases.OfType<string>().ToList();
-                var key = default(bc.Pkcs.AsymmetricKeyEntry);
-                var chain = default(bc.Pkcs.X509CertificateEntry[]);
-                foreach (var alias in aliases)
+                var bcPfxIn = new bc.Pkcs.Pkcs12Store(ms, Array.Empty<char>());
+                var bcPfxOut = new bc.Pkcs.Pkcs12Store();
+                var aliases = bcPfxIn.Aliases.OfType<string>().ToList();
+                var keyAlias = aliases.FirstOrDefault(a => bcPfxIn.IsKeyEntry(a));
+                if (keyAlias != null)
                 {
-                    if (bcPfx.IsKeyEntry(alias))
+                    bcPfxOut.SetKeyEntry(
+                        input.CommonName.Value,
+                        bcPfxIn.GetKey(keyAlias), 
+                        bcPfxIn.GetCertificateChain(keyAlias));
+                }
+                else
+                {
+                    foreach (var alias in aliases)
                     {
-                        key = bcPfx.GetKey(alias);
-                        chain = bcPfx.GetCertificateChain(alias);
-                        break;
+                        bcPfxOut.SetCertificateEntry(alias, bcPfxIn.GetCertificate(alias));
                     }
                 }
                 using var fs = new FileInfo(dest).OpenWrite();
-                bcPfx = new bc.Pkcs.Pkcs12Store();
-                bcPfx.SetKeyEntry(input.CommonName.Value, key, chain);
-                bcPfx.Save(fs, _password?.ToCharArray(), new bc.Security.SecureRandom());
+                bcPfxOut.Save(fs, _password?.ToCharArray(), new bc.Security.SecureRandom());
             }
             catch (Exception ex)
             {

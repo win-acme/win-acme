@@ -61,16 +61,16 @@ namespace PKISharp.WACS.Services
             return dueDate == null || dueDate < DateTime.Now;
         }
 
-        public virtual bool ShouldRun(Order order)
+        public virtual bool ShouldRun(OrderContext order)
         {
             var renewalDue = IsDue(order.Renewal);
             if (renewalDue)
             {
                 return true;
             }
-            if (_certificateService.CachedInfo(order) == null)
+            if (_certificateService.CachedInfo(order.Order) == null)
             {
-                _logService.Information(LogType.All, "Renewal {renewal} running prematurely due to source change in order {order}", order.Renewal.LastFriendlyName, order.FriendlyNamePart ?? OrderContext.DefaultOrderName);
+                _logService.Information(LogType.All, "Renewal {renewal} running prematurely due to source change in order {order}", order.Renewal.LastFriendlyName, order.OrderName);
                 return true;
             }
             return false;

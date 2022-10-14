@@ -531,7 +531,7 @@ namespace PKISharp.WACS
                     }
                     else
                     {
-                        await notification.NotifyFailure(runLevel, renewal, result.ErrorMessages, _log.Lines);
+                        await notification.NotifyFailure(runLevel, renewal, result, _log.Lines);
                         return false;
                     }
                 } 
@@ -543,7 +543,7 @@ namespace PKISharp.WACS
             catch (Exception ex)
             {
                 _exceptionHandler.HandleException(ex);
-                await notification.NotifyFailure(runLevel, renewal, new List<string> { ex.Message }, _log.Lines);
+                await notification.NotifyFailure(runLevel, renewal, new RenewResult(ex.Message), _log.Lines);
                 return false;
             }
         }
@@ -597,7 +597,7 @@ namespace PKISharp.WACS
                 _input.Show("File", $"{renewal.Id}.renewal.json");
                 _input.Show("FriendlyName", string.IsNullOrEmpty(renewal.FriendlyName) ? $"[Auto] {renewal.LastFriendlyName}" : renewal.FriendlyName);
                 _input.Show(".pfx password", renewal.PfxPassword?.Value);
-                var expires = renewal.History.Where(x => x.Success == true).FirstOrDefault()?.ExpireDate;
+                var expires = renewal.History.Where(x => x.Success == true).LastOrDefault()?.ExpireDate;
                 if (expires == null)
                 {
                     _input.Show("Expires", "Unknown");
@@ -643,7 +643,7 @@ namespace PKISharp.WACS
                 }
                 else
                 {
-                    _input.Show($"History (most recent {historyLimit} of {renewal.History.Count} entries)");
+                    _input.Show($"History ({historyLimit}/{renewal.History.Count})");
                    
                 }
                 await _input.WritePagedList(

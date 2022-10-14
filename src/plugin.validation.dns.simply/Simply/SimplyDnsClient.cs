@@ -24,8 +24,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Simply
 
         public async Task<List<Product>> GetAllProducts()
         {
-            var products = await GetProductsAsync();
-            return products;
+            return await GetProductsAsync();
         }
 
         public async Task CreateRecordAsync(string objectId, string domain, string value)
@@ -53,7 +52,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Simply
             {
                 throw new Exception($"The TXT record {domain} that should be deleted does not exist at Simply.");
             }
-
             await DeleteRecordAsync(objectId, record.RecordId);
         }
 
@@ -64,7 +62,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Simply
             var products = await JsonSerializer.DeserializeAsync<ProductList>(stream);
             if (products == null || products.Products == null)
             {
-                throw new InvalidOperationException();
+                throw new Exception("Unable to retrieve products");
             }
             return products.Products;
         }

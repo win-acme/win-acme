@@ -150,7 +150,12 @@ namespace PKISharp.WACS.Host
                     }
                     else if (!string.IsNullOrEmpty(_args.Target) || !string.IsNullOrEmpty(_args.Source))
                     {
-                        await _renewalCreator.SetupRenewal(RunLevel.Unattended);
+                        var runLevel = RunLevel.Unattended;
+                        if (_args.Force)
+                        {
+                            runLevel |= RunLevel.ForceRenew | RunLevel.IgnoreCache;
+                        }
+                        await _renewalCreator.SetupRenewal(runLevel);
                         await CloseDefault();
                     }
                     else if (_args.Encrypt)

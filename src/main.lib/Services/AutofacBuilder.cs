@@ -140,43 +140,48 @@ namespace PKISharp.WACS.Services
             {
                 builder.Register(c => runLevel).As<RunLevel>();
                 builder.RegisterType<FindPrivateKey>().SingleInstance();
-
-                // Used to configure TaskScheduler without renewal
-                if (renewal != null)
+                builder.RegisterInstance(renewal);
+                builder.RegisterInstance(renewal.StorePluginOptions).As(renewal.StorePluginOptions.GetType());
+                if (renewal.CsrPluginOptions != null)
                 {
-                    builder.RegisterInstance(renewal);
+                    builder.RegisterInstance(renewal.CsrPluginOptions).As(renewal.CsrPluginOptions.GetType());
+                }
+                if (renewal.OrderPluginOptions != null)
+                {
+                    builder.RegisterInstance(renewal.OrderPluginOptions).As(renewal.OrderPluginOptions.GetType());
+                }
+                builder.RegisterInstance(renewal.TargetPluginOptions).As(renewal.TargetPluginOptions.GetType());
+                if (renewal.CsrPluginOptions != null)
+                {
+                    builder.RegisterType(renewal.CsrPluginOptions.Instance).As<ICsrPlugin>().SingleInstance();
+                }
+                if (renewal.OrderPluginOptions != null)
+                {
+                    builder.RegisterType(renewal.OrderPluginOptions.Instance).As<IOrderPlugin>().SingleInstance();
+                }
+                else
+                {
+                    builder.RegisterType<Plugins.OrderPlugins.Single>().As<IOrderPlugin>().SingleInstance();
+                }
+                builder.RegisterType(renewal.TargetPluginOptions.Instance).As<ITargetPlugin>().SingleInstance();
+            });
+        }
 
-                    builder.RegisterInstance(renewal.StorePluginOptions).As(renewal.StorePluginOptions.GetType());
-                    if (renewal.CsrPluginOptions != null)
-                    {
-                        builder.RegisterInstance(renewal.CsrPluginOptions).As(renewal.CsrPluginOptions.GetType());
-                    }
-                    if (renewal.OrderPluginOptions != null)
-                    {
-                        builder.RegisterInstance(renewal.OrderPluginOptions).As(renewal.OrderPluginOptions.GetType());
-                    }
-                    builder.RegisterInstance(renewal.TargetPluginOptions).As(renewal.TargetPluginOptions.GetType());
-                    if (renewal.CsrPluginOptions != null)
-                    {
-                        builder.RegisterType(renewal.CsrPluginOptions.Instance).As<ICsrPlugin>().SingleInstance();
-                    }
-                    if (renewal.OrderPluginOptions != null)
-                    {
-                        builder.RegisterType(renewal.OrderPluginOptions.Instance).As<IOrderPlugin>().SingleInstance();
-                    } 
-                    else
-                    {
-                        builder.RegisterType<Plugins.OrderPlugins.Single>().As<IOrderPlugin>().SingleInstance();
-                    }
-                    builder.RegisterType(renewal.TargetPluginOptions.Instance).As<ITargetPlugin>().SingleInstance();
-                    foreach (var i in renewal.InstallationPluginOptions)
-                    {
-                        builder.RegisterInstance(i).As(i.GetType());
-                    }
-                    foreach (var i in renewal.StorePluginOptions)
-                    {
-                        builder.RegisterInstance(i).As(i.GetType());
-                    }
+        /// <summary>
+        /// For a single order within the renewal
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="renewal"></param>
+        /// <param name="runLevel"></param>
+        /// <returns></returns>
+        public ILifetimeScope Order(ILifetimeScope execution)
+        {
+            var renewal = execution.Resolve<Renewal>();
+            return execution.BeginLifetimeScope("order", builder =>
+            {
+                if (renewal.CsrPluginOptions != null)
+                {
+                    builder.RegisterType(renewal.CsrPluginOptions.Instance).As<ICsrPlugin>().SingleInstance();
                 }
             });
         }

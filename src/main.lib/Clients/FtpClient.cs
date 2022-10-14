@@ -43,6 +43,24 @@ namespace PKISharp.WACS.Clients
                 {
                     Credentials = Credential
                 };
+                client.LegacyLogger += (level, message) =>
+                {
+                    switch (level)
+                    {
+                        case FtpTraceLevel.Verbose:
+                            _log.Verbose("FTP: {message}", message);
+                            break;
+                        case FtpTraceLevel.Info:
+                            _log.Information("FTP: {message}", message);
+                            break;
+                        case FtpTraceLevel.Warn:
+                            _log.Warning("FTP: {message}", message);
+                            break;
+                        case FtpTraceLevel.Error:
+                            _log.Error("FTP: {message}", message);
+                            break;
+                    }
+                };
                 await client.AutoConnect();
                 _cacheClient = client;
                 _log.Information("Established connection with ftp server at {host}:{port}, encrypted: {enc}", uri.Host, port, _cacheClient.IsEncrypted);

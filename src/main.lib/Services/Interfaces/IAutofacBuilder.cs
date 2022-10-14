@@ -43,6 +43,16 @@ namespace PKISharp.WACS.Services
         ILifetimeScope Execution(ILifetimeScope target, Renewal renewal, RunLevel runLevel);
 
         /// <summary>
+        /// For a single order, each order needs
+        /// it own instance of the ICsrPlugin
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="renewal"></param>
+        /// <param name="runLevel"></param>
+        /// <returns></returns>
+        ILifetimeScope Order(ILifetimeScope execution);
+
+        /// <summary>
         /// Validation of a single identifier
         /// </summary>
         /// <param name="execution"></param>

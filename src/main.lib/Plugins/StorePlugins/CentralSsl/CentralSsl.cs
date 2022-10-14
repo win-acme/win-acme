@@ -88,6 +88,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 {
                     if (string.Equals(cert.Thumbprint, input.Certificate.Thumbprint, StringComparison.InvariantCultureIgnoreCase))
                     {
+                        _log.Warning("Delete {fi} with thumb {thumb}", fi.FullName, cert.Thumbprint);
                         fi.Delete();
                     }
                     cert.Dispose();

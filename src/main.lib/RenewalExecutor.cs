@@ -181,16 +181,16 @@ namespace PKISharp.WACS
         private async Task<RenewResult> HandleOrders(ILifetimeScope execute, Renewal renewal, List<Order> orders, RunLevel runLevel)
         {
             // Build context
-            var result = new RenewResult();
-            var orderContexts = orders.Select(order => new OrderContext(execute, order, runLevel, result)).ToList();
+            var orderContexts = orders.Select(order => new OrderContext(_scopeBuilder.Order(execute), order, runLevel)).ToList();
 
             // Check if renewal is needed at the root level
-            var mainDue = !ShouldRunRenewal(renewal, runLevel);
+            var mainDue = ShouldRunRenewal(renewal, runLevel);
 
             // Check individual orders
             foreach (var o in orderContexts)
             {
-                o.ShouldRun = runLevel.HasFlag(RunLevel.ForceRenew) || _dueDate.ShouldRun(o.Order);
+                o.ShouldRun = runLevel.HasFlag(RunLevel.ForceRenew) || _dueDate.ShouldRun(o);
+                _log.Verbose("Order {name} should run: {run}", o.OrderName, o.ShouldRun);
             }
 
             if (!mainDue)
@@ -202,28 +202,30 @@ namespace PKISharp.WACS
                 {
                     return Abort(renewal);
                 } 
-            } 
+            }
 
             // Only process orders that are due. In the normal
             // case when using static due dates this will be all 
             // the orders. But when using the random due dates,
             // this could only be a part of them.
+            var allContexts = orderContexts;
+            var runnableContexts = orderContexts;
             if (!runLevel.HasFlag(RunLevel.IgnoreCache) && !renewal.New && !renewal.Updated)
             {
-                orderContexts = orderContexts.Where(x => x.ShouldRun).ToList();
+                runnableContexts = orderContexts.Where(x => x.ShouldRun).ToList();
             }
-            if (!orderContexts.Any())
+            if (!runnableContexts.Any())
             {
-                _log.Debug("None of the orders are currently due to run", orderContexts.Count, orders.Count);
+                _log.Debug("None of the orders are currently due to run");
                 return Abort(renewal);
             } 
             if (!renewal.New && !runLevel.HasFlag(RunLevel.ForceRenew))
             {
                 _log.Information(LogType.All, "Renewing {renewal}", renewal.LastFriendlyName);
             }
-            if (orders.Count > orderContexts.Count)
+            if (orders.Count > runnableContexts.Count)
             {
-                _log.Information("{n} of {m} orders are due to run", orderContexts.Count, orders.Count);
+                _log.Information("{n} of {m} orders are due to run", runnableContexts.Count, orders.Count);
             }
 
             // If at this point we haven't retured already with an error/abort
@@ -242,10 +244,12 @@ namespace PKISharp.WACS
             }
 
             // Get the certificates from cache or server
-            await ExecuteOrders(orderContexts, runLevel);
+            await ExecuteOrders(runnableContexts, allContexts, runLevel);
 
             // Handle all the store/install steps
-            await ProcessOrders(orderContexts);
+            var result = new RenewResult();
+            result.OrderResults = runnableContexts.Select(x => x.OrderResult).ToList();
+            await ProcessOrders(runnableContexts, result);
 
             // Run the post-execution script. Note that this is different
             // from the script installation plugin, which is handled
@@ -258,18 +262,19 @@ namespace PKISharp.WACS
             }
 
             // Return final result
+            result.Success = runnableContexts.All(o => o.OrderResult.Success == true);
             return result;
         }
 
         /// <summary>
         /// Get the certificates, if not from cache then from the server
         /// </summary>
-        /// <param name="orderContexts"></param>
+        /// <param name="runnableContexts"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        private async Task ExecuteOrders(List<OrderContext> orderContexts, RunLevel runLevel)
+        private async Task ExecuteOrders(List<OrderContext> runnableContexts, List<OrderContext> allContexts, RunLevel runLevel)
         {
-            foreach (var order in orderContexts)
+            foreach (var order in runnableContexts)
             {
                 // Get the previously issued certificates in this renewal
                 // sub order regardless of the fact that it may have another
@@ -286,9 +291,14 @@ namespace PKISharp.WACS
                     // order name part
                     order.PreviousCertificate = _certificateService.
                        CachedInfos(order.Renewal).
-                       Where(c => !orderContexts.Any(o => c.CacheFile!.Name.Contains($"-{o.Order.CacheKeyPart ?? "main"}-"))).
+                       Where(c => !allContexts.Any(o => c.CacheFile!.Name.Contains($"-{o.Order.CacheKeyPart ?? "main"}-"))).
                        OrderByDescending(x => x.Certificate.NotBefore).
                        FirstOrDefault();
+                }
+
+                if (order.PreviousCertificate != null)
+                {
+                    _log.Debug("Previous certificate found at {fi}", order.PreviousCertificate.CacheFile!.FullName);
                 }
 
                 // Get the existing certificate matching the order description
@@ -298,7 +308,7 @@ namespace PKISharp.WACS
 
             // Group validations of multiple order together
             // as to maximize the potential gains in parallelization
-            var fromServer = orderContexts.Where(x => x.NewCertificate == null).ToList();
+            var fromServer = runnableContexts.Where(x => x.NewCertificate == null).ToList();
             foreach (var order in fromServer)
             {
                 await CreateOrder(order);
@@ -307,31 +317,32 @@ namespace PKISharp.WACS
             // Validate all orders that need it
             var alwaysTryValidation = runLevel.HasFlag(RunLevel.Test) || runLevel.HasFlag(RunLevel.IgnoreCache);
             var validationRequired = fromServer.Where(x => x.Order.Details != null && (x.Order.Valid == false || alwaysTryValidation));
-            await _validator.AuthorizeOrders(validationRequired, runLevel);
+            await _validator.ValidateOrders(validationRequired, runLevel);
 
             // Download all the orders in parallel
-            await Task.WhenAll(orderContexts.Select(async order =>
+            await Task.WhenAll(runnableContexts.Select(async order =>
             {
-                if (order.Result.Success == false)
+                if (order.OrderResult.Success == false)
                 {
-                    _log.Verbose("Order {n}/{m} ({friendly}): validation error",
-                         orderContexts.IndexOf(order) + 1,
-                         orderContexts.Count,
-                         order.OrderName);
+                    _log.Verbose("Order {n}/{m} ({friendly}): error {error}",
+                         runnableContexts.IndexOf(order) + 1,
+                         runnableContexts.Count,
+                         order.OrderName,
+                         order.OrderResult.ErrorMessages?.FirstOrDefault() ?? "unknown");
                 }
                 else if (order.NewCertificate == null)
                 {
                     _log.Verbose("Order {n}/{m} ({friendly}): processing...",
-                         orderContexts.IndexOf(order) + 1,
-                         orderContexts.Count,
+                         runnableContexts.IndexOf(order) + 1,
+                         runnableContexts.Count,
                          order.OrderName);
                     order.NewCertificate = await GetFromServer(order);
                 }
                 else
                 {
                     _log.Verbose("Order {n}/{m} ({friendly}): handle from cache",
-                         orderContexts.IndexOf(order) + 1,
-                         orderContexts.Count,
+                         runnableContexts.IndexOf(order) + 1,
+                         runnableContexts.Count,
                          order.OrderName);
                 }
             }));
@@ -342,7 +353,7 @@ namespace PKISharp.WACS
         /// </summary>
         /// <param name="orderContexts"></param>
         /// <returns></returns>
-        private async Task ProcessOrders(List<OrderContext> orderContexts)
+        private async Task ProcessOrders(List<OrderContext> orderContexts, RenewResult renewResult)
         {
             // Process store/install steps
             foreach (var order in orderContexts)
@@ -352,26 +363,27 @@ namespace PKISharp.WACS
                    orderContexts.Count,
                    order.OrderName);
 
+                var orderResult = order.OrderResult;
                 if (order.NewCertificate == null)
                 {
-                    order.Result.AddErrorMessage($"No certificate generated for order {order.OrderName}");
+                    orderResult.AddErrorMessage("No certificate generated");
                     continue;
                 }
+                orderResult.Thumbprint = order.NewCertificate.Certificate.Thumbprint;
+                orderResult.ExpireDate = order.NewCertificate.Certificate.NotAfter;
 
-                // Store the date the certificate will expire
-                if (order.Result.ExpireDate == null ||
-                    order.Result.ExpireDate > order.NewCertificate.Certificate.NotAfter)
+                // Handle installation and store
+                renewResult.Abort = await ProcessOrder(order);
+                if (renewResult.Abort)
                 {
-                    order.Result.ExpireDate = order.NewCertificate.Certificate.NotAfter;
-                };
-                order.Result.AddThumbprint(order.NewCertificate.Certificate.Thumbprint);
+                    // Don't process the rest of the orders on abort
+                    break;
+                }
 
-                // Create the execution context
-                await ProcessOrder(order);
-
-                // Don't process the rest of the orders if one of them fails
-                if (order.Result.Abort || order.Result.Success == false)
+                if (orderResult.Success == false)
                 {
+                    // Do not try to store/install the rest of the certificates
+                    // after one fails to do that
                     break;
                 }
             }
@@ -383,7 +395,7 @@ namespace PKISharp.WACS
         /// <param name="context"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        private async Task ProcessOrder(OrderContext context)
+        private async Task<bool> ProcessOrder(OrderContext context)
         {
             try
             {
@@ -397,8 +409,7 @@ namespace PKISharp.WACS
                     context.RunLevel.HasFlag(RunLevel.Test) &&
                     !await _input.PromptYesNo($"[--test] Store and install the certificate for order {context.OrderName}?", true))
                 {
-                    context.Result.Abort = true;
-                    return;
+                    return true;
                 }
 
                 // Load the store plugins
@@ -417,29 +428,27 @@ namespace PKISharp.WACS
 
                 if (!await HandleStoreAdd(context, context.NewCertificate, storePluginOptions, storePlugins)) 
                 {
-                    return;
+                    return false;
                 }
                 if (!await HandleInstall(context, context.NewCertificate, context.PreviousCertificate, storePlugins))
                 {
-                    return;
+                    return false;
                 }
+                // Success only after store and install have been done
+                context.OrderResult.Success = true;
+
                 if (context.PreviousCertificate != null &&
                     context.NewCertificate.Certificate.Thumbprint != context.PreviousCertificate.Certificate.Thumbprint)
                 {
                     await HandleStoreRemove(context, context.PreviousCertificate, storePluginOptions, storePlugins);
                 }
-
-                // Made it to the end!
-                if (context.Result.Success == null)
-                {
-                    context.Result.Success = true;
-                }
             }
             catch (Exception ex)
             {
                 var message = _exceptionHandler.HandleException(ex);
-                context.Result.AddErrorMessage(message);
+                context.OrderResult.AddErrorMessage(message);
             }
+            return false;
         }
 
         /// <summary>
@@ -493,11 +502,11 @@ namespace PKISharp.WACS
             // Sanity checks
             if (context.Order.Details == null)
             {
-                context.Result.AddErrorMessage($"Unable to create order {context.OrderName}");
+                context.OrderResult.AddErrorMessage($"Unable to create order");
             }
             else if (context.Order.Details.Payload.Status == AcmeClient.OrderInvalid)
             {
-                context.Result.AddErrorMessage($"Created order {context.OrderName} was invalid");
+                context.OrderResult.AddErrorMessage($"Created order was invalid");
             }
         }
 
@@ -516,7 +525,7 @@ namespace PKISharp.WACS
                 var (disabled, disabledReason) = csrPlugin.Disabled;
                 if (disabled)
                 {
-                    context.Result.AddErrorMessage($"CSR plugin is not available. {disabledReason}");
+                    context.OrderResult.AddErrorMessage($"CSR plugin is not available. {disabledReason}");
                     return null;
                 }
             }
@@ -564,7 +573,7 @@ namespace PKISharp.WACS
                     var (disabled, disabledReason) = storePlugin.Disabled;
                     if (disabled)
                     {
-                        context.Result.AddErrorMessage($"Store plugin is not available. {disabledReason}");
+                        context.OrderResult.AddErrorMessage($"Store plugin is not available. {disabledReason}");
                         return false;
                     } 
                     await storePlugin.Save(newCertificate);
@@ -573,7 +582,7 @@ namespace PKISharp.WACS
             catch (Exception ex)
             {
                 var reason = _exceptionHandler.HandleException(ex, "Unable to store certificate");
-                context.Result.AddErrorMessage($"Store failed: {reason}");
+                context.OrderResult.AddErrorMessage($"Store failed: {reason}");
                 return false;
             }
             return true;
@@ -605,7 +614,7 @@ namespace PKISharp.WACS
                     {
                         _log.Error(ex, "Unable to delete previous certificate");
                         // not a show-stopper, consider the renewal a success
-                        context.Result.AddErrorMessage($"Delete failed: {ex.Message}", false);
+                        context.OrderResult.AddErrorMessage($"Delete failed: {ex.Message}", false);
                     }
                 }
             }
@@ -648,7 +657,7 @@ namespace PKISharp.WACS
                         var (disabled, disabledReason) = installPlugin.Disabled;
                         if (disabled)
                         {
-                            context.Result.AddErrorMessage($"Installation plugin is not available. {disabledReason}");
+                            context.OrderResult.AddErrorMessage($"Installation plugin is not available. {disabledReason}");
                             return false;
                         }
                         if (!await installPlugin.Install(context.Target, storePlugins, newCertificate, previousCertificate))
@@ -656,7 +665,7 @@ namespace PKISharp.WACS
                             // This is not truly fatal, other installation plugins might still be able to do
                             // something useful, and also we don't want to break compatability for users depending
                             // on scripts that return an error
-                            context.Result.AddErrorMessage($"Installation plugin {installOptions.Name} encountered an error");
+                            context.OrderResult.AddErrorMessage($"Installation plugin {installOptions.Name} encountered an error");
                         }
                     }
                 }
@@ -664,7 +673,7 @@ namespace PKISharp.WACS
             catch (Exception ex)
             {
                 var reason = _exceptionHandler.HandleException(ex, "Unable to install certificate");
-                context.Result.AddErrorMessage($"Install failed: {reason}");
+                context.OrderResult.AddErrorMessage($"Install failed: {reason}");
                 return false;
             }
             return true;

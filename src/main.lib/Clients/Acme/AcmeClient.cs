@@ -82,32 +82,47 @@ namespace PKISharp.WACS.Clients.Acme
             using var httpClient = _proxyService.GetHttpClient();
             httpClient.BaseAddress = _settings.BaseUri;
             httpClient.Timeout = new TimeSpan(0, 0, 10);
+            var success = await CheckNetworkUrl(httpClient, "directory");
+            if (!success)
+            {
+                success = await CheckNetworkUrl(httpClient, "");
+            }
+            if (!success)
+            {
+                _log.Debug("Initial connection failed, retrying with TLS 1.2 forced");
+                _proxyService.SslProtocols = SslProtocols.Tls12;
+                success = await CheckNetworkUrl(httpClient, "directory");
+                if (!success)
+                {
+                    success = await CheckNetworkUrl(httpClient, "");
+                }
+            }
+            if (success)
+            {
+                _log.Information("Connection OK!");
+            } 
+            else
+            {
+                _log.Warning("Initial connection failed");
+            }         
+        }
+
+        /// <summary>
+        /// Test the network connection
+        /// </summary>
+        internal async Task<bool> CheckNetworkUrl(HttpClient httpClient, string path)
+        {
             try
             {
-                _log.Verbose("SecurityProtocol setting: {setting}", ServicePointManager.SecurityProtocol);
-                var response = await httpClient.GetAsync("directory").ConfigureAwait(false);
+                var response = await httpClient.GetAsync(path).ConfigureAwait(false);
                 await CheckNetworkResponse(response);
-
+                return true;
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "Initial connection failed, retrying with TLS 1.2 forced");
-                _proxyService.SslProtocols = SslProtocols.Tls12;
-                using var altClient = _proxyService.GetHttpClient();
-                altClient.BaseAddress = _settings.BaseUri;
-                altClient.Timeout = new TimeSpan(0, 0, 10);
-                try
-                {
-                    var response = await altClient.GetAsync("directory").ConfigureAwait(false);
-                    await CheckNetworkResponse(response);
-                }
-                catch (Exception ex2)
-                {
-                    _log.Error(ex2, "Unable to connect to ACME server at {uri}", _settings.BaseUri);
-                    return;
-                }
+                _log.Debug($"Connection failed: {ex.Message}");
+                return false;
             }
-            _log.Debug("Connection OK!");
         }
 
         /// <summary>
@@ -551,6 +566,12 @@ namespace PKISharp.WACS.Clients.Acme
         {
             var client = await GetClient();
             return await Retry(client, () => client.GetAuthorizationDetailsAsync(url));
+        }
+
+        internal async Task DeactivateAuthorization(string url)
+        {
+            var client = await GetClient();
+            await Retry(client, () => client.DeactivateAuthorizationAsync(url));
         }
 
         /// <summary>
