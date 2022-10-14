@@ -1,6 +1,8 @@
 ﻿using PKISharp.WACS.Clients;
+using PKISharp.WACS.Configuration.Settings;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Services;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -13,12 +15,16 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         private readonly Renewal _renewal;
         private readonly ScriptOptions _options;
         private readonly ScriptClient _client;
+        private readonly SecretServiceManager _ssm;
 
-        public Script(Renewal renewal, ScriptOptions options, ScriptClient client)
+        public Script(
+            Renewal renewal, ScriptOptions options, 
+            ScriptClient client, SecretServiceManager secretManager)
         {
             _options = options;
             _renewal = renewal;
             _client = client;
+            _ssm = secretManager;
         }
 
         public async Task<bool> Install(Target target, IEnumerable<IStorePlugin> store, CertificateInfo newCertificate, CertificateInfo? oldCertificate)
@@ -38,7 +44,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             return false;
         }
 
-        private string ReplaceParameters(string input, StoreInfo? defaultStoreInfo, CertificateInfo newCertificate, CertificateInfo? oldCertificate, bool censor)
+        internal string ReplaceParameters(string input, StoreInfo? defaultStoreInfo, CertificateInfo newCertificate, CertificateInfo? oldCertificate, bool censor)
         {
             // Numbered parameters for backwards compatibility only,
             // do not extend for future updates
@@ -57,6 +63,8 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                     "{OldCertCommonName}" => oldCertificate?.CommonName?.Value ?? "",
                     "{OldCertFriendlyName}" => oldCertificate?.Certificate.FriendlyName ?? "",
                     "{OldCertThumbprint}" => oldCertificate?.Certificate.Thumbprint ?? "",
+                    var s when s.StartsWith($"{{{SecretServiceManager.VaultPrefix}") => 
+                        censor ? s : _ssm.EvaluateSecret(s.Trim('{', '}')) ?? s,
                     _ => m.Value
                 };
             });

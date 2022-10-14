@@ -1,11 +1,11 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Autofac;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PKISharp.WACS.Clients.IIS;
-using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Host;
 using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.UnitTests.Mock;
 using PKISharp.WACS.UnitTests.Mock.Services;
 using System.Collections.Generic;
 using System.IO;
@@ -26,9 +26,11 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
 
         public ScriptPluginTests()
         {
+           
             log = new Mock.Services.LogService(false);
             iis = new Mock.Clients.MockIISClient(log);
             cs = new Mock.Services.CertificateService();
+            
             var tempPath = Infrastructure.Directory.Temp();
             batchPath = new FileInfo(tempPath.FullName + "\\create.bat");
             File.WriteAllText(batchPath.FullName, "echo hello %1");
@@ -67,6 +69,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
 
         private void TestScript(string script, string? parameters)
         {
+           
             var renewal = new Renewal();
             var storeOptions = new CertificateStoreOptions();
             var settings = new MockSettingsService();
@@ -82,7 +85,8 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
                 Script = script,
                 ScriptParameters = parameters
             };
-            var installer = new Script(renewal, options, new Clients.ScriptClient(log, settings));
+            var container = new MockContainer().TestScope();
+            var installer = new Script(renewal, options, new Clients.ScriptClient(log, settings), container.Resolve<SecretServiceManager>());
             installer.Install(target, new[] { store }, newCert, oldCert).Wait();
         }
 
