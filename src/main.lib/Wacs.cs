@@ -25,6 +25,7 @@ namespace PKISharp.WACS.Host
         private readonly ISettingsService _settings;
         private readonly IRenewalStore _renewalStore;
         private readonly IUserRoleService _userRoleService;
+        private readonly AdminService _adminService;
         private readonly ArgumentsParser _arguments;
         private readonly ExceptionHandler _exceptionHandler;
         private readonly MainArguments _args;
@@ -41,6 +42,7 @@ namespace PKISharp.WACS.Host
             ISettingsService settingsService,
             IUserRoleService userRoleService,
             IDueDateService dueDateService,
+            AdminService adminService,
             TaskSchedulerService taskSchedulerService,
             SecretServiceManager secretServiceManager)
         {
@@ -50,6 +52,7 @@ namespace PKISharp.WACS.Host
             _exceptionHandler = exceptionHandler;
             _log = logService;
             _settings = settingsService;
+            _adminService = adminService;
             _userRoleService = userRoleService;
             _taskScheduler = taskSchedulerService;
             _secretServiceManager = secretServiceManager;
@@ -212,7 +215,7 @@ namespace PKISharp.WACS.Host
                 var client = _container.Resolve<AcmeClient>();
                 await client.CheckNetwork().ConfigureAwait(false);
             }
-            if (_userRoleService.IsAdmin)
+            if (_adminService.IsAdmin)
             {
                 _log.Debug("Running with administrator credentials");
                 var iis = _container.Resolve<IIISClient>().Version;
@@ -310,7 +313,7 @@ namespace PKISharp.WACS.Host
                 Choice.Create<Func<Task>>(
                     () => Import(RunLevel.Interactive | RunLevel.Advanced), 
                     "Import scheduled renewals from WACS/LEWS 1.9.x", "I", 
-                    disabled: (!_userRoleService.IsAdmin,
+                    disabled: (!_adminService.IsAdmin,
                     "Run as an administrator to allow search for legacy renewals.")),
                 Choice.Create<Func<Task>>(
                     () => Encrypt(RunLevel.Interactive), 

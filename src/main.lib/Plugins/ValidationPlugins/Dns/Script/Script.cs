@@ -52,7 +52,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                         record.Authority.Domain, 
                         record.Value,
                         args, 
-                        script.EndsWith(".ps1")));
+                        script.EndsWith(".ps1"), 
+                        false));
             }
             else
             {

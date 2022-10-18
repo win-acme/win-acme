@@ -5,6 +5,7 @@
         bool AllowCertificateStore { get; }
         (bool, string?) AllowIIS { get; }
         bool AllowTaskScheduler { get; }
-        bool IsAdmin { get; }
+        bool AllowLegacy { get; }
+        bool AllowSelfHosting { get; }
     }
 }

@@ -132,7 +132,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
         public override (bool, string?) Disabled => IsDisabled(_userRoleService);
         internal static (bool, string?) IsDisabled(IUserRoleService userRoleService)
         {
-            if (!userRoleService.IsAdmin)
+            if (!userRoleService.AllowSelfHosting)
             {
                 return (true, "Run as administrator to allow opening a TCP listener.");
             }

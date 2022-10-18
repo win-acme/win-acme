@@ -24,10 +24,10 @@ namespace PKISharp.WACS.Clients.IIS
         private ServerManager? _serverManager;
         private List<IISSiteWrapper>? _sites = null;
 
-        public IISClient(ILogService log)
+        public IISClient(ILogService log, AdminService adminService)
         {
             _log = log;
-            Version = GetIISVersion();
+            Version = GetIISVersion(adminService);
         }
 
         /// <summary>
@@ -332,7 +332,7 @@ namespace PKISharp.WACS.Clients.IIS
         /// Determine IIS version based on registry
         /// </summary>
         /// <returns></returns>
-        private Version GetIISVersion()
+        private Version GetIISVersion(AdminService adminService)
         {
             // Get the W3SVC service
             try
@@ -379,8 +379,11 @@ namespace PKISharp.WACS.Clients.IIS
             try
             {
                 // Try to create a ServerManager object and read from it
-                using var x = new ServerManager();
-                _ = x.ApplicationDefaults;
+                if (adminService.IsAdmin)
+                {
+                    using var x = new ServerManager();
+                    _ = x.ApplicationDefaults;
+                }
             }
             catch (Exception ex)
             {

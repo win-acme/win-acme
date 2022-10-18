@@ -1,22 +1,27 @@
 ﻿using PKISharp.WACS.Clients.IIS;
-using System;
-using System.Security.Principal;
 
 namespace PKISharp.WACS.Services
 {
     internal class UserRoleService : IUserRoleService
     {
         private readonly IIISClient _iisClient;
+        private readonly AdminService _adminService;
 
-        public UserRoleService(IIISClient iisClient) => _iisClient = iisClient;
+        public UserRoleService(IIISClient iisClient, AdminService adminService)
+        {
+            _iisClient = iisClient;
+            _adminService = adminService;
+        }
 
-        public bool AllowTaskScheduler => IsAdmin;
-        public bool AllowCertificateStore => IsAdmin;
+        public bool AllowTaskScheduler => _adminService.IsAdmin;
+
+        public bool AllowCertificateStore => _adminService.IsAdmin;
+
         public (bool, string?) AllowIIS
         {
             get
             {
-                if (!IsAdmin)
+                if (!_adminService.IsAdmin)
                 {
                     return (false, "Run as administrator to allow access to IIS.");
                 }
@@ -28,37 +33,8 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        public bool IsAdmin => IsAdminLazy.Value;
+        public bool AllowLegacy => _adminService.IsAdmin;
 
-        private Lazy<bool> IsAdminLazy => new Lazy<bool>(DetermineAdmin);
-
-        private bool DetermineAdmin()
-        {
-            bool isAdmin;
-            WindowsIdentity? user = null;
-            try
-            {
-                //get the currently logged in user
-                user = WindowsIdentity.GetCurrent();
-                var principal = new WindowsPrincipal(user);
-                isAdmin = principal.IsInRole(WindowsBuiltInRole.Administrator);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                isAdmin = false;
-            }
-            catch (Exception)
-            {
-                isAdmin = false;
-            }
-            finally
-            {
-                if (user != null)
-                {
-                    user.Dispose();
-                }
-            }
-            return isAdmin;
-        }
+        public bool AllowSelfHosting => _adminService.IsAdmin;
     }
 }

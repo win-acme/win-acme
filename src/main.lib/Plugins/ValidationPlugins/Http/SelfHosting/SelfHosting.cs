@@ -131,7 +131,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 
         internal static (bool, string?) IsDisabled(IUserRoleService userRoleService)
         {
-            if (!userRoleService.IsAdmin)
+            if (!userRoleService.AllowSelfHosting)
             {
                 return (true, "Run as administrator to allow use of the built-in web listener.");
             }

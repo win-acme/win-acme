@@ -4,11 +4,13 @@ using PKISharp.WACS.Configuration.Settings;
 using PKISharp.WACS.Extensions;
 using System;
 using System.IO;
+using System.Security.Principal;
 
 namespace PKISharp.WACS.Services
 {
     public class SettingsService : ISettingsService
     {
+        private readonly AdminService _adminService;
         private readonly ILogService _log;
         private readonly MainArguments _arguments;
 
@@ -33,10 +35,11 @@ namespace PKISharp.WACS.Services
         public InstallationSettings Installation { get; private set; } = new InstallationSettings();
         public SecretsSettings Secrets { get; private set; } = new SecretsSettings();
 
-        public SettingsService(ILogService log, MainArguments arguments)
+        public SettingsService(ILogService log, AdminService adminService, MainArguments arguments)
         {
             _log = log;
             _arguments = arguments;
+            _adminService = adminService;
             var settingsFileName = "settings.json";
             var settingsFileTemplateName = "settings_default.json";
             _log.Verbose("Looking for {settingsFileName} in {path}", settingsFileName, VersionService.SettingsPath);
@@ -170,13 +173,15 @@ namespace PKISharp.WACS.Services
             {
                 try
                 {
-                    Directory.CreateDirectory(Client.ConfigurationPath);
+                    di = Directory.CreateDirectory(Client.ConfigurationPath);
                 } 
                 catch (Exception ex)
                 {
                     throw new Exception($"Unable to create configuration path {Client.ConfigurationPath}", ex);
                 }
             }
+            var acl = di.GetAccessControl();
+            var rules = acl.GetAccessRules(true, true, typeof(SecurityIdentifier));
 
             _log.Debug("Config folder: {_configPath}", Client.ConfigurationPath);
         }

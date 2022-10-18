@@ -342,7 +342,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         internal static (bool, string?) Disabled(IUserRoleService userRoleService)
         {
-            if (userRoleService.IsAdmin) 
+            if (userRoleService.AllowCertificateStore) 
             {
                 return (false, null);
             } 
