@@ -4,6 +4,7 @@ using PKISharp.WACS.Configuration.Settings;
 using PKISharp.WACS.Extensions;
 using System;
 using System.IO;
+using System.Security.AccessControl;
 using System.Security.Principal;
 
 namespace PKISharp.WACS.Services
@@ -105,6 +106,7 @@ namespace PKISharp.WACS.Services
                 return;
             }
 
+            ChooseConfigPath();
             CreateConfigPath();
             CreateLogPath();
             CreateCachePath();
@@ -137,10 +139,9 @@ namespace PKISharp.WACS.Services
         }
 
         /// <summary>
-        /// Find and/or create path of the configuration files
+        /// Determine which folder to use for configuration data
         /// </summary>
-        /// <param name="arguments"></param>
-        private void CreateConfigPath()
+        private void ChooseConfigPath()
         {
             var userRoot = Client.ConfigurationPath;
             string? configRoot;
@@ -166,24 +167,65 @@ namespace PKISharp.WACS.Services
 
             // This only happens when invalid options are provided 
             Client.ConfigurationPath = Path.Combine(configRoot, BaseUri.CleanUri()!);
+        }
 
-            // Create folder if it doesn't exist yet
+        /// <summary>
+        /// Create and/or configure the configuration folder
+        /// </summary>
+        /// <param name="arguments"></param>
+        private void CreateConfigPath()
+        {
+            var created = false;
             var di = new DirectoryInfo(Client.ConfigurationPath);
             if (!di.Exists)
             {
                 try
                 {
                     di = Directory.CreateDirectory(Client.ConfigurationPath);
+                    _log.Debug("Created configuration folder {folder}", Client.ConfigurationPath);
+                    created = true;
                 } 
                 catch (Exception ex)
                 {
-                    throw new Exception($"Unable to create configuration path {Client.ConfigurationPath}", ex);
+                    throw new Exception($"Unable to create configuration folder {Client.ConfigurationPath}", ex);
+                }
+            } 
+            else
+            {
+                _log.Debug("Use existing configuration folder {folder}", Client.ConfigurationPath);
+            }
+
+            // Test access control rules
+            var acl = di.GetAccessControl();
+            if (created)
+            {
+                // Disable access rule inheritance
+                acl.SetAccessRuleProtection(true, true);
+                di.SetAccessControl(acl);
+                acl = di.GetAccessControl();
+            }
+
+            // Remove or warn about access by the "Users" group
+            var sid = new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null);
+            var rules = acl.GetAccessRules(true, true, typeof(SecurityIdentifier));
+            foreach (FileSystemAccessRule rule in rules)
+            {
+                if (rule.IdentityReference == sid)
+                {
+                    if (created)
+                    {
+                        acl.RemoveAccessRule(rule);
+                    } 
+                    else
+                    {
+                        _log.Warning("All users have {FileSystemRights} access to the configuration folder", rule.FileSystemRights);
+                    }
                 }
             }
-            var acl = di.GetAccessControl();
-            var rules = acl.GetAccessRules(true, true, typeof(SecurityIdentifier));
-
-            _log.Debug("Config folder: {_configPath}", Client.ConfigurationPath);
+            if (created)
+            {
+                di.SetAccessControl(acl);
+            }
         }
 
         /// <summary>
