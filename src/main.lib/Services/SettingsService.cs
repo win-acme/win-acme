@@ -104,11 +104,13 @@ namespace PKISharp.WACS.Services
                 return;
             }
 
-            Client.ConfigurationPath = ChooseConfigPath();
+            var configRoot = ChooseConfigPath();
+            Client.ConfigurationPath = Path.Combine(configRoot, BaseUri.CleanUri()!);
             Client.LogPath = ChooseLogPath();
             Cache.Path = ChooseCachePath();
 
-            EnsureFolderExists(Client.ConfigurationPath, "configuration", true);
+            EnsureFolderExists(configRoot, "configuration", true);
+            EnsureFolderExists(Client.ConfigurationPath, "configuration", false);
             EnsureFolderExists(Client.LogPath, "log", !Client.LogPath.StartsWith(Client.ConfigurationPath));
             EnsureFolderExists(Cache.Path, "cache", !Client.LogPath.StartsWith(Client.ConfigurationPath));
 
@@ -166,9 +168,7 @@ namespace PKISharp.WACS.Services
                 var appData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
                 configRoot = Path.Combine(appData, Client.ClientName);
             }
-
-            // This only happens when invalid options are provided 
-            return Path.Combine(configRoot, BaseUri.CleanUri()!);
+            return configRoot;
         }
 
         /// <summary>
@@ -238,8 +238,20 @@ namespace PKISharp.WACS.Services
         private void EnsureFolderAcl(DirectoryInfo di, string label, bool created)
         {
             // Test access control rules
+            var (access, inherited) = UsersHaveAccess(di);
+            if (!access)
+            {
+                return;
+            }
+            if (!created)
+            {
+                _log.Warning("All users have access to the {label} at {path}.", label, di.FullName);
+                _log.Warning("For better security, limit access to SYSTEM, Administrators and/or specific accounts.", label, di.FullName);
+                return;
+            } 
+
             var acl = di.GetAccessControl();
-            if (created)
+            if (inherited)
             {
                 // Disable access rule inheritance
                 acl.SetAccessRuleProtection(true, true);
@@ -247,35 +259,41 @@ namespace PKISharp.WACS.Services
                 acl = di.GetAccessControl();
             }
 
-            // Remove or warn about access by the "Users" group
             var sid = new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null);
             var rules = acl.GetAccessRules(true, true, typeof(SecurityIdentifier));
-            var hit = false;
             foreach (FileSystemAccessRule rule in rules)
             {
                 if (rule.IdentityReference == sid && 
                     rule.AccessControlType == AccessControlType.Allow)
                 {
-                    if (created)
-                    {
-                        acl.RemoveAccessRule(rule);
-                    }
-                    hit = true;
+                    acl.RemoveAccessRule(rule);
                 }
             }
-            if (hit)
+            di.SetAccessControl(acl);
+        }
+
+        /// <summary>
+        /// Test if users have access through inherited or direct rules
+        /// </summary>
+        /// <param name="di"></param>
+        /// <returns></returns>
+        private static (bool, bool) UsersHaveAccess(DirectoryInfo di)
+        {
+            var acl = di.GetAccessControl();
+            var sid = new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null);
+            var rules = acl.GetAccessRules(true, true, typeof(SecurityIdentifier));
+            var hit = false;
+            var inherited = false;
+            foreach (FileSystemAccessRule rule in rules)
             {
-                if (created)
+                if (rule.IdentityReference == sid &&
+                    rule.AccessControlType == AccessControlType.Allow)
                 {
-                    di.SetAccessControl(acl);
-                } 
-                else
-                {
-                    _log.Warning("All users have access to the {label} folder at {path}.", label, di.FullName);
-                    _log.Warning("For better security, limit access to SYSTEM, Administrators and/or specific accounts.", label, di.FullName);
-                   
+                    hit = true;
+                    inherited = inherited || rule.IsInherited;
                 }
             }
+            return (hit, inherited);
         }
     }
 }
