@@ -106,10 +106,14 @@ namespace PKISharp.WACS.Services
                 return;
             }
 
-            ChooseConfigPath();
-            CreateConfigPath();
-            CreateLogPath();
-            CreateCachePath();
+            Client.ConfigurationPath = ChooseConfigPath();
+            Client.LogPath = ChooseLogPath();
+            Cache.Path = ChooseCachePath();
+
+            EnsureFolderExists(Client.ConfigurationPath, "configuration", true);
+            EnsureFolderExists(Client.LogPath, "log", !Client.LogPath.StartsWith(Client.ConfigurationPath));
+            EnsureFolderExists(Cache.Path, "cache", !Client.LogPath.StartsWith(Client.ConfigurationPath));
+
             Valid = true;
         }
 
@@ -141,7 +145,7 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// Determine which folder to use for configuration data
         /// </summary>
-        private void ChooseConfigPath()
+        private string ChooseConfigPath()
         {
             var userRoot = Client.ConfigurationPath;
             string? configRoot;
@@ -166,35 +170,75 @@ namespace PKISharp.WACS.Services
             }
 
             // This only happens when invalid options are provided 
-            Client.ConfigurationPath = Path.Combine(configRoot, BaseUri.CleanUri()!);
+            return Path.Combine(configRoot, BaseUri.CleanUri()!);
         }
 
         /// <summary>
-        /// Create and/or configure the configuration folder
+        /// Determine which folder to use for logging
         /// </summary>
-        /// <param name="arguments"></param>
-        private void CreateConfigPath()
+        private string ChooseLogPath()
+        {
+            if (string.IsNullOrWhiteSpace(Client.LogPath))
+            {
+                return Path.Combine(Client.ConfigurationPath, "Log");
+            }
+            else
+            {
+                // Create seperate logs for each endpoint
+                return Path.Combine(Client.LogPath, BaseUri.CleanUri()!);
+            }
+        }
+
+        /// <summary>
+        /// Determine which folder to use for cache certificates
+        /// </summary>
+        private string ChooseCachePath()
+        {
+            if (string.IsNullOrWhiteSpace(Cache.Path))
+            {
+                return Path.Combine(Client.ConfigurationPath, "Certificates");
+            }
+            return Cache.Path;
+        }
+
+        /// <summary>
+        /// Create folder if needed
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="label"></param>
+        /// <exception cref="Exception"></exception>
+        private void EnsureFolderExists(string path, string label, bool checkAcl)
         {
             var created = false;
-            var di = new DirectoryInfo(Client.ConfigurationPath);
+            var di = new DirectoryInfo(path);
             if (!di.Exists)
             {
                 try
                 {
-                    di = Directory.CreateDirectory(Client.ConfigurationPath);
-                    _log.Debug("Created configuration folder {folder}", Client.ConfigurationPath);
+                    di = Directory.CreateDirectory(path);
+                    _log.Debug($"Created {label} folder {{path}}", path);
                     created = true;
-                } 
+                }
                 catch (Exception ex)
                 {
-                    throw new Exception($"Unable to create configuration folder {Client.ConfigurationPath}", ex);
+                    throw new Exception($"Unable to create {label} {path}", ex);
                 }
-            } 
+            }
             else
             {
-                _log.Debug("Use existing configuration folder {folder}", Client.ConfigurationPath);
+                _log.Debug($"Use existing {label} folder {{path}}", path);
             }
+            if (checkAcl)
+            {
+                EnsureFolderAcl(di, label, created);
+            }
+        }
 
+        /// <summary>
+        /// Ensure proper access rights to a folder
+        /// </summary>
+        private void EnsureFolderAcl(DirectoryInfo di, string label, bool created)
+        {
             // Test access control rules
             var acl = di.GetAccessControl();
             if (created)
@@ -215,10 +259,10 @@ namespace PKISharp.WACS.Services
                     if (created)
                     {
                         acl.RemoveAccessRule(rule);
-                    } 
+                    }
                     else
                     {
-                        _log.Warning("All users have {FileSystemRights} access to the configuration folder", rule.FileSystemRights);
+                        _log.Warning("All users have {FileSystemRights} access to the {label} folder", rule.FileSystemRights, label);
                     }
                 }
             }
@@ -227,59 +271,5 @@ namespace PKISharp.WACS.Services
                 di.SetAccessControl(acl);
             }
         }
-
-        /// <summary>
-        /// Find and/or created path for logging
-        /// </summary>
-        private void CreateLogPath()
-        {
-            if (string.IsNullOrWhiteSpace(Client.LogPath))
-            {
-                Client.LogPath = Path.Combine(Client.ConfigurationPath, "Log");
-            }
-            else
-            {
-                // Create seperate logs for each endpoint
-                Client.LogPath = Path.Combine(Client.LogPath, BaseUri.CleanUri()!);
-            }
-            if (!Directory.Exists(Client.LogPath))
-            {
-                try
-                {
-                    Directory.CreateDirectory(Client.LogPath);
-                }
-                catch (Exception ex)
-                {
-                    _log.Error(ex, "Unable to create log directory {_logPath}", Client.LogPath);
-                    throw;
-                }
-            }
-            _log.Debug("Log path: {_logPath}", Client.LogPath);
-        }
-
-        /// <summary>
-        /// Find and/or created path of the certificate cache
-        /// </summary>
-        private void CreateCachePath()
-        {
-            if (string.IsNullOrWhiteSpace(Cache.Path))
-            {
-                Cache.Path = Path.Combine(Client.ConfigurationPath, "Certificates");
-            }
-            if (!Directory.Exists(Cache.Path))
-            {
-                try
-                {
-                    Directory.CreateDirectory(Cache.Path);
-                }
-                catch (Exception ex)
-                {
-                    _log.Error(ex, "Unable to create cache path {_certificatePath}", Cache.Path);
-                    throw;
-                }
-            }
-            _log.Debug("Cache path: {_certificatePath}", Cache.Path);
-        }
-
     }
 }
