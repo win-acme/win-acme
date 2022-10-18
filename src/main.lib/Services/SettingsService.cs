@@ -243,12 +243,13 @@ namespace PKISharp.WACS.Services
             {
                 return;
             }
+
             if (!created)
             {
-                _log.Warning("All users have access to the {label} at {path}.", label, di.FullName);
-                _log.Warning("For better security, limit access to SYSTEM, Administrators and/or specific accounts.", label, di.FullName);
-                return;
-            } 
+                _log.Warning("All users currently have access to {path}.", di.FullName);
+                _log.Warning("That access will now be limited to improve security.", label, di.FullName);
+                _log.Warning("You may manually add specific trusted accounts to the ACL.", label, di.FullName);
+            }
 
             var acl = di.GetAccessControl();
             if (inherited)
