@@ -250,23 +250,31 @@ namespace PKISharp.WACS.Services
             // Remove or warn about access by the "Users" group
             var sid = new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null);
             var rules = acl.GetAccessRules(true, true, typeof(SecurityIdentifier));
+            var hit = false;
             foreach (FileSystemAccessRule rule in rules)
             {
-                if (rule.IdentityReference == sid)
+                if (rule.IdentityReference == sid && 
+                    rule.AccessControlType == AccessControlType.Allow)
                 {
                     if (created)
                     {
                         acl.RemoveAccessRule(rule);
                     }
-                    else
-                    {
-                        _log.Warning("All users have {FileSystemRights} access to the {label} folder", rule.FileSystemRights, label);
-                    }
+                    hit = true;
                 }
             }
-            if (created)
+            if (hit)
             {
-                di.SetAccessControl(acl);
+                if (created)
+                {
+                    di.SetAccessControl(acl);
+                } 
+                else
+                {
+                    _log.Warning("All users have access to the {label} folder at {path}.", label, di.FullName);
+                    _log.Warning("For better security, limit access to SYSTEM, Administrators and/or specific accounts.", label, di.FullName);
+                   
+                }
             }
         }
     }
