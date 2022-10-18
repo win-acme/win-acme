@@ -9,6 +9,8 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
 
         public bool AllowTaskScheduler => true;
 
-        public bool IsAdmin => true;
+        public bool AllowLegacy => true;
+
+        public bool AllowSelfHosting => true;
     }
 }

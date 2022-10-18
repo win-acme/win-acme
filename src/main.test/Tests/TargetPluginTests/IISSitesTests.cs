@@ -31,7 +31,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             domainParse = new DomainParseService(log, proxy, settings);
             helper = new IISHelper(log, iis, domainParse);
             plugins = new mock.MockPluginService(log);
-            userRoleService = new UserRoleService(iis);
+            userRoleService = new UserRoleService(iis, new AdminService());
         }
 
         private IISOptions? Options(string commandLine)

@@ -11,7 +11,6 @@ namespace PKISharp.WACS.Services
 {
     public class SettingsService : ISettingsService
     {
-        private readonly AdminService _adminService;
         private readonly ILogService _log;
         private readonly MainArguments _arguments;
 
@@ -36,11 +35,10 @@ namespace PKISharp.WACS.Services
         public InstallationSettings Installation { get; private set; } = new InstallationSettings();
         public SecretsSettings Secrets { get; private set; } = new SecretsSettings();
 
-        public SettingsService(ILogService log, AdminService adminService, MainArguments arguments)
+        public SettingsService(ILogService log, MainArguments arguments)
         {
             _log = log;
             _arguments = arguments;
-            _adminService = adminService;
             var settingsFileName = "settings.json";
             var settingsFileTemplateName = "settings_default.json";
             _log.Verbose("Looking for {settingsFileName} in {path}", settingsFileName, VersionService.SettingsPath);

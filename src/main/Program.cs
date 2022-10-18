@@ -157,8 +157,7 @@ namespace PKISharp.WACS.Host
             {
                 return null;
             }
-            var adminService = new AdminService();
-            var settingsService = new SettingsService(logger, adminService, mainArguments);
+            var settingsService = new SettingsService(logger, mainArguments);
             if (!settingsService.Valid)
             {
                 return null;
@@ -170,7 +169,7 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterInstance(logger).As<ILogService>();
             _ = builder.RegisterInstance(settingsService).As<ISettingsService>();
             _ = builder.RegisterInstance(pluginService).As<IPluginService>();
-            _ = builder.RegisterInstance(adminService);
+            _ = builder.RegisterType<AdminService>();
             _ = builder.RegisterType<UserRoleService>().As<IUserRoleService>().SingleInstance();
             _ = builder.RegisterType<ValidationOptionsService>().As<IValidationOptionsService>().SingleInstance();
             _ = builder.RegisterType<InputService>().As<IInputService>().SingleInstance();
