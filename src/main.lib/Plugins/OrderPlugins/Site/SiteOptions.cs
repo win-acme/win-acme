@@ -7,6 +7,6 @@ namespace PKISharp.WACS.Plugins.OrderPlugins
     internal class SiteOptions : OrderPluginOptions<Site>
     {
         public override string Name => "Site";
-        public override string Description => "Seperate certificate for each site";
+        public override string Description => "Separate certificate for each IIS site";
     }
 }

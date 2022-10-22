@@ -7,6 +7,6 @@ namespace PKISharp.WACS.Plugins.OrderPlugins
     internal class HostOptions : OrderPluginOptions<Host>
     {
         public override string Name => "Host";
-        public override string Description => "Seperate certificate for each host";
+        public override string Description => "Separate certificate for each host (e.g. sub.example.com)";
     }
 }

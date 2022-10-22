@@ -5,6 +5,7 @@ using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories.Null;
 using PKISharp.WACS.Plugins.CsrPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Plugins.OrderPlugins;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Plugins.ValidationPlugins.Http;
@@ -228,6 +229,30 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     " the certificate for. This happens both during initial setup *and* for every future renewal. There are two main methods of doing so: " +
                     "answering specific http requests (http-01) or create specific dns records (dns-01). For wildcard domains the latter is the only option. " +
                     "Various additional plugins are available from https://github.com/win-acme/win-acme/.");
+        }
+
+        public override async Task<IOrderPluginOptionsFactory> GetOrderPlugin(ILifetimeScope scope, Target target)
+        {
+            if (target.Parts.SelectMany(x => x.Identifiers).Count() > 1)
+            {
+                return await GetPlugin<IOrderPluginOptionsFactory>(
+                   scope,
+                   defaultParam1: _settings.Order.DefaultPlugin,
+                   defaultType: typeof(SingleOptionsFactory),
+                   defaultTypeFallback: typeof(SingleOptionsFactory),
+                   nullResult: new NullOrderOptionsFactory(),
+                   unusable: (c) => (!c.CanProcess(target), "Unsupported source."),
+                   className: "order",
+                   shortDescription: "Would you like to split this source into multiple certificates?",
+                   longDescription: $"By default your source hosts are covered by a single certificate. " +
+                        $"But if you want to avoid the {Constants.MaxNames} domain limit, want to prevent " +
+                        $"information disclosure via the SAN list, and/or reduce the impact of a single validation failure," +
+                        $"you may choose to convert one source into multiple certificates, using different strategies.");
+            } 
+            else
+            {
+                return await base.GetOrderPlugin(scope, target);
+            }
         }
 
         public override async Task<ICsrPluginOptionsFactory> GetCsrPlugin(ILifetimeScope scope)

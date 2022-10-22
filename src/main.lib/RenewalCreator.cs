@@ -153,6 +153,16 @@ namespace PKISharp.WACS
             var ask = runLevel.HasFlag(RunLevel.Advanced | RunLevel.Interactive) && steps.HasFlag(Steps.Target);
             await SetupFriendlyName(tempRenewal, initialTarget, ask);
 
+            // Choose the order plugin
+            if (steps.HasFlag(Steps.Order))
+            {
+                tempRenewal.OrderPluginOptions = await SetupOrder(targetScope, runLevel);
+                if (tempRenewal.OrderPluginOptions == null)
+                {
+                    return;
+                }
+            }
+
             // Choose the validation plugin
             if (steps.HasFlag(Steps.Validation))
             {
@@ -162,16 +172,6 @@ namespace PKISharp.WACS
                     return;
                 }
                 tempRenewal.ValidationPluginOptions = validationOptions;
-            }
-
-            // Choose the order plugin
-            if (steps.HasFlag(Steps.Order))
-            {
-                tempRenewal.OrderPluginOptions = await SetupOrder(targetScope, runLevel);
-                if (tempRenewal.OrderPluginOptions == null)
-                {
-                    return;
-                }
             }
 
             // Choose the CSR plugin
