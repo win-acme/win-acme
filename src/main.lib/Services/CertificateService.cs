@@ -249,7 +249,7 @@ namespace PKISharp.WACS.Services
         /// to make sure that future releases don't invalidate 
         /// the entire cache on upgrades.
         /// </summary>
-        public const int MaxCacheKeyVersion = 3;
+        public const int MaxCacheKeyVersion = 4;
 
         /// <summary>
         /// To check if it's possible to reuse a previously retrieved
@@ -277,6 +277,13 @@ namespace PKISharp.WACS.Services
             _ = order.Renewal.CsrPluginOptions != null ?
                 cacheKeyBuilder.Append(JsonConvert.SerializeObject(order.Renewal.CsrPluginOptions)) :
                 cacheKeyBuilder.Append('-');
+            if (version > 3)
+            {
+                // Make SiteId part of the cache key so that we will 
+                // detect moved bindings and re-run the installation
+                // step accordingly.
+                cacheKeyBuilder.Append(string.Join(',', order.Target.Parts.Select(p => p.SiteId ?? 0)));
+            }
             var key = cacheKeyBuilder.ToString().SHA1();
             if (version > 2)
             {
