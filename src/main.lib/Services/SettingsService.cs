@@ -3,6 +3,7 @@ using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Configuration.Settings;
 using PKISharp.WACS.Extensions;
 using System;
+using System.Data;
 using System.IO;
 using System.Security.AccessControl;
 using System.Security.Principal;
@@ -270,6 +271,20 @@ namespace PKISharp.WACS.Services
                     acl.RemoveAccessRule(rule);
                 }
             }
+            var user = WindowsIdentity.GetCurrent().User;
+            if (user != null)
+            {
+                // Allow user access from non-privilegdes perspective 
+                // as well.
+                acl.AddAccessRule(
+                    new FileSystemAccessRule(
+                        user,
+                        FileSystemRights.Read | FileSystemRights.Delete | FileSystemRights.Modify,
+                        InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
+                        PropagationFlags.None,
+                        AccessControlType.Allow));
+            }
+
             di.SetAccessControl(acl);
         }
 
