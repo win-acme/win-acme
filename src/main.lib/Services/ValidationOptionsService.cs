@@ -1,10 +1,237 @@
-﻿using PKISharp.WACS.DomainObjects;
+﻿using Autofac;
+using Newtonsoft.Json;
+using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Options;
+using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Plugins.TargetPlugins;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Services
 {
     internal class ValidationOptionsService : IValidationOptionsService
     {
-        public ValidationPluginOptions? GetValidationOptions(Identifier identifier) => null; // new SelfHostingOptions();
+        private readonly IInputService _input;
+        private readonly ILogService _log;
+        private readonly ISettingsService _settings;
+        private List<GlobalValidationPluginOptions>? _options;
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="input"></param>
+        public ValidationOptionsService(IInputService input, ILogService log, ISettingsService settings)
+        {
+            _options = new();
+            _input = input;
+            _log = log;
+            _settings = settings;   
+        }
+
+        /// <summary>
+        /// File where the validation information is stored
+        /// </summary>
+        private FileInfo Store => new FileInfo(Path.Join(_settings.Client.ConfigurationPath, "validation.json"));
+
+        /// <summary>
+        /// Data store
+        /// </summary>
+        private IEnumerable<GlobalValidationPluginOptions>? GlobalOptions
+        {
+            get
+            {
+                if (_options == null && Store.Exists)
+                {
+                    try
+                    {
+                        var rawJson = File.ReadAllText(Store.FullName);
+                        _options = JsonConvert.DeserializeObject<List<GlobalValidationPluginOptions>>(rawJson);
+                    }
+                    catch
+                    {
+                        _log.Error("Unable to read global validation options from {path}", Store.FullName);
+                    }
+                }
+                return _options;
+            }
+            set
+            {
+                var asList = value?.ToList();
+                if (asList == null)
+                {
+                    Store.Delete();
+                } 
+                else
+                {
+                    var rawJson = JsonConvert.SerializeObject(asList, Formatting.Indented);
+                    File.WriteAllText(Store.FullName, rawJson);
+                }
+                _options = asList;
+            }
+        }
+
+        /// <summary>
+        /// Manage validation options
+        /// </summary>
+        /// <returns></returns>
+        public async Task Manage(ILifetimeScope scope)
+        {
+            // Pick bindings
+            var exit  = false;
+            while (!exit)
+            {
+                _input.CreateSpace();
+                _input.Show(null, "Welcome to the global validation options manager. Here you may " +
+                    "define validation options that will be prioritized over the settings chosen for " +
+                    "individual renewals. This can ease management when there are many renewals " +
+                    "(e.g. when rotating credentials or switching DNS providers), but it also enables you " +
+                    "to create certificates where different domains have different validation requirements. " +
+                    "If you are not sure why you might need this, just go back and stick with regular renewals.");
+                var menu = new List<Choice<Func<Task>>>
+                {
+                    Choice.Create<Func<Task>>(
+                        () => Add(scope),
+                        "Add global validation setting", command: "A"),
+                    Choice.Create<Func<Task>>(
+                        () => { exit = true; return Task.CompletedTask; },
+                        "Back",
+                        @default: true, command: "Q")
+                };
+                var chosen = await _input.ChooseFromMenu("Choose menu option", menu);
+                await chosen.Invoke();
+            }
+        }
+
+        /// <summary>
+        /// Configure new validation mode
+        /// </summary>
+        /// <returns></returns>
+        public async Task Add(ILifetimeScope scope)
+        {
+            _input.CreateSpace();
+            _input.Show(null, IISArguments.PatternExamples);
+            string pattern;
+            do
+            {
+                pattern = await _input.RequestString("Pattern");
+            }
+            while (!IISOptionsFactory.ParsePattern(pattern, _log));
+
+            var fakeTarget = new Target(new DnsIdentifier("www.example.com"));
+            var resolver = scope.Resolve<IResolver>();
+            var optionsFactory = await resolver.GetValidationPlugin(scope, fakeTarget);
+            var options = await optionsFactory.Aquire(fakeTarget, _input, RunLevel.Advanced);
+            var global = new GlobalValidationPluginOptions() { 
+                ValidationPluginOptions = options,
+                Pattern = pattern
+            };
+            AddOrReplace(global);
+        }
+
+        private void AddOrReplace(GlobalValidationPluginOptions options)
+        {
+            var old = GlobalOptions?.ToList() ?? new();
+            var replace = old.FindIndex(x => x.Pattern == options.Pattern);
+            if (replace > -1)
+            {
+                old[replace] = options;
+            } 
+            else
+            {
+                old.Add(options);
+            }
+            GlobalOptions = old;
+        }
+
+        /// <summary>
+        /// Accessed by the renewal process
+        /// </summary>
+        /// <param name="identifier"></param>
+        /// <returns></returns>
+        public ValidationPluginOptions? GetValidationOptions(Identifier identifier) =>
+            _options.Where(o => o.Match(identifier)).FirstOrDefault()?.ValidationPluginOptions;
+
+        public class GlobalValidationPluginOptions
+        {
+            private string? _pattern;
+            private string? _regex;
+            private Regex? _parsedRegex;
+
+            /// <summary>
+            /// Direct input of a regular expression
+            /// </summary>
+            public string? Regex
+            {
+                get => _regex;
+                set
+                {
+                    _regex = value;
+                    _parsedRegex = null;
+                }
+            }
+
+            /// <summary>
+            /// Input of a pattern like used in other
+            /// parts of the software as well, e.g.
+            /// </summary>
+            public string? Pattern
+            {
+                get => _pattern;
+                set
+                {
+                    _pattern = value;
+                    _parsedRegex = null;
+                }
+            }
+
+            /// <summary>
+            /// The actual validation options that 
+            /// are stored for re-use
+            /// </summary>
+            public ValidationPluginOptions? ValidationPluginOptions { get; set; }
+
+            /// <summary>
+            /// Convert the user settings into a Regex that will be 
+            /// matched with the identifier.
+            /// </summary>
+            private Regex? ParsedRegex
+            {
+                get
+                {
+                    if (_parsedRegex == null)
+                    {
+                        if (Pattern != null)
+                        {
+                            _parsedRegex = new Regex(Pattern.PatternToRegex());
+                        }
+                        if (Regex != null)
+                        {
+                            _parsedRegex = new Regex(Regex);
+                        }
+                    }
+                    return _parsedRegex;
+                }
+            }
+
+            /// <summary>
+            /// Test if this specific identifier is a match
+            /// for these validation options
+            /// </summary>
+            /// <param name="identifier"></param>
+            /// <returns></returns>
+            public bool Match(Identifier identifier)
+            {
+                if (ParsedRegex == null)
+                {
+                    return false;
+                }
+                return ParsedRegex.IsMatch(identifier.Value);
+            }
+        }
     }
 }

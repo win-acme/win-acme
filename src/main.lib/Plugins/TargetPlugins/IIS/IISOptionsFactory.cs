@@ -336,7 +336,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 raw = await input.RequestString("Pattern");
             }
-            while (!ParsePattern(raw, options));
+            while (!SetPattern(raw, options));
         }
 
         async Task InputRegex(IInputService input, IISOptions options)
@@ -349,27 +349,35 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             while (!ParseRegex(raw, options));
         }
 
-        private bool ParsePattern(string? pattern, IISOptions ret)
+        public static bool ParsePattern(string? pattern, ILogService log)
         {
             if (string.IsNullOrWhiteSpace(pattern))
             {
-                _log.Error("Invalid input");
+                log.Error("Invalid input");
                 return false;
             }
             try
             {
                 var regexString = pattern.PatternToRegex();
                 var actualRegex = new Regex(regexString);
-                ret.IncludePattern = pattern;
                 return true;
-            } 
+            }
             catch (Exception ex)
             {
-                _log.Error(ex, "Unable to convert pattern to regex");
+                log.Error(ex, "Unable to convert pattern to regex");
                 return false;
             }
         }
 
+        private bool SetPattern(string? pattern, IISOptions ret)
+        {
+            if (ParsePattern(pattern, _log))
+            {
+                ret.IncludePattern = pattern;
+                return true;
+            }
+            return false;
+        }
 
         private bool ParseRegex(string? regex, IISOptions options)
         {
@@ -489,7 +497,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                     _log.Error("Parameters --host and --host-pattern cannot be combined");
                     return null;
                 }
-                if (!ParsePattern(pattern, options))
+                if (!SetPattern(pattern, options))
                 {
                     return null;
                 }

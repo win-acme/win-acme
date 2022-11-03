@@ -4,6 +4,7 @@ using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Legacy;
@@ -32,6 +33,7 @@ namespace PKISharp.WACS.Host
         private readonly RenewalManager _renewalManager;
         private readonly RenewalCreator _renewalCreator;
         private readonly SecretServiceManager _secretServiceManager;
+        private readonly ValidationOptionsService _validationOptionsService;
         private readonly TaskSchedulerService _taskScheduler;
 
         public Wacs(
@@ -44,7 +46,8 @@ namespace PKISharp.WACS.Host
             IDueDateService dueDateService,
             AdminService adminService,
             TaskSchedulerService taskSchedulerService,
-            SecretServiceManager secretServiceManager)
+            SecretServiceManager secretServiceManager,
+            ValidationOptionsService validationOptionsService)
         {
             // Basic services
             _container = container;
@@ -75,6 +78,7 @@ namespace PKISharp.WACS.Host
             _args = _arguments.GetArguments<MainArguments>()!;
             _input = _container.Resolve<IInputService>();
             _renewalStore = _container.Resolve<IRenewalStore>();
+            _validationOptionsService = validationOptionsService;
 
             var renewalExecutor = container.Resolve<RenewalExecutor>(
                 new TypedParameter(typeof(IContainer), _container));
@@ -299,6 +303,13 @@ namespace PKISharp.WACS.Host
                 Choice.Create<Func<Task>>(
                     () => _secretServiceManager.ManageSecrets(),
                     $"Manage secrets", "S"),
+                Choice.Create<Func<Task>>(
+                    () =>
+                    {
+                        var scope = _scopeBuilder.Configuration(_container, new Renewal(), RunLevel.Interactive | RunLevel.Advanced);
+                        return _validationOptionsService.Manage(scope);
+                    },
+                    $"Manage global validation options", "V"),
                 Choice.Create<Func<Task>>(
                     () => _taskScheduler.CreateTaskScheduler(RunLevel.Interactive | RunLevel.Advanced), 
                     "(Re)create scheduled task", "T", 
