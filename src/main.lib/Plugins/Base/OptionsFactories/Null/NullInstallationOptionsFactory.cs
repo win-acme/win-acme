@@ -18,7 +18,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         Task<InstallationPluginOptions?> Generate() => Task.FromResult<InstallationPluginOptions?>(new NullInstallationOptions());
         Task<InstallationPluginOptions?> IInstallationPluginOptionsFactory.Aquire(Target target, IInputService inputService, RunLevel runLevel) => Generate();
         Task<InstallationPluginOptions?> IInstallationPluginOptionsFactory.Default(Target target) => Generate();
-        bool IInstallationPluginOptionsFactory.CanInstall(IEnumerable<Type> storeTypes) => true;
+        (bool, string?) IInstallationPluginOptionsFactory.CanInstall(IEnumerable<Type> storeTypes, IEnumerable<Type> installationTypes) => (true, null);
         int IPluginOptionsFactory.Order => int.MaxValue;
         (bool, string?) IPluginOptionsFactory.Disabled => (false, null);
         string IPluginOptionsFactory.Name => new NullInstallationOptions().Name;

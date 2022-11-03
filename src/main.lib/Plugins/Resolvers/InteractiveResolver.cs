@@ -345,8 +345,8 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 "";
             return await GetPlugin<IInstallationPluginOptionsFactory>(
                 scope,
-                filter: (x) => x, // Disable default null check
-                unusable: x => (!x.CanInstall(storeTypes), "This step cannot be used in combination with the specified store(s)"),
+                filter: x => x, // Disable default null check
+                unusable: x => { var (a, b) = x.CanInstall(storeTypes, chosen.Select(c => c.InstanceType)); return (!a, b); },
                 defaultParam1: defaultParam1,
                 defaultType: defaultType,
                 defaultTypeFallback: typeof(NullInstallationOptionsFactory),

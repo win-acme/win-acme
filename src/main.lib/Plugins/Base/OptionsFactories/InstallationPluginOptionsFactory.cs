@@ -22,7 +22,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories
         async Task<InstallationPluginOptions?> IInstallationPluginOptionsFactory.Default(Target target) => await Default(target);
         public abstract Task<TOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel);
         public abstract Task<TOptions> Default(Target target);
-        public virtual bool CanInstall(IEnumerable<Type> storeTypes) => true;
+        public virtual (bool, string?) CanInstall(IEnumerable<Type> storeTypes, IEnumerable<Type> installationTypes) => (true, null);
     }
 
 }

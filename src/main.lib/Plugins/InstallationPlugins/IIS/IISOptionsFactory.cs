@@ -38,10 +38,19 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             Disabled = IIS.Disabled(userRoleService, iisClient);
         }
 
-        public override bool CanInstall(IEnumerable<Type> storeTypes) => 
-            storeTypes.Contains(typeof(CertificateStore)) || 
-            storeTypes.Contains(typeof(CentralSsl));
-
+        public override (bool, string?) CanInstall(IEnumerable<Type> storeTypes, IEnumerable<Type> installationTypes)
+        {
+            if (installationTypes.Contains(typeof(IIS)))
+            {
+                return (false, "Cannot be used more than once in a renewal");
+            }
+            if (storeTypes.Contains(typeof(CertificateStore)) || storeTypes.Contains(typeof(CentralSsl))) 
+            {
+                return (true, null);
+            }
+            return (false, "Requires the use of the CertificateStore or CentralSsl store plugin");
+        }
+    
         private ArgumentResult<int?> NewBindingPort => _arguments.
             GetInt<IISArguments>(x => x.SSLPort).
             WithDefault(IISClient.DefaultBindingPort).
@@ -71,12 +80,22 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 NewBindingPort = await NewBindingPort.GetValue(),
                 NewBindingIp = await NewBindingIp.GetValue()
             };
+            inputService.Show(null,
+                   "This plugin will update *all* binding using the previous certificate in both Web and " +
+                   "FTP sites, regardless of whether those bindings were created manually or by the program " +
+                   "itself. Therefor you'll never need to run this installation step twice.");
+       
             var ask = true;
             if (target.IIS)
             {
+                inputService.CreateSpace();
+                inputService.Show(null,
+                    "During initial setup, it will try to make as few changes as possible to IIS to cover " +
+                    "the source hosts. If new bindings are needed, by default it will create those at " +
+                    "the same site where the HTTP binding for that host was found.");
                 ask = runLevel.HasFlag(RunLevel.Advanced) && 
-                    await inputService.PromptYesNo("Use different site for installation?", false);
-            }
+                    await inputService.PromptYesNo("Create new bindings in a different site?", false);
+            } 
             if (ask)
             {
                 var chosen = await inputService.ChooseRequired("Choose site to create new bindings",

@@ -29,6 +29,6 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        bool CanInstall(IEnumerable<Type> storeTypes);
+        (bool, string?) CanInstall(IEnumerable<Type> storeTypes, IEnumerable<Type> installationTypes);
     }
 }

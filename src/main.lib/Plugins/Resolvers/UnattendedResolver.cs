@@ -231,7 +231,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             return await GetPlugin<IInstallationPluginOptionsFactory>(
                 scope,
                 filter: x => x,
-                unusable: x => (!x.CanInstall(storeTypes), "This step cannot be used in combination with the specified store(s)"),
+                unusable: x => { var (a, b) = x.CanInstall(storeTypes, chosen.Select(c => c.InstanceType)); return (!a, b); },
                 defaultParam1: parts[index],
                 defaultType: typeof(NullInstallationOptionsFactory),
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.

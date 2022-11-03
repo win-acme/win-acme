@@ -101,12 +101,12 @@ namespace PKISharp.WACS.Clients.IIS
             SiteId = siteId;
         }
 
-        public BindingOptions WithFlags(SSLFlags flags) => new BindingOptions(flags, Port, IP, Thumbprint, Store, Host, SiteId);
-        public BindingOptions WithPort(int port) => new BindingOptions(Flags, port, IP, Thumbprint, Store, Host, SiteId);
-        public BindingOptions WithIP(string ip) => new BindingOptions(Flags, Port, ip, Thumbprint, Store, Host, SiteId);
-        public BindingOptions WithThumbprint(byte[] thumbprint) => new BindingOptions(Flags, Port, IP, thumbprint, Store, Host, SiteId);
-        public BindingOptions WithStore(string? store) => new BindingOptions(Flags, Port, IP, Thumbprint, store, Host, SiteId);
-        public BindingOptions WithHost(string hostName) => new BindingOptions(Flags, Port, IP, Thumbprint, Store, hostName, SiteId);
-        public BindingOptions WithSiteId(long? siteId) => new BindingOptions(Flags, Port, IP, Thumbprint, Store, Host, siteId);
+        public BindingOptions WithFlags(SSLFlags flags) => new(flags, Port, IP, Thumbprint, Store, Host, SiteId);
+        public BindingOptions WithPort(int port) => new(Flags, port, IP, Thumbprint, Store, Host, SiteId);
+        public BindingOptions WithIP(string ip) => new(Flags, Port, ip, Thumbprint, Store, Host, SiteId);
+        public BindingOptions WithThumbprint(byte[] thumbprint) => new(Flags, Port, IP, thumbprint, Store, Host, SiteId);
+        public BindingOptions WithStore(string? store) => new(Flags, Port, IP, Thumbprint, store, Host, SiteId);
+        public BindingOptions WithHost(string hostName) => new(Flags, Port, IP, Thumbprint, Store, hostName, SiteId);
+        public BindingOptions WithSiteId(long? siteId) => new(Flags, Port, IP, Thumbprint, Store, Host, siteId);
     }
 }
