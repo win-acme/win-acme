@@ -29,7 +29,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             // Check if we have any bindings
             var allBindings = _helper.GetBindings();
             var filteredBindings = _helper.FilterBindings(allBindings, _options);
-            if (filteredBindings.Count() == 0)
+            if (filteredBindings.Count == 0)
             {
                 _log.Error("No bindings matched, unable to proceed");
                 return new NullTarget();

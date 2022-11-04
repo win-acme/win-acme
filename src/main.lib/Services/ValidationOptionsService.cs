@@ -36,7 +36,7 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// File where the validation information is stored
         /// </summary>
-        private FileInfo Store => new FileInfo(Path.Join(_settings.Client.ConfigurationPath, "validation.json"));
+        private FileInfo Store => new(Path.Join(_settings.Client.ConfigurationPath, "validation.json"));
 
         /// <summary>
         /// Data store
@@ -154,7 +154,7 @@ namespace PKISharp.WACS.Services
         /// <param name="identifier"></param>
         /// <returns></returns>
         public ValidationPluginOptions? GetValidationOptions(Identifier identifier) =>
-            _options.Where(o => o.Match(identifier)).FirstOrDefault()?.ValidationPluginOptions;
+            _options?.Where(o => o.Match(identifier)).FirstOrDefault()?.ValidationPluginOptions;
 
         public class GlobalValidationPluginOptions
         {

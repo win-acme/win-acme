@@ -45,10 +45,14 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             }
  
             // Determine site types
-            foreach (var part in source.Parts)
+            if (_options.SiteId != null)
             {
-                part.SiteId ??= _options.SiteId;
-                part.SiteType ??= _iisClient.GetSite(part.SiteId!.Value).Type;
+                var siteType = _iisClient.GetSite(_options.SiteId.Value).Type; 
+                foreach (var part in source.Parts)
+                {
+                    part.SiteId = _options.SiteId;
+                    part.SiteType = siteType;
+                }
             }
 
             if (centralSsl != null)

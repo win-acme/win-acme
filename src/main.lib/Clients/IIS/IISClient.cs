@@ -178,7 +178,7 @@ namespace PKISharp.WACS.Clients.IIS
             var newBinding = site.Site.Bindings.CreateElement("binding");
             newBinding.BindingInformation = options.Binding;
             newBinding.CertificateStoreName = options.Store;
-            newBinding.CertificateHash = options.Thumbprint;
+            newBinding.CertificateHash = options.Thumbprint?.ToArray();
             newBinding.Protocol = "https";
             if (options.Flags > 0)
             {
@@ -201,7 +201,7 @@ namespace PKISharp.WACS.Clients.IIS
             var replacement = site.Site.Bindings.CreateElement("binding");
             replacement.BindingInformation = existingBinding.BindingInformation;
             replacement.CertificateStoreName = options.Store;
-            replacement.CertificateHash = options.Thumbprint;
+            replacement.CertificateHash = options.Thumbprint?.ToArray();
             replacement.Protocol = existingBinding.Protocol;
             foreach (var attr in existingBinding.Binding.Attributes)
             {

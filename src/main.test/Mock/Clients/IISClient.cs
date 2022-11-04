@@ -156,7 +156,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
             Host = options.Host;
             Protocol = "https";
             Port = options.Port;
-            CertificateHash = options.Thumbprint;
+            CertificateHash = options.Thumbprint?.ToArray();
             CertificateStoreName = options.Store ?? "";
             IP = options.IP;
             SSLFlags = options.Flags;

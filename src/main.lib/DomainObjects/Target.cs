@@ -24,7 +24,7 @@ namespace PKISharp.WACS.DomainObjects
         {
             FriendlyName = friendlyName;
             CommonName = commonName;
-            Parts = parts;
+            Parts = parts.ToList(); // Create local copy
         }
 
         /// <summary>

@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+﻿using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 
@@ -29,7 +31,7 @@ namespace PKISharp.WACS.Clients.IIS
         /// <summary>
         /// Certificate thumbprint that should be set for the binding
         /// </summary>
-        public byte[]? Thumbprint { get; }
+        public IEnumerable<byte>? Thumbprint { get; }
 
         /// <summary>
         /// Certificate store where the certificate can be found
@@ -87,7 +89,7 @@ namespace PKISharp.WACS.Clients.IIS
             SSLFlags flags = SSLFlags.None,
             int port = IISClient.DefaultBindingPort,
             string ip = IISClient.DefaultBindingIp,
-            byte[]? thumbprint = null,
+            IEnumerable<byte>? thumbprint = null,
             string? store = null,
             string host = "",
             long? siteId = null)
