@@ -24,9 +24,9 @@
 
   <ItemGroup>
     <PackageReference Include="Autofac" Version="6.4.0" />
-    <PackageReference Include="DnsClient" Version="1.6.1" />
-    <PackageReference Include="FluentFTP" Version="41.0.0" />
-    <PackageReference Include="MailKit" Version="3.4.1" />
+    <PackageReference Include="DnsClient" Version="1.7.0" />
+    <PackageReference Include="FluentFTP" Version="42.0.0" />
+    <PackageReference Include="MailKit" Version="3.4.2" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="6.0.0" />
