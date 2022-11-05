@@ -247,8 +247,10 @@ namespace PKISharp.WACS
             await ExecuteOrders(runnableContexts, allContexts, runLevel);
 
             // Handle all the store/install steps
-            var result = new RenewResult();
-            result.OrderResults = runnableContexts.Select(x => x.OrderResult).ToList();
+            var result = new RenewResult
+            {
+                OrderResults = runnableContexts.Select(x => x.OrderResult).ToList()
+            };
             await ProcessOrders(runnableContexts, result);
 
             // Run the post-execution script. Note that this is different
@@ -285,16 +287,13 @@ namespace PKISharp.WACS
                     OrderByDescending(x => x.Certificate.NotBefore).
                     FirstOrDefault();
 
-                if (order.PreviousCertificate == null)
-                {
-                    // Fallback to legacy cache file name without
-                    // order name part
-                    order.PreviousCertificate = _certificateService.
+                // Fallback to legacy cache file name without
+                // order name part
+                order.PreviousCertificate ??= _certificateService.
                        CachedInfos(order.Renewal).
                        Where(c => !allContexts.Any(o => c.CacheFile!.Name.Contains($"-{o.Order.CacheKeyPart ?? "main"}-"))).
                        OrderByDescending(x => x.Certificate.NotBefore).
                        FirstOrDefault();
-                }
 
                 if (order.PreviousCertificate != null)
                 {
