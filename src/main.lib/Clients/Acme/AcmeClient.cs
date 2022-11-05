@@ -771,7 +771,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// Prevent sending simulateous requests to the ACME service because it messes
         /// up the nonce tracking mechanism
         /// </summary>
-        private readonly SemaphoreSlim _requestLock = new SemaphoreSlim(1, 1);
+        private readonly SemaphoreSlim _requestLock = new(1, 1);
 
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls

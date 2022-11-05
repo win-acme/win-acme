@@ -100,7 +100,7 @@ namespace PKISharp.WACS
 
             // Map contexts to plugins
             var runnable = authorizations.OfType<AuthorizationContext>();
-            var mapping = CreateMapping(runnable);
+            var mapping = await CreateMapping(runnable);
             if (mapping == null)
             {
                 return;
@@ -180,7 +180,7 @@ namespace PKISharp.WACS
         /// <param name="authorisationContexts"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        private Dictionary<ValidationPluginOptions, List<AuthorizationContext>>? CreateMapping(IEnumerable<AuthorizationContext> authorisationContexts)
+        private async Task<Dictionary<ValidationPluginOptions, List<AuthorizationContext>>?> CreateMapping(IEnumerable<AuthorizationContext> authorisationContexts)
         {
             var ret = new Dictionary<ValidationPluginOptions, List<AuthorizationContext>>();
             var add = (ValidationPluginOptions o, AuthorizationContext a) => {
@@ -204,7 +204,7 @@ namespace PKISharp.WACS
                 // are specified at the level of the renewal
                 var localOptions = authorisationContext.Order.Renewal.ValidationPluginOptions;
                 var identifier = Identifier.Parse(authorisationContext.Authorization);
-                var globalOptions = _validationOptions.GetValidationOptions(identifier);
+                var globalOptions = await _validationOptions.GetValidationOptions(identifier);
                 if (globalOptions != null &&
                     CanValidate(authorisationContext, globalOptions))
                 {

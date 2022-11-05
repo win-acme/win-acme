@@ -155,6 +155,20 @@ namespace PKISharp.WACS.Services
             }
         }
 
+        public async Task<int?> RequestInt(string what)
+        {
+            var str = await RequestString(what);
+            if (int.TryParse(str, out var ret))
+            {
+                return ret;
+            }
+            else
+            {
+                _log.Warning("Invalid number: {ret}", str);
+                return null;
+            }
+        }
+
         public Task<string> RequestString(string what, bool multiline = false)
         {
             Validate(what);

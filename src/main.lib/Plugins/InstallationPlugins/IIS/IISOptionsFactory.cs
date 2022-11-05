@@ -42,13 +42,13 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         {
             if (installationTypes.Contains(typeof(IIS)))
             {
-                return (false, "Cannot be used more than once in a renewal");
+                return (false, "Cannot be used more than once in a renewal.");
             }
             if (storeTypes.Contains(typeof(CertificateStore)) || storeTypes.Contains(typeof(CentralSsl))) 
             {
                 return (true, null);
             }
-            return (false, "Requires the use of the CertificateStore or CentralSsl store plugin");
+            return (false, "Requires CertificateStore or CentralSsl store plugin.");
         }
     
         private ArgumentResult<int?> NewBindingPort => _arguments.
@@ -77,8 +77,8 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         {
             var ret = new IISOptions()
             {
-                NewBindingPort = await NewBindingPort.GetValue(),
-                NewBindingIp = await NewBindingIp.GetValue()
+                NewBindingPort = await NewBindingPort.Interactive(inputService).GetValue(),
+                NewBindingIp = await NewBindingIp.Interactive(inputService).GetValue()
             };
             inputService.Show(null,
                    "This plugin will update *all* binding using the previous certificate in both Web and " +
@@ -109,10 +109,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         public override async Task<IISOptions> Default(Target target)
         {
             var siteId = await FtpSite.GetValue();
-            if (siteId == null)
-            {
-                siteId = await InstallationSite.Required(!target.IIS).GetValue();
-            }
+            siteId ??= await InstallationSite.Required(!target.IIS).GetValue();
             var ret = new IISOptions()
             {
                 NewBindingPort = await NewBindingPort.GetValue(),

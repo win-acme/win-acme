@@ -62,7 +62,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
 
             // Apply default sorting when no sorting has been provided yet
             var options = _plugins.GetFactories<T>(scope);
-            options = filter != null ? filter(options) : options.Where(x => !(x is INull));
+            options = filter != null ? filter(options) : options.Where(x => x is not INull);
             var localOptions = options.Select(x => new {
                 plugin = x,
                 type = x.GetType(),
@@ -97,7 +97,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             if (defaultTypeDisabled.Item1)
             {
                 _log.Error("{n} plugin {x} not available: {m}. " + changeInstructions, 
-                    char.ToUpper(className[0]) + className.Substring(1), 
+                    char.ToUpper(className[0]) + className[1..], 
                     defaultOption.plugin?.Name ?? "Unknown",
                     defaultTypeDisabled.Item2?.TrimEnd('.'));
                 return nullResult;

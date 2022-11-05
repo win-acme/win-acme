@@ -12,6 +12,7 @@ namespace PKISharp.WACS.Services
         Task<bool> PromptYesNo(string message, bool defaultOption);
         Task<string?> ReadPassword(string what);
         Task<string> RequestString(string what, bool multiline = false);
+        Task<int?> RequestInt(string what);
         void CreateSpace();
         void Show(string? label, string? value = null, int level = 0);
         Task<bool> Wait(string message = "Press <Enter> to continue");
@@ -31,10 +32,7 @@ namespace PKISharp.WACS.Services
             ConsoleColor? color = null)
         {
             var newItem = new Choice<TItem>(item);
-            if (disabled == null)
-            {
-                disabled = (false, null);
-            }
+            disabled ??= (false, null);
             // Default description is item.ToString, but it may 
             // be overruled by the optional parameter here
             if (!string.IsNullOrEmpty(description))
