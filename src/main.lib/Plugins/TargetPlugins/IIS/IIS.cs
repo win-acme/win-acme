@@ -119,7 +119,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                     SiteId = group.Key,
                     SiteType = group.First().SiteType
                 });
-            return new Target(friendlyNameSuggestion, commonName, parts);
+            return new Target(friendlyNameSuggestion, commonName, parts.ToList());
         }
 
         (bool, string?) IPlugin.Disabled => Disabled(_userRoleService);

@@ -22,7 +22,11 @@ namespace PKISharp.WACS.Plugins.OrderPlugins
                         var newTarget = new Target(
                             target.FriendlyName ?? "",
                             host,
-                            parts.Select(p => new TargetPart(new List<Identifier> { host }) { SiteId = p.SiteId, SiteType = p.SiteType }));
+                            parts.Select(p => 
+                                new TargetPart(new List<Identifier> { host }) { 
+                                    SiteId = p.SiteId,
+                                    SiteType = p.SiteType 
+                                }).ToList());
                         var newOrder = new Order(
                             renewal, 
                             newTarget, 
