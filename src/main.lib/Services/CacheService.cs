@@ -422,6 +422,7 @@ namespace PKISharp.WACS.Services
             ClearCache($"{order.Renewal.Id}*{PfxPostFixLegacy}");
             var pfxPath = new FileInfo(GetPath(order.Renewal, $"-{CacheKey(order)}{PfxPostFix}"));
             await File.WriteAllBytesAsync(pfxPath.FullName, pfx);
+            pfxPath.Refresh();
             _log.Debug("Certificate written to cache file {path} in certificate cache folder {folder}. It will be " +
                 "reused when renewing within {x} day(s) as long as the --source and --csr parameters remain the same and " +
                 "the --force switch is not used.",
