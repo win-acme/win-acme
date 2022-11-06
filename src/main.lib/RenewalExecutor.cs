@@ -29,6 +29,7 @@ namespace PKISharp.WACS
         private readonly IInputService _input;
         private readonly ISettingsService _settings;
         private readonly ICertificateService _certificateService;
+        private readonly ICacheService _cacheService;
         private readonly IDueDateService _dueDate;
         private readonly ExceptionHandler _exceptionHandler;
         private readonly RenewalValidator _validator;
@@ -40,6 +41,7 @@ namespace PKISharp.WACS
             IInputService input,
             ISettingsService settings,
             ICertificateService certificateService,
+            ICacheService cacheService,
             IDueDateService dueDate,
             RenewalValidator validator,
             ExceptionHandler exceptionHandler, 
@@ -53,6 +55,7 @@ namespace PKISharp.WACS
             _settings = settings;
             _exceptionHandler = exceptionHandler;
             _certificateService = certificateService;
+            _cacheService = cacheService;
             _container = container;
             _dueDate = dueDate;
         }
@@ -282,14 +285,14 @@ namespace PKISharp.WACS
                 // sub order regardless of the fact that it may have another
                 // shape (e.g. different SAN names or common name etc.). This
                 // means we cannot use the cache key for it.
-                order.PreviousCertificate = _certificateService.
+                order.PreviousCertificate = _cacheService.
                     CachedInfos(order.Renewal, order.Order).
                     OrderByDescending(x => x.Certificate.NotBefore).
                     FirstOrDefault();
 
                 // Fallback to legacy cache file name without
                 // order name part
-                order.PreviousCertificate ??= _certificateService.
+                order.PreviousCertificate ??= _cacheService.
                        CachedInfos(order.Renewal).
                        Where(c => !allContexts.Any(o => c.CacheFile!.Name.Contains($"-{o.Order.CacheKeyPart ?? "main"}-"))).
                        OrderByDescending(x => x.Certificate.NotBefore).
@@ -458,7 +461,7 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private CertificateInfo? GetFromCache(OrderContext context, RunLevel runLevel)
         {
-            var cachedCertificate = _certificateService.CachedInfo(context.Order);
+            var cachedCertificate = _cacheService.CachedInfo(context.Order);
             if (cachedCertificate == null || cachedCertificate.CacheFile == null)
             {
                 return null;
@@ -495,7 +498,7 @@ namespace PKISharp.WACS
             // Place the order
             var orderManager = context.ExecutionScope.Resolve<OrderManager>();
             context.Order.KeyPath = context.Order.Renewal.CsrPluginOptions?.ReusePrivateKey == true
-                ? _certificateService.ReuseKeyPath(context.Order) : null;
+                ? _cacheService.Key(context.Order).FullName : null;
             context.Order.Details = await orderManager.GetOrCreate(context.Order, context.RunLevel);
 
             // Sanity checks

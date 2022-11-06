@@ -77,8 +77,8 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         {
             var ret = new IISOptions()
             {
-                NewBindingPort = await NewBindingPort.Interactive(inputService).GetValue(),
-                NewBindingIp = await NewBindingIp.Interactive(inputService).GetValue()
+                NewBindingPort = await NewBindingPort.GetValue(),
+                NewBindingIp = await NewBindingIp.GetValue()
             };
             inputService.Show(null,
                    "This plugin will update *all* binding using the previous certificate in both Web and " +

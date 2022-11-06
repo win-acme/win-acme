@@ -57,6 +57,7 @@ namespace PKISharp.WACS.UnitTests.Mock
             _ = builder.RegisterType<EmailClient>().SingleInstance();
             _ = builder.RegisterType<ScriptClient>().SingleInstance();
             _ = builder.RegisterType<LookupClientProvider>().SingleInstance();
+            _ = builder.RegisterType<mock.CacheService>().As<real.ICacheService>().SingleInstance();
             _ = builder.RegisterType<mock.CertificateService>().As<real.ICertificateService>().SingleInstance();
             _ = builder.RegisterType<real.TaskSchedulerService>().SingleInstance();
             _ = builder.RegisterType<real.NotificationService>().SingleInstance();

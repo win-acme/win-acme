@@ -13,7 +13,7 @@ namespace PKISharp.WACS.Services
     internal class NotificationService
     {
         private readonly ILogService _log;
-        private readonly ICertificateService _certificateService;
+        private readonly ICacheService _cacheService;
         private readonly ISettingsService _settings;
         private readonly EmailClient _email;
 
@@ -21,10 +21,10 @@ namespace PKISharp.WACS.Services
             ILogService log,
             ISettingsService setttings,
             EmailClient email,
-            ICertificateService certificateService)
+            ICacheService certificateService)
         {
             _log = log;
-            _certificateService = certificateService;
+            _cacheService = certificateService;
             _email = email;
             _settings = setttings;
         }
@@ -106,7 +106,7 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        private string RenderLog(IEnumerable<MemoryEntry> log) => @$"<p>Log output:<ul><li>{string.Join("</li><li>", log.Select(x => RenderLogEntry(x)))}</ul></p>";
+        private static string RenderLog(IEnumerable<MemoryEntry> log) => @$"<p>Log output:<ul><li>{string.Join("</li><li>", log.Select(x => RenderLogEntry(x)))}</ul></p>";
 
         private static string RenderLogEntry(MemoryEntry log)
         {
@@ -170,7 +170,7 @@ namespace PKISharp.WACS.Services
         {
             try
             {
-                var infos = _certificateService.CachedInfos(renewal);
+                var infos = _cacheService.CachedInfos(renewal);
                 if (infos == null || !infos.Any())
                 {
                     return "Unknown";

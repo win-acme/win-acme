@@ -401,8 +401,8 @@ namespace PKISharp.WACS.Host
                 var accountManager = _container.Resolve<AccountManager>();
                 accountManager.EncryptSigner(); //re-writes the signer file
 
-                var certificateService = _container.Resolve<ICertificateService>();
-                certificateService.Encrypt(); //re-saves all cached private keys
+                var cacheService = _container.Resolve<ICacheService>();
+                cacheService.Encrypt(); //re-saves all cached private keys
 
                 var secretService = _container.Resolve<SecretServiceManager>();
                 secretService.Encrypt(); //re-writes the secrets file

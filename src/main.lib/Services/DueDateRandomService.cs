@@ -11,17 +11,17 @@ namespace PKISharp.WACS.Services
 
         public DueDateRandomService(
             ISettingsService settings,
-            ICertificateService certificateService,
+            ICacheService cacheService,
             ILogService logService,
             IInputService input) :
-            base(settings, certificateService, logService) => _input = input;
+            base(settings, cacheService, logService) => _input = input;
 
         public override bool ShouldRun(Renewal renewal) => true;
 
         public override bool ShouldRun(OrderContext order)
         {
             // Run any in nay case if a difference in source is detected.
-            var previous = _certificateService.CachedInfo(order.Order);
+            var previous = _cacheService.CachedInfo(order.Order);
             if (previous == null)
             {
                 _logService.Verbose("{name}: no cached information found", order.OrderName);

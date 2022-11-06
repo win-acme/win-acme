@@ -33,7 +33,7 @@ namespace PKISharp.WACS.UnitTests.Tests.CsrPluginTests
             var tempFile = Path.GetTempFileName();
             File.WriteAllBytes(tempFile, bytes);
             var fi = new FileInfo(tempFile);
-            var certInfo = real.CertificateService.GetInfo(fi, "A8<TEpyPweWMO1m(");
+            var certInfo = real.CacheService.GetInfo(fi, "A8<TEpyPweWMO1m(");
             _ = x.PostProcess(certInfo.Certificate).Result;
             Assert.IsTrue(true);
         }
