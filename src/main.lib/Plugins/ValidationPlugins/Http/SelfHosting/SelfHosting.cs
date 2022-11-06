@@ -15,7 +15,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         internal const int DefaultHttpValidationPort = 80;
         internal const int DefaultHttpsValidationPort = 443;
 
-        private readonly object _listenerLock = new object();
+        private readonly object _listenerLock = new();
         private HttpListener? _listener;
         private readonly ConcurrentDictionary<string, string> _files;
         private readonly SelfHostingOptions _options;

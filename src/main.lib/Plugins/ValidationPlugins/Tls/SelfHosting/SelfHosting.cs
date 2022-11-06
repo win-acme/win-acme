@@ -23,7 +23,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
         private readonly SelfHostingOptions _options;
         private readonly ILogService _log;
         private readonly IUserRoleService _userRoleService;
-        private readonly CancellationTokenSource _tokenSource = new CancellationTokenSource();
+        private readonly CancellationTokenSource _tokenSource = new();
 
         private TcpListener Listener
         {

@@ -15,7 +15,7 @@ namespace PKISharp.WACS.DomainObjects
         /// A read-only instance of the ShortGuid class whose value
         /// is guaranteed to be all zeroes.
         /// </summary>
-        public static readonly ShortGuid Empty = new ShortGuid(Guid.Empty);
+        public static readonly ShortGuid Empty = new(Guid.Empty);
 
         #endregion
 
@@ -140,7 +140,7 @@ namespace PKISharp.WACS.DomainObjects
         /// Initialises a new instance of the ShortGuid class
         /// </summary>
         /// <returns></returns>
-        public static ShortGuid NewGuid() => new ShortGuid(Guid.NewGuid());
+        public static ShortGuid NewGuid() => new(Guid.NewGuid());
 
         #endregion
 
@@ -240,14 +240,14 @@ namespace PKISharp.WACS.DomainObjects
         /// </summary>
         /// <param name="shortGuid"></param>
         /// <returns></returns>
-        public static implicit operator ShortGuid(string shortGuid) => new ShortGuid(shortGuid);
+        public static implicit operator ShortGuid(string shortGuid) => new(shortGuid);
 
         /// <summary>
         /// Implicitly converts the Guid to a ShortGuid
         /// </summary>
         /// <param name="guid"></param>
         /// <returns></returns>
-        public static implicit operator ShortGuid(Guid guid) => new ShortGuid(guid);
+        public static implicit operator ShortGuid(Guid guid) => new(guid);
 
         #endregion
     }

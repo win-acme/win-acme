@@ -21,7 +21,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         where TOptions : HttpValidationOptions<TPlugin>
         where TPlugin : IValidationPlugin
     {
-        private readonly List<string> _filesWritten = new List<string>();
+        private readonly List<string> _filesWritten = new();
 
         protected TOptions _options;
         protected ILogService _log;
@@ -211,7 +211,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// Get the template for the web.config
         /// </summary>
         /// <returns></returns>
-        private static Lazy<string?> GetWebConfig() => new Lazy<string?>(() => {
+        private static Lazy<string?> GetWebConfig() => new(() => {
             try
             {
                 return File.ReadAllText(HttpValidation<TOptions, TPlugin>.TemplateWebConfig);

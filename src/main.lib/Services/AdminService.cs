@@ -7,7 +7,7 @@ namespace PKISharp.WACS.Services
     {
         public bool IsAdmin => IsAdminLazy.Value;
 
-        private Lazy<bool> IsAdminLazy => new Lazy<bool>(DetermineAdmin);
+        private Lazy<bool> IsAdminLazy => new(DetermineAdmin);
 
         private bool DetermineAdmin()
         {

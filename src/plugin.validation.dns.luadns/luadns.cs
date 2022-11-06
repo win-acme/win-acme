@@ -47,8 +47,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             public int TTL { get; set; }
         }
 
-        private static readonly Uri _LuaDnsApiEndpoint = new Uri("https://api.luadns.com/v1/", UriKind.Absolute);
-        private static readonly Dictionary<string, RecordData> _recordsMap = new Dictionary<string, RecordData>();
+        private static readonly Uri _LuaDnsApiEndpoint = new("https://api.luadns.com/v1/", UriKind.Absolute);
+        private static readonly Dictionary<string, RecordData> _recordsMap = new();
 
         private readonly IProxyService _proxyService;
 

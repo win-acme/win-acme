@@ -13,7 +13,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     internal class NS1DnsValidation : DnsValidation<NS1DnsValidation>
     {
         private readonly DnsManagementClient _client;
-        private static readonly Dictionary<string, string> _zonesMap = new Dictionary<string, string>();
+        private static readonly Dictionary<string, string> _zonesMap = new();
 
         public NS1DnsValidation(
             LookupClientProvider dnsClient,
