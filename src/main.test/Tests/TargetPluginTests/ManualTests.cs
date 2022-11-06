@@ -47,7 +47,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             if (options != null)
             {
                 Assert.AreEqual(options.CommonName, "a.example.com");
-                Assert.AreEqual(options.AlternativeNames.Count(), 3);
+                Assert.AreEqual(options.AlternativeNames.Count, 3);
                 var tar = Target(options);
                 Assert.AreEqual(tar.IsValid(log), true);
             }
@@ -157,7 +157,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             if (options != null)
             {
                 Assert.AreEqual(options.CommonName, "common.example.com");
-                Assert.AreEqual(options.AlternativeNames.Count(), 4);
+                Assert.AreEqual(options.AlternativeNames.Count, 4);
                 var tar = Target(options);
                 Assert.AreEqual(tar.IsValid(log), true);
             }
@@ -171,7 +171,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             if (options != null)
             {
                 Assert.AreEqual(options.CommonName, "经/已經.example.com");
-                Assert.AreEqual(options.AlternativeNames.Count(), 3);
+                Assert.AreEqual(options.AlternativeNames.Count, 3);
                 var tar = Target(options);
                 Assert.AreEqual(tar.IsValid(log), true);
             }

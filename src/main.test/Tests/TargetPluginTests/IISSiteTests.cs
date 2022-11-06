@@ -64,7 +64,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                 Assert.IsNotNull(options.IncludeSiteIds);
                 if (options.IncludeSiteIds != null)
                 {
-                    Assert.AreEqual(options.IncludeSiteIds.Count(), 1);
+                    Assert.AreEqual(options.IncludeSiteIds.Count, 1);
                     Assert.IsTrue(options.IncludeSiteIds.Contains(1));
                     Assert.IsNull(options.CommonName);
                     Assert.IsNull(options.ExcludeHosts);
@@ -72,9 +72,9 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                     Assert.AreEqual(target.IsValid(log), true);
                     Assert.AreEqual(target.CommonName.Value, site.Bindings.First().Host); // First binding
                     Assert.AreEqual(target.IIS, true);
-                    Assert.AreEqual(target.Parts.Count(), 1);
+                    Assert.AreEqual(target.Parts.Count, 1);
                     Assert.AreEqual(target.Parts.First().SiteId, siteId);
-                    Assert.AreEqual(target.Parts.First().Identifiers.Count(), site.Bindings.Count());
+                    Assert.AreEqual(target.Parts.First().Identifiers.Count, site.Bindings.Count());
                     Assert.AreEqual(target.Parts.First().Identifiers.All(x => site.Bindings.Any(b => b.Host == x.Value)), true);
                 }
             }
@@ -151,7 +151,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                 Assert.IsNotNull(options.ExcludeHosts);
                 if (options.ExcludeHosts != null)
                 {
-                    Assert.AreEqual(options.ExcludeHosts.Count(), 1);
+                    Assert.AreEqual(options.ExcludeHosts.Count, 1);
                     Assert.AreEqual(options.ExcludeHosts.First(), "经/已經.example.com");
                 }
             }

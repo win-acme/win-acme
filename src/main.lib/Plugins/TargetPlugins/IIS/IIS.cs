@@ -95,7 +95,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                     host = _options.IncludeHosts.First();
                 }
                 friendlyNameSuggestion += $", {host}";
-                var count = _options.IncludeHosts.Count();
+                var count = _options.IncludeHosts.Count;
                 if (count > 1)
                 {
                     friendlyNameSuggestion += $" (+{count - 1} other{(count == 2 ? "" : "s")})";

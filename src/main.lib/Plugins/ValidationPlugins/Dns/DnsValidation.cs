@@ -226,7 +226,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                     // If there is a zone for a.b.c.com (4) and one for c.com (2)
                     // then the former is a better (more specific) match than the
                     // latter, so we should use that
-                    fit = name.Split('.').Count();
+                    fit = name.Split('.').Length;
                     _log.Verbose("Zone {name} scored {fit} points", key, fit);
                 }
                 else

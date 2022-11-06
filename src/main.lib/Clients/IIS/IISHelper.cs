@@ -195,7 +195,7 @@ namespace PKISharp.WACS.Clients.IIS
             {
                 _log.Debug("Filtering by host: {regex}", regex);
                 bindings = bindings.Where(x => Matches(x, regex)).ToList();
-                _log.Verbose("{0} bindings remaining after host filter", bindings.Count());
+                _log.Verbose("{0} bindings remaining after host filter", bindings.Count);
             }
             else
             {
@@ -206,11 +206,11 @@ namespace PKISharp.WACS.Clients.IIS
             if (options.ExcludeHosts != null && options.ExcludeHosts.Any())
             {
                 bindings = bindings.Where(x => !options.ExcludeHosts.Contains(x.HostUnicode)).ToList();
-                _log.Verbose("{0} named bindings remaining after explicit exclusions", bindings.Count());
+                _log.Verbose("{0} named bindings remaining after explicit exclusions", bindings.Count);
             }
 
             // Check if we have anything left
-            _log.Verbose($"{{0}} matching binding{(bindings.Count() != 1 ? "s" : "")} found", bindings.Count());
+            _log.Verbose($"{{0}} matching binding{(bindings.Count != 1 ? "s" : "")} found", bindings.Count);
             return bindings.ToList();
         }
 

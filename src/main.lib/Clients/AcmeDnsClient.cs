@@ -144,7 +144,7 @@ namespace PKISharp.WACS.Clients
                 var answers = await Task.WhenAll(result.Select(client => client.GetCname($"_acme-challenge.{domain}")));
 
                 // Loop through results
-                for (var i = 0; i < result.Count(); i++)
+                for (var i = 0; i < result.Count; i++)
                 {
                     var currentClient = result[i];
                     var currentResult = answers[i];
