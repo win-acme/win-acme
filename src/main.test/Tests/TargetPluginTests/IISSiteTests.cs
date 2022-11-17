@@ -9,7 +9,7 @@ using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.UnitTests.Mock.Services;
 using System.Linq;
-using mock = PKISharp.WACS.UnitTests.Mock.Services;
+using Mock = PKISharp.WACS.UnitTests.Mock.Services;
 
 namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
 {
@@ -25,20 +25,20 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
 
         public IISSiteTests()
         {
-            log = new mock.LogService(false);
+            log = new Mock.Services.LogService(false);
             iis = new Mock.Clients.MockIISClient(log);
             var settings = new MockSettingsService();
-            var proxy = new mock.ProxyService();
+            var proxy = new Mock.Services.ProxyService();
             domainParse = new DomainParseService(log, proxy, settings);
             helper = new IISHelper(log, iis, domainParse);
             plugins = new MockPluginService(log);
-            userRoleService = new mock.UserRoleService();
+            userRoleService = new Mock.Services.UserRoleService();
         }
 
         private IISOptions? Options(string commandLine)
         {
             var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
-            var input = new mock.InputService(new());
+            var input = new Mock.Services.InputService(new());
             var secretService = new SecretServiceManager(new SecretService(), input, log);
             var argsInput = new ArgumentsInputService(log, optionsParser, input, secretService);
             var args = new MainArguments();
