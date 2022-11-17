@@ -3,6 +3,7 @@ using Newtonsoft.Json.Linq;
 using PKISharp.WACS.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace PKISharp.WACS.Services.Serialization
 {
@@ -25,6 +26,7 @@ namespace PKISharp.WACS.Services.Serialization
         public virtual void Show(IInputService input) { }
 
         [JsonIgnore]
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
         public abstract Type Instance { get; }
 
         /// <summary>

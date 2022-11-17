@@ -112,6 +112,7 @@ namespace PKISharp.WACS.Services
 
                 foreach (var writeTo in fileConfig.GetSection("disk:WriteTo").GetChildren())
                 {
+#pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
                     if (writeTo.GetValue<string>("Name") == "File")
                     {
                         var pathSection = writeTo.GetSection("Args:path");
@@ -130,6 +131,7 @@ namespace PKISharp.WACS.Services
                             rollingInterval.Value = ((int)defaultRollingInterval).ToString();
                         }
                     }
+#pragma warning restore IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
                 }
 
                 _diskLogger = new LoggerConfiguration()
