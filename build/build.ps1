@@ -25,9 +25,9 @@ $BuildFolder = Join-Path -Path $RepoRoot "build"
 & dotnet publish $RepoRoot\src\main\wacs.csproj -c "Release" -r win-x64 --self-contained
 & dotnet publish $RepoRoot\src\main\wacs.csproj -c "Release" -r win-x86 --self-contained
 & dotnet publish $RepoRoot\src\main\wacs.csproj -c "Release" -r win-arm64 --self-contained
-# & dotnet publish $RepoRoot\src\main\wacs.csproj -c "ReleaseTrimmed" -r win-x64 --self-contained
-# & dotnet publish $RepoRoot\src\main\wacs.csproj -c "ReleaseTrimmed" -r win-x86 --self-contained
-# & dotnet publish $RepoRoot\src\main\wacs.csproj -c "ReleaseTrimmed" -r win-arm64 --self-contained
+& dotnet publish $RepoRoot\src\main\wacs.csproj -c "ReleaseTrimmed" -r win-x64 --self-contained
+& dotnet publish $RepoRoot\src\main\wacs.csproj -c "ReleaseTrimmed" -r win-x86 --self-contained
+& dotnet publish $RepoRoot\src\main\wacs.csproj -c "ReleaseTrimmed" -r win-arm64 --self-contained
 
 & dotnet publish $RepoRoot\src\plugin.store.keyvault\wacs.store.keyvault.csproj -c "Release"
 & dotnet publish $RepoRoot\src\plugin.validation.dns.azure\wacs.validation.dns.azure.csproj -c "Release"
