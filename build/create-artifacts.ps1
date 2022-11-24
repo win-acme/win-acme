@@ -98,9 +98,10 @@ NugetRelease
 PlatformRelease "Release" win-x64
 PlatformRelease "Release" win-x86
 PlatformRelease "Release" win-arm64
-PlatformRelease "ReleasePluggable" win-x64
-PlatformRelease "ReleasePluggable" win-x86
-PlatformRelease "ReleasePluggable" win-arm64
+# PlatformRelease "ReleaseTrimmed" win-x64
+# PlatformRelease "ReleaseTrimmed" win-x86
+# PlatformRelease "ReleaseTrimmed" win-arm64
+
 PluginRelease plugin.validation.dns.dreamhost @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost.dll"
 )

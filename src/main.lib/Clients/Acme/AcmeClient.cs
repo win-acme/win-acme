@@ -1,7 +1,7 @@
 ﻿using ACMESharp;
 using ACMESharp.Authorizations;
 using ACMESharp.Protocol;
-using acme = ACMESharp.Protocol.Resources;
+using Protocol = ACMESharp.Protocol.Resources;
 using Newtonsoft.Json;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
@@ -152,7 +152,7 @@ namespace PKISharp.WACS.Clients.Acme
             }
             try
             {
-                JsonConvert.DeserializeObject<acme.ServiceDirectory>(content);
+                JsonConvert.DeserializeObject<Protocol.ServiceDirectory>(content);
             }
             catch (Exception ex)
             {
@@ -197,9 +197,9 @@ namespace PKISharp.WACS.Clients.Acme
         /// </summary>
         /// <param name="client"></param>
         /// <returns></returns>
-        internal async Task<acme.ServiceDirectory> EnsureServiceDirectory(AcmeProtocolClient client)
+        internal async Task<Protocol.ServiceDirectory> EnsureServiceDirectory(AcmeProtocolClient client)
         {
-            acme.ServiceDirectory? directory;
+            Protocol.ServiceDirectory? directory;
             try
             {
                 _log.Verbose("Getting service directory...");
@@ -367,7 +367,7 @@ namespace PKISharp.WACS.Clients.Acme
             {
                 // Some non-ACME compliant server may not support ES256 or other
                 // algorithms, so attempt fallback to RS256
-                if (apex.ProblemType == acme.ProblemType.BadSignatureAlgorithm &&
+                if (apex.ProblemType == Protocol.ProblemType.BadSignatureAlgorithm &&
                     signer.KeyType != "RS256")
                 {
                     signer = _accountManager.NewSigner("RS256");
@@ -513,13 +513,13 @@ namespace PKISharp.WACS.Clients.Acme
             return newEmails.Select(x => $"{prefix}{x}").ToArray();
         }
 
-        internal async Task<IChallengeValidationDetails> DecodeChallengeValidation(acme.Authorization auth, acme.Challenge challenge)
+        internal async Task<IChallengeValidationDetails> DecodeChallengeValidation(Protocol.Authorization auth, Protocol.Challenge challenge)
         {
             var client = await GetClient();
             return AuthorizationDecoder.DecodeChallengeValidation(auth, challenge.Type, client.Signer);
         }
 
-        internal async Task<acme.Challenge> AnswerChallenge(acme.Challenge challenge)
+        internal async Task<Protocol.Challenge> AnswerChallenge(Protocol.Challenge challenge)
         {
             // Have to loop to wait for server to stop being pending
             var client = await GetClient();
@@ -544,7 +544,7 @@ namespace PKISharp.WACS.Clients.Acme
         internal async Task<OrderDetails> CreateOrder(IEnumerable<Identifier> identifiers)
         {
             var client = await GetClient();
-            var acmeIdentifiers = identifiers.Select(i => new acme.Identifier() {
+            var acmeIdentifiers = identifiers.Select(i => new Protocol.Identifier() {
                 Type = i.Type switch
                 {
                     IdentifierType.DnsName => "dns", // rfc8555
@@ -556,13 +556,13 @@ namespace PKISharp.WACS.Clients.Acme
             return await Retry(client, () => client.CreateOrderAsync(acmeIdentifiers));
         }
 
-        internal async Task<acme.Challenge> GetChallengeDetails(string url)
+        internal async Task<Protocol.Challenge> GetChallengeDetails(string url)
         {
             var client = await GetClient();
             return await Retry(client, () => client.GetChallengeDetailsAsync(url));
         }
 
-        internal async Task<acme.Authorization> GetAuthorizationDetails(string url)
+        internal async Task<Protocol.Authorization> GetAuthorizationDetails(string url)
         {
             var client = await GetClient();
             return await Retry(client, () => client.GetAuthorizationDetailsAsync(url));
@@ -667,7 +667,7 @@ namespace PKISharp.WACS.Clients.Acme
         internal async Task RevokeCertificate(byte[] crt)
         {
             var client = await GetClient();
-            _ = await Retry(client, async () => client.RevokeCertificateAsync(crt, acme.RevokeReason.Unspecified));
+            _ = await Retry(client, async () => client.RevokeCertificateAsync(crt, Protocol.RevokeReason.Unspecified));
         }
 
         /// <summary>
@@ -696,13 +696,13 @@ namespace PKISharp.WACS.Clients.Acme
             }
             catch (AcmeProtocolException apex)
             {
-                if (attempt < 3 && apex.ProblemType == acme.ProblemType.BadNonce)
+                if (attempt < 3 && apex.ProblemType == Protocol.ProblemType.BadNonce)
                 {
                     _log.Warning("First chance error calling into ACME server, retrying with new nonce...");
                     await GetNonce(client);
                     return await Retry(client, executor, attempt + 1);
                 }
-                else if (apex.ProblemType == acme.ProblemType.UserActionRequired)
+                else if (apex.ProblemType == Protocol.ProblemType.UserActionRequired)
                 {
                     _log.Error("{detail}: {instance}", apex.ProblemDetail, apex.ProblemInstance);
                     throw;
@@ -749,7 +749,7 @@ namespace PKISharp.WACS.Clients.Acme
             {
                 if (ape.Response.StatusCode == HttpStatusCode.TooManyRequests)
                 {
-                    if (ape.ProblemType == acme.ProblemType.RateLimited)
+                    if (ape.ProblemType == Protocol.ProblemType.RateLimited)
                     {
                         // Do not keep retrying when rate limit is hit
                         throw;
