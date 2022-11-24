@@ -20,7 +20,7 @@ clone_script:
 before_build:
   - cmd: dotnet --version
 build_script:
-  - cmd: dotnet pack ./src/main/wacs.csproj -c "Release"
+  - cmd: dotnet pack ./src/main/wacs.csproj -c "Release" /p:PublishSingleFile=false
   - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-x64
   - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-x86
   - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-arm64
@@ -55,4 +55,4 @@ after_build:
     Get-ChildItem $env:APPVEYOR_BUILD_FOLDER\build\artifacts\ | Foreach-Object {
         Push-AppveyorArtifact $_.FullName -FileName $_.Name
     }
-deploy: off
+deploy: "off"

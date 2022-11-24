@@ -1,4 +1,4 @@
-﻿using acme = ACMESharp.Protocol.Resources;
+﻿using Protocol = ACMESharp.Protocol.Resources;
 using Autofac;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Context;
@@ -405,11 +405,11 @@ namespace PKISharp.WACS
         /// <param name="authorizationUri"></param>
         /// <param name="options"></param>
         /// <returns></returns>
-        private static async Task<acme.Authorization?> GetAuthorizationDetails(OrderContext context, string authorizationUri)
+        private static async Task<Protocol.Authorization?> GetAuthorizationDetails(OrderContext context, string authorizationUri)
         {
             // Get authorization challenge details from server
             var client = context.ExecutionScope.Resolve<AcmeClient>();
-            acme.Authorization? authorization;
+            Protocol.Authorization? authorization;
             try
             {
                 authorization = await client.GetAuthorizationDetails(authorizationUri);

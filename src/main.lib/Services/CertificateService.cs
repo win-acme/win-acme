@@ -10,7 +10,7 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
-using bc = Org.BouncyCastle;
+using Bc = Org.BouncyCastle;
 
 namespace PKISharp.WACS.Services
 {
@@ -256,7 +256,7 @@ namespace PKISharp.WACS.Services
             // Build pfx archive including any intermediates provided
             _log.Verbose("Parsing certificate from {bytes} bytes received", bytes.Length);
             var text = Encoding.UTF8.GetString(bytes);
-            var pfx = new bc.Pkcs.Pkcs12Store();
+            var pfx = new Bc.Pkcs.Pkcs12Store();
             var startIndex = 0;
             const string startString = "-----BEGIN CERTIFICATE-----";
             const string endString = "-----END CERTIFICATE-----";
@@ -275,10 +275,10 @@ namespace PKISharp.WACS.Services
                 endIndex += endString.Length;
                 var pem = text[startIndex..endIndex];
                 _log.Verbose("Parsing PEM data at range {startIndex}..{endIndex}", startIndex, endIndex);
-                var bcCertificate = _pemService.ParsePem<bc.X509.X509Certificate>(pem);
+                var bcCertificate = _pemService.ParsePem<Bc.X509.X509Certificate>(pem);
                 if (bcCertificate != null)
                 {
-                    var bcCertificateEntry = new bc.Pkcs.X509CertificateEntry(bcCertificate);
+                    var bcCertificateEntry = new Bc.Pkcs.X509CertificateEntry(bcCertificate);
                     var bcCertificateAlias = startIndex == 0 ?
                         friendlyName :
                         bcCertificate.SubjectDN.ToString();
@@ -289,7 +289,7 @@ namespace PKISharp.WACS.Services
                     // are intermediates
                     if (startIndex == 0 && pk != null)
                     {
-                        var bcPrivateKeyEntry = new bc.Pkcs.AsymmetricKeyEntry(pk);
+                        var bcPrivateKeyEntry = new Bc.Pkcs.AsymmetricKeyEntry(pk);
                         pfx.SetKeyEntry(bcCertificateAlias, bcPrivateKeyEntry, new[] { bcCertificateEntry });
                     }
                 }
@@ -309,7 +309,7 @@ namespace PKISharp.WACS.Services
             }
 
             var pfxStream = new MemoryStream();
-            pfx.Save(pfxStream, null, new bc.Security.SecureRandom());
+            pfx.Save(pfxStream, null, new Bc.Security.SecureRandom());
             pfxStream.Position = 0;
             using var pfxStreamReader = new BinaryReader(pfxStream);
 
