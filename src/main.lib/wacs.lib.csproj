@@ -6,21 +6,23 @@
 		<Configurations>Debug;DebugTrimmed;Release;ReleaseTrimmed</Configurations>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)'=='Debug' OR '$(Configuration)'=='DebugTrimmed'">
+	<PropertyGroup Condition="'$(Configuration)'=='Debug'">
 		<WarningLevel>1</WarningLevel>
-		<DefineConstants>TRACE</DefineConstants>
+		<DefineConstants>DEBUG;PLUGGABLE</DefineConstants>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)'=='DebugTrimmed'">
+		<WarningLevel>1</WarningLevel>
+		<DefineConstants>DEBUG</DefineConstants>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<DefineConstants>PLUGGABLE</DefineConstants>
 	</PropertyGroup>
 	
 	<PropertyGroup Condition="'$(Configuration)'=='DebugTrimmed' OR '$(Configuration)'=='ReleaseTrimmed'">
 		<IsTrimmable>true</IsTrimmable>
 		<TrimMode>partial</TrimMode>
-		<DefineConstants>TRIMMED</DefineConstants>
 	</PropertyGroup>
 	
-	<PropertyGroup Condition="'$(Configuration)'=='Debug' OR '$(Configuration)'=='Release'">
-		<DefineConstants>PLUGGABLE</DefineConstants>
-	</PropertyGroup>
-
 	<PropertyGroup>
 		<Nullable>enable</Nullable>
 		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
