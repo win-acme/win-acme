@@ -20,8 +20,10 @@
 	
 	<PropertyGroup Condition="'$(Configuration)'=='DebugTrimmed' OR '$(Configuration)'=='ReleaseTrimmed'">
 		<IsTrimmable>true</IsTrimmable>
-		<TrimMode>partial</TrimMode>
+		<TrimmerDefaultAction>link</TrimmerDefaultAction>
 		<PublishTrimmed>true</PublishTrimmed>
+		<EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+		<TrimMode>partial</TrimMode>
 	</PropertyGroup>
 	
 	<PropertyGroup>

@@ -38,6 +38,7 @@
 	
 	<PropertyGroup Condition="'$(Configuration)'=='DebugTrimmed'OR'$(Configuration)'=='ReleaseTrimmed'">
 		<PublishTrimmed>true</PublishTrimmed>
+		<TrimmerDefaultAction>link</TrimmerDefaultAction>
 		<TrimMode>partial</TrimMode>
 	</PropertyGroup>
 
@@ -63,6 +64,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\main.lib\wacs.lib.csproj" />
+		<TrimmerRootAssembly Include="wacs.lib" />
 	</ItemGroup>
 
 	<ItemGroup>

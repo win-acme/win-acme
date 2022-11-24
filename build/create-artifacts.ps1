@@ -33,9 +33,9 @@ function PlatformRelease
 
 	Remove-Item $Temp\* -recurse
 	$PlatformShort = $Platform -Replace "win-", ""
-	$Postfix = "trimmed"
-	if ($ReleaseType -eq "ReleasePluggable") {
-		$Postfix = "pluggable"
+	$Postfix = "pluggable"
+	if ($ReleaseType -eq "ReleaseTrimmed") {
+		$Postfix = "trimmed"
 	}
 	$MainZip = "win-acme.v$Version.$PlatformShort.$Postfix.zip"
 	$MainZipPath = "$Out\$MainZip"
@@ -98,9 +98,9 @@ NugetRelease
 PlatformRelease "Release" win-x64
 PlatformRelease "Release" win-x86
 PlatformRelease "Release" win-arm64
-# PlatformRelease "ReleaseTrimmed" win-x64
-# PlatformRelease "ReleaseTrimmed" win-x86
-# PlatformRelease "ReleaseTrimmed" win-arm64
+PlatformRelease "ReleaseTrimmed" win-x64
+PlatformRelease "ReleaseTrimmed" win-x86
+PlatformRelease "ReleaseTrimmed" win-arm64
 
 PluginRelease plugin.validation.dns.dreamhost @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost.dll"

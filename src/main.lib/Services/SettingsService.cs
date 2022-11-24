@@ -69,6 +69,7 @@ namespace PKISharp.WACS.Services
                 // This code specifically deals with backwards compatibility 
                 // so it is allowed to use obsolete properties
 #pragma warning disable CS0612
+#pragma warning disable CS0618
                 static string? Fallback(string? x, string? y) => string.IsNullOrWhiteSpace(x) ? y : x;
                 Source.DefaultSource = Fallback(Source.DefaultSource, Target.DefaultTarget);
                 Store.PemFiles.DefaultPath = Fallback(Store.PemFiles.DefaultPath, Store.DefaultPemFilesPath);
@@ -76,6 +77,7 @@ namespace PKISharp.WACS.Services
                 Store.CentralSsl.DefaultPassword = Fallback(Store.CentralSsl.DefaultPassword, Store.DefaultCentralSslPfxPassword);
                 Store.CertificateStore.DefaultStore = Fallback(Store.CertificateStore.DefaultStore, Store.DefaultCertificateStore);
 #pragma warning restore CS0612 
+#pragma warning restore CS0618
             }
             catch (Exception ex)
             {
