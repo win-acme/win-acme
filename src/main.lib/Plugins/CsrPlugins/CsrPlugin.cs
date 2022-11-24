@@ -13,6 +13,7 @@ using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
@@ -25,7 +26,8 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
     /// <summary>
     /// Common implementation between RSA and EC certificates
     /// </summary>
-    public abstract class CsrPlugin<TPlugin, TOptions> : ICsrPlugin
+    public abstract class CsrPlugin<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TPlugin, TOptions> : 
+        ICsrPlugin
         where TOptions : CsrPluginOptions<TPlugin>
         where TPlugin : ICsrPlugin
     {

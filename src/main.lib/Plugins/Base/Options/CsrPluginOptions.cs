@@ -16,7 +16,8 @@ namespace PKISharp.WACS.Plugins.Base.Options
         public bool? ReusePrivateKey { get; set; }
     }
 
-    public abstract class CsrPluginOptions<TPlugin> : CsrPluginOptions where TPlugin : ICsrPlugin
+    public abstract class CsrPluginOptions<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TPlugin> : 
+        CsrPluginOptions where TPlugin : ICsrPlugin
     {
         public abstract override string Name { get; }
         public abstract override string Description { get; }

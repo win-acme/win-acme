@@ -21,6 +21,7 @@
 	<PropertyGroup Condition="'$(Configuration)'=='DebugTrimmed' OR '$(Configuration)'=='ReleaseTrimmed'">
 		<IsTrimmable>true</IsTrimmable>
 		<TrimMode>partial</TrimMode>
+		<PublishTrimmed>true</PublishTrimmed>
 	</PropertyGroup>
 	
 	<PropertyGroup>

@@ -15,7 +15,8 @@ namespace PKISharp.WACS.Plugins.Base.Options
         public bool? KeepExisting { get; set; }
     }
 
-    public abstract class StorePluginOptions<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T> : StorePluginOptions where T : IStorePlugin
+    public abstract class StorePluginOptions<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T> : 
+        StorePluginOptions where T : IStorePlugin
     {
         public abstract override string Name { get; }
         public abstract override string Description { get; }

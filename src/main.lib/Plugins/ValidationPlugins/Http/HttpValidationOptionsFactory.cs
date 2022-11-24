@@ -4,11 +4,12 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    internal abstract class HttpValidationOptionsFactory<TPlugin, TOptions> :
+    internal abstract class HttpValidationOptionsFactory<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TPlugin, TOptions> :
         ValidationPluginOptionsFactory<TPlugin, TOptions>
         where TPlugin : IValidationPlugin
         where TOptions : HttpValidationOptions<TPlugin>, new()

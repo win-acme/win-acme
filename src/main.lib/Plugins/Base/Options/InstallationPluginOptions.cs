@@ -14,7 +14,8 @@ namespace PKISharp.WACS.Plugins.Base.Options
         public override Type Instance => throw new NotImplementedException();
     }
 
-    public abstract class InstallationPluginOptions<T> : InstallationPluginOptions where T : IInstallationPlugin
+    public abstract class InstallationPluginOptions<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T> : 
+        InstallationPluginOptions where T : IInstallationPlugin
     {
         public abstract override string Name { get; }
         public abstract override string Description { get; }

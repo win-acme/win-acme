@@ -6,6 +6,7 @@ using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -16,7 +17,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     /// <summary>
     /// Base implementation for HTTP-01 validation plugins
     /// </summary>
-    internal abstract class HttpValidation<TOptions, TPlugin> :
+    internal abstract class HttpValidation<TOptions, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TPlugin> :
         Validation<Http01ChallengeValidationDetails>
         where TOptions : HttpValidationOptions<TPlugin>
         where TPlugin : IValidationPlugin
