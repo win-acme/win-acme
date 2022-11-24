@@ -311,7 +311,7 @@ namespace PKISharp.WACS.Services
         public ScriptSettings Script => _settings.Script;
         public ClientSettings Client => _settings.Client;
         public SourceSettings Source => _settings.Source;
-        [Obsolete]
+        [Obsolete("Use Source instead")]
         public SourceSettings Target => _settings.Target;
         public ValidationSettings Validation => _settings.Validation;
         public OrderSettings Order => _settings.Order;

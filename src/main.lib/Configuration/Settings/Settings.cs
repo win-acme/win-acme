@@ -22,7 +22,7 @@ namespace PKISharp.WACS.Configuration.Settings
         public NotificationSettings Notification { get; set; } = new NotificationSettings();
         public SecuritySettings Security { get; set; } = new SecuritySettings();
         public ScriptSettings Script { get; set; } = new ScriptSettings();
-        [Obsolete]
+        [Obsolete("Use Source instead")]
         public SourceSettings Target { get; set; } = new SourceSettings();
         public SourceSettings Source { get; set; } = new SourceSettings();
         public ValidationSettings Validation { get; set; } = new ValidationSettings();
@@ -352,7 +352,7 @@ namespace PKISharp.WACS.Configuration.Settings
         /// <summary>
         /// Default plugin to select in the Advanced menu
         /// in the menu.
-        [Obsolete]
+        [Obsolete("Use DefaultSource instead")]
         public string? DefaultTarget { get; set; }
         /// <summary>
         /// Default plugin to select in the Advanced menu
@@ -447,13 +447,13 @@ namespace PKISharp.WACS.Configuration.Settings
         /// </summary>
         public string? DefaultStore { get; set; }
 
-        [Obsolete]
+        [Obsolete("Use CertificateStore.DefaultStore instead")]
         public string? DefaultCertificateStore { get; set; }
-        [Obsolete]
+        [Obsolete("Use CentralSsl.DefaultStore instead")]
         public string? DefaultCentralSslStore { get; set; }
-        [Obsolete]
+        [Obsolete("Use CentralSsl.DefaultPassword instead")]
         public string? DefaultCentralSslPfxPassword { get; set; }
-        [Obsolete]
+        [Obsolete("Use PemFiles.DefaultPath instead")]
         public string? DefaultPemFilesPath { get; set; }
 
         /// <summary>
