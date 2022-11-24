@@ -21,7 +21,7 @@ $BuildFolder = Join-Path -Path $RepoRoot "build"
 # & dotnet clean $RepoRoot\src\main\wacs.csproj -c "ReleaseTrimmed" -r win-arm64 --self-contained 
 
 # Build main
-& dotnet pack $RepoRoot\src\main\wacs.csproj -c "Release" /p:PublishSingleFile=false
+& dotnet pack $RepoRoot\src\main\wacs.csproj -c "Release" /p:PublishSingleFile=false /p:PublishReadyToRun=false
 & dotnet publish $RepoRoot\src\main\wacs.csproj -c "Release" -r win-x64 --self-contained
 & dotnet publish $RepoRoot\src\main\wacs.csproj -c "Release" -r win-x86 --self-contained
 & dotnet publish $RepoRoot\src\main\wacs.csproj -c "Release" -r win-arm64 --self-contained

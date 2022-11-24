@@ -20,7 +20,7 @@ clone_script:
 before_build:
   - cmd: dotnet --version
 build_script:
-  - cmd: dotnet pack ./src/main/wacs.csproj -c "Release" /p:PublishSingleFile=false
+  - cmd: dotnet pack ./src/main/wacs.csproj -c "Release" /p:PublishSingleFile=false /p:PublishReadyToRun=false
   - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-x64
   - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-x86
   - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-arm64
