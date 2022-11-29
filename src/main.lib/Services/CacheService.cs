@@ -44,7 +44,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         private void CheckStaleFiles()
         {
-            var days = 120;
+            var days = _settings.Cache.DeleteStaleFilesDays ?? 120;
             var files = _cache.
                 GetFiles().
                 Where(x => x.LastWriteTime < DateTime.Now.AddDays(-days));

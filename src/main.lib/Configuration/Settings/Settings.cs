@@ -174,13 +174,21 @@ namespace PKISharp.WACS.Configuration.Settings
         /// </summary>
         public int ReuseDays { get; set; }
         /// <summary>
+        /// Automatically delete files older than
+        /// (DeleteStaleFilesDays) days from the (Path). 
+        /// Running with default settings, these should 
+        /// only be long expired certificates, generated for 
+        /// abandoned renewals. However we do advise caution.
+        /// </summary>
+        public bool DeleteStaleFiles { get; set; }        
+        /// <summary>
         /// Automatically delete files older than 120 days 
         /// from the CertificatePath folder. Running with 
         /// default settings, these should only be long-
         /// expired certificates, generated for abandoned
         /// renewals. However we do advise caution.
         /// </summary>
-        public bool DeleteStaleFiles { get; set; }
+        public int? DeleteStaleFilesDays { get; set; }
 
     }
 
