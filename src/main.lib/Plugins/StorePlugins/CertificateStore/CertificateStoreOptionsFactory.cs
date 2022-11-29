@@ -3,11 +3,13 @@ using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    internal class CertificateStoreOptionsFactory : StorePluginOptionsFactory<CertificateStore, CertificateStoreOptions>
+    internal class CertificateStoreOptionsFactory : 
+        StorePluginOptionsFactory<CertificateStore, CertificateStoreOptions>
     {
         private readonly ArgumentsInputService _arguments;
         private readonly IIISClient _iisClient;
@@ -62,6 +64,11 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         {
             return new CertificateStoreOptions
             {
+                StoreLocation = await _arguments.
+                    GetString<CertificateStoreArguments>(x => x.CertificateStoreLocation).
+                    WithDefault(nameof(StoreLocation.LocalMachine)).
+                    DefaultAsNull().
+                    GetValue(),
                 StoreName = await _arguments.
                     GetString<CertificateStoreArguments>(x => x.CertificateStore).
                     WithDefault(CertificateStore.DefaultStore(_settingsService, _iisClient)).

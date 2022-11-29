@@ -15,19 +15,32 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// <summary>
         /// Name of the certificate store to use
         /// </summary>
-        public string? StoreName { get; set; }
+        public string? StoreName { get; set; }        
+        
+        /// <summary>
+        /// Location of the certificate store to use
+        /// </summary>
+        public string? StoreLocation { get; set; }
 
         /// <summary>
-        /// Name of the certificate store to use
+        /// ACL to add to the private key
         /// </summary>
         public List<string>? AclFullControl { get; set; }
 
+        /// <summary>
+        /// Print details to user
+        /// </summary>
+        /// <param name="input"></param>
         public override void Show(IInputService input)
         {
             base.Show(input);
+            if (!string.IsNullOrEmpty(StoreLocation))
+            {
+                input.Show("Location", StoreLocation, level: 1);
+            }
             if (!string.IsNullOrEmpty(StoreName))
             {
-                input.Show("Store", StoreName, level: 1);
+                input.Show("Name", StoreName, level: 1);
             }
             if (AclFullControl != null)
             {

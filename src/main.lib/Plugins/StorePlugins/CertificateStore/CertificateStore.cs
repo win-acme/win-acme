@@ -20,6 +20,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private const string DefaultStoreName = nameof(StoreName.My);
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
+        private readonly StoreLocation _storeLocation;
         private readonly string _storeName;
         private readonly X509Store _store;
         private readonly IIISClient _iisClient;
@@ -38,7 +39,13 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             _settings = settings;
             _userRoleService = userRoleService;
             _keyFinder = keyFinder;
-            _storeName = options.StoreName ?? DefaultStore(settings, iisClient);
+             
+            var locationName = options.StoreLocation ?? nameof(StoreLocation.LocalMachine);
+            if (!Enum.TryParse(locationName, true, out _storeLocation))
+            {
+                _log.Warning("Unable to parse store location {storeLocation}", options.StoreLocation);
+            }
+            _storeName = options.StoreName ?? DefaultStore(settings, iisClient, _storeLocation);
             if (string.Equals(_storeName, "Personal", StringComparison.InvariantCultureIgnoreCase) ||
                 string.Equals(_storeName, "Computer", StringComparison.InvariantCultureIgnoreCase))
             {
@@ -46,8 +53,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 // config files, because that's what the store is called in mmc
                 _storeName = nameof(StoreName.My);
             }
-            _log.Debug("Certificate store: {_certificateStore}", _storeName);
-            _store = new X509Store(_storeName!, StoreLocation.LocalMachine);
+            _log.Debug("Certificate store location: {_storeLocation}", _storeLocation);
+            _log.Debug("Certificate store name: {_storeName}", _storeName);
+            _store = new X509Store(_storeName, _storeLocation);
         }
 
         /// <summary>
@@ -56,7 +64,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// <param name="settings"></param>
         /// <param name="client"></param>
         /// <returns></returns>
-        public static string DefaultStore(ISettingsService settings, IIISClient client)
+        public static string DefaultStore(ISettingsService settings, IIISClient client, StoreLocation location = StoreLocation.LocalMachine)
         {
             // First priority: specified in settings.json 
             string? storeName;
@@ -66,8 +74,17 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 // Second priority: defaults
                 if (string.IsNullOrWhiteSpace(storeName))
                 {
-                    // Default store should be WebHosting on IIS8+, and My (Personal) for IIS7.x
-                    storeName = client.Version.Major < 8 ? nameof(StoreName.My) : "WebHosting";
+                    if (location == StoreLocation.LocalMachine)
+                    {
+                        // Default store for LocalMachine should be WebHosting on IIS8+,
+                        // and My (Personal) for IIS7.x
+                        storeName = client.Version.Major < 8 ? nameof(StoreName.My) : "WebHosting";
+                    } 
+                    else
+                    {
+                        // Default for CurrentUser store is My (Personal)
+                        storeName = nameof(StoreName.My);
+                    }
                 }
             } 
             catch
@@ -212,12 +229,12 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             X509Store imStore;
             try
             {
-                imStore = new X509Store(StoreName.CertificateAuthority, StoreLocation.LocalMachine);
+                imStore = new X509Store(StoreName.CertificateAuthority, _storeLocation);
                 imStore.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
                 if (!imStore.IsOpen)
                 {
                     _log.Verbose("Unable to open intermediate certificate authority store");
-                    imStore = new X509Store(_storeName!, StoreLocation.LocalMachine);
+                    imStore = new X509Store(_storeName!, _storeLocation);
                     imStore.Open(OpenFlags.ReadWrite);
                 }
             }
