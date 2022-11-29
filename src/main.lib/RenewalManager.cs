@@ -166,36 +166,16 @@ namespace PKISharp.WACS
                         $"Show details for {selectionLabel}", "D",
                         @disabled: (none, "No renewals selected.")));
                 options.Add(
-                    Choice.Create<Func<Task>>(
-                        async () => {
-                            WarnAboutRenewalArguments();
-                            foreach (var renewal in selectedRenewals)
-                            {
-                                var runLevel = RunLevel.Interactive;
-                                if (_args.Force)
-                                {
-                                    runLevel |= RunLevel.IgnoreCache;
-                                }
-                                await ProcessRenewal(renewal, runLevel);
-                            }
-                        },
-                        $"Run {selectionLabel} (normal)", "R",
+                    Choice.Create<Func<Task>>(() => Run(selectedRenewals, RunLevel.Interactive),
+                        $"Run {selectionLabel}", "R",
+                        @disabled: (none, "No renewals selected."))); ;
+                options.Add(
+                    Choice.Create<Func<Task>>(() => Run(selectedRenewals, RunLevel.Interactive | RunLevel.Force),
+                        $"Run {selectionLabel} (force)", "Z",
                         @disabled: (none, "No renewals selected.")));
                 options.Add(
-                    Choice.Create<Func<Task>>(
-                        async () => {
-                            WarnAboutRenewalArguments();
-                            foreach (var renewal in selectedRenewals)
-                            {
-                                var runLevel = RunLevel.Interactive | RunLevel.ForceRenew;
-                                if (_args.Force)
-                                {
-                                    runLevel |= RunLevel.IgnoreCache;
-                                }
-                                await ProcessRenewal(renewal, runLevel);
-                            }
-                        },
-                        $"Run {selectionLabel} (forced)", "Z",
+                    Choice.Create<Func<Task>>(() => Run(selectedRenewals, RunLevel.Interactive | RunLevel.Force | RunLevel.NoCache),
+                        $"Run {selectionLabel} (force, nocache)", "X",
                         @disabled: (none, "No renewals selected.")));
                 options.Add(
                     Choice.Create<Func<Task>>(
@@ -250,6 +230,21 @@ namespace PKISharp.WACS
                 _container.Resolve<IIISClient>().Refresh();
             }
             while (!quit);
+        }
+
+        /// <summary>
+        /// Run selected renewals
+        /// </summary>
+        /// <param name="selectedRenewals"></param>
+        /// <param name="flags"></param>
+        /// <returns></returns>
+        private async Task Run(IEnumerable<Renewal> selectedRenewals, RunLevel flags)
+        {
+            WarnAboutRenewalArguments();
+            foreach (var renewal in selectedRenewals)
+            {
+                await ProcessRenewal(renewal, flags);
+            }
         }
 
         /// <summary>
@@ -582,7 +577,7 @@ namespace PKISharp.WACS
             var chosen = await _input.ChooseFromMenu("Which step do you want to edit?", options);
             if (chosen != Steps.None)
             {
-                await _renewalCreator.SetupRenewal(RunLevel.Interactive | RunLevel.Advanced | RunLevel.ForceRenew, chosen, renewal);
+                await _renewalCreator.SetupRenewal(RunLevel.Interactive | RunLevel.Advanced | RunLevel.Force, chosen, renewal);
             }
         }
 

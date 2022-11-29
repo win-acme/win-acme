@@ -112,15 +112,12 @@ namespace PKISharp.WACS
             {
                 runLevel |= RunLevel.Test;
             }
-            if (_args.Force)
+            if (_args.NoCache)
             {
-                runLevel |= RunLevel.IgnoreCache;
+                runLevel |= RunLevel.NoCache;
             }
             _log.Information(LogType.All, "Running in mode: {runLevel}", runLevel);
-            if (tempRenewal == null)
-            {
-                tempRenewal = Renewal.Create(_args.Id, _passwordGenerator);
-            } 
+            tempRenewal ??= Renewal.Create(_args.Id, _passwordGenerator); 
             using var configScope = _scopeBuilder.Configuration(_container, tempRenewal, runLevel);
 
             // Choose the target plugin

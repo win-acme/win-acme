@@ -440,7 +440,7 @@ namespace PKISharp.WACS
                 if (context.Valid)
                 {
                     _log.Information("[{identifier}] Cached authorization result: {Status}", context.Label, context.Authorization.Status);
-                    if (!runLevel.HasFlag(RunLevel.Test) && !runLevel.HasFlag(RunLevel.IgnoreCache))
+                    if (!runLevel.HasFlag(RunLevel.Test) && !runLevel.HasFlag(RunLevel.NoCache))
                     {
                         return;
                     }
@@ -481,7 +481,7 @@ namespace PKISharp.WACS
                         // We actually should not get here because if one of the
                         // challenges is valid, the authorization itself should also 
                         // be valid.
-                        if (!runLevel.HasFlag(RunLevel.Test) && !runLevel.HasFlag(RunLevel.IgnoreCache))
+                        if (!runLevel.HasFlag(RunLevel.Test) && !runLevel.HasFlag(RunLevel.NoCache))
                         {
                             _log.Information("[{identifier}] Cached challenge result: {Status}", !context.Valid);
                             return;

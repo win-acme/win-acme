@@ -150,7 +150,11 @@ namespace PKISharp.WACS.Host
                         var runLevel = RunLevel.Unattended;
                         if (_args.Force)
                         {
-                            runLevel |= RunLevel.ForceRenew | RunLevel.IgnoreCache;
+                            runLevel |= RunLevel.Force;
+                        }
+                        if (_args.NoCache)
+                        {
+                            runLevel |= RunLevel.NoCache;
                         }
                         await _renewalManager.CheckRenewals(runLevel);
                         await CloseDefault();
@@ -160,7 +164,11 @@ namespace PKISharp.WACS.Host
                         var runLevel = RunLevel.Unattended;
                         if (_args.Force)
                         {
-                            runLevel |= RunLevel.ForceRenew | RunLevel.IgnoreCache;
+                            runLevel |= RunLevel.Force | RunLevel.NoCache;
+                        }
+                        if (_args.NoCache)
+                        {
+                            runLevel |= RunLevel.NoCache;
                         }
                         await _renewalCreator.SetupRenewal(runLevel);
                         await CloseDefault();

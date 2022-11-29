@@ -81,7 +81,7 @@ namespace PKISharp.WACS.Clients.Acme
                     _log.Warning("Using cache. To force a new order within {days} days, " +
                           "run with --{switch}. Beware that you might run into rate limits.",
                           _settings.Cache.ReuseDays,
-                          nameof(MainArguments.Force).ToLower());
+                          nameof(MainArguments.NoCache).ToLower());
                     return orderDetails;
                 }
                 else
@@ -107,10 +107,10 @@ namespace PKISharp.WACS.Clients.Acme
                 return null;
             }
 
-            if (runLevel.HasFlag(RunLevel.IgnoreCache))
+            if (runLevel.HasFlag(RunLevel.NoCache))
             {
                 _log.Warning("Cached order available but not used with --{switch} option.",
-                    nameof(MainArguments.Force).ToLower());
+                    nameof(MainArguments.NoCache).ToLower());
                 return null;
             }
 

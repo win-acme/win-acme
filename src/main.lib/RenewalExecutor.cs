@@ -124,7 +124,7 @@ namespace PKISharp.WACS
                 var taskLevel = runLevel;
                 if (_args.SetupTaskScheduler)
                 {
-                    taskLevel |= RunLevel.ForceRenew;
+                    taskLevel |= RunLevel.Force;
                 }
                 await es.Resolve<TaskSchedulerService>().EnsureTaskScheduler(runLevel);
             }
@@ -143,7 +143,7 @@ namespace PKISharp.WACS
             {
                 return true;
             }
-            if (!runLevel.HasFlag(RunLevel.ForceRenew) && !renewal.Updated)
+            if (!runLevel.HasFlag(RunLevel.Force) && !renewal.Updated)
             {
                 _log.Verbose("Checking {renewal}", renewal.LastFriendlyName);
                 if (!_dueDate.ShouldRun(renewal))
@@ -151,7 +151,7 @@ namespace PKISharp.WACS
                     return false;
                 }
             }
-            else if (runLevel.HasFlag(RunLevel.ForceRenew))
+            else if (runLevel.HasFlag(RunLevel.Force))
             {
                 _log.Information(LogType.All, "Force renewing {renewal}", renewal.LastFriendlyName);
             }
@@ -192,7 +192,7 @@ namespace PKISharp.WACS
             // Check individual orders
             foreach (var o in orderContexts)
             {
-                o.ShouldRun = runLevel.HasFlag(RunLevel.ForceRenew) || _dueDate.ShouldRun(o);
+                o.ShouldRun = runLevel.HasFlag(RunLevel.Force) || _dueDate.ShouldRun(o);
                 _log.Verbose("Order {name} should run: {run}", o.OrderName, o.ShouldRun);
             }
 
@@ -213,7 +213,7 @@ namespace PKISharp.WACS
             // this could only be a part of them.
             var allContexts = orderContexts;
             var runnableContexts = orderContexts;
-            if (!runLevel.HasFlag(RunLevel.IgnoreCache) && !renewal.New && !renewal.Updated)
+            if (!runLevel.HasFlag(RunLevel.NoCache) && !renewal.New && !renewal.Updated)
             {
                 runnableContexts = orderContexts.Where(x => x.ShouldRun).ToList();
             }
@@ -222,7 +222,7 @@ namespace PKISharp.WACS
                 _log.Debug("None of the orders are currently due to run");
                 return Abort(renewal);
             } 
-            if (!renewal.New && !runLevel.HasFlag(RunLevel.ForceRenew))
+            if (!renewal.New && !runLevel.HasFlag(RunLevel.Force))
             {
                 _log.Information(LogType.All, "Renewing {renewal}", renewal.LastFriendlyName);
             }
@@ -317,7 +317,7 @@ namespace PKISharp.WACS
             }
 
             // Validate all orders that need it
-            var alwaysTryValidation = runLevel.HasFlag(RunLevel.Test) || runLevel.HasFlag(RunLevel.IgnoreCache);
+            var alwaysTryValidation = runLevel.HasFlag(RunLevel.Test) || runLevel.HasFlag(RunLevel.NoCache);
             var validationRequired = fromServer.Where(x => x.Order.Details != null && (x.Order.Valid == false || alwaysTryValidation));
             await _validator.ValidateOrders(validationRequired, runLevel);
 
@@ -470,11 +470,11 @@ namespace PKISharp.WACS
             {
                 return null;
             }
-            if (runLevel.HasFlag(RunLevel.IgnoreCache))
+            if (runLevel.HasFlag(RunLevel.NoCache))
             {
                 _log.Warning(
                     "Cached certificate available but not used due to --{switch} switch.",
-                    nameof(MainArguments.Force).ToLower());
+                    nameof(MainArguments.NoCache).ToLower());
                 return null;
             }
             _log.Warning(
@@ -482,7 +482,7 @@ namespace PKISharp.WACS
                 "within {days} days, run with --{switch}.",
                 context.Order.FriendlyNameIntermediate,
                 _settings.Cache.ReuseDays,
-                nameof(MainArguments.Force).ToLower());
+                nameof(MainArguments.NoCache).ToLower());
                 return cachedCertificate;
         }
 
