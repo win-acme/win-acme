@@ -1,12 +1,11 @@
-﻿using Microsoft.Extensions.Configuration;
-using PKISharp.WACS.Configuration.Arguments;
+﻿using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Configuration.Settings;
 using PKISharp.WACS.Extensions;
 using System;
-using System.Data;
 using System.IO;
 using System.Security.AccessControl;
 using System.Security.Principal;
+using System.Text.Json;
 
 namespace PKISharp.WACS.Services
 {
@@ -14,32 +13,14 @@ namespace PKISharp.WACS.Services
     {
         private readonly ILogService _log;
         private readonly MainArguments _arguments;
-
+        private readonly Settings _settings;
         public bool Valid { get; private set; } = false;
-        public ClientSettings Client { get; private set; } = new ClientSettings();
-        public UiSettings UI { get; private set; } = new UiSettings();
-        public AcmeSettings Acme { get; private set; } = new AcmeSettings();
-        public ExecutionSettings Execution { get; private set; } = new ExecutionSettings();
-        public ProxySettings Proxy { get; private set; } = new ProxySettings();
-        public CacheSettings Cache { get; private set; } = new CacheSettings();
-        public ScheduledTaskSettings ScheduledTask { get; private set; } = new ScheduledTaskSettings();
-        public NotificationSettings Notification { get; private set; } = new NotificationSettings();
-        public SecuritySettings Security { get; private set; } = new SecuritySettings();
-        public ScriptSettings Script { get; private set; } = new ScriptSettings();
-        [Obsolete]
-        public SourceSettings Target { get; private set; } = new SourceSettings();
-        public SourceSettings Source { get; private set; } = new SourceSettings();
-        public ValidationSettings Validation { get; private set; } = new ValidationSettings();
-        public OrderSettings Order { get; private set; } = new OrderSettings();
-        public CsrSettings Csr { get; private set; } = new CsrSettings();
-        public StoreSettings Store { get; private set; } = new StoreSettings();
-        public InstallationSettings Installation { get; private set; } = new InstallationSettings();
-        public SecretsSettings Secrets { get; private set; } = new SecretsSettings();
 
         public SettingsService(ILogService log, MainArguments arguments)
         {
             _log = log;
             _arguments = arguments;
+            _settings = new Settings();
             var settingsFileName = "settings.json";
             var settingsFileTemplateName = "settings_default.json";
             _log.Verbose("Looking for {settingsFileName} in {path}", settingsFileName, VersionService.SettingsPath);
@@ -78,14 +59,17 @@ namespace PKISharp.WACS.Services
 
             try
             {
-                new ConfigurationBuilder()
-                    .AddJsonFile(useFile.FullName, true, true)
-                    .Build()
-                    .Bind(this);
+                using var fs = useFile.OpenRead();
+                var newSettings = JsonSerializer.Deserialize(fs, SettingsJson.Default.Settings);
+                if (newSettings != null)
+                {
+                    _settings = newSettings;
+                }
 
                 // This code specifically deals with backwards compatibility 
                 // so it is allowed to use obsolete properties
 #pragma warning disable CS0612
+#pragma warning disable CS0618
                 static string? Fallback(string? x, string? y) => string.IsNullOrWhiteSpace(x) ? y : x;
                 Source.DefaultSource = Fallback(Source.DefaultSource, Target.DefaultTarget);
                 Store.PemFiles.DefaultPath = Fallback(Store.PemFiles.DefaultPath, Store.DefaultPemFilesPath);
@@ -93,6 +77,7 @@ namespace PKISharp.WACS.Services
                 Store.CentralSsl.DefaultPassword = Fallback(Store.CentralSsl.DefaultPassword, Store.DefaultCentralSslPfxPassword);
                 Store.CertificateStore.DefaultStore = Fallback(Store.CertificateStore.DefaultStore, Store.DefaultCertificateStore);
 #pragma warning restore CS0612 
+#pragma warning restore CS0618
             }
             catch (Exception ex)
             {
@@ -311,5 +296,29 @@ namespace PKISharp.WACS.Services
             }
             return (hit, inherited);
         }
+
+        /// <summary>
+        /// Interface implementation
+        /// </summary>
+
+        public UiSettings UI => _settings.UI;
+        public AcmeSettings Acme => _settings.Acme;
+        public ExecutionSettings Execution => _settings.Execution;
+        public ProxySettings Proxy => _settings.Proxy;
+        public CacheSettings Cache => _settings.Cache;
+        public SecretsSettings Secrets => _settings.Secrets;
+        public ScheduledTaskSettings ScheduledTask => _settings.ScheduledTask;
+        public NotificationSettings Notification => _settings.Notification;
+        public SecuritySettings Security => _settings.Security;
+        public ScriptSettings Script => _settings.Script;
+        public ClientSettings Client => _settings.Client;
+        public SourceSettings Source => _settings.Source;
+        [Obsolete("Use Source instead")]
+        public SourceSettings Target => _settings.Target;
+        public ValidationSettings Validation => _settings.Validation;
+        public OrderSettings Order => _settings.Order;
+        public CsrSettings Csr => _settings.Csr;
+        public StoreSettings Store => _settings.Store;
+        public InstallationSettings Installation => _settings.Installation;
     }
 }

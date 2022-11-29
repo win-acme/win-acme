@@ -2,6 +2,7 @@
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace PKISharp.WACS.Plugins.Base.Options
 {
@@ -9,10 +10,11 @@ namespace PKISharp.WACS.Plugins.Base.Options
     {
         public override string Name => throw new NotImplementedException();
         public override string Description => throw new NotImplementedException();
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
         public override Type Instance => throw new NotImplementedException();
     }
 
-    public abstract class TargetPluginOptions<T> : TargetPluginOptions where T : ITargetPlugin
+    public abstract class TargetPluginOptions<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T> : TargetPluginOptions where T : ITargetPlugin
     {
         public abstract override string Name { get; }
         public abstract override string Description { get; }
@@ -23,6 +25,7 @@ namespace PKISharp.WACS.Plugins.Base.Options
             input.Show("Plugin", $"{Name} - ({Description})", level: 1);
         }
 
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
         public override Type Instance => typeof(T);
     }
 }

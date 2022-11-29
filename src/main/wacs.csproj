@@ -1,76 +1,86 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
-    <RuntimeIdentifiers>win-x64;win-x86;win-arm64</RuntimeIdentifiers>
-    <ApplicationIcon>icon.ico</ApplicationIcon>
-    <StartupObject />
-    <Version>2.1.0.0</Version>
-    <AssemblyVersion>2.1.0.0</AssemblyVersion>
-    <FileVersion>2.1.0.0</FileVersion>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net7.0</TargetFramework>
+		<RuntimeIdentifiers>win-x64;win-x86;win-arm64</RuntimeIdentifiers>
+		<Configurations>Debug;DebugTrimmed;Release;ReleaseTrimmed</Configurations>
+		<ApplicationIcon>icon.ico</ApplicationIcon>
+		<StartupObject />
+		<Version>2.1.0.0</Version>
+		<AssemblyVersion>2.1.0.0</AssemblyVersion>
+		<FileVersion>2.1.0.0</FileVersion>
+		<ApplicationManifest>app.manifest</ApplicationManifest>
 
-    <PackAsTool>true</PackAsTool>
-    <ToolCommandName>wacs</ToolCommandName>
-    <PackageOutputPath>./nupkg</PackageOutputPath>
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <PackageTags>acme,cli,letsencrypt,zerossl</PackageTags>
-    <RepositoryUrl>https://github.com/win-acme/win-acme</RepositoryUrl>
-    <RepositoryType>Github</RepositoryType>
-    <NeutralLanguage>en-US</NeutralLanguage>
-    <PackageIcon>icon.png</PackageIcon>
-    <PackageProjectUrl>https://www.win-acme.com/</PackageProjectUrl>
-    <Authors>Wouter Tinus and many others</Authors>
-    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <PackageId>win-acme</PackageId>
-    <Product>win-acme</Product>
-    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <Description>This is a ACMEv2 client for Windows that aims to be very simple to start with, but powerful enough to grow into almost every scenario.</Description>
-    
-  </PropertyGroup>
+		<PackAsTool>true</PackAsTool>
+		<ToolCommandName>wacs</ToolCommandName>
+		<PackageOutputPath>./nupkg</PackageOutputPath>
+		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+		<PackageTags>acme,cli,letsencrypt,zerossl</PackageTags>
+		<RepositoryUrl>https://github.com/win-acme/win-acme</RepositoryUrl>
+		<RepositoryType>Github</RepositoryType>
+		<NeutralLanguage>en-US</NeutralLanguage>
+		<PackageIcon>icon.png</PackageIcon>
+		<PackageProjectUrl>https://www.win-acme.com/</PackageProjectUrl>
+		<Authors>Wouter Tinus and many others</Authors>
+		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+		<PackageId>win-acme</PackageId>
+		<Product>win-acme</Product>
+		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+		<Description>This is a ACMEv2 client for Windows that aims to be very simple to start with, but powerful enough to grow into almost every scenario.</Description>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <PlatformTarget>x86</PlatformTarget>
-  </PropertyGroup>
+	</PropertyGroup>
 
-  <PropertyGroup>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-  
-  <ItemGroup>
-    <Compile Remove="nupkg\**" />
-    <EmbeddedResource Remove="nupkg\**" />
-    <None Remove="nupkg\**" />
-  </ItemGroup>
+	<PropertyGroup>
+		<PublishReadyToRun>true</PublishReadyToRun>
+		<PublishSingleFile>true</PublishSingleFile>
+	</PropertyGroup>
+	
+	<PropertyGroup Condition="'$(Configuration)'=='DebugTrimmed'OR'$(Configuration)'=='ReleaseTrimmed'">
+		<PublishTrimmed>true</PublishTrimmed>
+		<TrimmerDefaultAction>link</TrimmerDefaultAction>
+		<TrimMode>partial</TrimMode>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <TrimmerRootAssembly Include="System.Collections.Immutable" />
-    <TrimmerRootAssembly Include="System.Net.WebSockets" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <None Include="icon.ico" />
-  </ItemGroup>
+	<PropertyGroup>
+		<Nullable>enable</Nullable>
+		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\main.lib\wacs.lib.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<Compile Remove="nupkg\**" />
+		<EmbeddedResource Remove="nupkg\**" />
+		<None Remove="nupkg\**" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <None Include="..\..\dist\Web_Config.xml" Pack="true" PackagePath="">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="..\..\dist\public_suffix_list.dat" Pack="true" PackagePath="">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="icon.png" Pack="true" PackagePath="" />
-  </ItemGroup>
+	<ItemGroup>
+		<TrimmerRootAssembly Include="System.Collections.Immutable" />
+		<TrimmerRootAssembly Include="System.Net.WebSockets" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <None Update="settings.json" Pack="true" PackagePath="settings_default.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+	<ItemGroup>
+		<None Include="icon.ico" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\main.lib\wacs.lib.csproj" />
+		<TrimmerRootAssembly Include="wacs.lib" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="..\..\dist\Web_Config.xml" Pack="true" PackagePath="">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Include="..\..\dist\public_suffix_list.dat" Pack="true" PackagePath="">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Include="icon.png" Pack="true" PackagePath="" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="settings.json" Pack="true" PackagePath="settings_default.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
 
 </Project>

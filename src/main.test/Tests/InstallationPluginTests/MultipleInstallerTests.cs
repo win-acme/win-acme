@@ -1,21 +1,19 @@
 ﻿using Autofac;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Plugins.Base.Factories.Null;
 using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
-using mock = PKISharp.WACS.UnitTests.Mock.Services;
+using PKISharp.WACS.UnitTests.Mock.Services;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using PKISharp.WACS.Clients.DNS;
-using PKISharp.WACS.UnitTests.Mock;
-using PKISharp.WACS.UnitTests.Mock.Services;
-using PKISharp.WACS.Configuration.Arguments;
 
 namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
 {
@@ -23,14 +21,14 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
     public class MultipleInstallerTests
     {
         private readonly ILogService log;
-        private readonly mock.MockPluginService plugins;
-        private readonly mock.MockSettingsService settings;
+        private readonly Mock.Services.MockPluginService plugins;
+        private readonly Mock.Services.MockSettingsService settings;
 
         public MultipleInstallerTests()
         {
-            log = new mock.LogService(false);
-            plugins = new mock.MockPluginService(log);
-            settings = new mock.MockSettingsService();
+            log = new Mock.Services.LogService(false);
+            plugins = new Mock.Services.MockPluginService(log);
+            settings = new Mock.Services.MockSettingsService();
         }
 
         /// <summary>
@@ -47,11 +45,11 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             
             var builder = new ContainerBuilder();
             _ = builder.RegisterType<LookupClientProvider>();
-            _ = builder.RegisterType<mock.ProxyService>().As<IProxyService>();
+            _ = builder.RegisterType<Mock.Services.ProxyService>().As<IProxyService>();
             _ = builder.RegisterType<DomainParseService>();
             _ = builder.RegisterType<ArgumentsInputService>();
             _ = builder.RegisterType<IISHelper>();
-            var input = new mock.InputService(new List<string>());
+            var input = new Mock.Services.InputService(new List<string>());
             _ = builder.RegisterInstance(input).As<IInputService>();
             _ = builder.RegisterType<SecretService>().As<ISecretService>();
             _ = builder.RegisterType<SecretServiceManager>();
@@ -70,7 +68,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             _ = builder.RegisterType<ArgumentsParser>().
                 SingleInstance().
                 WithParameter(new TypedParameter(typeof(string[]), commandLine.Split(' ')));
-            _ = builder.RegisterType<mock.UserRoleService>().As<IUserRoleService>().SingleInstance();
+            _ = builder.RegisterType<Mock.Services.UserRoleService>().As<IUserRoleService>().SingleInstance();
             _ = builder.RegisterType<UnattendedResolver>().As<IResolver>();
             _ = builder.Register(c => c.Resolve<ArgumentsParser>().GetArguments<MainArguments>()!).SingleInstance();
             plugins.Configure(builder);

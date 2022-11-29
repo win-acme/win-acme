@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <RootNamespace>PKISharp.WACS.Plugins.StorePlugins</RootNamespace>
     <AssemblyName>PKISharp.WACS.Plugins.StorePlugins.KeyVault</AssemblyName>
     <Version>2.1.0.0</Version>
@@ -14,7 +14,7 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="Azure.Identity" Version="1.7.0" />
+    <PackageReference Include="Azure.Identity" Version="1.8.0" />
     <PackageReference Include="Azure.Security.KeyVault.Certificates" Version="4.4.0" />
   </ItemGroup>
 

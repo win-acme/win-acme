@@ -4,8 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using mock = PKISharp.WACS.UnitTests.Mock.Services;
-using real = PKISharp.WACS.Services;
+using Mock = PKISharp.WACS.UnitTests.Mock.Services;
+using Real = PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.UnitTests.Tests.CsrPluginTests
 {
@@ -16,9 +16,9 @@ namespace PKISharp.WACS.UnitTests.Tests.CsrPluginTests
         [DataRow("working")]
         public void Convert(string name)
         {
-            var log = new mock.LogService(false);
-            var settings = new mock.MockSettingsService();
-            var pem = new real.PemService();
+            var log = new Mock.Services.LogService(false);
+            var settings = new Mock.Services.MockSettingsService();
+            var pem = new Real.PemService();
             var x = new Rsa(log, settings,  pem, new RsaOptions());
             var data = Assembly.
                 GetAssembly(typeof(PostProcessTest))!.
@@ -33,7 +33,7 @@ namespace PKISharp.WACS.UnitTests.Tests.CsrPluginTests
             var tempFile = Path.GetTempFileName();
             File.WriteAllBytes(tempFile, bytes);
             var fi = new FileInfo(tempFile);
-            var certInfo = real.CacheService.GetInfo(fi, "A8<TEpyPweWMO1m(");
+            var certInfo = Real.CacheService.GetInfo(fi, "A8<TEpyPweWMO1m(");
             _ = x.PostProcess(certInfo.Certificate).Result;
             Assert.IsTrue(true);
         }

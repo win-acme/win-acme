@@ -1,8 +1,38 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Configuration.Settings
 {
+    [JsonSerializable(typeof(Settings))]
+    internal partial class SettingsJson : JsonSerializerContext {}
+
+    /// <summary>
+    /// All settings
+    /// </summary>
+    public class Settings
+    {
+        public ClientSettings Client { get; set; } = new ClientSettings();
+        public UiSettings UI { get; set; } = new UiSettings();
+        public AcmeSettings Acme { get; set; } = new AcmeSettings();
+        public ExecutionSettings Execution { get; set; } = new ExecutionSettings();
+        public ProxySettings Proxy { get; set; } = new ProxySettings();
+        public CacheSettings Cache { get; set; } = new CacheSettings();
+        public ScheduledTaskSettings ScheduledTask { get; set; } = new ScheduledTaskSettings();
+        public NotificationSettings Notification { get; set; } = new NotificationSettings();
+        public SecuritySettings Security { get; set; } = new SecuritySettings();
+        public ScriptSettings Script { get; set; } = new ScriptSettings();
+        [Obsolete("Use Source instead")]
+        public SourceSettings Target { get; set; } = new SourceSettings();
+        public SourceSettings Source { get; set; } = new SourceSettings();
+        public ValidationSettings Validation { get; set; } = new ValidationSettings();
+        public OrderSettings Order { get; set; } = new OrderSettings();
+        public CsrSettings Csr { get; set; } = new CsrSettings();
+        public StoreSettings Store { get; set; } = new StoreSettings();
+        public InstallationSettings Installation { get; set; } = new InstallationSettings();
+        public SecretsSettings Secrets { get; set; } = new SecretsSettings();
+    }
+
     public class ClientSettings
     {
         public string ClientName { get; set; } = "win-acme";
@@ -322,7 +352,7 @@ namespace PKISharp.WACS.Configuration.Settings
         /// <summary>
         /// Default plugin to select in the Advanced menu
         /// in the menu.
-        [Obsolete]
+        [Obsolete("Use DefaultSource instead")]
         public string? DefaultTarget { get; set; }
         /// <summary>
         /// Default plugin to select in the Advanced menu
@@ -417,13 +447,13 @@ namespace PKISharp.WACS.Configuration.Settings
         /// </summary>
         public string? DefaultStore { get; set; }
 
-        [Obsolete]
+        [Obsolete("Use CertificateStore.DefaultStore instead")]
         public string? DefaultCertificateStore { get; set; }
-        [Obsolete]
+        [Obsolete("Use CentralSsl.DefaultStore instead")]
         public string? DefaultCentralSslStore { get; set; }
-        [Obsolete]
+        [Obsolete("Use CentralSsl.DefaultPassword instead")]
         public string? DefaultCentralSslPfxPassword { get; set; }
-        [Obsolete]
+        [Obsolete("Use PemFiles.DefaultPath instead")]
         public string? DefaultPemFilesPath { get; set; }
 
         /// <summary>

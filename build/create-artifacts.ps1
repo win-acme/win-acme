@@ -33,16 +33,16 @@ function PlatformRelease
 
 	Remove-Item $Temp\* -recurse
 	$PlatformShort = $Platform -Replace "win-", ""
-	$Postfix = "trimmed"
-	if ($ReleaseType -eq "ReleasePluggable") {
-		$Postfix = "pluggable"
+	$Postfix = "pluggable"
+	if ($ReleaseType -eq "ReleaseTrimmed") {
+		$Postfix = "trimmed"
 	}
 	$MainZip = "win-acme.v$Version.$PlatformShort.$Postfix.zip"
 	$MainZipPath = "$Out\$MainZip"
-	$MainBin = "$Root\src\main\bin\$ReleaseType\net6.0\$Platform"
+	$MainBin = "$Root\src\main\bin\$ReleaseType\net7.0\$Platform"
 	if (!(Test-Path $MainBin)) 
 	{
-		$MainBin = "$Root\src\main\bin\Any CPU\$ReleaseType\net6.0\$Platform"
+		$MainBin = "$Root\src\main\bin\Any CPU\$ReleaseType\net7.0\$Platform"
 	}
 	if (Test-Path $MainBin) 
 	{
@@ -71,10 +71,10 @@ function PluginRelease
 	Remove-Item $Temp\* -recurse
 	$PlugZip = "$Dir.v$Version.zip"
 	$PlugZipPath = "$Out\$PlugZip"
-	$PlugBin = "$Root\src\$Dir\bin\Release\net6.0\publish"
+	$PlugBin = "$Root\src\$Dir\bin\Release\net7.0\publish"
 	if (!(Test-Path $PlugBin)) 
 	{
-		$PlugBin = "$Root\src\$Dir\bin\Any CPU\Release\net6.0\publish"
+		$PlugBin = "$Root\src\$Dir\bin\Any CPU\Release\net7.0\publish"
 	}
 	if (Test-Path $PlugBin) 
 	{
@@ -98,9 +98,10 @@ NugetRelease
 PlatformRelease "Release" win-x64
 PlatformRelease "Release" win-x86
 PlatformRelease "Release" win-arm64
-PlatformRelease "ReleasePluggable" win-x64
-PlatformRelease "ReleasePluggable" win-x86
-PlatformRelease "ReleasePluggable" win-arm64
+PlatformRelease "ReleaseTrimmed" win-x64
+PlatformRelease "ReleaseTrimmed" win-x86
+PlatformRelease "ReleaseTrimmed" win-arm64
+
 PluginRelease plugin.validation.dns.dreamhost @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost.dll"
 )

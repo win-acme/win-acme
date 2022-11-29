@@ -20,13 +20,13 @@ clone_script:
 before_build:
   - cmd: dotnet --version
 build_script:
-  - cmd: dotnet pack ./src/main/wacs.csproj -c "ReleasePluggable"
-  - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-x64 --self-contained /p:PublishSingleFile=true /p:PublishTrimmed=true /p:IncludeNativeLibrariesForSelfExtract=true /p:BuiltInComInteropSupport=true
-  - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-x86 --self-contained /p:PublishSingleFile=true /p:PublishTrimmed=true /p:IncludeNativeLibrariesForSelfExtract=true /p:BuiltInComInteropSupport=true
-  - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-arm64 --self-contained /p:PublishSingleFile=true /p:PublishTrimmed=true /p:IncludeNativeLibrariesForSelfExtract=true /p:BuiltInComInteropSupport=true
-  - cmd: dotnet publish ./src/main/wacs.csproj -c "ReleasePluggable" -r win-x64 --self-contained /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true
-  - cmd: dotnet publish ./src/main/wacs.csproj -c "ReleasePluggable" -r win-x86 --self-contained /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true
-  - cmd: dotnet publish ./src/main/wacs.csproj -c "ReleasePluggable" -r win-arm64 --self-contained /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true
+  - cmd: dotnet pack ./src/main/wacs.csproj -c "Release" /p:PublishSingleFile=false /p:PublishReadyToRun=false
+  - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-x64 --self-contained
+  - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-x86 --self-contained
+  - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-arm64 --self-contained
+  - cmd: dotnet publish ./src/main/wacs.csproj -c "ReleaseTrimmed" -r win-x64 --self-contained
+  - cmd: dotnet publish ./src/main/wacs.csproj -c "ReleaseTrimmed" -r win-x86 --self-contained
+  - cmd: dotnet publish ./src/main/wacs.csproj -c "ReleaseTrimmed" -r win-arm64 --self-contained
   - cmd: dotnet publish ./src/plugin.store.keyvault/wacs.store.keyvault.csproj -c Release
   - cmd: dotnet publish ./src/plugin.validation.dns.azure/wacs.validation.dns.azure.csproj -c Release
   - cmd: dotnet publish ./src/plugin.validation.dns.cloudflare/wacs.validation.dns.cloudflare.csproj -c Release
@@ -55,4 +55,4 @@ after_build:
     Get-ChildItem $env:APPVEYOR_BUILD_FOLDER\build\artifacts\ | Foreach-Object {
         Push-AppveyorArtifact $_.FullName -FileName $_.Name
     }
-deploy: off
+deploy: "off"

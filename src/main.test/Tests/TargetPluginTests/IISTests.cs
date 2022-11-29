@@ -9,7 +9,7 @@ using PKISharp.WACS.Services;
 using PKISharp.WACS.UnitTests.Mock.Services;
 using System.Linq;
 using System.Text.RegularExpressions;
-using mock = PKISharp.WACS.UnitTests.Mock.Services;
+using Mock = PKISharp.WACS.UnitTests.Mock.Services;
 
 namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
 {
@@ -37,7 +37,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         private IISOptions? Options(string commandLine)
         {
             var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
-            var input = new mock.InputService(new());
+            var input = new Mock.Services.InputService(new());
             var secretService = new SecretServiceManager(new SecretService(), input, log);
             var argsInput = new ArgumentsInputService(log, optionsParser, input, secretService);
             var args = new MainArguments();

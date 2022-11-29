@@ -1,10 +1,12 @@
 ﻿using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using System.Diagnostics.CodeAnalysis;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    internal abstract class HttpValidationOptions<T> : ValidationPluginOptions<T> where T : IValidationPlugin
+    internal abstract class HttpValidationOptions<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T> : 
+        ValidationPluginOptions<T> where T : IValidationPlugin
     {
         public string? Path { get; set; }
         public bool? CopyWebConfig { get; set; }

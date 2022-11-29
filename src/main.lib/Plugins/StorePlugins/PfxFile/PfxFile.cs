@@ -7,7 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
-using bc = Org.BouncyCastle;
+using Bc = Org.BouncyCastle;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
@@ -65,8 +65,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 };
                 collection.AddRange(input.Chain.ToArray());
                 var ms = new MemoryStream(collection.Export(X509ContentType.Pfx)!);
-                var bcPfxIn = new bc.Pkcs.Pkcs12Store(ms, Array.Empty<char>());
-                var bcPfxOut = new bc.Pkcs.Pkcs12Store();
+                var bcPfxIn = new Bc.Pkcs.Pkcs12Store(ms, Array.Empty<char>());
+                var bcPfxOut = new Bc.Pkcs.Pkcs12Store();
                 var aliases = bcPfxIn.Aliases.OfType<string>().ToList();
                 var keyAlias = aliases.FirstOrDefault(a => bcPfxIn.IsKeyEntry(a));
                 if (keyAlias != null)
@@ -84,7 +84,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     }
                 }
                 using var fs = new FileInfo(dest).OpenWrite();
-                bcPfxOut.Save(fs, _password?.ToCharArray(), new bc.Security.SecureRandom());
+                bcPfxOut.Save(fs, _password?.ToCharArray(), new Bc.Security.SecureRandom());
             }
             catch (Exception ex)
             {

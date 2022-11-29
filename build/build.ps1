@@ -13,21 +13,21 @@ $BuildFolder = Join-Path -Path $RepoRoot "build"
 & dotnet restore $RepoRoot\src\main\wacs.csproj
 
 # Clean solution
-& dotnet clean $RepoRoot\src\main\wacs.csproj -c "Release" -r win-x64 --self-contained
-& dotnet clean $RepoRoot\src\main\wacs.csproj -c "Release" -r win-x86 --self-contained
-& dotnet clean $RepoRoot\src\main\wacs.csproj -c "Release" -r win-arm64 --self-contained
-& dotnet clean $RepoRoot\src\main\wacs.csproj -c "ReleasePluggable" -r win-x64 --self-contained
-& dotnet clean $RepoRoot\src\main\wacs.csproj -c "ReleasePluggable" -r win-x86 --self-contained 
-& dotnet clean $RepoRoot\src\main\wacs.csproj -c "ReleasePluggable" -r win-arm64 --self-contained 
+& dotnet clean $RepoRoot\src\main\wacs.csproj -c "Release" -r win-x64 /p:SelfContained=true
+& dotnet clean $RepoRoot\src\main\wacs.csproj -c "Release" -r win-x86 /p:SelfContained=true
+& dotnet clean $RepoRoot\src\main\wacs.csproj -c "Release" -r win-arm64 /p:SelfContained=true
+& dotnet clean $RepoRoot\src\main\wacs.csproj -c "ReleaseTrimmed" -r win-x64 --self-contained
+& dotnet clean $RepoRoot\src\main\wacs.csproj -c "ReleaseTrimmed" -r win-x86 --self-contained 
+& dotnet clean $RepoRoot\src\main\wacs.csproj -c "ReleaseTrimmed" -r win-arm64 --self-contained 
 
 # Build main
-& dotnet pack $RepoRoot\src\main\wacs.csproj -c "ReleasePluggable"
-& dotnet publish $RepoRoot\src\main\wacs.csproj -c "Release" -r win-x64 --self-contained /p:PublishSingleFile=true /p:PublishTrimmed=true /p:IncludeNativeLibrariesForSelfExtract=true /p:BuiltInComInteropSupport=true
-& dotnet publish $RepoRoot\src\main\wacs.csproj -c "Release" -r win-x86 --self-contained /p:PublishSingleFile=true /p:PublishTrimmed=true /p:IncludeNativeLibrariesForSelfExtract=true /p:BuiltInComInteropSupport=true
-& dotnet publish $RepoRoot\src\main\wacs.csproj -c "Release" -r win-arm64 --self-contained /p:PublishSingleFile=true /p:PublishTrimmed=true /p:IncludeNativeLibrariesForSelfExtract=true /p:BuiltInComInteropSupport=true
-& dotnet publish $RepoRoot\src\main\wacs.csproj -c "ReleasePluggable" -r win-x64 --self-contained /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true
-& dotnet publish $RepoRoot\src\main\wacs.csproj -c "ReleasePluggable" -r win-x86 --self-contained /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true
-& dotnet publish $RepoRoot\src\main\wacs.csproj -c "ReleasePluggable" -r win-arm64 --self-contained /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true
+& dotnet pack $RepoRoot\src\main\wacs.csproj -c "Release" /p:PublishSingleFile=false /p:PublishReadyToRun=false
+& dotnet publish $RepoRoot\src\main\wacs.csproj -c "Release" -r win-x64 --self-contained
+& dotnet publish $RepoRoot\src\main\wacs.csproj -c "Release" -r win-x86 --self-contained
+& dotnet publish $RepoRoot\src\main\wacs.csproj -c "Release" -r win-arm64 --self-contained
+& dotnet publish $RepoRoot\src\main\wacs.csproj -c "ReleaseTrimmed" -r win-x64 --self-contained
+& dotnet publish $RepoRoot\src\main\wacs.csproj -c "ReleaseTrimmed" -r win-x86 --self-contained
+& dotnet publish $RepoRoot\src\main\wacs.csproj -c "ReleaseTrimmed" -r win-arm64 --self-contained
 
 & dotnet publish $RepoRoot\src\plugin.store.keyvault\wacs.store.keyvault.csproj -c "Release"
 & dotnet publish $RepoRoot\src\plugin.validation.dns.azure\wacs.validation.dns.azure.csproj -c "Release"

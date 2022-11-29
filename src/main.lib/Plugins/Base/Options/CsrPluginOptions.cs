@@ -2,6 +2,7 @@
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace PKISharp.WACS.Plugins.Base.Options
 {
@@ -9,12 +10,14 @@ namespace PKISharp.WACS.Plugins.Base.Options
     {
         public override string Name => throw new NotImplementedException();
         public override string Description => throw new NotImplementedException();
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
         public override Type Instance => throw new NotImplementedException();
         public bool? OcspMustStaple { get; set; }
         public bool? ReusePrivateKey { get; set; }
     }
 
-    public abstract class CsrPluginOptions<TPlugin> : CsrPluginOptions where TPlugin : ICsrPlugin
+    public abstract class CsrPluginOptions<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TPlugin> : 
+        CsrPluginOptions where TPlugin : ICsrPlugin
     {
         public abstract override string Name { get; }
         public abstract override string Description { get; }
@@ -31,6 +34,7 @@ namespace PKISharp.WACS.Plugins.Base.Options
                 input.Show("ReusePrivateKey", "Yes");
             }
         }
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
         public override Type Instance => typeof(TPlugin);
     }
 }
