@@ -175,7 +175,7 @@ namespace PKISharp.WACS
                         @disabled: (none, "No renewals selected.")));
                 options.Add(
                     Choice.Create<Func<Task>>(() => Run(selectedRenewals, RunLevel.Interactive | RunLevel.Force | RunLevel.NoCache),
-                        $"Run {selectionLabel} (force, nocache)", "X",
+                        $"Run {selectionLabel} (force, no cache)", "X",
                         @disabled: (none, "No renewals selected.")));
                 options.Add(
                     Choice.Create<Func<Task>>(
