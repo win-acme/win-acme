@@ -1,16 +1,18 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using PKISharp.WACS.Plugins.Base.Options;
+﻿using PKISharp.WACS.Plugins.Base.Options;
+using PKISharp.WACS.Plugins.Interfaces;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Services.Serialization
 {
     /// <summary>
     /// Convert StorePluginOptions in legacy JSON to List<StorePluginOptions> for 2.0.7+
     /// </summary>
-    internal class StorePluginOptionsConverter : JsonConverter
+    internal class StorePluginOptionsConverter : JsonConverter<List<StorePluginOptions>>
     {
         private readonly JsonConverter _childConverter;
 
@@ -18,20 +20,18 @@ namespace PKISharp.WACS.Services.Serialization
 
         public override bool CanConvert(Type objectType) => objectType == typeof(List<StorePluginOptions>);
 
-        public override object ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
+        public override List<StorePluginOptions>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            if (reader.TokenType == JsonToken.StartArray)
+            var childOptions = new JsonSerializerOptions();
+            childOptions.Converters.Add(_childConverter);
+            if (reader.TokenType == JsonTokenType.StartArray)
             {
-                var data = JArray.Load(reader);
-                return data.
-                    Children().
-                    Select(x => Read(x.CreateReader(), serializer)).
-                    ToList();
+                return JsonSerializer.Deserialize<List<StorePluginOptions>>(ref reader, childOptions);
             }
             else
             {
                 var list = new List<StorePluginOptions>();
-                var option = Read(reader, serializer);
+                var option = JsonSerializer.Deserialize<StorePluginOptions>(ref reader, childOptions);
                 if (option != null)
                 {
                     list.Add(option);
@@ -40,8 +40,7 @@ namespace PKISharp.WACS.Services.Serialization
             }
         }
 
-        private StorePluginOptions? Read(JsonReader reader, JsonSerializer serializer) => (StorePluginOptions?)_childConverter.ReadJson(reader, typeof(StorePluginOptions), null, serializer);
-
-        public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer) => throw new NotImplementedException();
+        public override void Write(Utf8JsonWriter writer, List<StorePluginOptions> value, JsonSerializerOptions options) => 
+            throw new NotImplementedException();
     }
 }

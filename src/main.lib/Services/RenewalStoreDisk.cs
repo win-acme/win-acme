@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services.Serialization;
@@ -8,6 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Services
 {
@@ -53,48 +53,40 @@ namespace PKISharp.WACS.Services
                 {
                     try
                     {
-
                         var storeConverter = new PluginOptionsConverter<StorePluginOptions>(_plugin.PluginOptionTypes<StorePluginOptions>(), _log);
                         var text = File.ReadAllText(rj.FullName);
-                        var result = JsonConvert.DeserializeObject<Renewal>(
-                            text,
-                            new JsonSerializerSettings() {
-                                ObjectCreationHandling = ObjectCreationHandling.Replace,
-                                Converters = {
-                                    new ProtectedStringConverter(_log, _settings),
-                                    new StorePluginOptionsConverter(storeConverter),
-                                    new PluginOptionsConverter<TargetPluginOptions>(_plugin.PluginOptionTypes<TargetPluginOptions>(), _log),
-                                    new PluginOptionsConverter<CsrPluginOptions>(_plugin.PluginOptionTypes<CsrPluginOptions>(), _log),
-                                    new PluginOptionsConverter<OrderPluginOptions>(_plugin.PluginOptionTypes<OrderPluginOptions>(), _log),
-                                    storeConverter,
-                                    new PluginOptionsConverter<ValidationPluginOptions>(_plugin.PluginOptionTypes<ValidationPluginOptions>(), _log),
-                                    new PluginOptionsConverter<InstallationPluginOptions>(_plugin.PluginOptionTypes<InstallationPluginOptions>(), _log)
-                                }
-                            });
+                        var options = new JsonSerializerOptions();
+                        options.Converters.Add(new ProtectedStringConverter2(_log, _settings)); 
+                        options.Converters.Add(new StorePluginOptionsConverter(storeConverter));
+                        options.Converters.Add(new PluginOptionsConverter<TargetPluginOptions>(_plugin.PluginOptionTypes<TargetPluginOptions>(), _log));
+                        options.Converters.Add(new PluginOptionsConverter<CsrPluginOptions>(_plugin.PluginOptionTypes<CsrPluginOptions>(), _log));
+                        options.Converters.Add(new PluginOptionsConverter<OrderPluginOptions>(_plugin.PluginOptionTypes<OrderPluginOptions>(), _log));
+                        options.Converters.Add(new PluginOptionsConverter<ValidationPluginOptions>(_plugin.PluginOptionTypes<ValidationPluginOptions>(), _log));
+                        options.Converters.Add(new PluginOptionsConverter<InstallationPluginOptions>(_plugin.PluginOptionTypes<InstallationPluginOptions>(), _log));
+                        var result = JsonSerializer.Deserialize<Renewal>(text, options);
                         if (result == null)
                         {
                             throw new Exception("result is empty");
-                        }
-                        dynamic neutralResult = JObject.Parse(text);
-                        if (neutralResult == null)
-                        {
-                            throw new Exception("neutralResult is empty");
                         }
                         if (result.Id != rj.Name.Replace(postFix, ""))
                         {
                             throw new Exception($"mismatch between filename and id {result.Id}");
                         }
-                        if (result.TargetPluginOptions == null || result.TargetPluginOptions.GetType() == typeof(TargetPluginOptions))
+                        if (result.TargetPluginOptions == null)
                         {
                             throw new Exception("missing TargetPluginOptions");
                         }
-                        if (result.ValidationPluginOptions == null || result.ValidationPluginOptions.GetType() == typeof(ValidationPluginOptions))
+                        if (result.TargetPluginOptions.GetType() == typeof(TargetPluginOptions))
                         {
-                            if (neutralResult.ValidationPluginOptions != null)
-                            {
-                                 throw new Exception($"missing ValidationPlugin with {{{neutralResult.ValidationPluginOptions.Plugin}}}");
-                            }
+                            throw new Exception($"missing source plugin {result.TargetPluginOptions.Plugin}");
+                        }
+                        if (result.ValidationPluginOptions == null)
+                        {
                             throw new Exception("missing ValidationPluginOptions");
+                        }
+                        if (result.ValidationPluginOptions.GetType() == typeof(ValidationPluginOptions))
+                        {
+                            throw new Exception($"missing validation plugin {result.ValidationPluginOptions.Plugin}");
                         }
                         if (result.StorePluginOptions == null)
                         {
@@ -153,12 +145,11 @@ namespace PKISharp.WACS.Services
                     {
                         try
                         {
-                            var renewalContent = JsonConvert.SerializeObject(renewal, new JsonSerializerSettings
-                            {
-                                NullValueHandling = NullValueHandling.Ignore,
-                                Formatting = Formatting.Indented,
-                                Converters = { new ProtectedStringConverter(_log, _settings) }
-                            });
+                            var options = new JsonSerializerOptions();
+                            options.WriteIndented = true;
+                            options.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+                            options.Converters.Add(new ProtectedStringConverter2(_log, _settings));
+                            var renewalContent = JsonSerializer.Serialize(renewal, options);
                             if (string.IsNullOrWhiteSpace(renewalContent))
                             {
                                 throw new Exception("Serialization yielded empty result");

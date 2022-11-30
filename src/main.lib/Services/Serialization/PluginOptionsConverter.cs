@@ -1,9 +1,9 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using PKISharp.WACS.Extensions;
+﻿using PKISharp.WACS.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Services.Serialization
 {
@@ -47,9 +47,10 @@ namespace PKISharp.WACS.Services.Serialization
     /// the propery strongly typed object required by the plugin
     /// </summary>
     /// <typeparam name="TOptions"></typeparam>
-    internal class PluginOptionsConverter<TOptions> : JsonConverter where TOptions : PluginOptions
+    internal class PluginOptionsConverter<TOptions> : 
+        JsonConverter<TOptions> 
+        where TOptions : PluginOptions
     {
-
         /// <summary>
         /// Possible plugins to match with, indexed by GUID
         /// </summary>
@@ -84,38 +85,41 @@ namespace PKISharp.WACS.Services.Serialization
             }
         }
 
+        /// <summary>
+        /// Is conversion possible?
+        /// </summary>
+        /// <param name="objectType"></param>
+        /// <returns></returns>
         public override bool CanConvert(Type objectType) => typeof(TOptions) == objectType;
 
         /// <summary>
         /// Override reading to allow strongly typed object return, based on Plugin
         /// </summary>
         /// <param name="reader"></param>
-        /// <param name="objectType"></param>
-        /// <param name="existingValue"></param>
-        /// <param name="serializer"></param>
+        /// <param name="typeToConvert"></param>
+        /// <param name="options"></param>
         /// <returns></returns>
-        public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
+        public override TOptions? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            var data = JObject.Load(reader);
-            var key = data.Property("Plugin")?.Value.Value<string>();
+            var readerClone = reader;
+            var neutral = JsonSerializer.Deserialize(ref readerClone, typeof(TOptions)) as TOptions;
+            var key = neutral?.Plugin;
             if (key == null)
             {
                 return null;
             }
-            var plugin = _pluginsOptions.ContainsKey(key) ? _pluginsOptions[key] : null;
+            var plugin = _pluginsOptions.TryGetValue(key, out var value) ? value : null;
             if (plugin != null)
             {
-                return data.ToObject(plugin, serializer);
+                return JsonSerializer.Deserialize(ref reader, plugin, options) as TOptions;
             }
-            return null;
+            else
+            {
+                return JsonSerializer.Deserialize(ref reader, typeof(TOptions)) as TOptions;
+            }
         }
 
-        /// <summary>
-        /// Standard write
-        /// </summary>
-        /// <param name="writer"></param>
-        /// <param name="value"></param>
-        /// <param name="serializer"></param>
-        public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer) => serializer.Serialize(writer, value);
+        public override void Write(Utf8JsonWriter writer, TOptions value, JsonSerializerOptions options) => 
+            JsonSerializer.Serialize(writer, value, options);
     }
 }
