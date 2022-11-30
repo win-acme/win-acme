@@ -28,7 +28,6 @@
 		<Product>win-acme</Product>
 		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
 		<Description>This is a ACMEv2 client for Windows that aims to be very simple to start with, but powerful enough to grow into almost every scenario.</Description>
-
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -38,10 +37,19 @@
 	
 	<PropertyGroup Condition="'$(Configuration)'=='DebugTrimmed'OR'$(Configuration)'=='ReleaseTrimmed'">
 		<PublishTrimmed>true</PublishTrimmed>
-		<TrimmerDefaultAction>link</TrimmerDefaultAction>
-		<TrimMode>partial</TrimMode>
 	</PropertyGroup>
-
+	
+	<ItemGroup>
+		<TrimmerRootAssembly Include="Autofac" />
+		<TrimmerRootAssembly Include="FluentFTP" />
+		<TrimmerRootAssembly Include="Microsoft.Web.Administration" />
+		<TrimmerRootAssembly Include="Newtonsoft.Json" />
+		<TrimmerRootAssembly Include="Serilog.Settings.Configuration" />
+		<TrimmerRootAssembly Include="Serilog" />
+		<TrimmerRootAssembly Include="Renci.SshNet" />
+		<TrimmerRootAssembly Include="Microsoft.Win32.TaskScheduler" />
+	</ItemGroup>
+	
 	<PropertyGroup>
 		<Nullable>enable</Nullable>
 		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>

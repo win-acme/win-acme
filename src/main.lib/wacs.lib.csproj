@@ -15,20 +15,18 @@
 		<DefineConstants>DEBUG</DefineConstants>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)'=='Release'">
-		<DefineConstants>PLUGGABLE</DefineConstants>
+		<DefineConstants>RELEASE;PLUGGABLE</DefineConstants>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)'=='Release' OR '$(Configuration)'=='ReleaseTrimmed'">
+		<DefineConstants>RELEASE</DefineConstants>
 	</PropertyGroup>
 	
 	<PropertyGroup Condition="'$(Configuration)'=='DebugTrimmed' OR '$(Configuration)'=='ReleaseTrimmed'">
-		<IsTrimmable>true</IsTrimmable>
-		<TrimmerDefaultAction>link</TrimmerDefaultAction>
-		<PublishTrimmed>true</PublishTrimmed>
 		<EnableTrimAnalyzer>true</EnableTrimAnalyzer>
-		<TrimMode>partial</TrimMode>
 	</PropertyGroup>
 	
 	<PropertyGroup>
 		<Nullable>enable</Nullable>
-		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
 	</PropertyGroup>
 
 	<ItemGroup>
