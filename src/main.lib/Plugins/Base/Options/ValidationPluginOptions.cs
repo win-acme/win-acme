@@ -1,9 +1,9 @@
-﻿using Newtonsoft.Json;
-using PKISharp.WACS.Plugins.Interfaces;
+﻿using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.Base.Options
 {

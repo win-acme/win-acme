@@ -1,14 +1,15 @@
 ﻿using Autofac;
-using Newtonsoft.Json;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.TargetPlugins;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -19,17 +20,19 @@ namespace PKISharp.WACS.Services
         private readonly IInputService _input;
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
+        private readonly IPluginService _plugin;
         private List<GlobalValidationPluginOptions>? _options;
 
         /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="input"></param>
-        public ValidationOptionsService(IInputService input, ILogService log, ISettingsService settings)
+        public ValidationOptionsService(IInputService input, ILogService log, ISettingsService settings, IPluginService plugin)
         {
             _input = input;
             _log = log;
             _settings = settings;
+            _plugin = plugin;
         }
 
         /// <summary>
@@ -50,6 +53,16 @@ namespace PKISharp.WACS.Services
         }
 
         /// <summary>
+        /// Re-save with new encryption setting applied
+        /// </summary>
+        /// <returns></returns>
+        public async Task Encrypt()
+        {
+            await Load();
+            await Save();
+        }
+
+        /// <summary>
         /// Save to disk
         /// </summary>
         /// <returns></returns>
@@ -63,7 +76,10 @@ namespace PKISharp.WACS.Services
                 }
                 return;
             }
-            var rawJson = JsonConvert.SerializeObject(_options, Formatting.Indented);
+            var options = new JsonSerializerOptions();
+            options.WriteIndented = true;
+            options.Converters.Add(new ProtectedStringConverter2(_log, _settings));
+            var rawJson = JsonSerializer.Serialize(_options, options);
             await File.WriteAllTextAsync(Store.FullName, rawJson);
         }
 
@@ -78,7 +94,10 @@ namespace PKISharp.WACS.Services
                 try
                 {
                     var rawJson = await File.ReadAllTextAsync(Store.FullName);
-                    _options = JsonConvert.DeserializeObject<List<GlobalValidationPluginOptions>>(rawJson);
+                    var options = new JsonSerializerOptions();
+                    options.Converters.Add(new ProtectedStringConverter2(_log, _settings));
+                    options.Converters.Add(new PluginOptionsConverter<ValidationPluginOptions>(_plugin.PluginOptionTypes<ValidationPluginOptions>(), _log));
+                    _options = JsonSerializer.Deserialize<List<GlobalValidationPluginOptions>>(rawJson);
                     if (_options == null)
                     {
                         throw new Exception();

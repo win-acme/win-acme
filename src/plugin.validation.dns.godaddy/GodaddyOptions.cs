@@ -1,7 +1,7 @@
-﻿using Newtonsoft.Json;
-using PKISharp.WACS.Plugins.Base;
+﻿using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services.Serialization;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
@@ -11,7 +11,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public override string Name => "Godaddy";
         public override string Description => "Create verification records in Godaddy DNS";
         public override string ChallengeType => Constants.Dns01ChallengeType;
-        [JsonProperty(propertyName: "SecretSafe")]
+        [JsonPropertyName("SecretSafe")]
         public ProtectedString? ApiKey { get; set; }
         public ProtectedString? ApiSecret { get; set; }
     }

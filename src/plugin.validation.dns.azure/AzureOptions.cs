@@ -1,8 +1,8 @@
-﻿using Newtonsoft.Json;
-using PKISharp.WACS.Plugins.Azure.Common;
+﻿using PKISharp.WACS.Plugins.Azure.Common;
 using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services.Serialization;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
@@ -18,7 +18,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public string? ClientId { get; set; }
         public string? ResourceGroupName { get; set; }
 
-        [JsonProperty(propertyName: "SecretSafe")]
+        [JsonPropertyName("SecretSafe")]
         public ProtectedString? Secret { get; set; }
 
         public string? SubscriptionId { get; set; }

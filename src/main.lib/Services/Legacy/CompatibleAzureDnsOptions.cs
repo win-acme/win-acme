@@ -1,8 +1,8 @@
-﻿using Newtonsoft.Json;
-using PKISharp.WACS.Plugins.Base;
+﻿using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services.Serialization;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Services.Legacy
 {
@@ -16,7 +16,7 @@ namespace PKISharp.WACS.Services.Legacy
         public string? ClientId { get; set; }
         public string? ResourceGroupName { get; set; }
 
-        [JsonProperty(propertyName: "SecretSafe")]
+        [JsonPropertyName("SecretSafe")]
         public ProtectedString? Secret { get; set; }
 
         public string? SubscriptionId { get; set; }

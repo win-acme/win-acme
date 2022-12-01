@@ -159,7 +159,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// <summary>
         /// Encrypt/decrypt signer information
         /// </summary>
-        internal void EncryptSigner()
+        internal void Encrypt()
         {
             try
             {

@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using PKISharp.WACS.Plugins.Base;
+﻿using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services.Serialization;
 

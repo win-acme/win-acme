@@ -6,6 +6,7 @@ namespace PKISharp.WACS.Services
 {
     public interface IValidationOptionsService
     {
+        Task Encrypt();
         Task<ValidationPluginOptions?> GetValidationOptions(Identifier identifier);
     }
 }

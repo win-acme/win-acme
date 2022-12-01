@@ -407,13 +407,16 @@ namespace PKISharp.WACS.Host
                 _renewalStore.Encrypt(); //re-saves all renewals, forcing re-write of all protected strings decorated with [jsonConverter(typeOf(protectedStringConverter())]
 
                 var accountManager = _container.Resolve<AccountManager>();
-                accountManager.EncryptSigner(); //re-writes the signer file
+                accountManager.Encrypt(); //re-writes the signer file
 
                 var cacheService = _container.Resolve<ICacheService>();
                 cacheService.Encrypt(); //re-saves all cached private keys
 
                 var secretService = _container.Resolve<SecretServiceManager>();
                 secretService.Encrypt(); //re-writes the secrets file
+
+                var validationOptionsService = _container.Resolve<IValidationOptionsService>();
+                await validationOptionsService.Encrypt(); //re-saves all global validation options
 
                 _log.Information("Your files are re-saved with encryption turned {onoff}", encryptConfig ? "on" : "off");
             }
