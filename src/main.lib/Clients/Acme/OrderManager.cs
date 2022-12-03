@@ -1,5 +1,4 @@
 ﻿using ACMESharp.Protocol;
-using Newtonsoft.Json;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
@@ -8,6 +7,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Clients.Acme
@@ -53,7 +53,7 @@ namespace PKISharp.WACS.Clients.Acme
                 cacheKeyBuilder.Append(Convert.ToBase64String(order.Target.UserCsrBytes)) :
                 cacheKeyBuilder.Append('-');
             _ = order.Renewal.CsrPluginOptions != null ?
-                cacheKeyBuilder.Append(JsonConvert.SerializeObject(order.Renewal.CsrPluginOptions)) :
+                cacheKeyBuilder.Append(JsonSerializer.Serialize(order.Renewal.CsrPluginOptions)) :
                 cacheKeyBuilder.Append('-');
             cacheKeyBuilder.Append(order.KeyPath);
             return cacheKeyBuilder.ToString().SHA1();
@@ -212,7 +212,8 @@ namespace PKISharp.WACS.Clients.Acme
             try
             {
                 var content = File.ReadAllText(fi.FullName);
-                var order = JsonConvert.DeserializeObject<OrderDetails>(content);
+                var order = JsonSerializer.Deserialize<OrderDetails>(content,
+                    new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
                 return order;
             } 
             catch (Exception ex)
@@ -268,7 +269,7 @@ namespace PKISharp.WACS.Clients.Acme
                 {
                     _orderPath.Create();
                 }
-                var content = JsonConvert.SerializeObject(order);
+                var content = JsonSerializer.Serialize(order);
                 var path = Path.Combine(_orderPath.FullName, $"{cacheKey}.{_orderFileExtension}");
                 await File.WriteAllTextAsync(path, content);
             }

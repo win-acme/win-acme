@@ -43,7 +43,6 @@
 		<TrimmerRootAssembly Include="Autofac" />
 		<TrimmerRootAssembly Include="FluentFTP" />
 		<TrimmerRootAssembly Include="Microsoft.Web.Administration" />
-		<TrimmerRootAssembly Include="Newtonsoft.Json" />
 		<TrimmerRootAssembly Include="Serilog.Settings.Configuration" />
 		<TrimmerRootAssembly Include="Serilog" />
 		<TrimmerRootAssembly Include="Renci.SshNet" />

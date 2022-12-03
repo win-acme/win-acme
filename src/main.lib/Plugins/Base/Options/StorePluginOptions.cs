@@ -3,6 +3,7 @@ using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.Base.Options
 {
@@ -10,6 +11,7 @@ namespace PKISharp.WACS.Plugins.Base.Options
     {
         public override string Name => throw new NotImplementedException();
         public override string Description => throw new NotImplementedException();
+        [JsonIgnore]
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
         public override Type Instance => throw new NotImplementedException();
         public bool? KeepExisting { get; set; }

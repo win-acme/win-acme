@@ -1,9 +1,10 @@
-﻿using Newtonsoft.Json;
-using PKISharp.WACS.Services.Serialization;
+﻿using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Services
 {
@@ -41,13 +42,10 @@ namespace PKISharp.WACS.Services
             _secrets = new List<CredentialEntry>();
             if (_file.Exists)
             {
-                var parsed = JsonConvert.DeserializeObject<List<CredentialEntry>>(
-                File.ReadAllText(_file.FullName),
-                    new JsonSerializerSettings()
-                    {
-                        ObjectCreationHandling = ObjectCreationHandling.Replace,
-                        Converters = { new ProtectedStringConverter(_log, _settings) }
-                    });
+                var options = new JsonSerializerOptions();
+                options.PropertyNameCaseInsensitive = true;
+                options.Converters.Add(new ProtectedStringConverter(_log, _settings));
+                var parsed = JsonSerializer.Deserialize<List<CredentialEntry>>(File.ReadAllText(_file.FullName), options);
                 if (parsed == null)
                 {
                     _log.Error("Unable to parse {filename}", _file.Name);
@@ -106,12 +104,11 @@ namespace PKISharp.WACS.Services
         /// </summary>
         public void Save()
         {
-            var newData = JsonConvert.SerializeObject(_secrets, new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore,
-                Formatting = Formatting.Indented,
-                Converters = { new ProtectedStringConverter(_log, _settings) }
-            });
+            var options = new JsonSerializerOptions();
+            options.Converters.Add(new ProtectedStringConverter(_log, _settings));
+            options.WriteIndented = true;
+            options.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+            var newData = JsonSerializer.Serialize(_secrets, options);
             if (newData != null)
             {
                 if (_file.Exists)

@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using PKISharp.WACS.Plugins.Base;
+﻿using PKISharp.WACS.Plugins.Base;
 using System.Collections.Generic;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins

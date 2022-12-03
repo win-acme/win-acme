@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services.Serialization;
 using System;
@@ -8,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Services
@@ -270,7 +270,7 @@ namespace PKISharp.WACS.Services
                 cacheKeyBuilder.Append(Convert.ToBase64String(order.Target.UserCsrBytes)) :
                 cacheKeyBuilder.Append('-');
             _ = order.Renewal.CsrPluginOptions != null ?
-                cacheKeyBuilder.Append(JsonConvert.SerializeObject(order.Renewal.CsrPluginOptions)) :
+                cacheKeyBuilder.Append(JsonSerializer.Serialize(order.Renewal.CsrPluginOptions)) :
                 cacheKeyBuilder.Append('-');
             if (version > 3)
             {

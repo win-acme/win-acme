@@ -78,7 +78,7 @@ namespace PKISharp.WACS.Services
             }
             var options = new JsonSerializerOptions();
             options.WriteIndented = true;
-            options.Converters.Add(new ProtectedStringConverter2(_log, _settings));
+            options.Converters.Add(new ProtectedStringConverter(_log, _settings));
             var rawJson = JsonSerializer.Serialize(_options, options);
             await File.WriteAllTextAsync(Store.FullName, rawJson);
         }
@@ -95,9 +95,10 @@ namespace PKISharp.WACS.Services
                 {
                     var rawJson = await File.ReadAllTextAsync(Store.FullName);
                     var options = new JsonSerializerOptions();
-                    options.Converters.Add(new ProtectedStringConverter2(_log, _settings));
+                    options.PropertyNameCaseInsensitive = true;
+                    options.Converters.Add(new ProtectedStringConverter(_log, _settings));
                     options.Converters.Add(new PluginOptionsConverter<ValidationPluginOptions>(_plugin.PluginOptionTypes<ValidationPluginOptions>(), _log));
-                    _options = JsonSerializer.Deserialize<List<GlobalValidationPluginOptions>>(rawJson);
+                    _options = JsonSerializer.Deserialize<List<GlobalValidationPluginOptions>>(rawJson, options);
                     if (_options == null)
                     {
                         throw new Exception();

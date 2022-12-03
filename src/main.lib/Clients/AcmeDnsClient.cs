@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using PKISharp.WACS.Clients.DNS;
+﻿using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
 using System;
@@ -8,6 +7,8 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Clients
@@ -81,7 +82,7 @@ namespace PKISharp.WACS.Clients
                         }
                         if (await VerifyRegistration(domain, newReg.Fulldomain, interactive))
                         {
-                            await File.WriteAllTextAsync(FileForDomain(domain), JsonConvert.SerializeObject(newReg));
+                            await File.WriteAllTextAsync(FileForDomain(domain), JsonSerializer.Serialize(newReg));
                             return true;
                         }
                     }
@@ -184,7 +185,7 @@ namespace PKISharp.WACS.Clients
             try
             {
                 var text = File.ReadAllText(file);
-                return JsonConvert.DeserializeObject<RegisterResponse>(text);
+                return JsonSerializer.Deserialize<RegisterResponse>(text);
             }
             catch
             {
@@ -199,7 +200,7 @@ namespace PKISharp.WACS.Clients
             try
             {
                 var response = await client.PostAsync($"register", new StringContent(""));
-                return JsonConvert.DeserializeObject<RegisterResponse>(await response.Content.ReadAsStringAsync());
+                return JsonSerializer.Deserialize<RegisterResponse>(await response.Content.ReadAsStringAsync());
             }
             catch (Exception ex)
             {
@@ -239,7 +240,7 @@ namespace PKISharp.WACS.Clients
                 await client.PostAsync(
                     $"update", 
                     new StringContent(
-                        JsonConvert.SerializeObject(request), 
+                        JsonSerializer.Serialize(request), 
                         Encoding.UTF8, 
                         "application/json"));
                 return true;
@@ -271,21 +272,21 @@ namespace PKISharp.WACS.Clients
 
         public class UpdateRequest
         {
-            [JsonProperty(PropertyName = "subdomain")]
+            [JsonPropertyName("subdomain")]
             public string Subdomain { get; set; } = "";
-            [JsonProperty(PropertyName = "txt")]
+            [JsonPropertyName("txt")]
             public string Token { get; set; } = "";
         }
 
         public class RegisterResponse
         {
-            [JsonProperty(PropertyName = "username")]
+            [JsonPropertyName("username")]
             public string UserName { get; set; } = "";
-            [JsonProperty(PropertyName = "password")]
+            [JsonPropertyName("password")]
             public string Password { get; set; } = "";
-            [JsonProperty(PropertyName = "fulldomain")]
+            [JsonPropertyName("fulldomain")]
             public string Fulldomain { get; set; } = "";
-            [JsonProperty(PropertyName = "subdomain")]
+            [JsonPropertyName("subdomain")]
             public string Subdomain { get; set; } = "";
         }
     }

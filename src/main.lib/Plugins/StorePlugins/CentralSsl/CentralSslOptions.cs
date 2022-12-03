@@ -1,8 +1,8 @@
-﻿using Newtonsoft.Json;
-using PKISharp.WACS.Plugins.Base;
+﻿using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
@@ -17,7 +17,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// <summary>
         /// PfxFile password
         /// </summary>
-        [JsonProperty(propertyName: "PfxPasswordProtected")]
+        [JsonPropertyName("PfxPasswordProtected")]
         public ProtectedString? PfxPassword { get; set; }
 
         internal const string PluginName = "CentralSsl";

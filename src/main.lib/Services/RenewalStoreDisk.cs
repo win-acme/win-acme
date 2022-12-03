@@ -56,7 +56,8 @@ namespace PKISharp.WACS.Services
                         var storeConverter = new PluginOptionsConverter<StorePluginOptions>(_plugin.PluginOptionTypes<StorePluginOptions>(), _log);
                         var text = File.ReadAllText(rj.FullName);
                         var options = new JsonSerializerOptions();
-                        options.Converters.Add(new ProtectedStringConverter2(_log, _settings)); 
+                        options.PropertyNameCaseInsensitive = true;
+                        options.Converters.Add(new ProtectedStringConverter(_log, _settings)); 
                         options.Converters.Add(new StorePluginOptionsConverter(storeConverter));
                         options.Converters.Add(new PluginOptionsConverter<TargetPluginOptions>(_plugin.PluginOptionTypes<TargetPluginOptions>(), _log));
                         options.Converters.Add(new PluginOptionsConverter<CsrPluginOptions>(_plugin.PluginOptionTypes<CsrPluginOptions>(), _log));
@@ -148,7 +149,7 @@ namespace PKISharp.WACS.Services
                             var options = new JsonSerializerOptions();
                             options.WriteIndented = true;
                             options.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-                            options.Converters.Add(new ProtectedStringConverter2(_log, _settings));
+                            options.Converters.Add(new ProtectedStringConverter(_log, _settings));
                             var renewalContent = JsonSerializer.Serialize(renewal, options);
                             if (string.IsNullOrWhiteSpace(renewalContent))
                             {

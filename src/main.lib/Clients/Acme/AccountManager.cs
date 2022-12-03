@@ -1,10 +1,10 @@
 ﻿using ACMESharp.Protocol;
-using Newtonsoft.Json;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System;
 using System.IO;
 using System.Security.Cryptography;
+using System.Text.Json;
 
 namespace PKISharp.WACS.Clients.Acme
 {
@@ -86,7 +86,8 @@ namespace PKISharp.WACS.Clients.Acme
                             var signerString = new ProtectedString(File.ReadAllText(SignerPath), _log);
                             if (signerString.Value != null)
                             {
-                                _currentSigner = JsonConvert.DeserializeObject<AccountSigner>(signerString.Value);
+                                _currentSigner = JsonSerializer.Deserialize<AccountSigner>(signerString.Value,
+                                    new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
                             }
                         }
                         catch (Exception ex)
@@ -106,7 +107,7 @@ namespace PKISharp.WACS.Clients.Acme
                 if (value != null)
                 {
                     _log.Debug("Saving signer to {SignerPath}", SignerPath);
-                    var x = new ProtectedString(JsonConvert.SerializeObject(value));
+                    var x = new ProtectedString(JsonSerializer.Serialize(value));
                     File.WriteAllText(SignerPath, x.DiskValue(_settings.Security.EncryptConfig));
                 } 
                 _currentSigner = value;
@@ -127,7 +128,8 @@ namespace PKISharp.WACS.Clients.Acme
                         if (CurrentSigner != null)
                         {
                             _log.Debug("Loading account from {accountPath}", AccountPath);
-                            _currentAccount = JsonConvert.DeserializeObject<AccountDetails>(File.ReadAllText(AccountPath));
+                            _currentAccount = JsonSerializer.Deserialize<AccountDetails>(File.ReadAllText(AccountPath),
+                                new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
                             // Maybe we should update the account details 
                             // on every start of the program to figure out
                             // if it hasn't been suspended or cancelled?
@@ -150,7 +152,7 @@ namespace PKISharp.WACS.Clients.Acme
                 if (value != null)
                 {
                     _log.Debug("Saving account to {AccountPath}", AccountPath);
-                    File.WriteAllText(AccountPath, JsonConvert.SerializeObject(value));
+                    File.WriteAllText(AccountPath, JsonSerializer.Serialize(value));
                 }
                 _currentAccount = value;
             }

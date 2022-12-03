@@ -1,5 +1,4 @@
 ﻿using Autofac;
-using Newtonsoft.Json.Schema;
 using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Configuration.Arguments;

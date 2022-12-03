@@ -25,7 +25,6 @@ namespace PKISharp.WACS.Services.Serialization
         /// <param name="input"></param>
         public virtual void Show(IInputService input) { }
 
-        [JsonIgnore]
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
         public abstract Type Instance { get; }
 

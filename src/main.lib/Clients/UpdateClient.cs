@@ -1,6 +1,6 @@
-﻿using Newtonsoft.Json;
-using PKISharp.WACS.Services;
+﻿using PKISharp.WACS.Services;
 using System;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Clients
@@ -16,7 +16,7 @@ namespace PKISharp.WACS.Clients
             _proxy = proxy;
         }
 
-        public async Task CheckNewVersion(RunLevel runLevel)
+        public async Task CheckNewVersion()
         {
             try
             {
@@ -26,7 +26,7 @@ namespace PKISharp.WACS.Clients
                 {
                     throw new Exception("Empty result");
                 }
-                var data = JsonConvert.DeserializeObject<VersionCheckData>(json);
+                var data = JsonSerializer.Deserialize<VersionCheckData>(json, new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
                 if (data == null || data.Latest == null || data.Latest.Build == null)
                 {
                     throw new Exception("Invalid result");

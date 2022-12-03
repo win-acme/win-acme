@@ -1,10 +1,9 @@
 ﻿using ACMESharp;
 using ACMESharp.Authorizations;
 using ACMESharp.Protocol;
-using Protocol = ACMESharp.Protocol.Resources;
-using Newtonsoft.Json;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
 using System;
@@ -12,13 +11,14 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net.Mail;
-using System.Security.Authentication;
-using System.Threading;
-using System.Threading.Tasks;
-using PKISharp.WACS.DomainObjects;
 using System.Net;
 using System.Net.Http;
+using System.Net.Mail;
+using System.Security.Authentication;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+using Protocol = ACMESharp.Protocol.Resources;
 
 namespace PKISharp.WACS.Clients.Acme
 {
@@ -152,7 +152,8 @@ namespace PKISharp.WACS.Clients.Acme
             }
             try
             {
-                JsonConvert.DeserializeObject<Protocol.ServiceDirectory>(content);
+                JsonSerializer.Deserialize<Protocol.ServiceDirectory>(content,
+                    new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
             }
             catch (Exception ex)
             {
@@ -410,9 +411,7 @@ namespace PKISharp.WACS.Clients.Acme
             {
                 externalAccount = new ExternalAccountBinding(
                     eabAlg,
-                    JsonConvert.SerializeObject(
-                        signer.JwsTool().ExportJwk(),
-                        Formatting.None),
+                    JsonSerializer.Serialize(signer.JwsTool().ExportJwk()),
                     eabKid,
                     eabKey,
                     client.Directory?.NewAccount ?? "");

@@ -1,5 +1,6 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Services.Serialization
 {
@@ -18,13 +19,10 @@ namespace PKISharp.WACS.Services.Serialization
             _settings = settings;
         }
 
-        public override void WriteJson(JsonWriter writer, ProtectedString? value, JsonSerializer serializer) => writer.WriteValue(value?.DiskValue(_settings.Security.EncryptConfig));
-       
-        public override ProtectedString ReadJson(JsonReader reader, Type objectType, ProtectedString? existingValue, bool hasExistingValue, JsonSerializer serializer)
-        {
-            //allows a user to manually edit the renewal file and enter a password in clear text
-            var s = (string?)reader.Value;
-            return new ProtectedString(s ?? "", _log);
-        }
+        public override ProtectedString? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => 
+            new ProtectedString(reader.GetString() ?? "", _log);
+
+        public override void Write(Utf8JsonWriter writer, ProtectedString value, JsonSerializerOptions options) => 
+            writer.WriteStringValue(value?.DiskValue(_settings.Security.EncryptConfig));
     }
 }

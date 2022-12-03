@@ -1,8 +1,8 @@
-﻿using Newtonsoft.Json;
-using PKISharp.WACS.Extensions;
+﻿using PKISharp.WACS.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.DomainObjects
 {
@@ -43,7 +43,7 @@ namespace PKISharp.WACS.DomainObjects
         /// </summary>
         public bool? Success { get; set; }
 
-        [JsonProperty("OrderResults")]
+        [JsonPropertyName("OrderResults")]
         public List<OrderResult>? OrderResultsJson { get; set; }
 
         /// <summary>
@@ -73,7 +73,7 @@ namespace PKISharp.WACS.DomainObjects
             set => OrderResultsJson = value;
         }
 
-        [JsonProperty("Thumbprints")]
+        [JsonPropertyName("Thumbprints")]
         private List<string>? ThumbprintsJson { get; set; }
 
         [JsonIgnore]

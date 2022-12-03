@@ -11,6 +11,7 @@ namespace PKISharp.WACS.Plugins.Base.Options
     {
         public override string Name => throw new NotImplementedException();
         public override string Description => throw new NotImplementedException();
+        [JsonIgnore]
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
         public override Type Instance => throw new NotImplementedException();
         [JsonIgnore]

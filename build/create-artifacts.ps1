@@ -140,9 +140,11 @@ PluginRelease plugin.validation.dns.digitalocean @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.DigitalOcean.dll"
 )
 PluginRelease plugin.validation.dns.transip @(
+	"Newtonsoft.Json.dll",
 	"PKISharp.WACS.Plugins.ValidationPlugins.TransIp.dll"
 )
 PluginRelease plugin.validation.dns.godaddy @(
+	"Newtonsoft.Json.dll",
 	"PKISharp.WACS.Plugins.ValidationPlugins.Godaddy.dll"
 )
 PluginRelease plugin.validation.dns.googledns @(

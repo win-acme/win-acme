@@ -219,7 +219,7 @@ namespace PKISharp.WACS.Host
             if (_settings.Client.VersionCheck)
             {
                 var client = _container.Resolve<UpdateClient>();
-                await client.CheckNewVersion(RunLevel.Unattended);
+                await client.CheckNewVersion();
             }
             if (_args != null)
             {
@@ -338,7 +338,7 @@ namespace PKISharp.WACS.Host
                     () => Encrypt(RunLevel.Interactive), 
                     "Encrypt/decrypt configuration", "M"),
                 Choice.Create<Func<Task>>(
-                    () => _container.Resolve<UpdateClient>().CheckNewVersion(RunLevel.Interactive),
+                    () => _container.Resolve<UpdateClient>().CheckNewVersion(),
                     "Check for updates", "U"),
                 Choice.Create<Func<Task>>(
                     () => Task.CompletedTask, 
@@ -404,7 +404,7 @@ namespace PKISharp.WACS.Host
             }
             if (userApproved)
             {
-                _renewalStore.Encrypt(); //re-saves all renewals, forcing re-write of all protected strings decorated with [jsonConverter(typeOf(protectedStringConverter())]
+                _renewalStore.Encrypt(); //re-saves all renewals, forcing re-write of all protected strings 
 
                 var accountManager = _container.Resolve<AccountManager>();
                 accountManager.Encrypt(); //re-writes the signer file
