@@ -44,10 +44,13 @@
 		<TrimmerRootAssembly Include="Autofac" />
 		<TrimmerRootAssembly Include="FluentFTP" />
 		<TrimmerRootAssembly Include="Microsoft.Web.Administration" />
+		<TrimmerRootAssembly Include="Microsoft.Win32.TaskScheduler" />
 		<TrimmerRootAssembly Include="Serilog.Settings.Configuration" />
 		<TrimmerRootAssembly Include="Serilog" />
+		<TrimmerRootAssembly Include="System.Collections.Immutable" />
+		<TrimmerRootAssembly Include="System.Net.WebSockets" />
 		<TrimmerRootAssembly Include="Renci.SshNet" />
-		<TrimmerRootAssembly Include="Microsoft.Win32.TaskScheduler" />
+		<TrimmerRootAssembly Include="wacs.lib" />
 	</ItemGroup>
 	
 	<PropertyGroup>
@@ -60,11 +63,7 @@
 		<EmbeddedResource Remove="nupkg\**" />
 		<None Remove="nupkg\**" />
 	</ItemGroup>
-
-	<ItemGroup>
-		<TrimmerRootAssembly Include="System.Collections.Immutable" />
-		<TrimmerRootAssembly Include="System.Net.WebSockets" />
-	</ItemGroup>
+	
 
 	<ItemGroup>
 		<None Include="icon.ico" />
@@ -72,7 +71,6 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\main.lib\wacs.lib.csproj" />
-		<TrimmerRootAssembly Include="wacs.lib" />
 	</ItemGroup>
 
 	<ItemGroup>
