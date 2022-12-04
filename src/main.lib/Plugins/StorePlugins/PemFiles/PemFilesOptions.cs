@@ -23,6 +23,11 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public string? Path { get; set; }
 
         /// <summary>
+        /// Name to use
+        /// </summary>
+        public string? FileName { get; set; }
+
+        /// <summary>
         /// Show details to the user
         /// </summary>
         /// <param name="input"></param>

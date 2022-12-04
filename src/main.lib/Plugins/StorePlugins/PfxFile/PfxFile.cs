@@ -15,6 +15,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
     {
         private readonly ILogService _log;
         private readonly string _path;
+        private readonly string? _name;
         private readonly string? _password;
 
         public static string? DefaultPath(ISettingsService settings) => 
@@ -35,6 +36,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 options.PfxPassword.Value :
                 settings.Store.PfxFile?.DefaultPassword;
             _password = secretServiceManager.EvaluateSecret(passwordRaw);
+            _name = options.FileName;
 
             var path = !string.IsNullOrWhiteSpace(options.Path) ? 
                 options.Path :
@@ -55,7 +57,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         public async Task Save(CertificateInfo input)
         {
-            var dest = PathForIdentifier(input.CommonName.Value);
+            var dest = PathForIdentifier(_name ?? input.CommonName.Value);
             _log.Information("Copying certificate to the pfx folder {dest}", dest);
             try
             {

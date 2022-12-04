@@ -14,6 +14,11 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public string? Path { get; set; }
 
         /// <summary>
+        /// Name to use
+        /// </summary>
+        public string? FileName { get; set; }
+
+        /// <summary>
         /// PfxFile password
         /// </summary>
         public ProtectedString? PfxPassword { get; set; }
@@ -29,7 +34,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public override void Show(IInputService input)
         {
             base.Show(input);
-            input.Show("Path", string.IsNullOrEmpty(Path) ? "[Default from settings.json]" : Path, level: 2);
+            input.Show("Path", string.IsNullOrEmpty(Path) ? "[Default from settings.json]" : Path, level: 2); 
+            input.Show("Name", string.IsNullOrEmpty(PfxPassword?.Value) ? "[Default from settings.json]" : PfxPassword.DisplayValue, level: 2);
             input.Show("Password", string.IsNullOrEmpty(PfxPassword?.Value) ? "[Default from settings.json]" : PfxPassword.DisplayValue, level: 2);
         }
     }

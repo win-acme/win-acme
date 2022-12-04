@@ -34,26 +34,32 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             Validate(x => Task.FromResult(x.ValidPath(_log)), "invalid path").
             DefaultAsNull();
 
+        private ArgumentResult<string?> Name => _arguments.
+            GetString<PfxFileArguments>(args => args.PfxFileName);
+
         public override async Task<PfxFileOptions?> Aquire(IInputService input, RunLevel runLevel)
         {
             var path = await Path.Interactive(input, "File path").GetValue();
+            var name = await Name.GetValue();
             var password = await Password.Interactive(input).GetValue();
-            return Create(path, password);
+            return Create(path, name, password);
         }
 
         public override async Task<PfxFileOptions?> Default()
         {
             var path = await Path.GetValue();
+            var name = await Name.GetValue();
             var password = await Password.GetValue();
-            return Create(path, password);
+            return Create(path, name, password);
         }
 
-        private static PfxFileOptions Create(string? path, ProtectedString? password)
+        private static PfxFileOptions Create(string? path, string? name, ProtectedString? password)
         {
             return new PfxFileOptions
             {
                 PfxPassword = password,
-                Path = path
+                Path = path,
+                FileName = name
             };
         }
     }

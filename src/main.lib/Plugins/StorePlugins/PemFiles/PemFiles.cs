@@ -16,6 +16,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private readonly ILogService _log;
         private readonly PemService _pemService;
         private readonly string _path;
+        private readonly string? _name;
         private readonly string? _password;
 
         public PemFiles(
@@ -30,7 +31,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 options.PemPassword.Value :
                 settings.Store.PemFiles.DefaultPassword;
             _password = secretServiceManager.EvaluateSecret(passwordRaw);
-
+            _name = options.FileName;
             var path = options.Path;
             if (string.IsNullOrWhiteSpace(path))
             {
@@ -54,7 +55,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             try
             {
                 // Determine name
-                var name = input.CommonName.Value.Replace("*", "_");
+                var name = _name ?? input.CommonName.Value.Replace("*", "_");
 
                 // Base certificate
                 var certificateExport = input.Certificate.Export(X509ContentType.Cert);
