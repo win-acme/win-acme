@@ -31,7 +31,6 @@
 	</PropertyGroup>
 
 	<PropertyGroup>
-		<PublishReadyToRun>true</PublishReadyToRun>
 		<PublishSingleFile>true</PublishSingleFile>
 		<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
 	</PropertyGroup>
