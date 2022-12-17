@@ -1,4 +1,4 @@
-﻿namespace PKISharp.WACS.Plugins.ValidationPlugins.Dnsmadeeasy
+﻿namespace PKISharp.WACS.Plugins.ValidationPlugins.DnsMadeEasy
 {
     public enum RecordType
     {

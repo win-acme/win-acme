@@ -9,33 +9,33 @@ using System.Threading.Tasks;
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     /// <summary>
-    /// Dnsmadeeasy DNS validation
+    /// DnsMadeEasy DNS validation
     /// </summary>
-    internal class DnsmadeeasyOptionsFactory : ValidationPluginOptionsFactory<DnsmadeeasyDnsValidation, DnsmadeeasyOptions>
+    internal class DnsMadeEasyOptionsFactory : ValidationPluginOptionsFactory<DnsMadeEasyDnsValidation, DnsMadeEasyOptions>
     {
         private readonly ArgumentsInputService _arguments;
 
-        public DnsmadeeasyOptionsFactory(ArgumentsInputService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
+        public DnsMadeEasyOptionsFactory(ArgumentsInputService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
 
         private ArgumentResult<ProtectedString?> ApiKey => _arguments.
-            GetProtectedString<DnsmadeeasyArguments>(a => a.ApiKey).
+            GetProtectedString<DnsMadeEasyArguments>(a => a.ApiKey).
             Required();
 
         private ArgumentResult<ProtectedString?> ApiSecret => _arguments.
-            GetProtectedString<DnsmadeeasyArguments>(a => a.ApiSecret);
+            GetProtectedString<DnsMadeEasyArguments>(a => a.ApiSecret);
 
-        public override async Task<DnsmadeeasyOptions?> Aquire(Target target, IInputService input, RunLevel runLevel)
+        public override async Task<DnsMadeEasyOptions?> Aquire(Target target, IInputService input, RunLevel runLevel)
         {
-            return new DnsmadeeasyOptions()
+            return new DnsMadeEasyOptions()
             {
                 ApiKey = await ApiKey.Interactive(input).GetValue(),
                 ApiSecret = await ApiSecret.Interactive(input).GetValue(),
             };
         }
 
-        public override async Task<DnsmadeeasyOptions?> Default(Target target)
+        public override async Task<DnsMadeEasyOptions?> Default(Target target)
         {
-            return new DnsmadeeasyOptions()
+            return new DnsMadeEasyOptions()
             {
                 ApiKey = await ApiKey.GetValue(),
                 ApiSecret = await ApiSecret.GetValue(),

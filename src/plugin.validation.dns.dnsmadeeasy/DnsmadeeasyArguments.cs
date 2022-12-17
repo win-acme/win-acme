@@ -3,7 +3,7 @@ using PKISharp.WACS.Configuration.Arguments;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    public class DnsmadeeasyArguments : BaseArguments
+    public class DnsMadeEasyArguments : BaseArguments
     {
         public override string Name => "DnsMadeEasy";
         public override string Group => "Validation";

@@ -1,5 +1,5 @@
 ﻿using PKISharp.WACS.Clients.DNS;
-using PKISharp.WACS.Plugins.ValidationPlugins.Dnsmadeeasy;
+using PKISharp.WACS.Plugins.ValidationPlugins.DnsMadeEasy;
 using PKISharp.WACS.Services;
 using System;
 using System.Runtime.Versioning;
@@ -9,17 +9,17 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    internal class DnsmadeeasyDnsValidation : DnsValidation<DnsmadeeasyDnsValidation>
+    internal class DnsMadeEasyDnsValidation : DnsValidation<DnsMadeEasyDnsValidation>
     {
         private readonly DnsManagementClient _client;
         private readonly DomainParseService _domainParser;
 
-        public DnsmadeeasyDnsValidation(
+        public DnsMadeEasyDnsValidation(
             LookupClientProvider dnsClient,
             ILogService logService,
             ISettingsService settings,
             DomainParseService domainParser,
-            DnsmadeeasyOptions options,
+            DnsMadeEasyOptions options,
             SecretServiceManager ssm,
             IProxyService proxyService)
             : base(dnsClient, logService, settings)
@@ -56,7 +56,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             }
             catch (Exception ex)
             {
-                _log.Warning($"Unable to delete record from Dnsmadeeasy: {ex.Message}");
+                _log.Warning($"Unable to delete record from DnsMadeEasy: {ex.Message}");
             }
         }
     }
