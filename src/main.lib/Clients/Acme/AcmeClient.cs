@@ -16,12 +16,21 @@ using System.Net.Http;
 using System.Net.Mail;
 using System.Security.Authentication;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Protocol = ACMESharp.Protocol.Resources;
 
 namespace PKISharp.WACS.Clients.Acme
 {
+    [JsonSerializable(typeof(AccountSigner))]
+    [JsonSerializable(typeof(AccountDetails))]
+    [JsonSerializable(typeof(Protocol.ServiceDirectory))]
+    internal partial class AcmeClientJson : JsonSerializerContext
+    {
+        public static AcmeClientJson Insensitive { get; } = new AcmeClientJson(new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
+    }
+
     /// <summary>
     /// Main class that talks to the ACME server
     /// </summary>
@@ -152,8 +161,7 @@ namespace PKISharp.WACS.Clients.Acme
             }
             try
             {
-                JsonSerializer.Deserialize<Protocol.ServiceDirectory>(content,
-                    new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
+                JsonSerializer.Deserialize(content, AcmeClientJson.Insensitive.ServiceDirectory);
             }
             catch (Exception ex)
             {
@@ -411,7 +419,7 @@ namespace PKISharp.WACS.Clients.Acme
             {
                 externalAccount = new ExternalAccountBinding(
                     eabAlg,
-                    JsonSerializer.Serialize(signer.JwsTool().ExportJwk()),
+                    signer.JwsTool().ExportEab(),
                     eabKid,
                     eabKey,
                     client.Directory?.NewAccount ?? "");
