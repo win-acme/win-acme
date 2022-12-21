@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Services.Serialization
         }
 
         public override ProtectedString? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => 
-            new ProtectedString(reader.GetString() ?? "", _log);
+            new(reader.GetString() ?? "", _log);
 
         public override void Write(Utf8JsonWriter writer, ProtectedString value, JsonSerializerOptions options) => 
             writer.WriteStringValue(value?.DiskValue(_settings.Security.EncryptConfig));

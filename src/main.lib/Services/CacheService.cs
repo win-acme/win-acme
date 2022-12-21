@@ -270,7 +270,7 @@ namespace PKISharp.WACS.Services
                 cacheKeyBuilder.Append(Convert.ToBase64String(order.Target.UserCsrBytes)) :
                 cacheKeyBuilder.Append('-');
             _ = order.Renewal.CsrPluginOptions != null ?
-                cacheKeyBuilder.Append(JsonSerializer.Serialize(order.Renewal.CsrPluginOptions)) :
+                cacheKeyBuilder.Append(JsonSerializer.Serialize(order.Renewal.CsrPluginOptions, WacsJson.Default.CsrPluginOptions)) :
                 cacheKeyBuilder.Append('-');
             if (version > 3)
             {

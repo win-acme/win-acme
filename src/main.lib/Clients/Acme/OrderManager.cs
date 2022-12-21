@@ -3,6 +3,7 @@ using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.IO;
 using System.Linq;
@@ -53,7 +54,7 @@ namespace PKISharp.WACS.Clients.Acme
                 cacheKeyBuilder.Append(Convert.ToBase64String(order.Target.UserCsrBytes)) :
                 cacheKeyBuilder.Append('-');
             _ = order.Renewal.CsrPluginOptions != null ?
-                cacheKeyBuilder.Append(JsonSerializer.Serialize(order.Renewal.CsrPluginOptions)) :
+                cacheKeyBuilder.Append(JsonSerializer.Serialize(order.Renewal.CsrPluginOptions, WacsJson.Default.CsrPluginOptions)) :
                 cacheKeyBuilder.Append('-');
             cacheKeyBuilder.Append(order.KeyPath);
             return cacheKeyBuilder.ToString().SHA1();

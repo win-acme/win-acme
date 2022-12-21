@@ -1,9 +1,6 @@
 ﻿using PKISharp.WACS.Plugins.Base.Options;
-using PKISharp.WACS.Plugins.Interfaces;
-using Serilog;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -12,11 +9,11 @@ namespace PKISharp.WACS.Services.Serialization
     /// <summary>
     /// Convert StorePluginOptions in legacy JSON to List<StorePluginOptions> for 2.0.7+
     /// </summary>
-    internal class StorePluginOptionsConverter : JsonConverter<List<StorePluginOptions>>
+    internal class StoresPluginOptionsConverter : JsonConverter<List<StorePluginOptions>>
     {
         private readonly JsonConverter _childConverter;
 
-        public StorePluginOptionsConverter(JsonConverter childConverter) => _childConverter = childConverter;
+        public StoresPluginOptionsConverter(JsonConverter childConverter) => _childConverter = childConverter;
 
         public override bool CanConvert(Type objectType) => objectType == typeof(List<StorePluginOptions>);
 
