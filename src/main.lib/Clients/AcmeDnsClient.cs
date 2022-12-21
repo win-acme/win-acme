@@ -9,11 +9,12 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Clients
 {
-    internal class AcmeDnsClient
+    internal partial class AcmeDnsClient
     {
         private readonly IProxyService _proxy;
         private readonly LookupClientProvider _dnsClient;
@@ -82,7 +83,7 @@ namespace PKISharp.WACS.Clients
                         }
                         if (await VerifyRegistration(domain, newReg.Fulldomain, interactive))
                         {
-                            await File.WriteAllTextAsync(FileForDomain(domain), JsonSerializer.Serialize(newReg));
+                            await File.WriteAllTextAsync(FileForDomain(domain), JsonSerializer.Serialize(newReg, AcmeDnsJson.Default.RegisterResponse));
                             return true;
                         }
                     }
@@ -185,7 +186,7 @@ namespace PKISharp.WACS.Clients
             try
             {
                 var text = File.ReadAllText(file);
-                return JsonSerializer.Deserialize<RegisterResponse>(text);
+                return JsonSerializer.Deserialize(text, AcmeDnsJson.Default.RegisterResponse);
             }
             catch
             {
@@ -200,7 +201,7 @@ namespace PKISharp.WACS.Clients
             try
             {
                 var response = await client.PostAsync($"register", new StringContent(""));
-                return JsonSerializer.Deserialize<RegisterResponse>(await response.Content.ReadAsStringAsync());
+                return JsonSerializer.Deserialize(await response.Content.ReadAsStringAsync(), AcmeDnsJson.Default.RegisterResponse);
             }
             catch (Exception ex)
             {
@@ -240,7 +241,7 @@ namespace PKISharp.WACS.Clients
                 await client.PostAsync(
                     $"update", 
                     new StringContent(
-                        JsonSerializer.Serialize(request), 
+                        JsonSerializer.Serialize(request, AcmeDnsJson.Default.UpdateRequest), 
                         Encoding.UTF8, 
                         "application/json"));
                 return true;
@@ -269,6 +270,10 @@ namespace PKISharp.WACS.Clients
             }
             return httpClient;
         }
+
+        [JsonSerializable(typeof(UpdateRequest))]
+        [JsonSerializable(typeof(RegisterResponse))]
+        internal partial class AcmeDnsJson : JsonSerializerContext { }
 
         public class UpdateRequest
         {

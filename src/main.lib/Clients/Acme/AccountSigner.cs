@@ -1,9 +1,18 @@
 ﻿using ACMESharp.Crypto.JOSE;
 using ACMESharp.Crypto.JOSE.Impl;
+using ACMESharp.Protocol;
 using System;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Clients.Acme
 {
+    [JsonSerializable(typeof(AccountSigner))]
+    [JsonSerializable(typeof(AccountDetails))]
+    internal partial class AcmeClientJson : JsonSerializerContext {
+        public static AcmeClientJson Insensitive { get; } = new AcmeClientJson(new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
+    }
+
     /// <summary>
     /// This is "password" for the ACME account, it can be 
     /// an RSA or Elliptic curve private key
