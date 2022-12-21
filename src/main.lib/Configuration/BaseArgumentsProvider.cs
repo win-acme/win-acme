@@ -4,6 +4,7 @@ using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 
@@ -14,7 +15,9 @@ namespace PKISharp.WACS.Configuration
     /// PluginService for each implementation of IArgumentsStandalone
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class BaseArgumentsProvider<T> : IArgumentsProvider<T> where T : class, IArguments, new()
+    public class BaseArgumentsProvider<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T> : 
+        IArgumentsProvider<T> 
+        where T : class, IArguments, new()
     {
         /// <summary>
         /// Command line partser internal

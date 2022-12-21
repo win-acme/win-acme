@@ -2,6 +2,7 @@
 using PKISharp.WACS.Plugins.Base;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 
@@ -30,7 +31,7 @@ namespace PKISharp.WACS.Extensions
         /// <summary>
         /// Get all metadata about this class
         /// </summary>
-        public static IEnumerable<(CommandLineAttribute, PropertyInfo)> CommandLineProperties(this Type type)
+        public static IEnumerable<(CommandLineAttribute, PropertyInfo)> CommandLineProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] this Type type)
         {
             var allProperties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList();
             foreach (var property in allProperties)

@@ -26,6 +26,7 @@ namespace PKISharp.WACS.Clients.Acme
     [JsonSerializable(typeof(AccountSigner))]
     [JsonSerializable(typeof(AccountDetails))]
     [JsonSerializable(typeof(Protocol.ServiceDirectory))]
+    [JsonSerializable(typeof(OrderDetails))]
     internal partial class AcmeClientJson : JsonSerializerContext
     {
         public static AcmeClientJson Insensitive { get; } = new AcmeClientJson(new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });

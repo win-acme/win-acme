@@ -212,8 +212,7 @@ namespace PKISharp.WACS.Clients.Acme
             try
             {
                 var content = File.ReadAllText(fi.FullName);
-                var order = JsonSerializer.Deserialize<OrderDetails>(content,
-                    new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
+                var order = JsonSerializer.Deserialize(content, AcmeClientJson.Insensitive.OrderDetails);
                 return order;
             } 
             catch (Exception ex)
@@ -269,7 +268,7 @@ namespace PKISharp.WACS.Clients.Acme
                 {
                     _orderPath.Create();
                 }
-                var content = JsonSerializer.Serialize(order);
+                var content = JsonSerializer.Serialize(order, AcmeClientJson.Default.OrderDetails);
                 var path = Path.Combine(_orderPath.FullName, $"{cacheKey}.{_orderFileExtension}");
                 await File.WriteAllTextAsync(path, content);
             }
