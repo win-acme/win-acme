@@ -339,10 +339,10 @@ namespace PKISharp.WACS.Clients.IIS
             {
                 var anyService = false;
                 var allServices = ServiceController.GetServices();
-                var w3Service = allServices.FirstOrDefault(s => s.ServiceName == "W3SVC");
+                var w3Service = allServices.FirstOrDefault(s => string.Equals(s.ServiceName, "W3SVC", StringComparison.OrdinalIgnoreCase));
                 if (w3Service == null)
                 {
-                    _log.Verbose("No W3SVC detected");
+                    _log.Verbose("No  detected");
                 }
                 else if (w3Service.Status != ServiceControllerStatus.Running)
                 {
