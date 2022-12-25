@@ -342,7 +342,7 @@ namespace PKISharp.WACS.Clients.IIS
                 var w3Service = allServices.FirstOrDefault(s => string.Equals(s.ServiceName, "W3SVC", StringComparison.OrdinalIgnoreCase));
                 if (w3Service == null)
                 {
-                    _log.Verbose("No  detected");
+                    _log.Verbose("No W3SVC detected");
                 }
                 else if (w3Service.Status != ServiceControllerStatus.Running)
                 {
