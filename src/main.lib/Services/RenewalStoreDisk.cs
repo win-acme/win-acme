@@ -58,7 +58,7 @@ namespace PKISharp.WACS.Services
                         var options = new JsonSerializerOptions();
                         options.PropertyNameCaseInsensitive = true;
                         options.Converters.Add(new ProtectedStringConverter(_log, _settings)); 
-                        options.Converters.Add(new StorePluginOptionsConverter(storeConverter));
+                        options.Converters.Add(new StoresPluginOptionsConverter(storeConverter));
                         options.Converters.Add(new PluginOptionsConverter<TargetPluginOptions>(_plugin.PluginOptionTypes<TargetPluginOptions>(), _log));
                         options.Converters.Add(new PluginOptionsConverter<CsrPluginOptions>(_plugin.PluginOptionTypes<CsrPluginOptions>(), _log));
                         options.Converters.Add(new PluginOptionsConverter<OrderPluginOptions>(_plugin.PluginOptionTypes<OrderPluginOptions>(), _log));

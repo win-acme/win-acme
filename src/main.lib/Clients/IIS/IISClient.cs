@@ -353,7 +353,7 @@ namespace PKISharp.WACS.Clients.IIS
                     _log.Verbose("W3SVC detected and running");
                     anyService = true;
                 }
-                var ftpService = allServices.FirstOrDefault(s => s.ServiceName == "FTPSVC");
+                var ftpService = allServices.FirstOrDefault(s => string.Equals(s.ServiceName, "FTPSVC", StringComparison.OrdinalIgnoreCase));
                 if (ftpService == null)
                 {
                     _log.Verbose("No FTPSVC detected");
