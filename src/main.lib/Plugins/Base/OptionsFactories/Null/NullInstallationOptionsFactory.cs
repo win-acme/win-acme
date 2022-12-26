@@ -20,7 +20,6 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         Task<InstallationPluginOptions?> IInstallationPluginOptionsFactory.Default(Target target) => Generate();
         (bool, string?) IInstallationPluginOptionsFactory.CanInstall(IEnumerable<Type> storeTypes, IEnumerable<Type> installationTypes) => (true, null);
         int IPluginOptionsFactory.Order => int.MaxValue;
-        (bool, string?) IPluginOptionsFactory.Disabled => (false, null);
         string IPluginOptionsFactory.Name => new NullInstallationOptions().Name;
         string IPluginOptionsFactory.Description => new NullInstallationOptions().Description;
         bool IPluginOptionsFactory.Match(string name) => string.Equals(name, new NullInstallationOptions().Name, StringComparison.InvariantCultureIgnoreCase);
@@ -35,7 +34,6 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
 
     internal class NullInstallation : IInstallationPlugin
     {
-        (bool, string?) IPlugin.Disabled => (false, null);
         Task<bool> IInstallationPlugin.Install(Target target, IEnumerable<IStorePlugin> stores, CertificateInfo newCertificateInfo, CertificateInfo? oldCertificateInfo) => Task.FromResult(true);
     }
 }

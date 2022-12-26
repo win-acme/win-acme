@@ -54,7 +54,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return Task.FromResult(_azureKeyVaultClient);
         }
 
-        public (bool, string) Disabled => (false, "");
         public Task Delete(CertificateInfo certificateInfo) => Task.CompletedTask;
         public async Task Save(CertificateInfo certificateInfo)
         {

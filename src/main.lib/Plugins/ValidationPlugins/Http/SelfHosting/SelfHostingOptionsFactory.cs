@@ -16,7 +16,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             _userRoleService = userRoleService;
         }
 
-        public override (bool, string?) Disabled => SelfHosting.IsDisabled(_userRoleService);
+        public (bool, string?) Disabled => SelfHosting.IsDisabled(_userRoleService);
 
         public override Task<SelfHostingOptions?> Aquire(Target target, IInputService inputService, RunLevel runLevel) => Default(target);
 

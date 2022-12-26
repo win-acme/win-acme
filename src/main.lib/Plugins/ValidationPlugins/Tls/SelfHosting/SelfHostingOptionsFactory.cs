@@ -18,7 +18,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
 
         public override int Order => 100;
 
-        public override (bool, string?) Disabled => SelfHosting.IsDisabled(_userRoleService);
+        public (bool, string?) Disabled => SelfHosting.IsDisabled(_userRoleService);
 
         public override Task<SelfHostingOptions?> Aquire(Target target, IInputService inputService, RunLevel runLevel) => Default(target);
 

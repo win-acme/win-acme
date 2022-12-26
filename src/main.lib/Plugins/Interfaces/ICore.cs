@@ -43,7 +43,7 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// Indicates whether the plugin is currently disabled and why
         /// </summary>
         /// <returns></returns>
-        (bool, string?) Disabled { get; }
+        (bool, string?) Disabled => (false, null);
     }
 
     public interface IPluginOptionsFactory<T>: IPluginOptionsFactory where T: PluginOptions
@@ -71,7 +71,7 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// Indicates whether the plugin is currently disabled and why
         /// </summary>
         /// <returns></returns>
-        (bool, string?) Disabled { get; }
+        (bool, string?) Disabled => (false, null);
     }
 
 }

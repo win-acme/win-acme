@@ -127,7 +127,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             return Task.CompletedTask;
         }
 
-        public override (bool, string?) Disabled => IsDisabled(_userRoleService);
+        public (bool, string?) Disabled => IsDisabled(_userRoleService);
 
         internal static (bool, string?) IsDisabled(IUserRoleService userRoleService)
         {

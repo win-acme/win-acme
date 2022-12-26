@@ -42,11 +42,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public abstract Task CleanUp();
 
         /// <summary>
-        /// Is the plugin currently disabled
-        /// </summary>
-        public virtual (bool, string?) Disabled => (false, null);
-
-        /// <summary>
         /// No parallelism by default
         /// </summary>
         public virtual ParallelOperations Parallelism => ParallelOperations.None;

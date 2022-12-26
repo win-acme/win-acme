@@ -31,7 +31,5 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
             return new DnsIdentifier(identifier);
         }
-
-        (bool, string?) IPlugin.Disabled => (false, null);
     }
 }

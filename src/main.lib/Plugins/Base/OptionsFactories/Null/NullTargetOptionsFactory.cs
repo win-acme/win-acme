@@ -13,7 +13,6 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
     {
         Type IPluginOptionsFactory.InstanceType => typeof(object);
         Type IPluginOptionsFactory.OptionsType => typeof(object);
-        (bool, string?) IPluginOptionsFactory.Disabled => (false, null);
         bool IPluginOptionsFactory.Match(string name) => false;
         Task<TargetPluginOptions?> IPluginOptionsFactory<TargetPluginOptions>.Aquire(IInputService inputService, RunLevel runLevel) => Task.FromResult<TargetPluginOptions?>(default);
         Task<TargetPluginOptions?> IPluginOptionsFactory<TargetPluginOptions>.Default() => Task.FromResult<TargetPluginOptions?>(default);

@@ -232,7 +232,5 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             var issuerDN = new X509Name(ord, attrs);
             return issuerDN;
         }
-
-        (bool, string?) IPlugin.Disabled => (false, null);
     }
 }

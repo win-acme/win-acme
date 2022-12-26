@@ -69,7 +69,5 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 };
             });
         }
-
-        (bool, string?) IPlugin.Disabled => (false, null);
     }
 }
