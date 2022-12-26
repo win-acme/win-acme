@@ -1,5 +1,5 @@
 ﻿using Autofac;
-using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services.Serialization;
 using System;
@@ -12,7 +12,8 @@ namespace PKISharp.WACS.Services
     {
         private readonly AssemblyService _assemblyService;
         private readonly List<Type> _optionFactories;
-        private readonly List<Type> _plugins;
+        private readonly List<Type> _pluginsRunners;
+        private readonly List<Plugin> _plugins;
         internal readonly ILogService _log;
 
         public IEnumerable<Type> PluginOptionTypes<T>() where T : PluginOptions => _assemblyService.GetResolvable<T>();
@@ -20,32 +21,68 @@ namespace PKISharp.WACS.Services
         internal void Configure(ContainerBuilder builder)
         {
             _optionFactories.ForEach(t => builder.RegisterType(t).SingleInstance());
-            _plugins.ForEach(ip => builder.RegisterType(ip));
+            _pluginsRunners.ForEach(ip => builder.RegisterType(ip));
+            _plugins.ForEach(p =>
+            {
+                builder.RegisterType(p.Runner);
+                builder.RegisterType(p.Factory);
+            });
         }
 
-        public IEnumerable<T> GetFactories<T>(ILifetimeScope scope) where T : IPluginOptionsFactory => _optionFactories.Select(scope.Resolve).OfType<T>().OrderBy(x => x.Order).ToList();
-
         private IEnumerable<T> GetByName<T>(string name, ILifetimeScope scope) where T : IPluginOptionsFactory => GetFactories<T>(scope).Where(x => x.Match(name));
+        public IEnumerable<T> GetFactories<T>(ILifetimeScope scope) where T : IPluginOptionsFactory => _optionFactories.Select(scope.Resolve).OfType<T>().OrderBy(x => x.Order).ToList();
+       
+        public IEnumerable<Plugin> GetPlugins(Steps step) => _plugins.Where(x => x.Step == step);
+        public Plugin? GetPlugin(ILifetimeScope scope, Steps step, string name, string? parameter = null)
+        {
+            var plugins = GetPlugins(step).
+                Select(s => new { plugin = s, factory = scope.Resolve(s.Factory) as IPluginOptionsFactory }).
+                Where(s => s.factory?.Match(name) ?? false).
+                ToList();
+            if (step == Steps.Validation && plugins.Count > 1)
+            {
+                plugins = plugins.
+                    Where(x =>
+                    {
+                        var challengeType = (x.factory as IValidationPluginOptionsFactory)?.ChallengeType;
+                        return string.Equals(challengeType, parameter, StringComparison.InvariantCultureIgnoreCase);
+                    }).
+                    ToList();
+            }
+            return plugins.FirstOrDefault()?.plugin;
+        }
 
         public PluginService(ILogService logger, AssemblyService assemblyService)
         {
             _log = logger;
             _assemblyService = assemblyService;
-            _optionFactories = _assemblyService.GetResolvable<IPluginOptionsFactory>(true);
-            _plugins = new List<Type>();
-            AddPluginType<ITargetPlugin>("target");
-            AddPluginType<IValidationPlugin>("validation");
-            AddPluginType<IOrderPlugin>("order");
-            AddPluginType<ICsrPlugin>("csr");
-            AddPluginType<IStorePlugin>("store");
-            AddPluginType<IInstallationPlugin>("installation");
+            _optionFactories = _assemblyService.GetResolvable<IPluginOptionsFactory>(true).Where(x => x is not ITargetPluginOptionsFactory).ToList();
+            _pluginsRunners = new List<Type>();
+            _plugins = new List<Plugin>();
+            AddPluginType<ITargetPlugin>(Steps.Target);
+            AddPluginType<IValidationPlugin>(Steps.Validation);
+            AddPluginType<IOrderPlugin>(Steps.Order);
+            AddPluginType<ICsrPlugin>(Steps.Csr);
+            AddPluginType<IStorePlugin>(Steps.Store);
+            AddPluginType<IInstallationPlugin>(Steps.Installation);
         }
 
-        private void AddPluginType<T>(string name)
+        private void AddPluginType<T>(Steps step)
         {
-            var temp = _assemblyService.GetResolvable<T>();
-            ListPlugins(temp, name);
-            _plugins.AddRange(temp);
+            var types = _assemblyService.GetResolvable<T>();
+            ListPlugins(types, step.ToString().ToLower());
+            foreach (var type in types)
+            {
+                var meta = type.GetCustomAttributes(true).OfType<Plugin2Attribute>().FirstOrDefault();
+                if (meta != null)
+                {
+                    _plugins.Add(new Plugin(type, meta, step));
+                } 
+                else
+                {
+                    _pluginsRunners.Add(type);
+                }
+            }
         }
 
         /// <summary>
@@ -80,5 +117,6 @@ namespace PKISharp.WACS.Services
             }
             return plugins.FirstOrDefault();
         }
+
     }
 }

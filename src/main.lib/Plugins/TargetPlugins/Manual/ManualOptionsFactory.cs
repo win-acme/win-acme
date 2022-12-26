@@ -1,13 +1,14 @@
 ﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    internal class ManualOptionsFactory : TargetPluginOptionsFactory<Manual, ManualOptions>
+    internal class ManualOptionsFactory : TargetPluginOptionsFactory<Manual, ManualOptions>, IPluginOptionsFactory<ManualOptions>
     {
         private readonly ArgumentsInputService _arguments;
         public ManualOptionsFactory(ArgumentsInputService arguments) => _arguments = arguments;

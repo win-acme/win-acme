@@ -1,16 +1,15 @@
-﻿using Protocol = ACMESharp.Protocol.Resources;
-using Autofac;
+﻿using Autofac;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Context;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Plugins.Base.Options;
+using Protocol = ACMESharp.Protocol.Resources;
 
 namespace PKISharp.WACS
 {
@@ -244,10 +243,8 @@ namespace PKISharp.WACS
             {
                 var validationPlugin = validationScope.Resolve<IValidationPlugin>();
                 var pluginService = scope.Resolve<IPluginService>();
-                var match = pluginService.
-                    GetFactories<IValidationPluginOptionsFactory>(scope).
-                    FirstOrDefault(vp => vp.OptionsType.PluginId() == options.Plugin);
-                return (validationPlugin, match);
+                var match = pluginService.GetPlugins(Steps.Validation).Where(x => x.Options == options.GetType()).FirstOrDefault();
+                return (validationPlugin, scope.Resolve(match!.Factory) as IValidationPluginOptionsFactory);
             } 
             catch (Exception ex)
             {

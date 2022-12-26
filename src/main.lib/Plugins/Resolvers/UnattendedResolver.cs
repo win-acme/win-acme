@@ -34,13 +34,14 @@ namespace PKISharp.WACS.Plugins.Resolvers
 
         private async Task<T> GetPlugin<T>(
             ILifetimeScope scope,
+            Steps step,
             Type defaultType,
             T nullResult,
             string className,
             string? defaultParam1 = null,
             string? defaultParam2 = null,
             Func<IEnumerable<T>, IEnumerable<T>>? filter = null,
-            Func<T, (bool, string?)>? unusable = null) where T: IPluginOptionsFactory
+            Func<T, (bool, string?)>? unusable = null) where T: class, IPluginOptionsFactory
         {
             // Helper method to determine final usability state
             // combination of plugin being enabled (e.g. due to missing
@@ -61,7 +62,10 @@ namespace PKISharp.WACS.Plugins.Resolvers
             };
 
             // Apply default sorting when no sorting has been provided yet
-            var options = _plugins.GetFactories<T>(scope);
+            IEnumerable<T> options = new List<T>();
+            options = step == Steps.Target
+                ? _plugins.GetPlugins(step).Select(x => x.Factory).Select(scope.Resolve).OfType<T>().ToList()
+                : _plugins.GetFactories<T>(scope);
             options = filter != null ? filter(options) : options.Where(x => x is not INull);
             var localOptions = options.Select(x => new {
                 plugin = x,
@@ -80,7 +84,19 @@ namespace PKISharp.WACS.Plugins.Resolvers
             var changeInstructions = $"Choose another plugin using the --{className} switch or change the default in settings.json";
             if (!string.IsNullOrEmpty(defaultParam1))
             {
-                var defaultPlugin = _plugins.GetFactory<T>(scope, defaultParam1, defaultParam2);
+                var defaultPlugin = default(T);
+                if (step == Steps.Target)
+                {
+                    var factory = _plugins.GetPlugin(scope, step, defaultParam1, defaultParam2)?.Factory;
+                    if (factory != null)
+                    {
+                        defaultPlugin = scope.Resolve(factory) as T;
+                    }
+                }
+                else
+                {
+                    defaultPlugin = _plugins.GetFactory<T>(scope, defaultParam1, defaultParam2);
+                }
                 if (defaultPlugin == null)
                 {
                     _log.Error("Unable to find {n} plugin {p}. " + changeInstructions, className, defaultParam1);
@@ -119,6 +135,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             // get into this code unless it was specified.
             return await GetPlugin<ITargetPluginOptionsFactory>(
                 scope,
+                Steps.Target,
                 defaultParam1: string.IsNullOrWhiteSpace(_arguments.Source) ? _arguments.Target : _arguments.Source,
                 defaultType: typeof(ManualOptionsFactory),
                 nullResult: new NullTargetFactory(),
@@ -139,6 +156,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             }
             return await GetPlugin<IValidationPluginOptionsFactory>(
                 scope,
+                Steps.Validation,
                 defaultParam1: _arguments.Validation ?? _settings.Validation.DefaultValidation,
                 defaultParam2: defaultParam2,
                 defaultType: typeof(SelfHostingOptionsFactory),
@@ -156,6 +174,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         {
             return await GetPlugin<IOrderPluginOptionsFactory>(
                 scope,
+                Steps.Order,
                 defaultParam1: _arguments.Order,
                 defaultType: typeof(SingleOptionsFactory),
                 nullResult: new NullOrderOptionsFactory(),
@@ -172,6 +191,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         {
             return await GetPlugin<ICsrPluginOptionsFactory>(
                 scope,
+                Steps.Csr,
                 defaultParam1: _arguments.Csr,
                 defaultType: typeof(RsaOptionsFactory),
                 nullResult: new NullCsrFactory(),
@@ -201,6 +221,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             }
             return await GetPlugin<IStorePluginOptionsFactory>(
                 scope,
+                Steps.Store,
                 filter: x => x,
                 defaultParam1: parts[index],
                 defaultType: typeof(NullStoreOptionsFactory),
@@ -230,6 +251,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             }
             return await GetPlugin<IInstallationPluginOptionsFactory>(
                 scope,
+                Steps.Installation,
                 filter: x => x,
                 unusable: x => { var (a, b) = x.CanInstall(storeTypes, chosen.Select(c => c.InstanceType)); return (!a, b); },
                 defaultParam1: parts[index],
