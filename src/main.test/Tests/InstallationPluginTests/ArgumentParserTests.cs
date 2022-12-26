@@ -19,7 +19,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
 
         private string? TestScript(string parameters)
         {
-            var argParser = new ArgumentsParser(log, new MockPluginService(log),
+            var argParser = new ArgumentsParser(log, new MockAssemblyService(log),
                 $"--scriptparameters {parameters} --verbose".Split(' '));
             var args = argParser.GetArguments<ScriptArguments>();
             return args?.ScriptParameters;

@@ -6,6 +6,7 @@ using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Plugins.Resolvers;
+using PKISharp.WACS.UnitTests.Mock.Services;
 using System.Collections.Generic;
 using Mock = PKISharp.WACS.UnitTests.Mock.Services;
 using Real = PKISharp.WACS.Services;
@@ -17,8 +18,9 @@ namespace PKISharp.WACS.UnitTests.Mock
         public ILifetimeScope TestScope(List<string>? inputSequence = null, string commandLine = "")
         {
             var log = new Services.LogService(false);
-            var pluginService = new Real.PluginService(log);
-            var argumentsParser = new ArgumentsParser(log, pluginService, commandLine.Split(' '));
+            var assemblyService = new MockAssemblyService(log);
+            var pluginService = new Real.PluginService(log, assemblyService);
+            var argumentsParser = new ArgumentsParser(log, assemblyService, commandLine.Split(' '));
             var input = new Services.InputService(inputSequence ?? new List<string>());
 
             var builder = new ContainerBuilder();

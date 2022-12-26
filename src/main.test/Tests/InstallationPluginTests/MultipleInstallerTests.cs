@@ -21,14 +21,14 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
     public class MultipleInstallerTests
     {
         private readonly ILogService log;
-        private readonly Mock.Services.MockPluginService plugins;
-        private readonly Mock.Services.MockSettingsService settings;
+        private readonly PluginService plugins;
+        private readonly MockSettingsService settings;
 
         public MultipleInstallerTests()
         {
             log = new Mock.Services.LogService(false);
-            plugins = new Mock.Services.MockPluginService(log);
-            settings = new Mock.Services.MockSettingsService();
+            plugins = new PluginService(log, new MockAssemblyService(log));
+            settings = new MockSettingsService();
         }
 
         /// <summary>
@@ -49,6 +49,8 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             _ = builder.RegisterType<DomainParseService>();
             _ = builder.RegisterType<ArgumentsInputService>();
             _ = builder.RegisterType<IISHelper>();
+            _ = builder.RegisterType<MockAssemblyService>().As<AssemblyService>();
+
             var input = new Mock.Services.InputService(new List<string>());
             _ = builder.RegisterInstance(input).As<IInputService>();
             _ = builder.RegisterType<SecretService>().As<ISecretService>();

@@ -10,7 +10,6 @@ namespace PKISharp.WACS.Services
     {
         IEnumerable<T> GetFactories<T>(ILifetimeScope scope) where T: IPluginOptionsFactory;
         T? GetFactory<T>(ILifetimeScope scope, string name, string? parameter = null) where T : IPluginOptionsFactory;
-        IEnumerable<IArgumentsProvider> ArgumentsProviders();
         IEnumerable<Type> PluginOptionTypes<T>() where T : PluginOptions;
     }
 }

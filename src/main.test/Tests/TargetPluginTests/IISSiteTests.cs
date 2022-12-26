@@ -31,13 +31,13 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             var proxy = new Mock.Services.ProxyService();
             domainParse = new DomainParseService(log, proxy, settings);
             helper = new IISHelper(log, iis, domainParse);
-            plugins = new MockPluginService(log);
+            plugins = new PluginService(log, new MockAssemblyService(log));
             userRoleService = new Mock.Services.UserRoleService();
         }
 
         private IISOptions? Options(string commandLine)
         {
-            var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
+            var optionsParser = new ArgumentsParser(log, new MockAssemblyService(log), commandLine.Split(' '));
             var input = new Mock.Services.InputService(new());
             var secretService = new SecretServiceManager(new SecretService(), input, log);
             var argsInput = new ArgumentsInputService(log, optionsParser, input, secretService);

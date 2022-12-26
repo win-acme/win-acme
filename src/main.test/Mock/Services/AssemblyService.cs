@@ -6,9 +6,9 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.UnitTests.Mock.Services
 {
-    class MockPluginService : PluginService
+    class MockAssemblyService : AssemblyService
     {
-        public MockPluginService(ILogService log) : base(log) { }
+        public MockAssemblyService(ILogService log) : base(log) { }
 
         internal override List<Type> GetTypes()
         {

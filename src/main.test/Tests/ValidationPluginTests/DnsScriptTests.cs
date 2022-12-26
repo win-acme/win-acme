@@ -22,7 +22,7 @@ namespace PKISharp.WACS.UnitTests.Tests.ValidationPluginTests
         public DnsScriptTests()
         {
             log = new Mock.Services.LogService(false);
-            plugins = new MockPluginService(log);
+            plugins = new PluginService(log, new MockAssemblyService(log));
             var tempPath = Infrastructure.Directory.Temp();
             commonScript = new FileInfo(tempPath.FullName + "\\dns-common.bat");
             File.WriteAllText(commonScript.FullName, "");
@@ -34,7 +34,7 @@ namespace PKISharp.WACS.UnitTests.Tests.ValidationPluginTests
 
         private ScriptOptions? Options(string commandLine)
         {
-            var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
+            var optionsParser = new ArgumentsParser(log, new MockAssemblyService(log), commandLine.Split(' '));
             var input = new Mock.Services.InputService(new());
             var secretService = new SecretServiceManager(new SecretService(), input, log);
             var argsInput = new ArgumentsInputService(log, optionsParser, input, secretService);

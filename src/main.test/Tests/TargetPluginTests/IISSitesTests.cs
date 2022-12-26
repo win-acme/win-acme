@@ -6,6 +6,7 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.UnitTests.Mock.Services;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -17,7 +18,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         private readonly ILogService log;
         private readonly IIISClient iis;
         private readonly IISHelper helper;
-        private readonly Mock.Services.MockPluginService plugins;
+        private readonly PluginService plugins;
         private readonly IUserRoleService userRoleService;
         private readonly DomainParseService domainParse;
 
@@ -25,17 +26,17 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         {
             log = new Mock.Services.LogService(false);
             iis = new Mock.Clients.MockIISClient(log);
-            var settings = new Mock.Services.MockSettingsService();
+            var settings = new MockSettingsService();
             var proxy = new Mock.Services.ProxyService();
             domainParse = new DomainParseService(log, proxy, settings);
             helper = new IISHelper(log, iis, domainParse);
-            plugins = new Mock.Services.MockPluginService(log);
-            userRoleService = new UserRoleService(iis, new AdminService());
+            plugins = new PluginService(log, new MockAssemblyService(log));
+            userRoleService = new Services.UserRoleService(iis, new AdminService());
         }
 
         private IISOptions? Options(string commandLine)
         {
-            var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
+            var optionsParser = new ArgumentsParser(log, new MockAssemblyService(log), commandLine.Split(' '));
             var input = new Mock.Services.InputService(new());
             var secretService = new SecretServiceManager(new Mock.Services.SecretService(), input, log);
             var argsInput = new ArgumentsInputService(log, optionsParser, input, secretService);

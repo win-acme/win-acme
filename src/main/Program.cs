@@ -146,8 +146,9 @@ namespace PKISharp.WACS.Host
             // prints some verbose messages that are interesting
             // to know very early in the start up process
             _ = new VersionService(logger);
-            var pluginService = new PluginService(logger);
-            var argumentsParser = new ArgumentsParser(logger, pluginService, args);
+            var assemblyService = new AssemblyService(logger);
+            var pluginService = new PluginService(logger, assemblyService);
+            var argumentsParser = new ArgumentsParser(logger, assemblyService, args);
             if (!argumentsParser.Validate())
             {
                 return null;

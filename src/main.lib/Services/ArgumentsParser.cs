@@ -13,6 +13,31 @@ namespace PKISharp.WACS.Configuration
         private readonly IEnumerable<IArgumentsProvider> _providers;
         private readonly IEnumerable<CommandLineAttribute> _arguments;
 
+        public ArgumentsParser(ILogService log, AssemblyService assemblyService, string[] args)
+        {
+            _log = log;
+            _args = args;
+            _providers = ArgumentsProviders(assemblyService);
+            _arguments = _providers.SelectMany(x => x.Configuration).ToList();
+        }
+
+        public IEnumerable<IArgumentsProvider> ArgumentsProviders(AssemblyService assemblyService)
+        {
+            var argumentGroups = assemblyService.GetResolvable<IArguments>();
+            return argumentGroups.Select(x =>
+                {
+                    var type = typeof(BaseArgumentsProvider<>).MakeGenericType(x);
+                    var constr = type.GetConstructor(Array.Empty<Type>());
+                    if (constr == null)
+                    {
+                        throw new Exception("IArgumentsProvider should have parameterless constructor");
+                    }
+                    var ret = (IArgumentsProvider)constr.Invoke(Array.Empty<object>());
+                    ret.Log = _log;
+                    return ret;
+                }).ToList();
+        }
+
         public T? GetArguments<T>() where T : class, new()
         {
             foreach (var provider in _providers)
@@ -25,17 +50,12 @@ namespace PKISharp.WACS.Configuration
             throw new InvalidOperationException($"Unable to find class that implements IArgumentsProvider<{typeof(T).Name}>");
         }
 
-        public ArgumentsParser(ILogService log, IPluginService plugins, string[] args)
-        {
-            _log = log;
-            _args = args;
-            _providers = plugins.ArgumentsProviders();
-            _arguments = _providers.SelectMany(x => x.Configuration).ToList();
-        }
-
+        /// <summary>
+        /// Test if the arguments can be resolved by any of the known providers
+        /// </summary>
+        /// <returns></returns>
         internal bool Validate()
         {
-            // Test if the arguments can be resolved by any of the known providers
             var extraOptions = _providers.First().GetExtraArguments(_args);
             foreach (var extraOption in extraOptions)
             {
@@ -98,6 +118,9 @@ namespace PKISharp.WACS.Configuration
             return false;
         }
 
+        /// <summary>
+        /// Get list of secret arguments that should be censored in the logs
+        /// </summary>
         internal IEnumerable<string> SecretArguments => _arguments.Where(x => x.Secret).Select(x => x.ArgumentName);
 
         /// <summary>
