@@ -1,8 +1,10 @@
 ﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories.Null;
 using PKISharp.WACS.Plugins.Base.Options;
+using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using static PKISharp.WACS.Services.ValidationOptionsService;
 using Csr = PKISharp.WACS.Plugins.CsrPlugins;
 using Installation = PKISharp.WACS.Plugins.InstallationPlugins;
 using Order = PKISharp.WACS.Plugins.OrderPlugins;
@@ -25,46 +27,40 @@ namespace PKISharp.WACS.Services.Serialization
     [JsonSerializable(typeof(Target.IISOptions))]
     [JsonSerializable(typeof(Target.CsrOptions))]
     [JsonSerializable(typeof(Validation.Dns.AcmeOptions))]
+    [JsonSerializable(typeof(Validation.Dns.ManualOptions), TypeInfoPropertyName = "DnsManualOptions")]
     [JsonSerializable(typeof(Validation.Dns.ScriptOptions))]
     [JsonSerializable(typeof(Validation.Http.FileSystemOptions))]
     [JsonSerializable(typeof(Validation.Http.FtpOptions))]
     [JsonSerializable(typeof(Validation.Http.SelfHostingOptions))]
     [JsonSerializable(typeof(Validation.Http.SftpOptions))]
     [JsonSerializable(typeof(Validation.Http.WebDavOptions))]
+    [JsonSerializable(typeof(Validation.Tls.SelfHostingOptions), TypeInfoPropertyName = "TlsSelfHostingOptions")]
     [JsonSerializable(typeof(Order.DomainOptions))]
     [JsonSerializable(typeof(Order.HostOptions))]
     [JsonSerializable(typeof(Order.SingleOptions))]
     [JsonSerializable(typeof(Csr.EcOptions))]
     [JsonSerializable(typeof(Csr.RsaOptions))]
     [JsonSerializable(typeof(Installation.IISFtpOptions))]
+    [JsonSerializable(typeof(Installation.IISOptions), TypeInfoPropertyName = "InstallationIISOptions")]
+    [JsonSerializable(typeof(Installation.ScriptOptions), TypeInfoPropertyName = "InstallationScriptOptions")]
     [JsonSerializable(typeof(NullInstallationOptions))]
     [JsonSerializable(typeof(NullStoreOptions))]
-    [JsonSerializable(typeof(NullInstallationOptions))]
-    [JsonSerializable(typeof(NullInstallationOptions))]
+    [JsonSerializable(typeof(GlobalValidationPluginOptions))]
+    [JsonSerializable(typeof(List<GlobalValidationPluginOptions>))]
     internal partial class WacsJson : JsonSerializerContext 
     {
         public static WacsJson Convert(IPluginService _plugin, ILogService _log, ISettingsService _settings)
         {
-            var storeConverter = new PluginOptionsConverter<StorePluginOptions>(_plugin.PluginOptionTypes<StorePluginOptions>(), _log);
-            var options = new JsonSerializerOptions();
-            options.PropertyNameCaseInsensitive = true;
+            var pluginConverter = new Plugin2OptionsConverter(_plugin);
+            var options = new JsonSerializerOptions
+            { 
+                WriteIndented = true,
+                PropertyNameCaseInsensitive = true
+            };
             options.Converters.Add(new ProtectedStringConverter(_log, _settings)); 
-            options.Converters.Add(new StoresPluginOptionsConverter(storeConverter));
-            options.Converters.Add(new PluginOptionsConverter<CsrPluginOptions>(_plugin.PluginOptionTypes<CsrPluginOptions>(), _log));
-            options.Converters.Add(new PluginOptionsConverter<OrderPluginOptions>(_plugin.PluginOptionTypes<OrderPluginOptions>(), _log));
-            options.Converters.Add(new PluginOptionsConverter<ValidationPluginOptions>(_plugin.PluginOptionTypes<ValidationPluginOptions>(), _log));
-            options.Converters.Add(new PluginOptionsConverter<InstallationPluginOptions>(_plugin.PluginOptionTypes<InstallationPluginOptions>(), _log));
-            options.Converters.Add(new Plugin2OptionsConverter(_plugin));
+            options.Converters.Add(new StoresPluginOptionsConverter(pluginConverter));
+            options.Converters.Add(pluginConverter);
             return new WacsJson(options);
         }
     }
-
-    /// <summary>
-    /// Code generator for built-in types (duplicate class names)
-    /// </summary>
-    [JsonSerializable(typeof(Validation.Dns.ManualOptions))]
-    [JsonSerializable(typeof(Validation.Tls.SelfHostingOptions))]
-    [JsonSerializable(typeof(Installation.ScriptOptions))]
-    [JsonSerializable(typeof(Installation.IISOptions))]
-    internal partial class WacsJson2 {}
 }

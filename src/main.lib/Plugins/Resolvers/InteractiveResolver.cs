@@ -79,7 +79,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             options = step == Steps.Target
                 ? _plugins.GetPlugins(step).Where(x => !x.Meta.Hidden).Select(x => x.Meta.OptionsFactory).Select(scope.Resolve).OfType<T>().ToList()
                 : _plugins.GetFactories<T>(scope);
-            options = filter != null ? filter(options) : options.Where(x => !(x is INull));
+            options = filter != null ? filter(options) : options.Where(x => x is not INull);
             options = sort != null ? sort(options) : options.OrderBy(x => x.Order).ThenBy(x => x.Description);
 
             var localOptions = options.
@@ -131,7 +131,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             if (defaultTypeDisabled.Item1)
             {
                 _log.Warning("{n} plugin {x} not available: {m}",
-                    char.ToUpper(className[0]) + className.Substring(1),
+                    char.ToUpper(className[0]) + className[1..],
                     defaultOption?.plugin.Name ?? defaultType.Name, 
                     defaultTypeDisabled.Item2);
                 defaultType = defaultTypeFallback;
@@ -158,22 +158,16 @@ namespace PKISharp.WACS.Plugins.Resolvers
                        disabled: disabled);
             }
 
-            var ret = default(T);
-            if (allowAbort)
-            {
-                ret = (T?)await _input.ChooseOptional(
+            var ret = allowAbort
+                ? (T?)await _input.ChooseOptional(
                     shortDescription,
                     localOptions,
                     x => creator(x.plugin, x.type, x.disabled),
-                    "Abort");
-            } 
-            else
-            {
-                ret = (T?)await _input.ChooseRequired(
+                    "Abort")
+                : (T?)await _input.ChooseRequired(
                     shortDescription,
                     localOptions,
                     x => creator(x.plugin, x.type, x.disabled));
-            }
             return ret ?? nullResult;
         }
 
@@ -298,7 +292,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             var longDescription = "When we have the certificate, you can store in one or more ways to make it accessible " +
                         "to your applications. The Windows Certificate Store is the default location for IIS (unless you are " +
                         "managing a cluster of them).";
-            if (chosen.Count() != 0)
+            if (chosen.Any())
             {
                 if (!_runLevel.HasFlag(RunLevel.Advanced))
                 {
@@ -345,7 +339,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             var longDescription = "With the certificate saved to the store(s) of your choice, " +
                 "you may choose one or more steps to update your applications, e.g. to configure " +
                 "the new thumbprint, or to update bindings.";
-            if (chosen.Count() != 0)
+            if (chosen.Any())
             {
                 if (!_runLevel.HasFlag(RunLevel.Advanced))
                 {

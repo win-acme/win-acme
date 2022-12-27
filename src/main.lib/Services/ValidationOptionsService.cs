@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -76,10 +77,7 @@ namespace PKISharp.WACS.Services
                 }
                 return;
             }
-            var options = new JsonSerializerOptions();
-            options.WriteIndented = true;
-            options.Converters.Add(new ProtectedStringConverter(_log, _settings));
-            var rawJson = JsonSerializer.Serialize(_options, options);
+            var rawJson = JsonSerializer.Serialize(_options, WacsJson.Convert(_plugin, _log, _settings).ListGlobalValidationPluginOptions);
             await File.WriteAllTextAsync(Store.FullName, rawJson);
         }
 
@@ -94,11 +92,7 @@ namespace PKISharp.WACS.Services
                 try
                 {
                     var rawJson = await File.ReadAllTextAsync(Store.FullName);
-                    var options = new JsonSerializerOptions();
-                    options.PropertyNameCaseInsensitive = true;
-                    options.Converters.Add(new ProtectedStringConverter(_log, _settings));
-                    options.Converters.Add(new PluginOptionsConverter<ValidationPluginOptions>(_plugin.PluginOptionTypes<ValidationPluginOptions>(), _log));
-                    _options = JsonSerializer.Deserialize<List<GlobalValidationPluginOptions>>(rawJson, options);
+                    _options = JsonSerializer.Deserialize(rawJson, WacsJson.Convert(_plugin, _log, _settings).ListGlobalValidationPluginOptions);
                     if (_options == null)
                     {
                         throw new Exception();
@@ -283,7 +277,6 @@ namespace PKISharp.WACS.Services
         {
             private string? _pattern;
             private string? _regex;
-            private Regex? _parsedRegex;
 
             /// <summary>
             /// Priority of this rule (lower number = higher priority)
@@ -299,7 +292,6 @@ namespace PKISharp.WACS.Services
                 set
                 {
                     _regex = value;
-                    _parsedRegex = null;
                 }
             }
 
@@ -313,7 +305,6 @@ namespace PKISharp.WACS.Services
                 set
                 {
                     _pattern = value;
-                    _parsedRegex = null;
                 }
             }
 
@@ -327,23 +318,17 @@ namespace PKISharp.WACS.Services
             /// Convert the user settings into a Regex that will be 
             /// matched with the identifier.
             /// </summary>
-            private Regex? ParsedRegex
+            private Regex? ParsedRegex()
             {
-                get
+                if (Pattern != null)
                 {
-                    if (_parsedRegex == null)
-                    {
-                        if (Pattern != null)
-                        {
-                            _parsedRegex = new Regex(Pattern.PatternToRegex());
-                        }
-                        if (Regex != null)
-                        {
-                            _parsedRegex = new Regex(Regex);
-                        }
-                    }
-                    return _parsedRegex;
+                    return new Regex(Pattern.PatternToRegex());
                 }
+                if (Regex != null)
+                {
+                    return new Regex(Regex);
+                }
+                return null;
             }
 
             /// <summary>
@@ -354,11 +339,12 @@ namespace PKISharp.WACS.Services
             /// <returns></returns>
             public bool Match(Identifier identifier)
             {
-                if (ParsedRegex == null)
+                var regex = ParsedRegex();
+                if (regex == null)
                 {
                     return false;
                 }
-                return ParsedRegex.IsMatch(identifier.Value);
+                return regex.IsMatch(identifier.Value);
             }
         }
     }
