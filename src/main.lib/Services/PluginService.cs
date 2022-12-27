@@ -25,18 +25,19 @@ namespace PKISharp.WACS.Services
             _plugins.ForEach(p =>
             {
                 builder.RegisterType(p.Runner);
-                builder.RegisterType(p.Factory);
+                builder.RegisterType(p.Meta.OptionsFactory);
             });
         }
 
         private IEnumerable<T> GetByName<T>(string name, ILifetimeScope scope) where T : IPluginOptionsFactory => GetFactories<T>(scope).Where(x => x.Match(name));
         public IEnumerable<T> GetFactories<T>(ILifetimeScope scope) where T : IPluginOptionsFactory => _optionFactories.Select(scope.Resolve).OfType<T>().OrderBy(x => x.Order).ToList();
-       
-        public IEnumerable<Plugin> GetPlugins(Steps step) => _plugins.Where(x => x.Step == step);
+        public IEnumerable<Plugin> GetPlugins() => _plugins.AsEnumerable();
+        public IEnumerable<Plugin> GetPlugins(Steps step) => GetPlugins().Where(x => x.Step == step);
+        public Plugin? GetPlugin(Guid id) => GetPlugins().Where(x => x.Id == id).FirstOrDefault();
         public Plugin? GetPlugin(ILifetimeScope scope, Steps step, string name, string? parameter = null)
         {
             var plugins = GetPlugins(step).
-                Select(s => new { plugin = s, factory = scope.Resolve(s.Factory) as IPluginOptionsFactory }).
+                Select(s => new { plugin = s, factory = scope.Resolve(s.Meta.OptionsFactory) as IPluginOptionsFactory }).
                 Where(s => s.factory?.Match(name) ?? false).
                 ToList();
             if (step == Steps.Validation && plugins.Count > 1)
@@ -73,14 +74,27 @@ namespace PKISharp.WACS.Services
             ListPlugins(types, step.ToString().ToLower());
             foreach (var type in types)
             {
-                var meta = type.GetCustomAttributes(true).OfType<Plugin2Attribute>().FirstOrDefault();
-                if (meta != null)
+                var attributes = type.GetCustomAttributes(true).OfType<IPluginMeta>();
+                foreach (var meta in attributes)
                 {
+                    var existing = _plugins.FirstOrDefault(p => p.Id == meta.Id);
+                    if (existing != null)
+                    {
+                        _log.Warning(
+                           "Duplicate plugin with key {key}. " +
+                           "{Name1} from {Location1} and " +
+                           "{Name2} from {Location2}",
+                           meta.Id,
+                           type.FullName, type.Assembly.Location,
+                           existing.Runner.FullName, existing.Runner.Assembly.Location);
+                        continue;
+                    }
                     _plugins.Add(new Plugin(type, meta, step));
-                } 
-                else
+                }
+                if (!attributes.Any()) 
                 {
                     _pluginsRunners.Add(type);
+                  
                 }
             }
         }
@@ -101,7 +115,7 @@ namespace PKISharp.WACS.Services
         }
 
         /// <summary>
-        /// Find chosen plugin options factory based on command line parameter(s)
+        /// Find chosen meta options factory based on command line parameter(s)
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="scope"></param>

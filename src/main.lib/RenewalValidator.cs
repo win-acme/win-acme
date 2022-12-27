@@ -243,8 +243,8 @@ namespace PKISharp.WACS
             {
                 var validationPlugin = validationScope.Resolve<IValidationPlugin>();
                 var pluginService = scope.Resolve<IPluginService>();
-                var match = pluginService.GetPlugins(Steps.Validation).Where(x => x.Options == options.GetType()).FirstOrDefault();
-                return (validationPlugin, scope.Resolve(match!.Factory) as IValidationPluginOptionsFactory);
+                var match = pluginService.GetPlugins(Steps.Validation).Where(x => x.Meta.OptionsFactory == options.GetType()).FirstOrDefault();
+                return (validationPlugin, scope.Resolve(match!.Meta.OptionsFactory) as IValidationPluginOptionsFactory);
             } 
             catch (Exception ex)
             {

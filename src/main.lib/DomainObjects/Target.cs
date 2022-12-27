@@ -74,7 +74,7 @@ namespace PKISharp.WACS.DomainObjects
             var alternativeNames = Parts.SelectMany(p => p.Identifiers).Distinct();
             if (alternativeNames.Count() > 1)
             {
-                x.Append($" and {alternativeNames.Count() - 1} alternatives");
+                _ = x.Append($" and {alternativeNames.Count() - 1} alternative{(alternativeNames.Count() > 1 ? "s" : "")}");
             }
             return x.ToString();
         }

@@ -1,4 +1,6 @@
 ﻿using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.Base.Options;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -11,6 +13,7 @@ namespace PKISharp.WACS.Services.Serialization
     /// the propery strongly typed object required by the plugin
     /// </summary>
     /// <typeparam name="TOptions"></typeparam>
+    [Obsolete]
     internal class PluginOptionsConverter<TOptions> : 
         JsonConverter<TOptions> 
         where TOptions : PluginOptions
@@ -85,5 +88,63 @@ namespace PKISharp.WACS.Services.Serialization
 
         public override void Write(Utf8JsonWriter writer, TOptions value, JsonSerializerOptions options) => 
             JsonSerializer.Serialize(writer, value, options);
+    }
+
+    /// <summary>
+    /// Read flat PluginOptions objects from JSON and convert them into 
+    /// the propery strongly typed object required by the plugin
+    /// </summary>
+    internal class Plugin2OptionsConverter : JsonConverter<PluginOptionsBase>
+    {
+        private readonly IPluginService _pluginService;
+
+        public Plugin2OptionsConverter(IPluginService plugin) => _pluginService = plugin;
+
+        public override bool CanConvert(Type typeToConvert) => typeof(TargetPluginOptions).IsAssignableFrom(typeToConvert);
+
+        /// <summary>
+        /// Override reading to allow strongly typed object return, based on Plugin
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <param name="typeToConvert"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        public override PluginOptions? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            var readerClone = reader;
+            var neutral = JsonSerializer.Deserialize(ref readerClone, WacsJson.Default.PluginOptionsBase);
+            var plugin = neutral?.FindPlugin(_pluginService);
+            if (plugin == null)
+            {
+                reader.Skip();
+                return null;
+            }
+            return JsonSerializer.Deserialize(ref reader, plugin.Meta.Options, plugin.Meta.JsonContext) as PluginOptions;
+        }
+
+        /// <summary>
+        /// Write plugin to string
+        /// </summary>
+        /// <param name="writer"></param>
+        /// <param name="value"></param>
+        /// <param name="options"></param>
+        public override void Write(Utf8JsonWriter writer, PluginOptionsBase value, JsonSerializerOptions options)
+        {
+            var plugin = value.FindPlugin(_pluginService);
+            if (plugin == null)
+            {
+                throw new Exception("Can't figure out for which plugin these options are");
+            }
+            if (string.IsNullOrWhiteSpace(value.Plugin))
+            {
+                // Add plugin identifier for future reference
+                value.Plugin = plugin.Id.ToString();
+            }
+            else if (!string.Equals(value.Plugin, plugin.Id.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                throw new Exception("Mismatch between detected plugin and pre-existing identifier");
+            }
+            JsonSerializer.Serialize(writer, value, plugin.Meta.Options, plugin.Meta.JsonContext);
+        }
     }
 }

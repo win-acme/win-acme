@@ -1,6 +1,10 @@
 ﻿using Autofac;
+using PKISharp.WACS.Plugins.Interfaces;
 using System;
 using System.Diagnostics;
+using System.Net.Http.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using System.Text.RegularExpressions;
 
 namespace PKISharp.WACS.Plugins.Base
@@ -14,15 +18,13 @@ namespace PKISharp.WACS.Plugins.Base
         public Guid Id { get; set; }
         public Steps Step { get; set; }
         public Type Runner { get; set; }
-        public Type Options { get; set; }
-        public Type Factory { get; set; }
+        public IPluginMeta Meta { get; set; }
 
-        public Plugin(Type source, Plugin2Attribute meta, Steps step)
+        public Plugin(Type source, IPluginMeta meta, Steps step)
         {
             Id = meta.Id;
             Runner = source;
-            Options = meta.Options;
-            Factory = meta.OptionsFactory;
+            Meta = meta;
             Step = step;
         }
     }

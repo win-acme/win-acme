@@ -53,18 +53,8 @@ namespace PKISharp.WACS.Services
                 {
                     try
                     {
-                        var storeConverter = new PluginOptionsConverter<StorePluginOptions>(_plugin.PluginOptionTypes<StorePluginOptions>(), _log);
                         var text = File.ReadAllText(rj.FullName);
-                        var options = new JsonSerializerOptions();
-                        options.PropertyNameCaseInsensitive = true;
-                        options.Converters.Add(new ProtectedStringConverter(_log, _settings)); 
-                        options.Converters.Add(new StoresPluginOptionsConverter(storeConverter));
-                        options.Converters.Add(new PluginOptionsConverter<TargetPluginOptions>(_plugin.PluginOptionTypes<TargetPluginOptions>(), _log));
-                        options.Converters.Add(new PluginOptionsConverter<CsrPluginOptions>(_plugin.PluginOptionTypes<CsrPluginOptions>(), _log));
-                        options.Converters.Add(new PluginOptionsConverter<OrderPluginOptions>(_plugin.PluginOptionTypes<OrderPluginOptions>(), _log));
-                        options.Converters.Add(new PluginOptionsConverter<ValidationPluginOptions>(_plugin.PluginOptionTypes<ValidationPluginOptions>(), _log));
-                        options.Converters.Add(new PluginOptionsConverter<InstallationPluginOptions>(_plugin.PluginOptionTypes<InstallationPluginOptions>(), _log));
-                        var result = JsonSerializer.Deserialize<Renewal>(text, options);
+                        var result = JsonSerializer.Deserialize(text, WacsJson.Convert(_plugin, _log, _settings).Renewal);
                         if (result == null)
                         {
                             throw new Exception("result is empty");

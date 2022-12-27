@@ -1,22 +1,45 @@
 ﻿using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Base;
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Services.Serialization
 {
     /// <summary>
-    /// Non-generic base class needed for serialization
+    /// For initial JSON deserialization
     /// </summary>
-    public abstract class PluginOptions
+    public class PluginOptionsBase
     {
-        public PluginOptions() => Plugin = GetType().PluginId();
-
-        /// <summary>
-        /// Contains the unique GUID of the plugin
-        /// </summary>
         public string? Plugin { get; set; }
 
+        /// <summary>
+        /// Find plugin based on available metadata or type
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public Plugin? FindPlugin(IPluginService plugin)
+        {
+            if (string.IsNullOrWhiteSpace(Plugin))
+            {
+                // Find plugin based on the type
+                var typeMatch = plugin.GetPlugins().FirstOrDefault(x => x.Meta.OptionsFactory == GetType());
+                return typeMatch;
+            }
+            else if (Guid.TryParse(Plugin, out var pluginGuid))
+            {
+                return plugin.GetPlugin(pluginGuid);
+            }
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Non-generic base class needed for serialization
+    /// </summary>
+    public abstract class PluginOptions : PluginOptionsBase
+    {
         /// <summary>
         /// Describe the plugin to the user
         /// </summary>

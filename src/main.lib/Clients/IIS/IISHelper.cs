@@ -233,7 +233,11 @@ namespace PKISharp.WACS.Clients.IIS
             {
                 return new Regex(HostsToRegex(options.IncludeHosts));
             }
-            return options.IncludeRegex;
+            if (!string.IsNullOrEmpty(options.IncludeRegex))
+            {
+                return new Regex(options.IncludeRegex);
+            }
+            return null;
         }
 
         private List<string> GetHosts(IIISSite site)

@@ -7,7 +7,6 @@ using System.Text.RegularExpressions;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    [Plugin("54deb3ee-b5df-4381-8485-fe386054055b")]
     internal class IISOptions : TargetPluginOptions<IIS>
     {
         public override string Name => "IIS";
@@ -26,7 +25,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         /// <summary>
         /// Regular expression to select hosts
         /// </summary>
-        public Regex? IncludeRegex { get; set; }
+        public string? IncludeRegex { get; set; }
 
         /// <summary>
         /// Filter by hostname

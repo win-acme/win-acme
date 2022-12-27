@@ -1,5 +1,4 @@
 ﻿using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services.Serialization;
 using System.Collections.Generic;
@@ -9,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    [Plugin2<ManualOptions, ManualOptionsFactory, WacsJson>("e239db3b-b42f-48aa-b64f-46d4f3e9941b")]
+    [IPlugin.Plugin<ManualOptions, ManualOptionsFactory, WacsJson>("e239db3b-b42f-48aa-b64f-46d4f3e9941b")]
     internal class Manual : ITargetPlugin
     {
         private readonly ManualOptions _options;
@@ -26,7 +25,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 });
         }
 
-        public static Identifier ParseIdentifier(string identifier)
+        internal static Identifier ParseIdentifier(string identifier)
         {
             if (IPAddress.TryParse(identifier, out var address))
             {

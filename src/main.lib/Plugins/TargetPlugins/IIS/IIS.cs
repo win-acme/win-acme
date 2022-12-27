@@ -2,11 +2,16 @@
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
+    [IPlugin.Plugin<IISSitesOptions, IISOptionsFactory, WacsJson>("cdd79a68-4a87-4039-bee8-5a0ebdca41cb", Hidden = true)]
+    [IPlugin.Plugin<IISSiteOptions, IISOptionsFactory, WacsJson>("d7940b23-f570-460e-ab15-2c822a79009b", Hidden = true)]
+    [IPlugin.Plugin<IISBindingOptions, IISOptionsFactory, WacsJson>("2f5dd428-0f5d-4c8a-8fd0-56fc1b5985ce", Hidden = true)]
+    [IPlugin.Plugin<IISOptions, IISOptionsFactory, WacsJson>("54deb3ee-b5df-4381-8485-fe386054055b")]
     internal class IIS : ITargetPlugin
     {
         private readonly ILogService _log;

@@ -1,6 +1,8 @@
-﻿using PKISharp.WACS.Services;
+﻿using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.Interfaces
@@ -65,6 +67,18 @@ namespace PKISharp.WACS.Plugins.Interfaces
 
     public interface IIgnore { }
 
+    /// <summary>
+    /// Base class for the attribute is used to find it easily
+    /// </summary>
+    public interface IPluginMeta
+    {
+        public Guid Id { get; }
+        public bool Hidden { get; }
+        public Type Options { get; }
+        public Type OptionsFactory { get; }
+        public JsonSerializerContext JsonContext { get; }
+    }
+
     public interface IPlugin
     {
         /// <summary>
@@ -72,6 +86,35 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// </summary>
         /// <returns></returns>
         (bool, string?) Disabled => (false, null);
+
+        /// <summary>
+        /// Mark a class as a plugin
+        /// Only possible on types that implement IPlugin, as per 
+        /// https://blog.marcgravell.com/2009/06/restricting-attribute-usage.html
+        /// </summary>
+        /// <typeparam name="TOptions"></typeparam>
+        /// <typeparam name="TOptionsFactory"></typeparam>
+        /// <typeparam name="TJson"></typeparam>
+        [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
+        protected sealed class PluginAttribute<TOptions, TOptionsFactory, TJson> : Attribute, IPluginMeta
+            where TOptions : PluginOptions
+            where TOptionsFactory : IPluginOptionsFactory
+            where TJson : JsonSerializerContext, new()
+        {
+            public Guid Id { get; }
+            public bool Hidden { get; set; } = false;
+            public Type Options { get; }
+            public Type OptionsFactory { get; }
+            public JsonSerializerContext JsonContext { get; }
+
+            public PluginAttribute(string id)
+            {
+                Id = Guid.Parse(id);
+                Options = typeof(TOptions);
+                OptionsFactory = typeof(TOptionsFactory);
+                JsonContext = new TJson();
+            }
+        }
     }
 
 }

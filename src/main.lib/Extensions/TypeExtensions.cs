@@ -15,6 +15,7 @@ namespace PKISharp.WACS.Extensions
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
+        [Obsolete]
         public static string? PluginId(this Type type)
         {
             var attr = type.GetCustomAttributes(true).OfType<PluginAttribute>();

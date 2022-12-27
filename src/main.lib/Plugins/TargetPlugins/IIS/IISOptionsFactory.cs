@@ -2,6 +2,7 @@
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
@@ -11,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    internal class IISOptionsFactory : TargetPluginOptionsFactory<IIS, IISOptions>
+    internal class IISOptionsFactory : TargetPluginOptionsFactory<IIS, IISOptions>, IPluginOptionsFactory<IISOptions>
     {
         private readonly IISHelper _iisHelper;
         private readonly ILogService _log;
@@ -389,7 +390,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             try
             {
                 var actualRegex = new Regex(regex);
-                options.IncludeRegex = actualRegex;
+                options.IncludeRegex = regex;
                 return true;
             }
             catch (Exception ex)
