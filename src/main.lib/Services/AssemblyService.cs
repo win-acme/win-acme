@@ -180,7 +180,6 @@ namespace PKISharp.WACS.Services
         {
             var ret = _allTypes.AsEnumerable();
             ret = ret.Where(type => typeof(T) != type && typeof(T).IsAssignableFrom(type) && !type.IsAbstract);
-            ret = ret.Where(type => !typeof(IIgnore).IsAssignableFrom(type));
             if (!allowNull)
             {
                 ret = ret.Where(type => !typeof(INull).IsAssignableFrom(type));

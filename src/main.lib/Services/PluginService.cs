@@ -11,8 +11,6 @@ namespace PKISharp.WACS.Services
     public class PluginService : IPluginService
     {
         private readonly AssemblyService _assemblyService;
-        private readonly List<Type> _optionFactories;
-        private readonly List<Type> _pluginsRunners;
         private readonly List<Plugin> _plugins;
         internal readonly ILogService _log;
 
@@ -20,8 +18,6 @@ namespace PKISharp.WACS.Services
 
         internal void Configure(ContainerBuilder builder)
         {
-            _optionFactories.ForEach(t => builder.RegisterType(t).SingleInstance());
-            _pluginsRunners.ForEach(ip => builder.RegisterType(ip));
             _plugins.ForEach(p =>
             {
                 builder.RegisterType(p.Runner);
@@ -29,8 +25,6 @@ namespace PKISharp.WACS.Services
             });
         }
 
-        private IEnumerable<T> GetByName<T>(string name, ILifetimeScope scope) where T : IPluginOptionsFactory => GetFactories<T>(scope).Where(x => x.Match(name));
-        public IEnumerable<T> GetFactories<T>(ILifetimeScope scope) where T : IPluginOptionsFactory => _optionFactories.Select(scope.Resolve).OfType<T>().OrderBy(x => x.Order).ToList();
         public IEnumerable<Plugin> GetPlugins() => _plugins.AsEnumerable();
         public IEnumerable<Plugin> GetPlugins(Steps step) => GetPlugins().Where(x => x.Step == step);
         public Plugin? GetPlugin(Guid id) => GetPlugins().Where(x => x.Id == id).FirstOrDefault();
@@ -57,8 +51,6 @@ namespace PKISharp.WACS.Services
         {
             _log = logger;
             _assemblyService = assemblyService;
-            _optionFactories = _assemblyService.GetResolvable<IPluginOptionsFactory>(true).Where(x => x is not ITargetPluginOptionsFactory).ToList();
-            _pluginsRunners = new List<Type>();
             _plugins = new List<Plugin>();
             AddPluginType<ITargetPlugin>(Steps.Target);
             AddPluginType<IValidationPlugin>(Steps.Validation);
@@ -93,8 +85,7 @@ namespace PKISharp.WACS.Services
                 }
                 if (!attributes.Any()) 
                 {
-                    _pluginsRunners.Add(type);
-                  
+                    _log.Warning("Missing metadata on {type} from {location}", type.FullName, type.Assembly.Location);                  
                 }
             }
         }
@@ -113,24 +104,5 @@ namespace PKISharp.WACS.Services
                     return false;
                 });
         }
-
-        /// <summary>
-        /// Find chosen meta options factory based on command line parameter(s)
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="scope"></param>
-        /// <param name="name"></param>
-        /// <param name="parameter"></param>
-        /// <returns></returns>
-        public T? GetFactory<T>(ILifetimeScope scope, string name, string? parameter = null) where T : IPluginOptionsFactory
-        {
-            var plugins = GetByName<T>(name, scope);
-            if (typeof(T) == typeof(IValidationPluginOptionsFactory) && plugins.Count() > 1)
-            {
-                plugins = plugins.Where(x => string.Equals(parameter, (x as IValidationPluginOptionsFactory)?.ChallengeType, StringComparison.InvariantCultureIgnoreCase));
-            }
-            return plugins.FirstOrDefault();
-        }
-
     }
 }

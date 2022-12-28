@@ -1,10 +1,13 @@
 ﻿using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services.Serialization;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    [Plugin("1a87d670-3fa3-4a2a-bb10-491d48feb5db")]
+    [JsonSerializable(typeof(DigitalOceanOptions))]
+    internal partial class DigitalOceanJson : JsonSerializerContext { }
+
     internal class DigitalOceanOptions : ValidationPluginOptions<DigitalOcean>
     {
         public override string Name => "DigitalOcean";

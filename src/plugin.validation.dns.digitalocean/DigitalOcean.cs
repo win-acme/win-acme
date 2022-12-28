@@ -5,12 +5,15 @@ using System.Threading.Tasks;
 using DigitalOcean.API;
 using DigitalOcean.API.Models.Requests;
 using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 
 [assembly: SupportedOSPlatform("windows")]
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
+    [IPlugin.Plugin<DigitalOceanOptions, DigitalOceanOptionsFactory, DigitalOceanJson>
+        ("1a87d670-3fa3-4a2a-bb10-491d48feb5db", "", "")]
     internal class DigitalOcean : DnsValidation<DigitalOcean>
     {
         private readonly IDigitalOceanClient _doClient;

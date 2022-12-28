@@ -2,19 +2,22 @@
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using static System.IO.FileSystemAclExtensions;
 using System.Linq;
 using System.Security.AccessControl;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
 using System.Threading.Tasks;
-using System.Collections;
+using static System.IO.FileSystemAclExtensions;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
+    [IPlugin.Plugin<CertificateStoreOptions, CertificateStoreOptionsFactory, WacsJson>
+        ("e30adc8e-d756-4e16-a6f2-450f784b1a97", CertificateStoreOptions.PluginName, "Windows Certificate Store")]
     internal class CertificateStore : IStorePlugin, IDisposable
     {
         private const string DefaultStoreName = nameof(StoreName.My);

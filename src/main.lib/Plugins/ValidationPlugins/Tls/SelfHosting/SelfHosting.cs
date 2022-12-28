@@ -1,7 +1,9 @@
 ﻿using ACMESharp.Authorizations;
 using Org.BouncyCastle.Asn1;
 using PKISharp.WACS.Context;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -15,6 +17,8 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
 {
+    [IPlugin.Plugin<SelfHostingOptions, SelfHostingOptionsFactory, WacsJson>
+        ("a1565064-b208-4467-8ca1-1bd3c08aa500", "SelfHosting", "Answer TLS verification request from win-acme")]
     internal class SelfHosting : Validation<TlsAlpn01ChallengeValidationDetails>
     {
         internal const int DefaultValidationPort = 443;

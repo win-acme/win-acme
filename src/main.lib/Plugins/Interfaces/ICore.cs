@@ -64,8 +64,6 @@ namespace PKISharp.WACS.Plugins.Interfaces
 
     public interface INull { }
 
-    public interface IIgnore { }
-
     /// <summary>
     /// Base class for the attribute is used to find it easily
     /// </summary>
@@ -77,7 +75,7 @@ namespace PKISharp.WACS.Plugins.Interfaces
         public bool Hidden { get; }
         public Type Options { get; }
         public Type OptionsFactory { get; }
-        public JsonSerializerContext JsonContext { get; }
+        public Type OptionsJson { get; }
     }
 
     public interface IPlugin
@@ -97,10 +95,11 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// <typeparam name="TOptionsFactory"></typeparam>
         /// <typeparam name="TJson"></typeparam>
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
-        protected sealed class PluginAttribute<TOptions, TOptionsFactory, TJson> : Attribute, IPluginMeta
+        protected sealed class PluginAttribute<TOptions, TOptionsFactory, TJson> : 
+            Attribute, IPluginMeta
             where TOptions : PluginOptions, new()
             where TOptionsFactory : IPluginOptionsFactory
-            where TJson : JsonSerializerContext, new()
+            where TJson : JsonSerializerContext
         {
             public Guid Id { get; }
             public bool Hidden { get; set; } = false;
@@ -108,14 +107,14 @@ namespace PKISharp.WACS.Plugins.Interfaces
             public string Description { get; set; }
             public Type Options { get; }
             public Type OptionsFactory { get; }
-            public JsonSerializerContext JsonContext { get; }
+            public Type OptionsJson { get; }
 
             public PluginAttribute(string id, string name, string description)
             {
                 Id = Guid.Parse(id);
                 Options = typeof(TOptions);
                 OptionsFactory = typeof(TOptionsFactory);
-                JsonContext = new TJson();
+                OptionsJson = typeof(TJson);
                 Name = name; 
                 Description = description;
             }

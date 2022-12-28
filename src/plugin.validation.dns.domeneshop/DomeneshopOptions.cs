@@ -5,7 +5,9 @@ using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    [Plugin("0BD9B320-08E0-4BFE-A535-B979886187E4")]
+    [JsonSerializable(typeof(DomeneshopOptions))]
+    internal partial class DomeneshopJson : JsonSerializerContext { }
+
     internal class DomeneshopOptions : ValidationPluginOptions<DomeneshopDnsValidation>
     {
         public override string Name => "Domeneshop";

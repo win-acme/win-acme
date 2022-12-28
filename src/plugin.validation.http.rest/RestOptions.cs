@@ -1,10 +1,12 @@
-﻿using PKISharp.WACS.Plugins.Base;
-using PKISharp.WACS.Plugins.Base.Options;
+﻿using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services.Serialization;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    [Plugin("11ba2994-ea59-4f2f-b9eb-0eaa2fa3cbfa")]
+    [JsonSerializable(typeof(RestOptions))]
+    internal partial class RestJson : JsonSerializerContext {}
+
     internal sealed class RestOptions : ValidationPluginOptions<Rest>
     {
         public override string Name => "Rest";

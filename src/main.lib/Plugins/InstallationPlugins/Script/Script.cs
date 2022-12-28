@@ -1,8 +1,8 @@
 ﻿using PKISharp.WACS.Clients;
-using PKISharp.WACS.Configuration.Settings;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
+    [IPlugin.Plugin<IISOptions, IISOptionsFactory, WacsJson>
+        ("3bb22c70-358d-4251-86bd-11858363d913", "Script", "Start external script or program")]
     internal class Script : IInstallationPlugin
     {
         private readonly Renewal _renewal;

@@ -2,6 +2,7 @@
 using PKISharp.WACS.Context;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Concurrent;
 using System.IO;
@@ -10,6 +11,8 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
+    [IPlugin.Plugin<SelfHostingOptions, SelfHostingOptionsFactory, WacsJson>
+        ("c7d5e050-9363-4ba1-b3a8-931b31c618b7", "SelfHosting", "Serve verification files from memory")]
     internal class SelfHosting : Validation<Http01ChallengeValidationDetails>
     {
         internal const int DefaultHttpValidationPort = 80;

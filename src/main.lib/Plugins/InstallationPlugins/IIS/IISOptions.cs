@@ -1,9 +1,7 @@
-﻿using PKISharp.WACS.Plugins.Base;
-using PKISharp.WACS.Plugins.Base.Options;
+﻿using PKISharp.WACS.Plugins.Base.Options;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    [Plugin("ea6a5be3-f8de-4d27-a6bd-750b619b2ee2")]
     internal class IISOptions : InstallationPluginOptions<IIS>
     {
         public long? SiteId { get; set; }

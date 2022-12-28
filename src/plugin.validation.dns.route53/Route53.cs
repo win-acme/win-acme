@@ -15,6 +15,8 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
+    [IPlugin.Plugin<Route53Options, Route53OptionsFactory, Route53Json>
+        ("4e5dc595-45c7-4461-929a-8f96a0c96b3d", "", "")]
     internal sealed class Route53 : DnsValidation<Route53>
     {
         private readonly IAmazonRoute53 _route53Client;

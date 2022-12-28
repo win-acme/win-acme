@@ -1,9 +1,11 @@
-﻿using PKISharp.WACS.Plugins.Base;
-using PKISharp.WACS.Plugins.Base.Options;
+﻿using PKISharp.WACS.Plugins.Base.Options;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    [Plugin("B61505E9-1709-43FD-996F-C74C3686286C")]
+    [JsonSerializable(typeof(CloudDnsOptions))]
+    internal partial class CloudDnsJson : JsonSerializerContext { }
+
     internal class CloudDnsOptions : ValidationPluginOptions<CloudDns>
     {
         public override string Name => "GCPDns";

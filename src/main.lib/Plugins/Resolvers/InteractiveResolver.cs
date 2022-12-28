@@ -76,9 +76,13 @@ namespace PKISharp.WACS.Plugins.Resolvers
 
             // Apply default sorting when no sorting has been provided yet
             IEnumerable<T> options = new List<T>();
-            options = step == Steps.Target
-                ? _plugins.GetPlugins(step).Where(x => !x.Meta.Hidden).Select(x => x.Meta.OptionsFactory).Select(scope.Resolve).OfType<T>().ToList()
-                : _plugins.GetFactories<T>(scope);
+            options = _plugins.
+                GetPlugins(step).
+                Where(x => !x.Meta.Hidden).
+                Select(x => x.Meta.OptionsFactory).
+                Select(scope.Resolve).
+                OfType<T>().
+                ToList();
             options = filter != null ? filter(options) : options.Where(x => x is not INull);
             options = sort != null ? sort(options) : options.OrderBy(x => x.Order).ThenBy(x => x.Description);
 
@@ -103,17 +107,10 @@ namespace PKISharp.WACS.Plugins.Resolvers
             if (!string.IsNullOrEmpty(defaultParam1))
             {
                 var defaultPlugin = default(T);
-                if (step == Steps.Target)
+                var factory = _plugins.GetPlugin(scope, step, defaultParam1, defaultParam2)?.Meta.OptionsFactory;
+                if (factory != null)
                 {
-                    var factory = _plugins.GetPlugin(scope, step, defaultParam1, defaultParam2)?.Meta.OptionsFactory;
-                    if (factory != null)
-                    {
-                        defaultPlugin = scope.Resolve(factory) as T;
-                    }
-                }
-                else
-                {
-                    defaultPlugin = _plugins.GetFactory<T>(scope, defaultParam1, defaultParam2);
+                    defaultPlugin = scope.Resolve(factory) as T;
                 }
                 if (defaultPlugin == null)
                 {

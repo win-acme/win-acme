@@ -1,10 +1,12 @@
-﻿using PKISharp.WACS.Plugins.Base;
-using PKISharp.WACS.Plugins.Base.Options;
+﻿using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services.Serialization;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    [Plugin("3693c40c-7c2f-4b70-aead-27869d8cbdf3")]
+    [JsonSerializable(typeof(SimplyOptions))]
+    internal partial class SimplyJson : JsonSerializerContext { }
+
     internal class SimplyOptions : ValidationPluginOptions<SimplyDnsValidation>
     {
         public override string Name => "Simply";

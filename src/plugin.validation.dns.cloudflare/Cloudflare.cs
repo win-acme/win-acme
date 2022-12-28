@@ -3,6 +3,7 @@ using FluentCloudflare.Api;
 using FluentCloudflare.Api.Entities;
 using FluentCloudflare.Extensions;
 using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
@@ -15,6 +16,8 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
+    [IPlugin.Plugin<CloudflareOptions, CloudflareOptionsFactory, CloudflareJson>
+        ("73af2c2e-4cf1-4198-a4c8-1129003cfb75", "Cloudflare", "Create verification records in Cloudflare DNS")]
     public class Cloudflare : DnsValidation<Cloudflare>, IDisposable
     {
         private readonly CloudflareOptions _options;

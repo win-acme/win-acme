@@ -5,7 +5,9 @@ using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    [Plugin("C66CC8BE-3046-46C2-A0BA-EC4EC3E7FE96")]
+    [JsonSerializable(typeof(NS1Options))]
+    internal partial class NS1Json : JsonSerializerContext { }
+
     internal class NS1Options : ValidationPluginOptions<NS1DnsValidation>
     {
         public override string Name => "NS1";

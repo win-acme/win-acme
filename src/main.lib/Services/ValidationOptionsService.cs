@@ -21,19 +21,19 @@ namespace PKISharp.WACS.Services
         private readonly IInputService _input;
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
-        private readonly IPluginService _plugin;
+        private readonly WacsJson _wacsJson;
         private List<GlobalValidationPluginOptions>? _options;
 
         /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="input"></param>
-        public ValidationOptionsService(IInputService input, ILogService log, ISettingsService settings, IPluginService plugin)
+        public ValidationOptionsService(IInputService input, ILogService log, ISettingsService settings, WacsJson wacsJson)
         {
             _input = input;
             _log = log;
             _settings = settings;
-            _plugin = plugin;
+            _wacsJson = wacsJson;
         }
 
         /// <summary>
@@ -77,7 +77,7 @@ namespace PKISharp.WACS.Services
                 }
                 return;
             }
-            var rawJson = JsonSerializer.Serialize(_options, WacsJson.Convert(_plugin, _log, _settings).ListGlobalValidationPluginOptions);
+            var rawJson = JsonSerializer.Serialize(_options, _wacsJson.ListGlobalValidationPluginOptions);
             await File.WriteAllTextAsync(Store.FullName, rawJson);
         }
 
@@ -92,7 +92,7 @@ namespace PKISharp.WACS.Services
                 try
                 {
                     var rawJson = await File.ReadAllTextAsync(Store.FullName);
-                    _options = JsonSerializer.Deserialize(rawJson, WacsJson.Convert(_plugin, _log, _settings).ListGlobalValidationPluginOptions);
+                    _options = JsonSerializer.Deserialize(rawJson, _wacsJson.ListGlobalValidationPluginOptions);
                     if (_options == null)
                     {
                         throw new Exception();
@@ -275,9 +275,6 @@ namespace PKISharp.WACS.Services
         /// </summary>
         public class GlobalValidationPluginOptions
         {
-            private string? _pattern;
-            private string? _regex;
-
             /// <summary>
             /// Priority of this rule (lower number = higher priority)
             /// </summary>
@@ -286,27 +283,13 @@ namespace PKISharp.WACS.Services
             /// <summary>
             /// Direct input of a regular expression
             /// </summary>
-            public string? Regex
-            {
-                get => _regex;
-                set
-                {
-                    _regex = value;
-                }
-            }
+            public string? Regex { get; set; }
 
             /// <summary>
             /// Input of a pattern like used in other
             /// parts of the software as well, e.g.
             /// </summary>
-            public string? Pattern
-            {
-                get => _pattern;
-                set
-                {
-                    _pattern = value;
-                }
-            }
+            public string? Pattern { get; set; }
 
             /// <summary>
             /// The actual validation options that 

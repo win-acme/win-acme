@@ -1,12 +1,13 @@
 ﻿using PKISharp.WACS.Plugins.Azure.Common;
-using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services.Serialization;
 using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    [Plugin("dbfa91e2-28c0-4b37-857c-df6575dbb388")]
+    [JsonSerializable(typeof(KeyVaultOptions))]
+    internal partial class KeyVaultJson : JsonSerializerContext { }
+
     internal class KeyVaultOptions : StorePluginOptions<KeyVault>, IAzureOptionsCommon
     {
         public override string Name => "KeyVault";

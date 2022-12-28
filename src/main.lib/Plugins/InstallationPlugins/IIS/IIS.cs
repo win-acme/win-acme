@@ -1,8 +1,10 @@
 ﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.CsrPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +12,10 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
+    [IPlugin.Plugin<IISFtpOptions, IISOptionsFactory, WacsJson>
+        ("13058a79-5084-48af-b047-634e0ee222f4", "IISFTP", "Create or update FTP bindings in IIS", Hidden = true)]
+    [IPlugin.Plugin<IISOptions, IISOptionsFactory, WacsJson>
+        ("ea6a5be3-f8de-4d27-a6bd-750b619b2ee2", "IIS", "Create or update bindings in IIS")]
     internal class IIS : IInstallationPlugin
     {
         private readonly ILogService _log;

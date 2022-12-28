@@ -5,7 +5,9 @@ using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    [Plugin("4e5dc595-45c7-4461-929a-8f96a0c96b3d")]
+    [JsonSerializable(typeof(Route53Options))]
+    internal partial class Route53Json : JsonSerializerContext { }
+
     internal sealed class Route53Options : ValidationPluginOptions<Route53>
     {
         public override string Name { get; } = "Route53";

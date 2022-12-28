@@ -2,7 +2,9 @@
 using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Prng;
 using Org.BouncyCastle.Security;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
@@ -11,6 +13,8 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.CsrPlugins
 {
+    [IPlugin.Plugin<EcOptions, EcOptionsFactory, WacsJson>
+        ("b9060d4b-c2d3-49ac-b37f-962e7c3cbe9d", "RSA", "RSA key")]
     internal class Rsa : CsrPlugin<Rsa, RsaOptions>
     {
         private static readonly object PostProcessLock = new();

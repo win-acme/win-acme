@@ -18,6 +18,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     /// <summary>
     /// Handle creation of DNS records in Azure
     /// </summary>
+    [IPlugin.Plugin<KeyVaultOptions, KeyVaultOptionsFactory, KeyVaultJson>
+        ("dbfa91e2-28c0-4b37-857c-df6575dbb388", "", "")]
     internal class KeyVault : IStorePlugin
     {
         private CertificateClient? _azureKeyVaultClient;

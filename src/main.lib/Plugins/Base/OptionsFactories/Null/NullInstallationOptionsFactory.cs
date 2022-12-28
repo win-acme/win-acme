@@ -2,6 +2,7 @@
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -25,13 +26,14 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         bool IPluginOptionsFactory.Match(string name) => string.Equals(name, new NullInstallationOptions().Name, StringComparison.InvariantCultureIgnoreCase);
     }
 
-    [Plugin("aecc502c-5f75-43d2-b578-f95d50c79ea1")]
     internal class NullInstallationOptions : InstallationPluginOptions<NullInstallation>
     {
         public override string Name => "None";
         public override string Description => "No (additional) installation steps";
     }
 
+    [IPlugin.Plugin<NullInstallationOptions, NullInstallationOptionsFactory, WacsJson>
+    ("aecc502c-5f75-43d2-b578-f95d50c79ea1", "None", "No (additional) installation steps")]
     internal class NullInstallation : IInstallationPlugin
     {
         Task<bool> IInstallationPlugin.Install(Target target, IEnumerable<IStorePlugin> stores, CertificateInfo newCertificateInfo, CertificateInfo? oldCertificateInfo) => Task.FromResult(true);

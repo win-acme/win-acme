@@ -2,6 +2,7 @@
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Threading.Tasks;
 
@@ -27,7 +28,6 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
     /// Do not make INull, we actually need to store these options to override
     /// the default behaviour of CertificateStore
     /// </summary>
-    [Plugin("cfdd7caa-ba34-4e9e-b9de-2a3d64c4f4ec")]
     internal class NullStoreOptions : StorePluginOptions<NullStore>
     {
         internal const string PluginName = "None";
@@ -35,6 +35,8 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         public override string Description => "No (additional) store steps";
     }
 
+    [IPlugin.Plugin<NullStoreOptions, NullStoreOptionsFactory, WacsJson>
+        ("cfdd7caa-ba34-4e9e-b9de-2a3d64c4f4ec", "None", "No (additional) store steps")]
     internal class NullStore : IStorePlugin
     {
         public Task Delete(CertificateInfo certificateInfo) => Task.CompletedTask;

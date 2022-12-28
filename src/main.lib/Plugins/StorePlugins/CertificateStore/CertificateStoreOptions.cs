@@ -5,7 +5,6 @@ using System.Collections.Generic;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    [Plugin("e30adc8e-d756-4e16-a6f2-450f784b1a97")]
     internal class CertificateStoreOptions : StorePluginOptions<CertificateStore>
     {
         internal const string PluginName = "CertificateStore";

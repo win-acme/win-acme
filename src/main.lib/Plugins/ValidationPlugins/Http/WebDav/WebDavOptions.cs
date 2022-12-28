@@ -4,7 +4,6 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    [Plugin("7e191d0e-30d1-47b3-ae2e-442499d33e16")]
     internal class WebDavOptions : HttpValidationOptions<WebDav>
     {
         public override string Name => "WebDav";

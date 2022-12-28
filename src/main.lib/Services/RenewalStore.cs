@@ -15,7 +15,6 @@ namespace PKISharp.WACS.Services
     {
         internal ISettingsService _settings;
         internal ILogService _log;
-        internal IPluginService _plugin;
         internal ICacheService _cacheService;
         internal IInputService _inputService;
         internal IDueDateService _dueDateService;
@@ -26,12 +25,10 @@ namespace PKISharp.WACS.Services
             ILogService log,
             IInputService input,
             PasswordGenerator password,
-            IPluginService plugin,
             IDueDateService dueDateService,
             ICacheService cacheService)
         {
             _log = log;
-            _plugin = plugin;
             _inputService = input;
             _passwordGenerator = password;
             _settings = settings;

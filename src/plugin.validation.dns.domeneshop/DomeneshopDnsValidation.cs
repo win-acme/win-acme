@@ -1,6 +1,8 @@
 ﻿using Abstractions.Integrations.Domeneshop;
 
 using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Plugins.ValidationPlugins.Dns;
 using PKISharp.WACS.Services;
 using System;
 using System.Linq;
@@ -12,6 +14,8 @@ using Options = Abstractions.Integrations.Domeneshop.DomeneshopOptions;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
+    [IPlugin.Plugin<DomeneshopOptions, DomeneshopOptionsFactory, DomeneshopJson>
+        ("0BD9B320-08E0-4BFE-A535-B979886187E4", "", "")]
     internal class DomeneshopDnsValidation : DnsValidation<DomeneshopDnsValidation>
     {
         private readonly DomeneshopClient _client;
@@ -27,8 +31,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             ISettingsService settings,
             DomainParseService domainParser,
             DomeneshopOptions options,
-            SecretServiceManager ssm,
-            IProxyService proxyService)
+            SecretServiceManager ssm)
             : base(dnsClient, logService, settings)
         {
             _client = new DomeneshopClient(new Options

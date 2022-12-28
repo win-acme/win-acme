@@ -3,7 +3,6 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    [Plugin("1c77b3a4-5310-4c46-92c6-00d866e84d6b")]
     internal class FileSystemOptions : HttpValidationOptions<FileSystem>
     {
         public override string Name => "FileSystem";

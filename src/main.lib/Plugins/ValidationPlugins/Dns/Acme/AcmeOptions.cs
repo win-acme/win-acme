@@ -3,7 +3,6 @@ using PKISharp.WACS.Plugins.Base.Options;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    [Plugin("c13acc1b-7571-432b-9652-7a68a5f506c5")]
     internal class AcmeOptions : ValidationPluginOptions<Acme>
     {
         public override string Name => "acme-dns";

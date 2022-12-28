@@ -4,7 +4,6 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
 {
-    [Plugin("a1565064-b208-4467-8ca1-1bd3c08aa500")]
     internal class SelfHostingOptions : ValidationPluginOptions<SelfHosting>
     {
         public override string ChallengeType => Constants.TlsAlpn01ChallengeType;

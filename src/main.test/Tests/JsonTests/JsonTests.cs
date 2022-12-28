@@ -1,8 +1,10 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Autofac;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using PKISharp.WACS.UnitTests.Mock.Services;
+using System;
 using System.Text.Json;
 
 namespace PKISharp.WACS.UnitTests.Tests.JsonTests
@@ -10,22 +12,34 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
     [TestClass]
     public class JsonTests
     {
-        private readonly ISettingsService _settings;
-        private readonly ILogService _log;
+        private readonly ILifetimeScope _container;
         private readonly IPluginService _plugin;
 
         public JsonTests()
         {
-            _settings = new MockSettingsService();
-            _log = new Mock.Services.LogService(false);
-            var assembly = new MockAssemblyService(_log);
-            _plugin = new PluginService(_log, assembly);
+            var builder = new ContainerBuilder();
+            _ = builder.RegisterType<MockSettingsService>().As<ISettingsService>();
+            _ = builder.RegisterType<MockAssemblyService>().As<AssemblyService>();
+            _ = builder.RegisterType<Mock.Services.LogService>().As<ILogService>();
+            _ = builder.RegisterType<PluginService>().As<IPluginService>();
+            _ = builder.Register(x =>
+            {
+                var context = x.Resolve<IComponentContext>();
+                if (context is ILifetimeScope scope)
+                {
+                    return new WacsJsonOptionsFactory(scope);
+                }
+                throw new Exception();
+            }).As<WacsJsonOptionsFactory>().SingleInstance();
+            _ = builder.RegisterType<WacsJson>().SingleInstance();
+            _container = builder.Build();
+            _plugin = _container.Resolve<IPluginService>();
         }
 
         private Renewal Deserialize(string json)
         {
-           
-            var renewal = JsonSerializer.Deserialize(json, WacsJson.Convert(_plugin, _log, _settings).Renewal);
+            var wacsJson = _container.Resolve<WacsJson>();
+            var renewal = JsonSerializer.Deserialize(json, wacsJson.Renewal);
             Assert.IsNotNull(renewal);
             return renewal;
         }

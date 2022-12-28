@@ -2,11 +2,14 @@
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace PKISharp.WACS.Plugins.OrderPlugins
 {
+    [IPlugin.Plugin<DomainOptions, DomainOptionsFactory, WacsJson>
+        ("b7c331d4-d875-453e-b83a-2b537ca12535", "Domain", "Separate certificate for each domain (e.g. *.example.com)")]
     class Domain : IOrderPlugin
     {
         private readonly DomainParseService _domainParseService;

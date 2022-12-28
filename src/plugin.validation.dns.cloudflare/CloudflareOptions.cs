@@ -1,10 +1,12 @@
-﻿using PKISharp.WACS.Plugins.Base;
-using PKISharp.WACS.Plugins.Base.Options;
+﻿using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services.Serialization;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    [Plugin("73af2c2e-4cf1-4198-a4c8-1129003cfb75")]
+    [JsonSerializable(typeof(CloudflareOptions))]
+    internal partial class CloudflareJson : JsonSerializerContext { }
+
     public class CloudflareOptions : ValidationPluginOptions<Cloudflare>
     {
         public override string Name => "Cloudflare";

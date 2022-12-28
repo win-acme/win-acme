@@ -1,8 +1,10 @@
 ﻿using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Services.Serialization
@@ -41,6 +43,9 @@ namespace PKISharp.WACS.Services.Serialization
         /// <returns></returns>
         public string Name(IPluginService plugin) => FindPlugin(plugin)?.Meta.Name ?? "?";
         public string Description(IPluginService plugin) => FindPlugin(plugin)?.Meta.Description ?? "?";
+
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? ExtensionData { get; set; }
     }
 
     /// <summary>

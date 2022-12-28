@@ -2,7 +2,6 @@
 using PKISharp.WACS.Plugins.Base.Factories.Null;
 using PKISharp.WACS.Plugins.Base.Options;
 using System.Collections.Generic;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using static PKISharp.WACS.Services.ValidationOptionsService;
 using Csr = PKISharp.WACS.Plugins.CsrPlugins;
@@ -49,18 +48,6 @@ namespace PKISharp.WACS.Services.Serialization
     [JsonSerializable(typeof(List<GlobalValidationPluginOptions>))]
     internal partial class WacsJson : JsonSerializerContext 
     {
-        public static WacsJson Convert(IPluginService _plugin, ILogService _log, ISettingsService _settings)
-        {
-            var pluginConverter = new PluginOptionsConverter(_plugin);
-            var options = new JsonSerializerOptions
-            { 
-                WriteIndented = true,
-                PropertyNameCaseInsensitive = true
-            };
-            options.Converters.Add(new ProtectedStringConverter(_log, _settings)); 
-            options.Converters.Add(new StoresPluginOptionsConverter(pluginConverter));
-            options.Converters.Add(pluginConverter);
-            return new WacsJson(options);
-        }
+        public WacsJson(WacsJsonOptionsFactory optionsFactory) : base(optionsFactory.Options) {}
     }
 }

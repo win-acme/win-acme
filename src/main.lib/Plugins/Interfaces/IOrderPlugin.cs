@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace PKISharp.WACS.Plugins.Interfaces
 {
-    public interface IOrderPlugin
+    public interface IOrderPlugin : IPlugin
     {
         IEnumerable<Order> Split(Renewal renewal, Target target);
     }

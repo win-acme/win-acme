@@ -7,8 +7,11 @@ using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
+using Serilog;
 using System;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -171,6 +174,16 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterInstance(settingsService).As<ISettingsService>();
             _ = builder.RegisterInstance(pluginService).As<IPluginService>();
             _ = builder.RegisterType<AdminService>();
+            _ = builder.Register(x =>
+            {
+                var context = x.Resolve<IComponentContext>();
+                if (context is ILifetimeScope scope)
+                {
+                    return new WacsJsonOptionsFactory(scope);
+                }
+                throw new Exception();
+            }).As<WacsJsonOptionsFactory>().SingleInstance();
+            _ = builder.RegisterType<WacsJson>().SingleInstance();
             _ = builder.RegisterType<UserRoleService>().As<IUserRoleService>().SingleInstance();
             _ = builder.RegisterType<ValidationOptionsService>().As<IValidationOptionsService>().As<ValidationOptionsService>().SingleInstance();
             _ = builder.RegisterType<InputService>().As<IInputService>().SingleInstance();
@@ -208,6 +221,7 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterType<RenewalManager>().SingleInstance();
             _ = builder.RegisterType<RenewalCreator>().SingleInstance();
             _ = builder.RegisterType<ArgumentsInputService>().SingleInstance();
+            
 
             _ = builder.RegisterType<Wacs>();
 

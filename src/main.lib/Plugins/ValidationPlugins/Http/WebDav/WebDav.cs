@@ -1,9 +1,13 @@
 ﻿using PKISharp.WACS.Client;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
+    [IPlugin.Plugin<WebDavOptions, WebDavOptionsFactory, WacsJson>
+        ("7e191d0e-30d1-47b3-ae2e-442499d33e16", "WebDav", "Upload verification files via WebDav")]
     internal class WebDav : HttpValidation<WebDavOptions, WebDav>
     {
         private readonly WebDavClientWrapper _webdavClient;

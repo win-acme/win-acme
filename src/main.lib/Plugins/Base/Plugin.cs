@@ -3,9 +3,11 @@ using PKISharp.WACS.Plugins.Interfaces;
 using System;
 using System.Diagnostics;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using System.Text.RegularExpressions;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace PKISharp.WACS.Plugins.Base
 {
@@ -19,13 +21,27 @@ namespace PKISharp.WACS.Plugins.Base
         public Steps Step { get; set; }
         public Type Runner { get; set; }
         public IPluginMeta Meta { get; set; }
-
+  
         public Plugin(Type source, IPluginMeta meta, Steps step)
         {
             Id = meta.Id;
             Runner = source;
             Meta = meta;
             Step = step;
+        }
+
+        public JsonTypeInfo JsonTypeInfo(ILifetimeScope scope)
+        {
+            if (scope.Resolve(Meta.OptionsJson) is not JsonSerializerContext context)
+            {
+                throw new Exception("Unable to create JsonSerializerContext");
+            }
+            var ret = context.GetTypeInfo(Meta.Options);
+            if (ret == null)
+            {
+                throw new Exception("JsonSerializerContext lacks JsonTypeInfo");
+            }
+            return ret;
         }
     }
 }

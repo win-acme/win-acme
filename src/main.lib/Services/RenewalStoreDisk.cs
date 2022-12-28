@@ -13,11 +13,19 @@ namespace PKISharp.WACS.Services
 {
     internal class RenewalStoreDisk : RenewalStore
     {
+        private readonly WacsJson _wacsJson; 
         public RenewalStoreDisk(
-            ISettingsService settings, ILogService log, 
-            IInputService input, PasswordGenerator password, IDueDateService dueDate,
-            IPluginService plugin, ICacheService certificateService) :
-            base(settings, log, input, password, plugin, dueDate, certificateService) { }
+            ISettingsService settings, 
+            ILogService log, 
+            IInputService input, 
+            PasswordGenerator password, 
+            WacsJson wacsJson,
+            IDueDateService dueDate,
+            ICacheService certificateService) :
+            base(settings, log, input, password, dueDate, certificateService) 
+        {
+            _wacsJson = wacsJson;
+        }
 
         /// <summary>
         /// Local cache to prevent superfluous reading and
@@ -54,7 +62,7 @@ namespace PKISharp.WACS.Services
                     try
                     {
                         var text = File.ReadAllText(rj.FullName);
-                        var result = JsonSerializer.Deserialize(text, WacsJson.Convert(_plugin, _log, _settings).Renewal);
+                        var result = JsonSerializer.Deserialize(text, _wacsJson.Renewal);
                         if (result == null)
                         {
                             throw new Exception("result is empty");

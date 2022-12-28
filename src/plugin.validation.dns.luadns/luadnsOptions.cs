@@ -5,7 +5,9 @@ using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    [Plugin("3b0c3cca-db98-40b7-b678-b34791070d42")]
+    [JsonSerializable(typeof(LuaDnsOptions))]
+    internal partial class LuaDnsJson : JsonSerializerContext { }
+
     internal sealed class LuaDnsOptions : ValidationPluginOptions<LuaDns>
     {
         public override string Name { get; } = "LuaDns";

@@ -19,9 +19,8 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
           IInputService input, 
           PasswordGenerator password,
           IDueDateService dueDate,
-          IPluginService plugin, 
           ICacheService certificateService) :
-          base(settings, log, input, password, plugin, dueDate, certificateService)
+          base(settings, log, input, password, dueDate, certificateService)
         {
             _renewalsCache = new List<Renewal>
             {

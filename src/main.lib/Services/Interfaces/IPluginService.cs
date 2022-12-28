@@ -13,12 +13,5 @@ namespace PKISharp.WACS.Services
         IEnumerable<Plugin> GetPlugins(Steps step);
         Plugin? GetPlugin(Guid id);
         Plugin? GetPlugin(ILifetimeScope scope, Steps step, string name, string? parameter = null);
-
-        [Obsolete]
-        IEnumerable<T> GetFactories<T>(ILifetimeScope scope) where T: IPluginOptionsFactory;
-        [Obsolete]
-        T? GetFactory<T>(ILifetimeScope scope, string name, string? parameter = null) where T : IPluginOptionsFactory;
-        [Obsolete]
-        IEnumerable<Type> PluginOptionTypes<T>() where T : PluginOptions;
     }
 }

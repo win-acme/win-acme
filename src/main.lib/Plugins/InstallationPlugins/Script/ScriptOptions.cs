@@ -4,7 +4,6 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    [Plugin("3bb22c70-358d-4251-86bd-11858363d913")]
     internal class ScriptOptions : InstallationPluginOptions<Script>
     {
         public override string Name => "Script";

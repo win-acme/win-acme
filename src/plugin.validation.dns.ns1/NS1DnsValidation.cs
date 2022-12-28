@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.ValidationPlugins.Dns.NS1;
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
@@ -10,6 +11,8 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
+    [IPlugin.Plugin<NS1Options, NS1OptionsFactory, NS1Json>
+        ("C66CC8BE-3046-46C2-A0BA-EC4EC3E7FE96", "", "")]
     internal class NS1DnsValidation : DnsValidation<NS1DnsValidation>
     {
         private readonly DnsManagementClient _client;
