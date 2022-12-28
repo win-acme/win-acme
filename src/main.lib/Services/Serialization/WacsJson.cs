@@ -51,7 +51,7 @@ namespace PKISharp.WACS.Services.Serialization
     {
         public static WacsJson Convert(IPluginService _plugin, ILogService _log, ISettingsService _settings)
         {
-            var pluginConverter = new Plugin2OptionsConverter(_plugin);
+            var pluginConverter = new PluginOptionsConverter(_plugin);
             var options = new JsonSerializerOptions
             { 
                 WriteIndented = true,

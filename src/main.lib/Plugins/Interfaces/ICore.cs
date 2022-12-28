@@ -1,5 +1,4 @@
-﻿using PKISharp.WACS.Plugins.Base;
-using PKISharp.WACS.Services;
+﻿using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Text.Json.Serialization;
@@ -73,6 +72,8 @@ namespace PKISharp.WACS.Plugins.Interfaces
     public interface IPluginMeta
     {
         public Guid Id { get; }
+        public string Name { get; }
+        public string Description { get; }
         public bool Hidden { get; }
         public Type Options { get; }
         public Type OptionsFactory { get; }
@@ -97,22 +98,26 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// <typeparam name="TJson"></typeparam>
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
         protected sealed class PluginAttribute<TOptions, TOptionsFactory, TJson> : Attribute, IPluginMeta
-            where TOptions : PluginOptions
+            where TOptions : PluginOptions, new()
             where TOptionsFactory : IPluginOptionsFactory
             where TJson : JsonSerializerContext, new()
         {
             public Guid Id { get; }
             public bool Hidden { get; set; } = false;
+            public string Name { get; set; }
+            public string Description { get; set; }
             public Type Options { get; }
             public Type OptionsFactory { get; }
             public JsonSerializerContext JsonContext { get; }
 
-            public PluginAttribute(string id)
+            public PluginAttribute(string id, string name, string description)
             {
                 Id = Guid.Parse(id);
                 Options = typeof(TOptions);
                 OptionsFactory = typeof(TOptionsFactory);
                 JsonContext = new TJson();
+                Name = name; 
+                Description = description;
             }
         }
     }

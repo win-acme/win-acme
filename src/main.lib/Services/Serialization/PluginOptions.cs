@@ -33,6 +33,14 @@ namespace PKISharp.WACS.Services.Serialization
             }
             return null;
         }
+
+        /// <summary>
+        /// Name of the plugin
+        /// </summary>
+        /// <param name="plugin"></param>
+        /// <returns></returns>
+        public string Name(IPluginService plugin) => FindPlugin(plugin)?.Meta.Name ?? "?";
+        public string Description(IPluginService plugin) => FindPlugin(plugin)?.Meta.Description ?? "?";
     }
 
     /// <summary>
