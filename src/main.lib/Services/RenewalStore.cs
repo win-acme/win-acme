@@ -15,7 +15,6 @@ namespace PKISharp.WACS.Services
     {
         internal ISettingsService _settings;
         internal ILogService _log;
-        internal ICacheService _cacheService;
         internal IInputService _inputService;
         internal IDueDateService _dueDateService;
         internal PasswordGenerator _passwordGenerator;
@@ -25,14 +24,12 @@ namespace PKISharp.WACS.Services
             ILogService log,
             IInputService input,
             PasswordGenerator password,
-            IDueDateService dueDateService,
-            ICacheService cacheService)
+            IDueDateService dueDateService)
         {
             _log = log;
             _inputService = input;
             _passwordGenerator = password;
             _settings = settings;
-            _cacheService = cacheService;
             _dueDateService = dueDateService;
             _log.Debug("Renewal period: {RenewalDays} days", _settings.ScheduledTask.RenewalDays);
         }
@@ -110,9 +107,9 @@ namespace PKISharp.WACS.Services
         public void Cancel(Renewal renewal)
         {
             renewal.Deleted = true;
-            Renewals = Renewals;
+            var renewals = Renewals;
+            Renewals = renewals;
             _log.Warning("Renewal {target} cancelled", renewal);
-            _cacheService.Delete(renewal);
         }
 
         /// <summary>

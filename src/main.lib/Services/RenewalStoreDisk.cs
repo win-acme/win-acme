@@ -13,19 +13,15 @@ namespace PKISharp.WACS.Services
 {
     internal class RenewalStoreDisk : RenewalStore
     {
-        private readonly WacsJson _wacsJson; 
+        private readonly WacsJson _wacsJson;
         public RenewalStoreDisk(
-            ISettingsService settings, 
-            ILogService log, 
-            IInputService input, 
-            PasswordGenerator password, 
+            ISettingsService settings,
+            ILogService log,
+            IInputService input,
+            PasswordGenerator password,
             WacsJson wacsJson,
-            IDueDateService dueDate,
-            ICacheService certificateService) :
-            base(settings, log, input, password, dueDate, certificateService) 
-        {
-            _wacsJson = wacsJson;
-        }
+            IDueDateService dueDate) :
+            base(settings, log, input, password, dueDate) => _wacsJson = wacsJson;
 
         /// <summary>
         /// Local cache to prevent superfluous reading and

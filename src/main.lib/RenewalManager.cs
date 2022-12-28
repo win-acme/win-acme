@@ -19,6 +19,7 @@ namespace PKISharp.WACS
         private readonly IInputService _input;
         private readonly ILogService _log;
         private readonly IRenewalStore _renewalStore;
+        private readonly ICacheService _cacheService;
         private readonly ArgumentsParser _arguments;
         private readonly MainArguments _args;
         private readonly IContainer _container;
@@ -32,6 +33,7 @@ namespace PKISharp.WACS
         public RenewalManager(
             ArgumentsParser arguments, MainArguments args,
             IRenewalStore renewalStore, IContainer container,
+            ICacheService cacheService,
             IInputService input, ILogService log,
             ISettingsService settings, IDueDateService dueDate,
             IAutofacBuilder autofacBuilder, ExceptionHandler exceptionHandler,
@@ -49,6 +51,7 @@ namespace PKISharp.WACS
             _exceptionHandler = exceptionHandler;
             _renewalExecutor = renewalExecutor;
             _renewalCreator = renewalCreator;
+            _cacheService = cacheService;
             _dueDate = dueDate;
         }
 
@@ -191,6 +194,7 @@ namespace PKISharp.WACS
                                 foreach (var renewal in selectedRenewals)
                                 {
                                     _renewalStore.Cancel(renewal);
+                                    _cacheService.Delete(renewal);
                                 };
                                 originalSelection = _renewalStore.Renewals.OrderBy(x => x.LastFriendlyName);
                                 selectedRenewals = originalSelection;
@@ -684,6 +688,7 @@ namespace PKISharp.WACS
             foreach (var t in targets)
             {
                 _renewalStore.Cancel(t);
+                _cacheService.Delete(t);
             }
         }
 
