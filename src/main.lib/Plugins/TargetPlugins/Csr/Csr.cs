@@ -5,7 +5,6 @@ using Org.BouncyCastle.Pkcs;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
-using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    [IPlugin.Plugin<CsrOptions, CsrOptionsFactory, WacsJson>
+    [IPlugin.Plugin<CsrOptions, CsrOptionsFactory>
         ("5C3DB0FB-840B-469F-B5A7-0635D8E9A93D", CsrOptions.NameLabel, "CSR created by another program")]
     internal class Csr : ITargetPlugin
     {

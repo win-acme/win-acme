@@ -6,11 +6,9 @@ namespace PKISharp.WACS.Services.Serialization
 {
     internal class WacsJsonOptionsFactory
     {
-        public WacsJsonOptionsFactory(ILifetimeScope context) 
+        public WacsJsonOptionsFactory(ILogService log, ISettingsService settings, IPluginService plugin) 
         {
-            var log = context.Resolve<ILogService>();
-            var settings = context.Resolve<ISettingsService>();
-            var pluginConverter = new PluginOptionsConverter(context);
+            var pluginConverter = new PluginOptionsConverter(plugin);
             var options = new JsonSerializerOptions
             {
                 WriteIndented = true,

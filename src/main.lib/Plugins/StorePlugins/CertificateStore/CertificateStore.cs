@@ -16,7 +16,7 @@ using static System.IO.FileSystemAclExtensions;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    [IPlugin.Plugin<CertificateStoreOptions, CertificateStoreOptionsFactory, WacsJson>
+    [IPlugin.Plugin<CertificateStoreOptions, CertificateStoreOptionsFactory>
         ("e30adc8e-d756-4e16-a6f2-450f784b1a97", CertificateStoreOptions.PluginName, "Windows Certificate Store")]
     internal class CertificateStore : IStorePlugin, IDisposable
     {

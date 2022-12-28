@@ -174,15 +174,7 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterInstance(settingsService).As<ISettingsService>();
             _ = builder.RegisterInstance(pluginService).As<IPluginService>();
             _ = builder.RegisterType<AdminService>();
-            _ = builder.Register(x =>
-            {
-                var context = x.Resolve<IComponentContext>();
-                if (context is ILifetimeScope scope)
-                {
-                    return new WacsJsonOptionsFactory(scope);
-                }
-                throw new Exception();
-            }).As<WacsJsonOptionsFactory>().SingleInstance();
+            _ = builder.RegisterType<WacsJsonOptionsFactory>().SingleInstance();
             _ = builder.RegisterType<WacsJson>().SingleInstance();
             _ = builder.RegisterType<UserRoleService>().As<IUserRoleService>().SingleInstance();
             _ = builder.RegisterType<ValidationOptionsService>().As<IValidationOptionsService>().As<ValidationOptionsService>().SingleInstance();

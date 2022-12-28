@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    [IPlugin.Plugin<RestOptions, RestOptionsFactory, RestJson>
+    [IPlugin.Plugin<RestOptions, RestOptionsFactory>
         ("11ba2994-ea59-4f2f-b9eb-0eaa2fa3cbfa", "", "")]
     internal sealed class Rest : Validation<Http01ChallengeValidationDetails>
     {

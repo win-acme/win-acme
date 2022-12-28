@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    [IPlugin.Plugin<ScriptOptions, ScriptOptionsFactory, WacsJson>
+    [IPlugin.Plugin<ScriptOptions, ScriptOptionsFactory>
         ("8f1da72e-f727-49f0-8546-ef69e5ecec32", "Script", "Create verification records with your own script")]
     internal class Script : DnsValidation<Script>
     {

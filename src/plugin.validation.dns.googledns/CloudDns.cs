@@ -18,7 +18,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    [IPlugin.Plugin<CloudDnsOptions, CloudDnsOptionsFactory, CloudDnsJson>
+    [IPlugin.Plugin<CloudDnsOptions, CloudDnsOptionsFactory>
         ("B61505E9-1709-43FD-996F-C74C3686286C", "", "")]
     internal class CloudDns: DnsValidation<CloudDns>
     {

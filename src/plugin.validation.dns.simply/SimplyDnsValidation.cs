@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    [IPlugin.Plugin<SimplyOptions, SimplyOptionsFactory, SimplyJson>
+    [IPlugin.Plugin<SimplyOptions, SimplyOptionsFactory>
         ("3693c40c-7c2f-4b70-aead-27869d8cbdf3", "", "")]
     internal class SimplyDnsValidation : DnsValidation<SimplyDnsValidation>
     {

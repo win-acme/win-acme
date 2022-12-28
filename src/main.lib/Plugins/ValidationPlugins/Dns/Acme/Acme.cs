@@ -2,13 +2,12 @@
 using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
-using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    [IPlugin.Plugin<AcmeOptions, AcmeOptionsFactory, WacsJson>
+    [IPlugin.Plugin<AcmeOptions, AcmeOptionsFactory>
         ("c13acc1b-7571-432b-9652-7a68a5f506c5", "acme-dns", "Create verification records with acme-dns (https://github.com/joohoi/acme-dns)")]
     internal class Acme : DnsValidation<Acme>
     {

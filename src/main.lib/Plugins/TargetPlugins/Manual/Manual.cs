@@ -1,6 +1,5 @@
 ﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
-using PKISharp.WACS.Services.Serialization;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -8,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    [IPlugin.Plugin<ManualOptions, ManualOptionsFactory, WacsJson>
+    [IPlugin.Plugin<ManualOptions, ManualOptionsFactory>
         ("e239db3b-b42f-48aa-b64f-46d4f3e9941b", "Manual", ManualOptions.DescriptionText)]
     internal class Manual : ITargetPlugin
     {

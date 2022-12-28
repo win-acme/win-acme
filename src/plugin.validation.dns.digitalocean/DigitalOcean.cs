@@ -12,7 +12,7 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    [IPlugin.Plugin<DigitalOceanOptions, DigitalOceanOptionsFactory, DigitalOceanJson>
+    [IPlugin.Plugin<DigitalOceanOptions, DigitalOceanOptionsFactory>
         ("1a87d670-3fa3-4a2a-bb10-491d48feb5db", "", "")]
     internal class DigitalOcean : DnsValidation<DigitalOcean>
     {

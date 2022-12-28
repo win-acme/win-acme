@@ -3,7 +3,6 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
-using PKISharp.WACS.Services.Serialization;
 using System;
 using System.IO;
 using System.Linq;
@@ -12,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    [IPlugin.Plugin<PemFilesOptions, PemFilesOptionsFactory, WacsJson>
+    [IPlugin.Plugin<PemFilesOptions, PemFilesOptionsFactory>
         ("e57c70e4-cd60-4ba6-80f6-a41703e21031", "PemFiles", "PEM encoded files (Apache, nginx, etc.)")]
     internal class PemFiles : IStorePlugin
     {
