@@ -184,6 +184,8 @@ namespace PKISharp.WACS.Host
                 throw new Exception();
             }).As<WacsJsonOptionsFactory>().SingleInstance();
             _ = builder.RegisterType<WacsJson>().SingleInstance();
+            _ = builder.RegisterType<WacsJsonPluginsOptionsFactory>().SingleInstance();
+            _ = builder.RegisterType<WacsJsonPlugins>().SingleInstance();
             _ = builder.RegisterType<UserRoleService>().As<IUserRoleService>().SingleInstance();
             _ = builder.RegisterType<ValidationOptionsService>().As<IValidationOptionsService>().As<ValidationOptionsService>().SingleInstance();
             _ = builder.RegisterType<InputService>().As<IInputService>().SingleInstance();

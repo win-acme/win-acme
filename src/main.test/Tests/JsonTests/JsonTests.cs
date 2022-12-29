@@ -32,6 +32,8 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
                 throw new Exception();
             }).As<WacsJsonOptionsFactory>().SingleInstance();
             _ = builder.RegisterType<WacsJson>().SingleInstance();
+            _ = builder.RegisterType<WacsJsonPluginsOptionsFactory>().SingleInstance();
+            _ = builder.RegisterType<WacsJsonPlugins>().SingleInstance();
             _container = builder.Build();
             _plugin = _container.Resolve<IPluginService>();
         }
@@ -70,6 +72,22 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
                             }}";
             var renewal = Deserialize(input);
             Assert.IsNull(renewal.TargetPluginOptions);
+        }
+
+        [TestMethod]
+        public void DeserializeValidationCorrect()
+        {
+            foreach (var plugin in _plugin.GetPlugins(Steps.Validation))
+            {
+                var input = @$"{{
+                              ""ValidationPluginOptions"": {{
+                                ""Plugin"": ""{plugin.Id}""
+                              }}
+                            }}";
+                var renewal = Deserialize(input);
+                Assert.IsInstanceOfType(renewal.ValidationPluginOptions, plugin.Meta.Options);
+                Assert.AreEqual(renewal.ValidationPluginOptions.FindPlugin(_plugin), plugin);
+            }
         }
     }
 }

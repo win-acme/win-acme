@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace PKISharp.WACS.Plugins.OrderPlugins
 {
-    [IPlugin.Plugin<SiteOptions, SiteOptionsFactory, WacsJson>
+    [IPlugin.Plugin<SiteOptions, SiteOptionsFactory, WacsJsonPlugins>
         ("74a42b2d-8eaa-4f40-ab6a-f55304254143", "Site", "Separate certificate for each IIS site")]
     class Site : IOrderPlugin
     {

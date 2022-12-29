@@ -8,13 +8,13 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    [IPlugin.Plugin<IISSitesOptions, IISOptionsFactory, WacsJson>
+    [IPlugin.Plugin<IISSitesOptions, IISOptionsFactory, WacsJsonPlugins>
         ("cdd79a68-4a87-4039-bee8-5a0ebdca41cb", "IISSites", "Read sites from IIS (legacy)", Hidden = true)]
-    [IPlugin.Plugin<IISSiteOptions, IISOptionsFactory, WacsJson>
+    [IPlugin.Plugin<IISSiteOptions, IISOptionsFactory, WacsJsonPlugins>
         ("d7940b23-f570-460e-ab15-2c822a79009b", "IISSite", "Read site from IIS (legacy)", Hidden = true)]
-    [IPlugin.Plugin<IISBindingOptions, IISOptionsFactory, WacsJson>
+    [IPlugin.Plugin<IISBindingOptions, IISOptionsFactory, WacsJsonPlugins>
         ("2f5dd428-0f5d-4c8a-8fd0-56fc1b5985ce", "IISBinding", "Read bindings from IIS (legacy)", Hidden = true)]
-    [IPlugin.Plugin<IISOptions, IISOptionsFactory, WacsJson>
+    [IPlugin.Plugin<IISOptions, IISOptionsFactory, WacsJsonPlugins>
         ("54deb3ee-b5df-4381-8485-fe386054055b", "IIS", "Read bindings from IIS")]
     internal class IIS : ITargetPlugin
     {

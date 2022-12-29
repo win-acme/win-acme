@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    [IPlugin.Plugin<FtpOptions, FtpOptionsFactory, WacsJson>
+    [IPlugin.Plugin<FtpOptions, FtpOptionsFactory, WacsJsonPlugins>
         ("bc27d719-dcf2-41ff-bf08-54db7ea49c48", "FTP", "Upload verification files via FTP(S)")]
     internal class Ftp : HttpValidation<FtpOptions, Ftp>
     {

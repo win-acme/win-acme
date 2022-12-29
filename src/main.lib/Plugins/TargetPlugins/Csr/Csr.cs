@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    [IPlugin.Plugin<CsrOptions, CsrOptionsFactory, WacsJson>
+    [IPlugin.Plugin<CsrOptions, CsrOptionsFactory, WacsJsonPlugins>
         ("5C3DB0FB-840B-469F-B5A7-0635D8E9A93D", CsrOptions.NameLabel, "CSR created by another program")]
     internal class Csr : ITargetPlugin
     {

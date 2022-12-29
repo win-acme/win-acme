@@ -12,7 +12,7 @@ using Bc = Org.BouncyCastle;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    [IPlugin.Plugin<PfxFileOptions, PfxFileOptionsFactory, WacsJson>
+    [IPlugin.Plugin<PfxFileOptions, PfxFileOptionsFactory, WacsJsonPlugins>
         ("2a2c576f-7637-4ade-b8db-e8613b0bb33e", "PfxFile", "PFX archive")]
     internal class PfxFile : IStorePlugin
     {

@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    [IPlugin.Plugin<PemFilesOptions, PemFilesOptionsFactory, WacsJson>
+    [IPlugin.Plugin<PemFilesOptions, PemFilesOptionsFactory, WacsJsonPlugins>
         ("e57c70e4-cd60-4ba6-80f6-a41703e21031", "PemFiles", "PEM encoded files (Apache, nginx, etc.)")]
     internal class PemFiles : IStorePlugin
     {

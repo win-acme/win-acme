@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    [IPlugin.Plugin<ManualOptions, ManualOptionsFactory, WacsJson>
+    [IPlugin.Plugin<ManualOptions, ManualOptionsFactory, WacsJsonPlugins>
         ("e45d62b9-f9a8-441e-b95f-c5ee0dcd8040", "Manual", "Create verification records manually (auto-renew not possible)")]
     internal class Manual : DnsValidation<Manual>
     {

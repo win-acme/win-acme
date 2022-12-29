@@ -1,11 +1,7 @@
 ﻿using Autofac;
-using Autofac.Core.Activators.Reflection;
-using PKISharp.WACS.Plugins.Base.Options;
 using System;
-using System.Reflection.Metadata.Ecma335;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Text.Json.Serialization.Metadata;
 
 namespace PKISharp.WACS.Services.Serialization
 {
@@ -24,7 +20,7 @@ namespace PKISharp.WACS.Services.Serialization
             _scope = context;
         }
 
-        public override bool CanConvert(Type typeToConvert) => typeof(TargetPluginOptions).IsAssignableFrom(typeToConvert);
+        public override bool CanConvert(Type typeToConvert) => typeof(PluginOptionsBase).IsAssignableFrom(typeToConvert);
 
         /// <summary>
         /// Override reading to allow strongly typed object return, based on Plugin
@@ -43,9 +39,11 @@ namespace PKISharp.WACS.Services.Serialization
                 reader.Skip();
                 return null;
             }
-#pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
-            return JsonSerializer.Deserialize(ref reader, plugin.Meta.Options) as PluginOptionsBase;
-#pragma warning restore IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
+            if (_scope.Resolve(plugin.Meta.OptionsJson) is not JsonSerializerContext context)
+            {
+                throw new Exception("Unable to create JsonSerializerContext");
+            }
+            return JsonSerializer.Deserialize(ref reader, plugin.Meta.Options, context) as PluginOptionsBase;
         }
 
         /// <summary>

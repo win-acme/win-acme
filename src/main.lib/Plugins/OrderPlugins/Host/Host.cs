@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace PKISharp.WACS.Plugins.OrderPlugins
 {
-    [IPlugin.Plugin<HostOptions, HostOptionsFactory, WacsJson>
+    [IPlugin.Plugin<HostOptions, HostOptionsFactory, WacsJsonPlugins>
         ("874a86e4-29c7-4294-9ab6-6908866847a0", "Host", "Separate certificate for each host (e.g. sub.example.com)")]
     class Host : IOrderPlugin
     {

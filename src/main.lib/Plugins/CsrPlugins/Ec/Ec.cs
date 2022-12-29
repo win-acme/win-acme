@@ -11,7 +11,7 @@ using System;
 
 namespace PKISharp.WACS.Plugins.CsrPlugins
 {
-    [IPlugin.Plugin<EcOptions, EcOptionsFactory, WacsJson>
+    [IPlugin.Plugin<EcOptions, EcOptionsFactory, WacsJsonPlugins>
         ("9aadcf71-5241-4c4f-aee1-bfe3f6be3489", "EC", "Elliptic Curve key")]
     internal class Ec : CsrPlugin<Ec, EcOptions>
     {

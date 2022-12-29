@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace PKISharp.WACS.Plugins.OrderPlugins
 {
-    [IPlugin.Plugin<DomainOptions, DomainOptionsFactory, WacsJson>
+    [IPlugin.Plugin<DomainOptions, DomainOptionsFactory, WacsJsonPlugins>
         ("b7c331d4-d875-453e-b83a-2b537ca12535", "Domain", "Separate certificate for each domain (e.g. *.example.com)")]
     class Domain : IOrderPlugin
     {

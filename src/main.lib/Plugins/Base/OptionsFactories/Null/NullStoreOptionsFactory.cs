@@ -35,7 +35,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         public override string Description => "No (additional) store steps";
     }
 
-    [IPlugin.Plugin<NullStoreOptions, NullStoreOptionsFactory, WacsJson>
+    [IPlugin.Plugin<NullStoreOptions, NullStoreOptionsFactory, WacsJsonPlugins>
         ("cfdd7caa-ba34-4e9e-b9de-2a3d64c4f4ec", "None", "No (additional) store steps")]
     internal class NullStore : IStorePlugin
     {
