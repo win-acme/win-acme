@@ -14,7 +14,7 @@ using Options = Abstractions.Integrations.Domeneshop.DomeneshopOptions;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    [IPlugin.Plugin<DomeneshopOptions, DomeneshopOptionsFactory>
+    [IPlugin.Plugin<DomeneshopOptions, DomeneshopOptionsFactory, DomeneshopJson>
         ("0BD9B320-08E0-4BFE-A535-B979886187E4", "", "")]
     internal class DomeneshopDnsValidation : DnsValidation<DomeneshopDnsValidation>
     {

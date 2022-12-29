@@ -12,9 +12,9 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    [IPlugin.Plugin<IISFtpOptions, IISOptionsFactory>
+    [IPlugin.Plugin<IISFtpOptions, IISOptionsFactory, WacsJson>
         ("13058a79-5084-48af-b047-634e0ee222f4", "IISFTP", "Create or update FTP bindings in IIS", Hidden = true)]
-    [IPlugin.Plugin<IISOptions, IISOptionsFactory>
+    [IPlugin.Plugin<IISOptions, IISOptionsFactory, WacsJson>
         ("ea6a5be3-f8de-4d27-a6bd-750b619b2ee2", "IIS", "Create or update bindings in IIS")]
     internal class IIS : IInstallationPlugin
     {

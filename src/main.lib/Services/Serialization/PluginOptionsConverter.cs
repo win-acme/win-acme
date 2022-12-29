@@ -1,8 +1,11 @@
 ﻿using Autofac;
+using Autofac.Core.Activators.Reflection;
 using PKISharp.WACS.Plugins.Base.Options;
 using System;
+using System.Reflection.Metadata.Ecma335;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 
 namespace PKISharp.WACS.Services.Serialization
 {
@@ -13,10 +16,15 @@ namespace PKISharp.WACS.Services.Serialization
     internal class PluginOptionsConverter : JsonConverter<PluginOptionsBase>
     {
         private readonly IPluginService _pluginService;
+        private readonly ILifetimeScope _scope;
 
-        public PluginOptionsConverter(IPluginService plugin) => _pluginService = plugin;
+        public PluginOptionsConverter(ILifetimeScope context) 
+        {
+            _pluginService = context.Resolve<IPluginService>();
+            _scope = context;
+        }
 
-        public override bool CanConvert(Type typeToConvert) => typeof(PluginOptionsBase).IsAssignableFrom(typeToConvert);
+        public override bool CanConvert(Type typeToConvert) => typeof(TargetPluginOptions).IsAssignableFrom(typeToConvert);
 
         /// <summary>
         /// Override reading to allow strongly typed object return, based on Plugin
@@ -35,14 +43,9 @@ namespace PKISharp.WACS.Services.Serialization
                 reader.Skip();
                 return null;
             }
-#if !PLUGGABLE
 #pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
-#endif
             return JsonSerializer.Deserialize(ref reader, plugin.Meta.Options) as PluginOptionsBase;
-#if !PLUGGABLE
 #pragma warning restore IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
-#endif
-
         }
 
         /// <summary>
@@ -67,7 +70,11 @@ namespace PKISharp.WACS.Services.Serialization
             {
                 throw new Exception("Mismatch between detected plugin and pre-existing identifier");
             }
-            JsonSerializer.Serialize(writer, value, plugin.Meta.Options);
+            if (_scope.Resolve(plugin.Meta.OptionsJson) is not JsonSerializerContext context)
+            {
+                throw new Exception("Unable to create JsonSerializerContext");
+            }
+            JsonSerializer.Serialize(writer, value, plugin.Meta.Options, context);
         }
     }
 }

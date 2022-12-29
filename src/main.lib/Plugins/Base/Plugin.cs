@@ -29,5 +29,19 @@ namespace PKISharp.WACS.Plugins.Base
             Meta = meta;
             Step = step;
         }
+
+        public JsonTypeInfo JsonTypeInfo(ILifetimeScope scope)
+        {
+            if (scope.Resolve(Meta.OptionsJson) is not JsonSerializerContext context)
+            {
+                throw new Exception("Unable to create JsonSerializerContext");
+            }
+            var ret = context.GetTypeInfo(Meta.Options);
+            if (ret == null)
+            {
+                throw new Exception("JsonSerializerContext lacks JsonTypeInfo");
+            }
+            return ret;
+        }
     }
 }

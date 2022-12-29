@@ -32,7 +32,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         public override string Description => "No (additional) installation steps";
     }
 
-    [IPlugin.Plugin<NullInstallationOptions, NullInstallationOptionsFactory>
+    [IPlugin.Plugin<NullInstallationOptions, NullInstallationOptionsFactory, WacsJson>
     ("aecc502c-5f75-43d2-b578-f95d50c79ea1", "None", "No (additional) installation steps")]
     internal class NullInstallation : IInstallationPlugin
     {

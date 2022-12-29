@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    [IPlugin.Plugin<LuaDnsOptions, LuaDnsOptionsFactory>
+    [IPlugin.Plugin<LuaDnsOptions, LuaDnsOptionsFactory, LuaDnsJson>
         ("3b0c3cca-db98-40b7-b678-b34791070d42", "", "")]
     internal sealed class LuaDns : DnsValidation<LuaDns>
     {

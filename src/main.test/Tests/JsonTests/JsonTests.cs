@@ -22,7 +22,15 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
             _ = builder.RegisterType<MockAssemblyService>().As<AssemblyService>();
             _ = builder.RegisterType<Mock.Services.LogService>().As<ILogService>();
             _ = builder.RegisterType<PluginService>().As<IPluginService>();
-            _ = builder.RegisterType<WacsJsonOptionsFactory>().SingleInstance();
+            _ = builder.Register(x =>
+            {
+                var context = x.Resolve<IComponentContext>();
+                if (context is ILifetimeScope scope)
+                {
+                    return new WacsJsonOptionsFactory(scope);
+                }
+                throw new Exception();
+            }).As<WacsJsonOptionsFactory>().SingleInstance();
             _ = builder.RegisterType<WacsJson>().SingleInstance();
             _container = builder.Build();
             _plugin = _container.Resolve<IPluginService>();
@@ -62,22 +70,6 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
                             }}";
             var renewal = Deserialize(input);
             Assert.IsNull(renewal.TargetPluginOptions);
-        }
-
-        [TestMethod]
-        public void DeserializeValidationCorrect()
-        {
-            foreach (var validation in _plugin.GetPlugins(Steps.Validation))
-            {
-                var input = @$"{{
-                              ""ValidationPluginOptions"": {{
-                                ""Plugin"": ""{validation.Id}""
-                              }}
-                            }}";
-                var renewal = Deserialize(input);
-                Assert.IsInstanceOfType(renewal.ValidationPluginOptions, validation.Meta.Options);
-                Assert.AreEqual(renewal.ValidationPluginOptions.FindPlugin(_plugin), validation);
-            }
         }
     }
 }
