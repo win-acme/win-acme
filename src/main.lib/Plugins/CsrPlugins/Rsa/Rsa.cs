@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.CsrPlugins
 {
-    [IPlugin.Plugin<EcOptions, EcOptionsFactory, WacsJsonPlugins>
+    [IPlugin.Plugin<RsaOptions, RsaOptionsFactory, WacsJsonPlugins>
         ("b9060d4b-c2d3-49ac-b37f-962e7c3cbe9d", "RSA", "RSA key")]
     internal class Rsa : CsrPlugin<Rsa, RsaOptions>
     {

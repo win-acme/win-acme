@@ -1,6 +1,7 @@
 ﻿using PKISharp.WACS.Plugins.Base.Factories.Null;
 using System.Text.Json.Serialization;
 using Csr = PKISharp.WACS.Plugins.CsrPlugins;
+using Store = PKISharp.WACS.Plugins.StorePlugins;
 using Installation = PKISharp.WACS.Plugins.InstallationPlugins;
 using Order = PKISharp.WACS.Plugins.OrderPlugins;
 using Target = PKISharp.WACS.Plugins.TargetPlugins;
@@ -32,6 +33,10 @@ namespace PKISharp.WACS.Services.Serialization
     [JsonSerializable(typeof(Order.SingleOptions))]
     [JsonSerializable(typeof(Csr.EcOptions))]
     [JsonSerializable(typeof(Csr.RsaOptions))]
+    [JsonSerializable(typeof(Store.CentralSslOptions))]
+    [JsonSerializable(typeof(Store.CertificateStoreOptions))]
+    [JsonSerializable(typeof(Store.PemFilesOptions))]
+    [JsonSerializable(typeof(Store.PfxFileOptions))]
     [JsonSerializable(typeof(Installation.IISFtpOptions))]
     [JsonSerializable(typeof(Installation.IISOptions), TypeInfoPropertyName = "InstallationIISOptions")]
     [JsonSerializable(typeof(Installation.ScriptOptions), TypeInfoPropertyName = "InstallationScriptOptions")]

@@ -5,6 +5,7 @@ using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using PKISharp.WACS.UnitTests.Mock.Services;
 using System;
+using System.Diagnostics;
 using System.Text.Json;
 
 namespace PKISharp.WACS.UnitTests.Tests.JsonTests
@@ -14,6 +15,7 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
     {
         private readonly ILifetimeScope _container;
         private readonly IPluginService _plugin;
+        private readonly ILogService _log;
 
         public JsonTests()
         {
@@ -36,6 +38,7 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
             _ = builder.RegisterType<WacsJsonPlugins>().SingleInstance();
             _container = builder.Build();
             _plugin = _container.Resolve<IPluginService>();
+            _log = _container.Resolve<ILogService>();
         }
 
         private Renewal Deserialize(string json)
@@ -85,6 +88,7 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
                               }}
                             }}";
                 var renewal = Deserialize(input);
+                _log.Information(plugin.Runner.Name);
                 Assert.IsInstanceOfType(renewal.ValidationPluginOptions, plugin.Meta.Options);
                 Assert.AreEqual(renewal.ValidationPluginOptions.FindPlugin(_plugin), plugin);
             }
