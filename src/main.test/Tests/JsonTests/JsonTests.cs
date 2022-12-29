@@ -93,5 +93,90 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
                 Assert.AreEqual(renewal.ValidationPluginOptions.FindPlugin(_plugin), plugin);
             }
         }
+
+        [TestMethod]
+        public void DeserializeCsrCorrect()
+        {
+            foreach (var plugin in _plugin.GetPlugins(Steps.Csr))
+            {
+                var input = @$"{{
+                              ""CsrPluginOptions"": {{
+                                ""Plugin"": ""{plugin.Id}""
+                              }}
+                            }}";
+                var renewal = Deserialize(input);
+                _log.Information(plugin.Runner.Name);
+                Assert.IsInstanceOfType(renewal.CsrPluginOptions, plugin.Meta.Options);
+                Assert.AreEqual(renewal.CsrPluginOptions!.FindPlugin(_plugin), plugin);
+            }
+        }
+
+        [TestMethod]
+        public void DeserializeOrderCorrect()
+        {
+            foreach (var plugin in _plugin.GetPlugins(Steps.Order))
+            {
+                var input = @$"{{
+                              ""OrderPluginOptions"": {{
+                                ""Plugin"": ""{plugin.Id}""
+                              }}
+                            }}";
+                var renewal = Deserialize(input);
+                _log.Information(plugin.Runner.Name);
+                Assert.IsInstanceOfType(renewal.OrderPluginOptions, plugin.Meta.Options);
+                Assert.AreEqual(renewal.OrderPluginOptions!.FindPlugin(_plugin), plugin);
+            }
+        }
+
+        [TestMethod]
+        public void DeserializeStoreCorrectSingle()
+        {
+            foreach (var plugin in _plugin.GetPlugins(Steps.Store))
+            {
+                var input = @$"{{
+                              ""StorePluginOptions"": {{
+                                ""Plugin"": ""{plugin.Id}""
+                              }}
+                            }}";
+                var renewal = Deserialize(input);
+                _log.Information(plugin.Runner.Name);
+                Assert.IsInstanceOfType(renewal.StorePluginOptions[0], plugin.Meta.Options);
+                Assert.AreEqual(renewal.StorePluginOptions[0]!.FindPlugin(_plugin), plugin);
+            }
+        }
+
+        [TestMethod]
+        public void DeserializeStoreCorrectArray()
+        {
+            foreach (var plugin in _plugin.GetPlugins(Steps.Store))
+            {
+                var input = @$"{{
+                              ""StorePluginOptions"": [{{
+                                ""Plugin"": ""{plugin.Id}""
+                              }}]
+                            }}";
+                var renewal = Deserialize(input);
+                _log.Information(plugin.Runner.Name);
+                Assert.IsInstanceOfType(renewal.StorePluginOptions[0], plugin.Meta.Options);
+                Assert.AreEqual(renewal.StorePluginOptions[0]!.FindPlugin(_plugin), plugin);
+            }
+        }
+
+        [TestMethod]
+        public void DeserializeInstallationCorrectArray()
+        {
+            foreach (var plugin in _plugin.GetPlugins(Steps.Installation))
+            {
+                var input = @$"{{
+                              ""InstallationPluginOptions"": [{{
+                                ""Plugin"": ""{plugin.Id}""
+                              }}]
+                            }}";
+                var renewal = Deserialize(input);
+                _log.Information(plugin.Runner.Name);
+                Assert.IsInstanceOfType(renewal.InstallationPluginOptions[0], plugin.Meta.Options);
+                Assert.AreEqual(renewal.InstallationPluginOptions[0]!.FindPlugin(_plugin), plugin);
+            }
+        }
     }
 }

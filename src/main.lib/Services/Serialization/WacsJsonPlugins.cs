@@ -31,6 +31,7 @@ namespace PKISharp.WACS.Services.Serialization
     [JsonSerializable(typeof(Order.DomainOptions))]
     [JsonSerializable(typeof(Order.HostOptions))]
     [JsonSerializable(typeof(Order.SingleOptions))]
+    [JsonSerializable(typeof(Order.SiteOptions))]
     [JsonSerializable(typeof(Csr.EcOptions))]
     [JsonSerializable(typeof(Csr.RsaOptions))]
     [JsonSerializable(typeof(Store.CentralSslOptions))]
