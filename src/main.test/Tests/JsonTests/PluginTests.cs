@@ -10,31 +10,20 @@ using System.Text.Json;
 namespace PKISharp.WACS.UnitTests.Tests.JsonTests
 {
     [TestClass]
-    public class JsonTests
+    public class PluginTests
     {
         private readonly ILifetimeScope _container;
         private readonly IPluginService _plugin;
         private readonly ILogService _log;
 
-        public JsonTests()
+        public PluginTests()
         {
             var builder = new ContainerBuilder();
             _ = builder.RegisterType<MockSettingsService>().As<ISettingsService>();
             _ = builder.RegisterType<MockAssemblyService>().As<AssemblyService>();
             _ = builder.RegisterType<Mock.Services.LogService>().As<ILogService>();
             _ = builder.RegisterType<PluginService>().As<IPluginService>();
-            _ = builder.Register(x =>
-            {
-                var context = x.Resolve<IComponentContext>();
-                if (context is ILifetimeScope scope)
-                {
-                    return new WacsJsonOptionsFactory(scope);
-                }
-                throw new Exception();
-            }).As<WacsJsonOptionsFactory>().SingleInstance();
-            _ = builder.RegisterType<WacsJson>().SingleInstance();
-            _ = builder.RegisterType<WacsJsonPluginsOptionsFactory>().SingleInstance();
-            _ = builder.RegisterType<WacsJsonPlugins>().SingleInstance();
+            WacsJson.Configure(builder);
             _container = builder.Build();
             _plugin = _container.Resolve<IPluginService>();
             _log = _container.Resolve<ILogService>();
@@ -42,7 +31,7 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
 
         private Renewal Deserialize(string json)
         {
-            var wacsJson = _container.Resolve<WacsJson>();
+            var wacsJson = _container.ResolveNamed<WacsJson>("legacy");
             var renewal = JsonSerializer.Deserialize(json, wacsJson.Renewal);
             Assert.IsNotNull(renewal);
             return renewal;

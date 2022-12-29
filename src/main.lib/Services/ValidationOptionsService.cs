@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using Autofac.Features.AttributeFilters;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Options;
@@ -10,7 +11,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -28,7 +28,11 @@ namespace PKISharp.WACS.Services
         /// Constructor
         /// </summary>
         /// <param name="input"></param>
-        public ValidationOptionsService(IInputService input, ILogService log, ISettingsService settings, WacsJson wacsJson)
+        public ValidationOptionsService(
+            IInputService input, 
+            ILogService log,
+            ISettingsService settings,
+            [KeyFilter("current")] WacsJson wacsJson)
         {
             _input = input;
             _log = log;

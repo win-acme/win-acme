@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Plugins.Base.Options
             input.Show(null, "[Installation]");
             input.Show("Plugin", $"{Name} - ({Description})", level: 1);
         }
-
+        [JsonIgnore]
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
         public override Type Instance => typeof(T);
     }

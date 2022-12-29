@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using Autofac.Features.AttributeFilters;
 using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Clients.DNS;
@@ -71,10 +72,7 @@ namespace PKISharp.WACS.Host
             {
                 // Restore original code page
                 Console.OutputEncoding = original;
-                if (_globalMutex != null)
-                {
-                    _globalMutex.Dispose();
-                }
+                _globalMutex?.Dispose();
             }
         }
 
@@ -174,25 +172,14 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterInstance(settingsService).As<ISettingsService>();
             _ = builder.RegisterInstance(pluginService).As<IPluginService>();
             _ = builder.RegisterType<AdminService>();
-            _ = builder.Register(x =>
-            {
-                var context = x.Resolve<IComponentContext>();
-                if (context is ILifetimeScope scope)
-                {
-                    return new WacsJsonOptionsFactory(scope);
-                }
-                throw new Exception();
-            }).As<WacsJsonOptionsFactory>().SingleInstance();
-            _ = builder.RegisterType<WacsJson>().SingleInstance();
-            _ = builder.RegisterType<WacsJsonPluginsOptionsFactory>().SingleInstance();
-            _ = builder.RegisterType<WacsJsonPlugins>().SingleInstance();
+            WacsJson.Configure(builder);
             _ = builder.RegisterType<UserRoleService>().As<IUserRoleService>().SingleInstance();
-            _ = builder.RegisterType<ValidationOptionsService>().As<IValidationOptionsService>().As<ValidationOptionsService>().SingleInstance();
+            _ = builder.RegisterType<ValidationOptionsService>().As<IValidationOptionsService>().As<ValidationOptionsService>().SingleInstance().WithAttributeFiltering(); ;
             _ = builder.RegisterType<InputService>().As<IInputService>().SingleInstance();
             _ = builder.RegisterType<ProxyService>().As<IProxyService>().SingleInstance();
             _ = builder.RegisterType<UpdateClient>().SingleInstance();
             _ = builder.RegisterType<PasswordGenerator>().SingleInstance();
-            _ = builder.RegisterType<RenewalStoreDisk>().As<IRenewalStore>().SingleInstance();
+            _ = builder.RegisterType<RenewalStoreDisk>().As<IRenewalStore>().SingleInstance().WithAttributeFiltering(); ;
 
             pluginService.Configure(builder);
 

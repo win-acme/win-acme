@@ -36,7 +36,7 @@ namespace PKISharp.WACS.Plugins.Base.Options
                 input.Show("ReusePrivateKey", "Yes");
             }
         }
-
+        [JsonIgnore]
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
         public override Type Instance => typeof(TPlugin);
     }

@@ -37,7 +37,7 @@ namespace PKISharp.WACS.Services.Serialization
             }
         }
 
-        public override void Write(Utf8JsonWriter writer, List<StorePluginOptions> value, JsonSerializerOptions options) => 
+        public override void Write(Utf8JsonWriter writer, List<StorePluginOptions> value, JsonSerializerOptions options) =>
             throw new NotImplementedException();
     }
 }

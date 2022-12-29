@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Services.Serialization
 {
@@ -9,7 +10,8 @@ namespace PKISharp.WACS.Services.Serialization
             var options = new JsonSerializerOptions
             {
                 WriteIndented = true,
-                PropertyNameCaseInsensitive = true
+                PropertyNameCaseInsensitive = true,
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
             };
             options.Converters.Add(new ProtectedStringConverter(log, settings));
             Options = options;

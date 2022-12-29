@@ -26,7 +26,7 @@ namespace PKISharp.WACS.Services.Serialization
             if (string.IsNullOrWhiteSpace(Plugin))
             {
                 // Find plugin based on the type
-                var typeMatch = plugin.GetPlugins().FirstOrDefault(x => x.Meta.OptionsFactory == GetType());
+                var typeMatch = plugin.GetPlugins().FirstOrDefault(x => x.Meta.Options == GetType());
                 return typeMatch;
             }
             else if (Guid.TryParse(Plugin, out var pluginGuid))
@@ -43,9 +43,6 @@ namespace PKISharp.WACS.Services.Serialization
         /// <returns></returns>
         public string Name(IPluginService plugin) => FindPlugin(plugin)?.Meta.Name ?? "?";
         public string Description(IPluginService plugin) => FindPlugin(plugin)?.Meta.Description ?? "?";
-
-        [JsonExtensionData]
-        public Dictionary<string, JsonElement>? ExtensionData { get; set; }
     }
 
     /// <summary>
@@ -59,6 +56,7 @@ namespace PKISharp.WACS.Services.Serialization
         /// <param name="input"></param>
         public virtual void Show(IInputService input) { }
 
+        [JsonIgnore]
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
         public abstract Type Instance { get; }
 
