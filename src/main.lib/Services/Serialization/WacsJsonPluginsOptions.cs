@@ -3,19 +3,35 @@ using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Services.Serialization
 {
-    internal class WacsJsonPluginsOptionsFactory
+    public class WacsJsonPluginsOptionsFactory
     {
-        public WacsJsonPluginsOptionsFactory(ILogService log, ISettingsService settings)
+        private readonly ILogService _log;
+        private readonly ISettingsService _settings;
+
+        public WacsJsonPluginsOptionsFactory(ILogService log, ISettingsService settings) 
         {
-            var options = new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                PropertyNameCaseInsensitive = true,
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-            };
-            options.Converters.Add(new ProtectedStringConverter(log, settings));
-            Options = options;
+            _log = log;
+            _settings = settings;
         }
-        public JsonSerializerOptions Options { get; }
+
+        /// <summary>
+        /// Return new instance every time because we can create
+        /// several unique contexts using the same options (e.g.
+        /// for plugins)
+        /// </summary>
+        public JsonSerializerOptions Options
+        {
+            get
+            {
+                var opt = new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    PropertyNameCaseInsensitive = true,
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                };
+                opt.Converters.Add(new ProtectedStringConverter(_log, _settings));
+                return opt;
+            }
+        }
     }
 }

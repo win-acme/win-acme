@@ -70,7 +70,8 @@ namespace PKISharp.WACS.Services
             // Load from the current app domain
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
-                if (!string.IsNullOrEmpty(assembly.FullName) && assembly.FullName.Contains("wacs"))
+                if (!string.IsNullOrEmpty(assembly.FullName) && 
+                    assembly.FullName.ToLower().Contains("wacs"))
                 {
                     IEnumerable<Type> types = new List<Type>();
                     try
@@ -112,7 +113,7 @@ namespace PKISharp.WACS.Services
             "mscordaccore.dll"
         };
 
-        private List<Type> LoadFromDisk(List<Assembly> scanned)
+        protected List<Type> LoadFromDisk(List<Assembly> scanned)
         {
             var pluginDirectory = new DirectoryInfo(VersionService.PluginPath);
             if (!pluginDirectory.Exists)

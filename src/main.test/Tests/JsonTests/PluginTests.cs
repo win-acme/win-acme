@@ -4,7 +4,6 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using PKISharp.WACS.UnitTests.Mock.Services;
-using System;
 using System.Text.Json;
 
 namespace PKISharp.WACS.UnitTests.Tests.JsonTests
@@ -12,17 +11,22 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
     [TestClass]
     public class PluginTests
     {
-        private readonly ILifetimeScope _container;
-        private readonly IPluginService _plugin;
-        private readonly ILogService _log;
+        private static ILifetimeScope _container;
+        private static IPluginService _plugin;
+        private static ILogService _log;
 
-        public PluginTests()
+        [ClassInitialize]
+        public static void ClassInitialize(TestContext context)
         {
             var builder = new ContainerBuilder();
+            var log = new Mock.Services.LogService();
+            var assembly = new AssemblyService(log);
+            var plugin = new PluginService(log, assembly);  
             _ = builder.RegisterType<MockSettingsService>().As<ISettingsService>();
-            _ = builder.RegisterType<MockAssemblyService>().As<AssemblyService>();
-            _ = builder.RegisterType<Mock.Services.LogService>().As<ILogService>();
-            _ = builder.RegisterType<PluginService>().As<IPluginService>();
+            _ = builder.RegisterInstance(assembly).As<AssemblyService>().SingleInstance();
+            _ = builder.RegisterInstance(log).As<ILogService>();
+            _ = builder.RegisterInstance(plugin).As<IPluginService>().SingleInstance();
+            plugin.Configure(builder);
             WacsJson.Configure(builder);
             _container = builder.Build();
             _plugin = _container.Resolve<IPluginService>();

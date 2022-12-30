@@ -6,7 +6,10 @@ using System.Text.Json.Serialization;
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
     [JsonSerializable(typeof(DreamhostOptions))]
-    internal partial class DreamhostJson : JsonSerializerContext { }
+    internal partial class DreamhostJson : JsonSerializerContext
+    {
+        public DreamhostJson(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
+    }
 
     internal class DreamhostOptions : ValidationPluginOptions<DreamhostDnsValidation>
     {

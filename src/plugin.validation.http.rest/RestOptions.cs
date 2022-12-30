@@ -5,7 +5,10 @@ using System.Text.Json.Serialization;
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
     [JsonSerializable(typeof(RestOptions))]
-    internal partial class RestJson : JsonSerializerContext {}
+    internal partial class RestJson : JsonSerializerContext
+    {
+        public RestJson(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
+    }
 
     internal sealed class RestOptions : ValidationPluginOptions<Rest>
     {

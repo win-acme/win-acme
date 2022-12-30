@@ -6,7 +6,10 @@ using System.Text.Json.Serialization;
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
     [JsonSerializable(typeof(DomeneshopOptions))]
-    internal partial class DomeneshopJson : JsonSerializerContext { }
+    internal partial class DomeneshopJson : JsonSerializerContext
+    {
+        public DomeneshopJson(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
+    }
 
     internal class DomeneshopOptions : ValidationPluginOptions<DomeneshopDnsValidation>
     {

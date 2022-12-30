@@ -21,7 +21,9 @@ namespace PKISharp.WACS.Plugins.Base.Options
     public abstract class ValidationPluginOptions<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T> : 
         ValidationPluginOptions where T : IValidationPlugin
     {
+        [JsonIgnore]
         public abstract override string Name { get; }
+        [JsonIgnore]
         public abstract override string Description { get; }
 
         public override void Show(IInputService input)

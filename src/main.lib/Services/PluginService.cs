@@ -14,13 +14,12 @@ namespace PKISharp.WACS.Services
         private readonly List<Plugin> _plugins;
         internal readonly ILogService _log;
 
-        public IEnumerable<Type> PluginOptionTypes<T>() where T : PluginOptions => _assemblyService.GetResolvable<T>();
-
         internal void Configure(ContainerBuilder builder)
         {
             _plugins.ForEach(p =>
             {
-                builder.RegisterType(p.Runner);
+                builder.RegisterType(p.Runner); 
+                builder.RegisterType(p.Meta.OptionsJson);
                 builder.RegisterType(p.Meta.OptionsFactory);
             });
         }

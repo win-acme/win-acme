@@ -6,7 +6,10 @@ using System.Text.Json.Serialization;
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     [JsonSerializable(typeof(DigitalOceanOptions))]
-    internal partial class DigitalOceanJson : JsonSerializerContext { }
+    internal partial class DigitalOceanJson : JsonSerializerContext
+    {
+        public DigitalOceanJson(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
+    }
 
     internal class DigitalOceanOptions : ValidationPluginOptions<DigitalOcean>
     {

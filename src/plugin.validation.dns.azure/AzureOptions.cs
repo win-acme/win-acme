@@ -6,7 +6,10 @@ using System.Text.Json.Serialization;
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     [JsonSerializable(typeof(AzureOptions))]
-    internal partial class AzureJson : JsonSerializerContext { }
+    internal partial class AzureJson : JsonSerializerContext 
+    {
+        public AzureJson(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
+    }
 
     internal class AzureOptions : ValidationPluginOptions<Azure>, IAzureOptionsCommon
     {

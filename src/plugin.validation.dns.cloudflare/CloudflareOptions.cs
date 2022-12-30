@@ -5,7 +5,10 @@ using System.Text.Json.Serialization;
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     [JsonSerializable(typeof(CloudflareOptions))]
-    internal partial class CloudflareJson : JsonSerializerContext { }
+    internal partial class CloudflareJson : JsonSerializerContext
+    {
+        public CloudflareJson(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
+    }
 
     public class CloudflareOptions : ValidationPluginOptions<Cloudflare>
     {

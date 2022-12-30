@@ -5,7 +5,10 @@ using System.Text.Json.Serialization;
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
     [JsonSerializable(typeof(GodaddyOptions))]
-    internal partial class GodaddyJson : JsonSerializerContext { }
+    internal partial class GodaddyJson : JsonSerializerContext
+    {
+        public GodaddyJson(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
+    }
 
     internal class GodaddyOptions : ValidationPluginOptions<GodaddyDnsValidation>
     {

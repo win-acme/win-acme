@@ -5,7 +5,10 @@ using System.Text.Json.Serialization;
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
     [JsonSerializable(typeof(SimplyOptions))]
-    internal partial class SimplyJson : JsonSerializerContext { }
+    internal partial class SimplyJson : JsonSerializerContext
+    {
+        public SimplyJson(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
+    }
 
     internal class SimplyOptions : ValidationPluginOptions<SimplyDnsValidation>
     {

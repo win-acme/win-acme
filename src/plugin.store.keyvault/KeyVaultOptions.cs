@@ -6,7 +6,10 @@ using System.Text.Json.Serialization;
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     [JsonSerializable(typeof(KeyVaultOptions))]
-    internal partial class KeyVaultJson : JsonSerializerContext { }
+    internal partial class KeyVaultJson : JsonSerializerContext
+    {
+        public KeyVaultJson(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
+    }
 
     internal class KeyVaultOptions : StorePluginOptions<KeyVault>, IAzureOptionsCommon
     {
