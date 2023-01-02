@@ -13,9 +13,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
     internal class KeyVaultOptions : StorePluginOptions<KeyVault>, IAzureOptionsCommon
     {
-        public override string Name => "KeyVault";
-        public override string Description => "Store certificate in Azure Key Vault";
-
         public string? AzureEnvironment { get; set; }
         public bool UseMsi { get; set; }
         public string? ClientId { get; set; }

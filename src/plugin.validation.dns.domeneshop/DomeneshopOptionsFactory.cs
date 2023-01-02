@@ -15,7 +15,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         private readonly ArgumentsInputService _arguments;
 
-        public DomeneshopOptionsFactory(ArgumentsInputService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
+        public DomeneshopOptionsFactory(ArgumentsInputService arguments) => _arguments = arguments;
 
         private ArgumentResult<ProtectedString?> ClientId => _arguments.
             GetProtectedString<DomeneshopArguments>(a => a.ClientId).

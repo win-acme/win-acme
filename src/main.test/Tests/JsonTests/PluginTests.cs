@@ -4,6 +4,7 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using PKISharp.WACS.UnitTests.Mock.Services;
+using System;
 using System.Text.Json;
 
 namespace PKISharp.WACS.UnitTests.Tests.JsonTests
@@ -11,13 +12,18 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
     [TestClass]
     public class PluginTests
     {
-        private static ILifetimeScope _container;
-        private static IPluginService _plugin;
-        private static ILogService _log;
+        private static ILifetimeScope? _container;
+        private static IPluginService? _plugin;
+        private static ILogService? _log;
 
         [ClassInitialize]
         public static void ClassInitialize(TestContext context)
         {
+            if (context is null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+
             var builder = new ContainerBuilder();
             var log = new Mock.Services.LogService();
             var assembly = new AssemblyService(log);
@@ -35,7 +41,7 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
 
         private Renewal Deserialize(string json)
         {
-            var wacsJson = _container.ResolveNamed<WacsJson>("legacy");
+            var wacsJson = _container!.ResolveNamed<WacsJson>("legacy");
             var renewal = JsonSerializer.Deserialize(json, wacsJson.Renewal);
             Assert.IsNotNull(renewal);
             return renewal;
@@ -44,7 +50,7 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
         [TestMethod]
         public void DeserializeTargetCorrect()
         {
-            foreach (var target in _plugin.GetPlugins(Steps.Target))
+            foreach (var target in _plugin!.GetPlugins(Steps.Target))
             {
                 var input = @$"{{
                               ""TargetPluginOptions"": {{
@@ -52,8 +58,8 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
                               }}
                             }}";
                 var renewal = Deserialize(input);
-                Assert.IsInstanceOfType(renewal.TargetPluginOptions, target.Meta.Options);
-                Assert.AreEqual(renewal.TargetPluginOptions.FindPlugin(_plugin), target);
+                Assert.IsInstanceOfType(renewal.TargetPluginOptions, target.Options);
+                Assert.AreEqual(_plugin.GetPlugin(renewal.TargetPluginOptions), target);
             }
         }
 
@@ -72,7 +78,7 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
         [TestMethod]
         public void DeserializeValidationCorrect()
         {
-            foreach (var plugin in _plugin.GetPlugins(Steps.Validation))
+            foreach (var plugin in _plugin!.GetPlugins(Steps.Validation))
             {
                 var input = @$"{{
                               ""ValidationPluginOptions"": {{
@@ -80,16 +86,16 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
                               }}
                             }}";
                 var renewal = Deserialize(input);
-                _log.Information(plugin.Runner.Name);
-                Assert.IsInstanceOfType(renewal.ValidationPluginOptions, plugin.Meta.Options);
-                Assert.AreEqual(renewal.ValidationPluginOptions.FindPlugin(_plugin), plugin);
+                _log!.Information(plugin.Runner.Name);
+                Assert.IsInstanceOfType(renewal.ValidationPluginOptions, plugin.Options);
+                Assert.AreEqual(_plugin.GetPlugin(renewal.ValidationPluginOptions), plugin);
             }
         }
 
         [TestMethod]
         public void DeserializeCsrCorrect()
         {
-            foreach (var plugin in _plugin.GetPlugins(Steps.Csr))
+            foreach (var plugin in _plugin!.GetPlugins(Steps.Csr))
             {
                 var input = @$"{{
                               ""CsrPluginOptions"": {{
@@ -97,16 +103,16 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
                               }}
                             }}";
                 var renewal = Deserialize(input);
-                _log.Information(plugin.Runner.Name);
-                Assert.IsInstanceOfType(renewal.CsrPluginOptions, plugin.Meta.Options);
-                Assert.AreEqual(renewal.CsrPluginOptions!.FindPlugin(_plugin), plugin);
+                _log!.Information(plugin.Runner.Name);
+                Assert.IsInstanceOfType(renewal.CsrPluginOptions, plugin.Options);
+                Assert.AreEqual(_plugin.GetPlugin(renewal.CsrPluginOptions!), plugin);
             }
         }
 
         [TestMethod]
         public void DeserializeOrderCorrect()
         {
-            foreach (var plugin in _plugin.GetPlugins(Steps.Order))
+            foreach (var plugin in _plugin!.GetPlugins(Steps.Order))
             {
                 var input = @$"{{
                               ""OrderPluginOptions"": {{
@@ -114,16 +120,16 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
                               }}
                             }}";
                 var renewal = Deserialize(input);
-                _log.Information(plugin.Runner.Name);
-                Assert.IsInstanceOfType(renewal.OrderPluginOptions, plugin.Meta.Options);
-                Assert.AreEqual(renewal.OrderPluginOptions!.FindPlugin(_plugin), plugin);
+                _log!.Information(plugin.Runner.Name);
+                Assert.IsInstanceOfType(renewal.OrderPluginOptions, plugin.Options);
+                Assert.AreEqual(_plugin.GetPlugin(renewal.OrderPluginOptions!), plugin);
             }
         }
 
         [TestMethod]
         public void DeserializeStoreCorrectSingle()
         {
-            foreach (var plugin in _plugin.GetPlugins(Steps.Store))
+            foreach (var plugin in _plugin!.GetPlugins(Steps.Store))
             {
                 var input = @$"{{
                               ""StorePluginOptions"": {{
@@ -131,16 +137,16 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
                               }}
                             }}";
                 var renewal = Deserialize(input);
-                _log.Information(plugin.Runner.Name);
-                Assert.IsInstanceOfType(renewal.StorePluginOptions[0], plugin.Meta.Options);
-                Assert.AreEqual(renewal.StorePluginOptions[0]!.FindPlugin(_plugin), plugin);
+                _log!.Information(plugin.Runner.Name);
+                Assert.IsInstanceOfType(renewal.StorePluginOptions[0], plugin.Options);
+                Assert.AreEqual(_plugin.GetPlugin(renewal.StorePluginOptions[0]!), plugin);
             }
         }
 
         [TestMethod]
         public void DeserializeStoreCorrectArray()
         {
-            foreach (var plugin in _plugin.GetPlugins(Steps.Store))
+            foreach (var plugin in _plugin!.GetPlugins(Steps.Store))
             {
                 var input = @$"{{
                               ""StorePluginOptions"": [{{
@@ -148,16 +154,16 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
                               }}]
                             }}";
                 var renewal = Deserialize(input);
-                _log.Information(plugin.Runner.Name);
-                Assert.IsInstanceOfType(renewal.StorePluginOptions[0], plugin.Meta.Options);
-                Assert.AreEqual(renewal.StorePluginOptions[0]!.FindPlugin(_plugin), plugin);
+                _log!.Information(plugin.Runner.Name);
+                Assert.IsInstanceOfType(renewal.StorePluginOptions[0], plugin.Options);
+                Assert.AreEqual(_plugin.GetPlugin(renewal.StorePluginOptions[0]!), plugin);
             }
         }
 
         [TestMethod]
         public void DeserializeInstallationCorrectArray()
         {
-            foreach (var plugin in _plugin.GetPlugins(Steps.Installation))
+            foreach (var plugin in _plugin!.GetPlugins(Steps.Installation))
             {
                 var input = @$"{{
                               ""InstallationPluginOptions"": [{{
@@ -165,9 +171,9 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
                               }}]
                             }}";
                 var renewal = Deserialize(input);
-                _log.Information(plugin.Runner.Name);
-                Assert.IsInstanceOfType(renewal.InstallationPluginOptions[0], plugin.Meta.Options);
-                Assert.AreEqual(renewal.InstallationPluginOptions[0]!.FindPlugin(_plugin), plugin);
+                _log!.Information(plugin.Runner.Name);
+                Assert.IsInstanceOfType(renewal.InstallationPluginOptions[0], plugin.Options);
+                Assert.AreEqual(_plugin.GetPlugin(renewal.InstallationPluginOptions[0]!), plugin);
             }
         }
     }

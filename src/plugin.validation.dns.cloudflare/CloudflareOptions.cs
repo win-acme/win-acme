@@ -12,10 +12,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
     public class CloudflareOptions : ValidationPluginOptions<Cloudflare>
     {
-        public override string Name => "Cloudflare";
-        public override string Description => "Create verification records in Cloudflare DNS";
-        public override string ChallengeType => Constants.Dns01ChallengeType;
-
         public ProtectedString? ApiToken { get; set; }
     }
 }

@@ -1,8 +1,11 @@
 ﻿using Autofac;
 using Microsoft.Win32;
+using Org.BouncyCastle.Asn1.X509;
+using Org.BouncyCastle.Ocsp;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Host.Services.Legacy;
+using PKISharp.WACS.Plugins;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.Resolvers;
@@ -10,11 +13,16 @@ using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Plugins.ValidationPlugins;
 using PKISharp.WACS.Services.Legacy;
 using System;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Services
 {
     internal class AutofacBuilder : IAutofacBuilder
     {
+        private readonly IPluginService _plugins;
+
+        public AutofacBuilder(IPluginService plugins) => _plugins = plugins;
+
         /// <summary>
         /// This is used to import renewals from 1.9.x
         /// </summary>
@@ -81,46 +89,40 @@ namespace PKISharp.WACS.Services
         }
 
         /// <summary>
-        /// For revocation and configuration
-        /// </summary>
-        /// <param name="main"></param>
-        /// <param name="runLevel"></param>
-        /// <returns></returns>
-        public ILifetimeScope Configuration(ILifetimeScope main, Renewal renewal, RunLevel runLevel)
-        {
-            var resolver = runLevel.HasFlag(RunLevel.Interactive)
-                ? main.Resolve<InteractiveResolver>(new TypedParameter(typeof(RunLevel), runLevel))
-                : (IResolver)main.Resolve<UnattendedResolver>();
-            return main.BeginLifetimeScope("config", builder =>
-            {
-                builder.Register(c => runLevel).As<RunLevel>();
-                builder.Register(c => resolver).As<IResolver>();
-                builder.Register(c => resolver.GetTargetPlugin(main).Result).As<ITargetPluginOptionsFactory>().SingleInstance();
-                builder.Register(c => resolver.GetCsrPlugin(main).Result).As<ICsrPluginOptionsFactory>().SingleInstance();
-            });
-        }
-
-        /// <summary>
         /// For configuration and renewal
         /// </summary>
         /// <param name="main"></param>
         /// <param name="renewal"></param>
-        /// <param name="runLevel"></param>
         /// <returns></returns>
-        public ILifetimeScope Target(ILifetimeScope main, Renewal renewal, RunLevel runLevel)
+        public async Task<ILifetimeScope> Target(ILifetimeScope parent, Renewal renewal)
         {
-            var resolver = runLevel.HasFlag(RunLevel.Interactive)
-                ? main.Resolve<InteractiveResolver>(new TypedParameter(typeof(RunLevel), runLevel))
-                : (IResolver)main.Resolve<UnattendedResolver>();
-            return main.BeginLifetimeScope("target", builder =>
+            var options = renewal.TargetPluginOptions;
+            if (options == null ||
+                options.GetType() == typeof(TargetPluginOptions))
             {
-                builder.RegisterInstance(renewal.TargetPluginOptions).As(renewal.TargetPluginOptions.GetType());
-                builder.RegisterInstance(renewal.TargetPluginOptions).As(renewal.TargetPluginOptions.GetType().BaseType!);
-                builder.RegisterType(renewal.TargetPluginOptions.Instance).As<ITargetPlugin>().SingleInstance();
-                builder.Register(c => c.Resolve<ITargetPlugin>().Generate().Result).As<Target>().SingleInstance();
-                builder.Register(c => resolver.GetValidationPlugin(main, c.Resolve<Target>()).Result).As<IValidationPluginOptionsFactory>().SingleInstance();
-                builder.Register(c => resolver.GetOrderPlugin(main, c.Resolve<Target>()).Result).As<IOrderPluginOptionsFactory>().SingleInstance();
+                return parent;
+            }
+            if (!_plugins.TryGetPlugin(options, out var plugin)) 
+            {
+                return parent;
+            }
+            var intermediateScope = parent.BeginLifetimeScope("target-inner", builder =>
+            {
+                builder.RegisterInstance(options).As<TargetPluginOptions>().As(options.GetType());
+                builder.RegisterType(plugin.Runner).As<ITargetPlugin>();
+                builder.RegisterInstance(plugin).Keyed<Plugin>("target");
             });
+            var pluginService = parent.Resolve<IPluginService>();
+            var targetPlugin = intermediateScope.Resolve<ITargetPlugin>();
+            var initialTarget = await targetPlugin.Generate();
+            if (initialTarget != null)
+            {
+                return intermediateScope.BeginLifetimeScope("target-outer", builder => builder.RegisterInstance(initialTarget));
+            }
+            else
+            {
+                return intermediateScope;
+            }         
         }
 
         /// <summary>

@@ -1,15 +1,10 @@
-﻿using PKISharp.WACS.Plugins.Base;
-using PKISharp.WACS.Plugins.Base.Options;
+﻿using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
 {
     internal class SelfHostingOptions : ValidationPluginOptions<SelfHosting>
     {
-        public override string ChallengeType => Constants.TlsAlpn01ChallengeType;
-        public override string Name => "SelfHosting";
-        public override string Description => "Answer TLS verification request from win-acme";
-
         /// <summary>
         /// Alternative port for validation. Note that ACME always requires
         /// port 80 to be open. This is only useful if the port is interally 

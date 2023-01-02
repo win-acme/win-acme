@@ -12,9 +12,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         private readonly ArgumentsInputService _arguments;
 
-        public DigitalOceanOptionsFactory(ArgumentsInputService arguments) : 
-            base(Dns01ChallengeValidationDetails.Dns01ChallengeType)
-            => _arguments = arguments;
+        public DigitalOceanOptionsFactory(ArgumentsInputService arguments) => _arguments = arguments;
 
         private ArgumentResult<ProtectedString?> ApiKey => _arguments.
             GetProtectedString<DigitalOceanArguments>(a => a.ApiToken).

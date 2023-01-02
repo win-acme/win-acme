@@ -12,14 +12,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
 
     internal class SimplyOptions : ValidationPluginOptions<SimplyDnsValidation>
     {
-        public override string Name => "Simply";
-
-        public override string Description => "Create verification records in Simply DNS";
-
-        public override string ChallengeType => Constants.Dns01ChallengeType;
-
         public string? Account { get; set; }
-
         public ProtectedString? ApiKey { get; set; }
     }
 }

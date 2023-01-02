@@ -34,14 +34,14 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 
         Task<bool> IInstallationPlugin.Install(
             Target source, 
-            IEnumerable<IStorePlugin> stores,
+            IEnumerable<Type> stores,
             CertificateInfo newCertificate,
             CertificateInfo? oldCertificate)
         {
             // Store validation
             var centralSslForHttp = false;
-            var centralSsl = stores.FirstOrDefault(x => x is CentralSsl);
-            var certificateStore = stores.FirstOrDefault(x => x is CertificateStore);
+            var centralSsl = stores.Contains(typeof(CentralSsl));
+            var certificateStore = stores.Contains(typeof(CertificateStore));
             if (centralSsl == null && certificateStore == null)
             {
                 // No supported store

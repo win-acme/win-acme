@@ -1,14 +1,10 @@
 ﻿using PKISharp.WACS.Configuration;
-using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
     internal class FtpOptions : HttpValidationOptions<Ftp>
     {
-        public override string Name => "FTP";
-        public override string Description => "Upload verification files via FTP(S)";
-
         public FtpOptions() : base() { }
         public FtpOptions(HttpValidationOptions<Ftp> source) : base(source) { }
 

@@ -23,7 +23,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             ArgumentsInputService arguments,
             SecretServiceManager ssm,
             ILogService log,
-            IProxyService proxy) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) 
+            IProxyService proxy) 
         {
             _arguments = arguments;
             _ssm = ssm;

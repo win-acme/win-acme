@@ -17,7 +17,10 @@ using System.Threading.Tasks;
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     [IPlugin.Plugin<LuaDnsOptions, LuaDnsOptionsFactory, LuaDnsJson>
-        ("3b0c3cca-db98-40b7-b678-b34791070d42", "", "")]
+        ("3b0c3cca-db98-40b7-b678-b34791070d42", 
+        "LuaDns", 
+        "Create verification records in LuaDns",
+        ChallengeType = Constants.Dns01ChallengeType)]
     internal sealed class LuaDns : DnsValidation<LuaDns>
     {
         private class ZoneData

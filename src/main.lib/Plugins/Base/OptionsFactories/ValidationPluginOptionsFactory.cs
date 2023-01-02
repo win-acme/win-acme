@@ -14,10 +14,6 @@ namespace PKISharp.WACS.Plugins.Base.Factories
         where TPlugin : IValidationPlugin
         where TOptions : ValidationPluginOptions, new()
     {
-        private readonly string _challengeType;
-        string IValidationPluginOptionsFactory.ChallengeType => _challengeType;
-        public ValidationPluginOptionsFactory(string challengeType = Constants.Http01ChallengeType) => _challengeType = challengeType;
-
         public abstract Task<TOptions?> Aquire(Target target, IInputService inputService, RunLevel runLevel);
         public abstract Task<TOptions?> Default(Target target);
         async Task<ValidationPluginOptions?> IValidationPluginOptionsFactory.Aquire(Target target, IInputService inputService, RunLevel runLevel) => await Aquire(target, inputService, runLevel);

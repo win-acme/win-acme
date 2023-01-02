@@ -13,9 +13,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
     internal sealed class TransIpOptions : ValidationPluginOptions<TransIp>
     {
-        public override string Name { get; } = "TransIp";
-        public override string Description { get; } = "Create verification records at TransIp";
-        public override string ChallengeType { get; } = Constants.Dns01ChallengeType;
         public string? Login { get; set; }
         public ProtectedString? PrivateKey { get; set; }
     }

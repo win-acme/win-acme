@@ -13,12 +13,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
 
     internal class DreamhostOptions : ValidationPluginOptions<DreamhostDnsValidation>
     {
-        public override string Name => "Dreamhost";
-
-        public override string Description => "Create verification records in Dreamhost DNS";
-
-        public override string ChallengeType => Constants.Dns01ChallengeType;
-
         [JsonPropertyName("SecretSafe")]
         public ProtectedString? ApiKey { get; set; }
     }

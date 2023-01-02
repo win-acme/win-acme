@@ -79,10 +79,4 @@ namespace PKISharp.WACS.DomainObjects
             return x.ToString();
         }
     }
-
-    [DebuggerDisplay("Target: null")]
-    public class NullTarget : Target, INull
-    {
-        public NullTarget() : base("", "", new List<TargetPart>()) { }
-    }
 }

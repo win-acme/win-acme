@@ -191,7 +191,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                 SiteId = 999
             };
             var target = Target(options);
-            Assert.IsTrue(target is INull);
+            Assert.IsNull(target);
         }
 
         [TestMethod]

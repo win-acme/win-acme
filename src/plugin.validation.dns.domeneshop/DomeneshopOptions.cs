@@ -13,9 +13,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
 
     internal class DomeneshopOptions : ValidationPluginOptions<DomeneshopDnsValidation>
     {
-        public override string Name => "Domeneshop";
-        public override string Description => "Create verification records in Domeneshop DNS";
-        public override string ChallengeType => Constants.Dns01ChallengeType;
         [JsonPropertyName("SecretSafe")]
         public ProtectedString? ClientId { get; set; }
         public ProtectedString? ClientSecret { get; set; }

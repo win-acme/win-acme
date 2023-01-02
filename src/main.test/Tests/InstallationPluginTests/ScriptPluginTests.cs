@@ -2,7 +2,9 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins;
 using PKISharp.WACS.Plugins.InstallationPlugins;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.UnitTests.Mock;
@@ -69,12 +71,8 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
 
         private void TestScript(string script, string? parameters)
         {
-           
             var renewal = new Renewal();
-            var storeOptions = new CertificateStoreOptions();
             var settings = new MockSettingsService();
-            var userRoleService = new Mock.Services.UserRoleService();
-            var store = new CertificateStore(log, iis, settings, userRoleService, new FindPrivateKey(log), storeOptions);
             var target = new Target("", "test.local", new List<TargetPart>());
             var targetOrder = new Order(renewal, target);
             var oldCert = cs.RequestCertificate(null, RunLevel.Unattended, targetOrder).Result;
@@ -87,7 +85,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             };
             var container = new MockContainer().TestScope();
             var installer = new Script(renewal, options, new Clients.ScriptClient(log, settings), container.Resolve<SecretServiceManager>());
-            installer.Install(target, new[] { store }, newCert, oldCert).Wait();
+            installer.Install(target, null, newCert, oldCert).Wait();
         }
 
         [TestMethod]

@@ -12,7 +12,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
     /// <summary>
     /// Null implementation
     /// </summary>
-    internal class NullInstallationOptionsFactory : IInstallationPluginOptionsFactory, INull
+    internal class NullInstallationOptionsFactory : IInstallationPluginOptionsFactory
     {
         Type IPluginOptionsFactory.InstanceType => typeof(NullInstallation);
         Type IPluginOptionsFactory.OptionsType => typeof(NullInstallationOptions);
@@ -21,21 +21,15 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         Task<InstallationPluginOptions?> IInstallationPluginOptionsFactory.Default(Target target) => Generate();
         (bool, string?) IInstallationPluginOptionsFactory.CanInstall(IEnumerable<Type> storeTypes, IEnumerable<Type> installationTypes) => (true, null);
         int IPluginOptionsFactory.Order => int.MaxValue;
-        string IPluginOptionsFactory.Name => new NullInstallationOptions().Name;
-        string IPluginOptionsFactory.Description => new NullInstallationOptions().Description;
-        bool IPluginOptionsFactory.Match(string name) => string.Equals(name, new NullInstallationOptions().Name, StringComparison.InvariantCultureIgnoreCase);
     }
 
-    internal class NullInstallationOptions : InstallationPluginOptions<NullInstallation>
-    {
-        public override string Name => "None";
-        public override string Description => "No (additional) installation steps";
-    }
+    internal class NullInstallationOptions : InstallationPluginOptions<NullInstallation> {}
 
     [IPlugin.Plugin<NullInstallationOptions, NullInstallationOptionsFactory, WacsJsonPlugins>
-    ("aecc502c-5f75-43d2-b578-f95d50c79ea1", "None", "No (additional) installation steps")]
+    ("aecc502c-5f75-43d2-b578-f95d50c79ea1", Name, "No (additional) installation steps")]
     internal class NullInstallation : IInstallationPlugin
     {
-        Task<bool> IInstallationPlugin.Install(Target target, IEnumerable<IStorePlugin> stores, CertificateInfo newCertificateInfo, CertificateInfo? oldCertificateInfo) => Task.FromResult(true);
+        public const string Name = "None";
+        Task<bool> IInstallationPlugin.Install(Target target, IEnumerable<Type> stores, CertificateInfo newCertificateInfo, CertificateInfo? oldCertificateInfo) => Task.FromResult(true);
     }
 }

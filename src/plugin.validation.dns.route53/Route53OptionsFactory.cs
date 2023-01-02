@@ -12,7 +12,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         private readonly ArgumentsInputService _arguments;
 
-        public Route53OptionsFactory(ArgumentsInputService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
+        public Route53OptionsFactory(ArgumentsInputService arguments) => _arguments = arguments;
 
         private ArgumentResult<ProtectedString?> AccessKey => _arguments.
             GetProtectedString<Route53Arguments>(a => a.Route53SecretAccessKey).

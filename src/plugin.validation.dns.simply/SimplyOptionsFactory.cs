@@ -15,7 +15,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         private readonly ArgumentsInputService _arguments;
 
-        public SimplyOptionsFactory(ArgumentsInputService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
+        public SimplyOptionsFactory(ArgumentsInputService arguments) => _arguments = arguments;
 
         private ArgumentResult<string?> Account => _arguments.
             GetString<SimplyArguments>(a => a.Account).

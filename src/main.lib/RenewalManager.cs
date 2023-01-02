@@ -4,6 +4,7 @@ using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
 using System;
@@ -18,6 +19,7 @@ namespace PKISharp.WACS
     {
         private readonly IInputService _input;
         private readonly ILogService _log;
+        private readonly IPluginService _plugin;
         private readonly IRenewalStore _renewalStore;
         private readonly ICacheService _cacheService;
         private readonly ArgumentsParser _arguments;
@@ -33,7 +35,7 @@ namespace PKISharp.WACS
         public RenewalManager(
             ArgumentsParser arguments, MainArguments args,
             IRenewalStore renewalStore, IContainer container,
-            ICacheService cacheService,
+            ICacheService cacheService, IPluginService plugin,
             IInputService input, ILogService log,
             ISettingsService settings, IDueDateService dueDate,
             IAutofacBuilder autofacBuilder, ExceptionHandler exceptionHandler,
@@ -53,6 +55,7 @@ namespace PKISharp.WACS
             _renewalCreator = renewalCreator;
             _cacheService = cacheService;
             _dueDate = dueDate;
+            _plugin = plugin;
         }
 
         /// <summary>
@@ -264,8 +267,13 @@ namespace PKISharp.WACS
 
             foreach (var renewal in selectedRenewals)
             {
-                using var targetScope = _scopeBuilder.Target(_container, renewal, RunLevel.Unattended);
-                var target = targetScope.Resolve<Target>();
+                using var targetScope = await _scopeBuilder.Target(_container, renewal);
+                var target = targetScope.ResolveOptional<Target>();
+                if (target == null)
+                {
+                    _log.Warning("Unable to generate target for renewal {id}", renewal.Id);
+                    continue;
+                }
                 foreach (var targetPart in target.Parts)
                 {
                     if (targetPart.SiteId != null)
@@ -617,23 +625,23 @@ namespace PKISharp.WACS
                 }
                 _input.Show("Renewed", $"{renewal.History.Where(x => x.Success == true).Count()} times");
                 _input.CreateSpace();
-                renewal.TargetPluginOptions.Show(_input);
-                renewal.ValidationPluginOptions.Show(_input);
+                renewal.TargetPluginOptions.Show(_input, _plugin);
+                renewal.ValidationPluginOptions.Show(_input, _plugin);
                 if (renewal.OrderPluginOptions != null)
                 {
-                    renewal.OrderPluginOptions.Show(_input);
+                    renewal.OrderPluginOptions.Show(_input, _plugin);
                 }
                 if (renewal.CsrPluginOptions != null)
                 {
-                    renewal.CsrPluginOptions.Show(_input);
+                    renewal.CsrPluginOptions.Show(_input, _plugin);
                 }
                 foreach (var ipo in renewal.StorePluginOptions)
                 {
-                    ipo.Show(_input);
+                    ipo.Show(_input, _plugin);
                 }
                 foreach (var ipo in renewal.InstallationPluginOptions)
                 {
-                    ipo.Show(_input);
+                    ipo.Show(_input, _plugin);
                 }
                 _input.CreateSpace();
                 var historyLimit = 10; 

@@ -8,11 +8,6 @@ namespace PKISharp.WACS.Plugins.Interfaces
     public interface IValidationPluginOptionsFactory : IPluginOptionsFactory
     {
         /// <summary>
-        /// Type of challenge
-        /// </summary>
-        string ChallengeType { get; }
-
-        /// <summary>
         /// Check or get information needed for store (interactive)
         /// </summary>
         /// <param name="target"></param>

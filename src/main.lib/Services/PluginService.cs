@@ -1,9 +1,10 @@
 ﻿using Autofac;
-using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace PKISharp.WACS.Services
@@ -13,38 +14,6 @@ namespace PKISharp.WACS.Services
         private readonly AssemblyService _assemblyService;
         private readonly List<Plugin> _plugins;
         internal readonly ILogService _log;
-
-        internal void Configure(ContainerBuilder builder)
-        {
-            _plugins.ForEach(p =>
-            {
-                builder.RegisterType(p.Runner); 
-                builder.RegisterType(p.Meta.OptionsJson);
-                builder.RegisterType(p.Meta.OptionsFactory);
-            });
-        }
-
-        public IEnumerable<Plugin> GetPlugins() => _plugins.AsEnumerable();
-        public IEnumerable<Plugin> GetPlugins(Steps step) => GetPlugins().Where(x => x.Step == step);
-        public Plugin? GetPlugin(Guid id) => GetPlugins().Where(x => x.Id == id).FirstOrDefault();
-        public Plugin? GetPlugin(ILifetimeScope scope, Steps step, string name, string? parameter = null)
-        {
-            var plugins = GetPlugins(step).
-                Select(s => new { plugin = s, factory = scope.Resolve(s.Meta.OptionsFactory) as IPluginOptionsFactory }).
-                Where(s => s.factory?.Match(name) ?? false).
-                ToList();
-            if (step == Steps.Validation && plugins.Count > 1)
-            {
-                plugins = plugins.
-                    Where(x =>
-                    {
-                        var challengeType = (x.factory as IValidationPluginOptionsFactory)?.ChallengeType;
-                        return string.Equals(challengeType, parameter, StringComparison.InvariantCultureIgnoreCase);
-                    }).
-                    ToList();
-            }
-            return plugins.FirstOrDefault()?.plugin;
-        }
 
         public PluginService(ILogService logger, AssemblyService assemblyService)
         {
@@ -59,6 +28,107 @@ namespace PKISharp.WACS.Services
             AddPluginType<IInstallationPlugin>(Steps.Installation);
         }
 
+        /// <summary>
+        /// Get all plugins
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<Plugin> GetPlugins() => _plugins.AsEnumerable();
+        
+        /// <summary>
+        /// Get all plugins for a specific step,
+        /// used by the resolvers
+        /// </summary>
+        /// <param name="step"></param>
+        /// <returns></returns>
+        public IEnumerable<Plugin> GetPlugins(Steps step) => GetPlugins().Where(x => x.Step == step);
+        
+        /// <summary>
+        /// Get plugin by Guid
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        private Plugin? GetPlugin(Guid id) => GetPlugins().Where(x => x.Id == id).OrderByDescending(x => x.Hidden).FirstOrDefault();
+        
+        /// <summary>
+        /// Detect plugin based on provided options,
+        /// either by type or by ID
+        /// </summary>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        public Plugin GetPlugin(PluginOptionsBase options) {
+            if (TryGetPlugin(options, out var plugin)) 
+            {
+                return plugin;
+            } 
+            throw new Exception("Plugin not found");
+        }
+
+        /// <summary>
+        /// Get the plugin without crashing
+        /// </summary>
+        /// <param name="options"></param>
+        /// <param name="plugin"></param>
+        /// <returns></returns>
+        public bool TryGetPlugin(PluginOptionsBase? options, [NotNullWhen(true)] out Plugin? plugin)
+        {
+            plugin = default;
+            if (options == null)
+            {
+                return false;
+            }
+            if (string.IsNullOrWhiteSpace(options.Plugin))
+            {
+                // Find plugin based on the type
+                plugin = GetPlugins().FirstOrDefault(x => x.Options == options.GetType());
+            }
+            else if (Guid.TryParse(options.Plugin, out var pluginGuid))
+            {
+                plugin = GetPlugin(pluginGuid);
+            }
+            return plugin != null;
+        }
+
+        /// <summary>
+        /// Get plugin based on command line arguments
+        /// </summary>
+        /// <param name="scope"></param>
+        /// <param name="step"></param>
+        /// <param name="name"></param>
+        /// <param name="parameter"></param>
+        /// <returns></returns>
+        public Plugin? GetPlugin(Steps step, string name, string? parameter = null)
+        {
+            var plugins = GetPlugins(step).
+                Where(s => string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase)).
+                ToList();
+            if (step == Steps.Validation && plugins.Count > 1)
+            {
+                plugins = plugins.
+                    Where(x => string.Equals(x.ChallengeType, parameter, StringComparison.InvariantCultureIgnoreCase)).
+                    ToList();
+            }
+            return plugins.FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Configure the DI system
+        /// </summary>
+        /// <param name="builder"></param>
+        internal void Configure(ContainerBuilder builder)
+        {
+            _plugins.ForEach(p =>
+            {
+                builder.RegisterType(p.Runner);
+                builder.RegisterType(p.OptionsJson);
+                builder.RegisterType(p.OptionsFactory);
+            });
+        }
+
+        /// <summary>
+        /// Extract meta data from found types
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="step"></param>
         private void AddPluginType<T>(Steps step)
         {
             var types = _assemblyService.GetResolvable<T>();

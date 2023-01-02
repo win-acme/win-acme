@@ -13,7 +13,10 @@ using PKISharp.WACS.Services;
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     [IPlugin.Plugin<DigitalOceanOptions, DigitalOceanOptionsFactory, DigitalOceanJson>
-        ("1a87d670-3fa3-4a2a-bb10-491d48feb5db", "", "")]
+        ("1a87d670-3fa3-4a2a-bb10-491d48feb5db",
+        "DigitalOcean",
+        "Create verification records on DigitalOcean",
+        ChallengeType = Constants.Dns01ChallengeType)]
     internal class DigitalOcean : DnsValidation<DigitalOcean>
     {
         private readonly IDigitalOceanClient _doClient;

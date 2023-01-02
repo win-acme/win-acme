@@ -1,13 +1,9 @@
-﻿using PKISharp.WACS.Plugins.Base;
-using PKISharp.WACS.Services;
+﻿using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
     internal class FileSystemOptions : HttpValidationOptions<FileSystem>
     {
-        public override string Name => "FileSystem";
-        public override string Description => "Save verification files on (network) path";
-
         public FileSystemOptions() : base() { }
         public FileSystemOptions(HttpValidationOptions<FileSystem> source) : base(source) { }
 

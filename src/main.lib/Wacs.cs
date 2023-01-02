@@ -312,11 +312,7 @@ namespace PKISharp.WACS.Host
                     () => _secretServiceManager.ManageSecrets(),
                     $"Manage secrets", "S"),
                 Choice.Create<Func<Task>>(
-                    () =>
-                    {
-                        var scope = _scopeBuilder.Configuration(_container, new Renewal(), RunLevel.Interactive | RunLevel.Advanced);
-                        return _validationOptionsService.Manage(scope);
-                    },
+                    () => _validationOptionsService.Manage(_container),
                     $"Manage global validation options", "V"),
                 Choice.Create<Func<Task>>(
                     () => _taskScheduler.CreateTaskScheduler(RunLevel.Interactive | RunLevel.Advanced), 

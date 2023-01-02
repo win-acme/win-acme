@@ -135,7 +135,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         {
             var options = new IISBindingOptions() { Host = "doesntexist.example.com", SiteId = 1 };
             var target = Target(options);
-            Assert.IsTrue(target is INull);
+            Assert.IsNull(target);
         }
     }
 }

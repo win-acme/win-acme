@@ -33,17 +33,16 @@ namespace PKISharp.WACS.Services.Serialization
         {
             var readerClone = reader;
             var neutral = JsonSerializer.Deserialize(ref readerClone, WacsJson.Default.PluginOptionsBase);
-            var plugin = neutral?.FindPlugin(_pluginService);
-            if (plugin == null)
+            if (!_pluginService.TryGetPlugin(neutral, out var plugin))
             {
                 reader.Skip();
                 return null;
             }
-            if (_scope.Resolve(plugin.Meta.OptionsJson) is not JsonSerializerContext context)
+            if (_scope.Resolve(plugin.OptionsJson) is not JsonSerializerContext context)
             {
                 throw new Exception("Unable to create JsonSerializerContext");
             }
-            return JsonSerializer.Deserialize(ref reader, plugin.Meta.Options, context) as PluginOptionsBase;
+            return JsonSerializer.Deserialize(ref reader, plugin.Options, context) as PluginOptionsBase;
         }
 
         /// <summary>
@@ -54,8 +53,7 @@ namespace PKISharp.WACS.Services.Serialization
         /// <param name="options"></param>
         public override void Write(Utf8JsonWriter writer, PluginOptionsBase value, JsonSerializerOptions options)
         {
-            var plugin = value.FindPlugin(_pluginService);
-            if (plugin == null)
+            if (!_pluginService.TryGetPlugin(value, out var plugin))
             {
                 throw new Exception("Can't figure out for which plugin these options are");
             }
@@ -68,11 +66,11 @@ namespace PKISharp.WACS.Services.Serialization
             {
                 throw new Exception("Mismatch between detected plugin and pre-existing identifier");
             }
-            if (_scope.Resolve(plugin.Meta.OptionsJson) is not JsonSerializerContext context)
+            if (_scope.Resolve(plugin.OptionsJson) is not JsonSerializerContext context)
             {
                 throw new Exception("Unable to create JsonSerializerContext");
             }
-            JsonSerializer.Serialize(writer, value, plugin.Meta.Options, context);
+            JsonSerializer.Serialize(writer, value, plugin.Options, context);
         }
     }
 }

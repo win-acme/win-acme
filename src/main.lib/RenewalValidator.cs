@@ -2,6 +2,7 @@
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Context;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
@@ -34,6 +35,7 @@ namespace PKISharp.WACS
     {
         private readonly IAutofacBuilder _scopeBuilder;
         private readonly ILogService _log;
+        private readonly IPluginService _plugin;
         private readonly ISettingsService _settings;
         private readonly IValidationOptionsService _validationOptions;
         private readonly ExceptionHandler _exceptionHandler;
@@ -43,6 +45,7 @@ namespace PKISharp.WACS
             IAutofacBuilder scopeBuilder,
             ISettingsService settings,
             ILogService log,
+            IPluginService plugin,
             AcmeClient acmeClient,
             IValidationOptionsService validationOptions,
             ExceptionHandler exceptionHandler)
@@ -53,6 +56,7 @@ namespace PKISharp.WACS
             _exceptionHandler = exceptionHandler;
             _settings = settings;
             _acmeClient = acmeClient; 
+            _plugin = plugin;
         }
 
         /// <summary>
@@ -138,7 +142,8 @@ namespace PKISharp.WACS
                 {
                     throw new InvalidOperationException("Authorisation found that doesn't match target");
                 }
-                return new ValidationContextParameters(context, targetPart, pluginOptions);
+                var pluginMeta = _plugin.GetPlugin(pluginOptions);
+                return new ValidationContextParameters(context, targetPart, pluginOptions, pluginMeta);
             }).ToList();
 
             // Choose between parallel and serial execution
@@ -236,20 +241,17 @@ namespace PKISharp.WACS
         /// <param name="scope"></param>
         /// <param name="options"></param>
         /// <returns></returns>
-        private (IValidationPlugin?, IValidationPluginOptionsFactory?) GetInstances(ILifetimeScope scope, ValidationPluginOptions options)
+        private ValidationPluginContext? GetInstances(ILifetimeScope scope, ValidationPluginOptions options)
         {
             var validationScope = _scopeBuilder.Validation(scope, options);
             try
             {
-                var validationPlugin = validationScope.Resolve<IValidationPlugin>();
-                var pluginService = scope.Resolve<IPluginService>();
-                var match = pluginService.GetPlugins(Steps.Validation).Where(x => x.Meta.Options == options.GetType()).FirstOrDefault();
-                return (validationPlugin, scope.Resolve(match!.Meta.OptionsFactory) as IValidationPluginOptionsFactory);
+                return new ValidationPluginContext(options, validationScope);
             } 
             catch (Exception ex)
             {
-                _log.Error(ex, $"Unable to resolve plugin {options.Name}");
-                return (null, null);
+                _log.Error(ex, $"Unable to resolve plugin");
+                return null;
             }
         }
 
@@ -261,29 +263,29 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private bool CanValidate(AuthorizationContext context, ValidationPluginOptions options)
         {
-            var (plugin, match) = GetInstances(context.Order.ExecutionScope, options);
-            if (plugin == null || match == null)
+            var plugin = GetInstances(context.Order.ExecutionScope, options);
+            if (plugin == null)
             {
-                _log.Warning("Validation plugin {name} not found or not created", options.Name);
+                _log.Warning("Validation plugin not found or not created");
                 return false;
             }
-            var (disabled, disabledReason) = plugin.Disabled;
+            var (disabled, disabledReason) = plugin.Factory.Disabled;
             if (disabled)
             {
-                _log.Warning("Validation plugin {name} is not available. {disabledReason}", options.Name, disabledReason);
+                _log.Warning("Validation plugin {name} is not available. {disabledReason}", plugin.Meta.Name, disabledReason);
                 return false;
             }
 
             var identifier = Identifier.Parse(context.Authorization.Identifier);
             var dummyTarget = new Target(identifier);
-            if (!match.CanValidate(dummyTarget))
+            if (!plugin.Factory.CanValidate(dummyTarget))
             {
-                _log.Warning("Validation plugin {name} cannot validate identifier {identifier}", options.Name, identifier.Value);
+                _log.Warning("Validation plugin {name} cannot validate identifier {identifier}", plugin.Meta.Name, identifier.Value);
                 return false;
             }
-            if (!context.Authorization.Challenges.Any(x => x.Type == options.ChallengeType))
+            if (!context.Authorization.Challenges.Any(x => x.Type == plugin.Meta.ChallengeType))
             {
-                _log.Warning("No challenge of type {challengeType} available", options.ChallengeType);
+                _log.Warning("No challenge of type {challengeType} available", plugin.Meta.ChallengeType);
                 return context.Authorization.Status == AcmeClient.AuthorizationValid;
             }
             return true;

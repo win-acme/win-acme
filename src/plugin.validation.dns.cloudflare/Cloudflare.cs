@@ -17,7 +17,10 @@ using System.Threading.Tasks;
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     [IPlugin.Plugin<CloudflareOptions, CloudflareOptionsFactory, CloudflareJson>
-        ("73af2c2e-4cf1-4198-a4c8-1129003cfb75", "Cloudflare", "Create verification records in Cloudflare DNS")]
+        ("73af2c2e-4cf1-4198-a4c8-1129003cfb75", 
+        "Cloudflare", 
+        "Create verification records in Cloudflare DNS",
+        ChallengeType = Constants.Dns01ChallengeType)]
     public class Cloudflare : DnsValidation<Cloudflare>, IDisposable
     {
         private readonly CloudflareOptions _options;

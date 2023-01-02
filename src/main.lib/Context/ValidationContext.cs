@@ -3,9 +3,9 @@ using ACMESharp.Protocol.Resources;
 using Autofac;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
-using System;
 
 namespace PKISharp.WACS.Context
 {
@@ -14,19 +14,24 @@ namespace PKISharp.WACS.Context
         public ValidationContextParameters(
             AuthorizationContext authorization,
             TargetPart targetPart,
-            ValidationPluginOptions options)
+            ValidationPluginOptions options,
+            Plugin plugin)
         {
             TargetPart = targetPart;
             OrderContext = authorization.Order;
             Authorization = authorization.Authorization;
             Label = authorization.Label;
             Options = options;
+            ChallengeType = plugin.ChallengeType;
+            Name = plugin.Name;
         }
         public OrderContext OrderContext { get; }
         public ValidationPluginOptions Options { get; }
         public TargetPart TargetPart { get; }
         public Authorization Authorization { get; }
         public string Label { get; }
+        public string ChallengeType { get; }
+        public string Name { get; }
     }
 
     public class ValidationContext
@@ -41,8 +46,8 @@ namespace PKISharp.WACS.Context
             Authorization = parameters.Authorization;
             OrderResult = parameters.OrderContext.OrderResult;
             Scope = scope;
-            ChallengeType = parameters.Options.ChallengeType;
-            PluginName = parameters.Options.Name;
+            ChallengeType = parameters.ChallengeType;
+            PluginName = parameters.Name;
             ValidationPlugin = scope.Resolve<IValidationPlugin>();
             Valid = parameters.Authorization.Status == AcmeClient.AuthorizationValid;
         }

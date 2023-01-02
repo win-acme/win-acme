@@ -6,9 +6,6 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
     internal class ScriptOptions : InstallationPluginOptions<Script>
     {
-        public override string Name => "Script";
-        public override string Description => "Start external script or program";
-
         public string? Script { get; set; }
         public string? ScriptParameters { get; set; }
 

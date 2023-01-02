@@ -22,7 +22,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             ILogService log,
             ISettingsService settings,
             IProxyService proxy,
-            ArgumentsInputService arguments) : base(Constants.Dns01ChallengeType)
+            ArgumentsInputService arguments)
         {
             _log = log;
             _arguments = arguments;

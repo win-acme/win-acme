@@ -10,7 +10,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
         private readonly ArgumentsInputService _arguments;
         private readonly IUserRoleService _userRoleService;
 
-        public SelfHostingOptionsFactory(ArgumentsInputService arguments, IUserRoleService userRoleService) : base(Constants.TlsAlpn01ChallengeType)
+        public SelfHostingOptionsFactory(ArgumentsInputService arguments, IUserRoleService userRoleService) 
         {
             _arguments = arguments;
             _userRoleService = userRoleService;

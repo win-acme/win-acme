@@ -8,20 +8,20 @@ namespace PKISharp.WACS.Plugins.Interfaces
 {
     public interface IResolver
     {
-        Task<ITargetPluginOptionsFactory> GetTargetPlugin(ILifetimeScope scope);
+        Task<Plugin?> GetTargetPlugin(ILifetimeScope scope);
 
-        Task<IValidationPluginOptionsFactory> GetValidationPlugin(ILifetimeScope scope, Target target);
+        Task<Plugin?> GetValidationPlugin(ILifetimeScope scope, Target target);
        
-        Task<IOrderPluginOptionsFactory> GetOrderPlugin(ILifetimeScope scope, Target target);
+        Task<Plugin?> GetOrderPlugin(ILifetimeScope scope, Target target);
 
-        Task<ICsrPluginOptionsFactory> GetCsrPlugin(ILifetimeScope scope);
+        Task<Plugin?> GetCsrPlugin(ILifetimeScope scope);
 
-        Task<IStorePluginOptionsFactory?> GetStorePlugin(ILifetimeScope scope, IEnumerable<IStorePluginOptionsFactory> chosen);
+        Task<Plugin?> GetStorePlugin(ILifetimeScope scope, IEnumerable<Plugin> chosen);
 
-        Task<IInstallationPluginOptionsFactory?> GetInstallationPlugin(
+        Task<Plugin?> GetInstallationPlugin(
             ILifetimeScope scope,
-            IEnumerable<Type> storeType,
-            IEnumerable<IInstallationPluginOptionsFactory> chosen);
+            IEnumerable<Plugin> storeType,
+            IEnumerable<Plugin> chosen);
 
 
 

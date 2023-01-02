@@ -5,6 +5,7 @@ using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Context;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins;
 using PKISharp.WACS.Plugins.Base.Factories.Null;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
@@ -30,6 +31,7 @@ namespace PKISharp.WACS
         private readonly ICertificateService _certificateService;
         private readonly ICacheService _cacheService;
         private readonly IDueDateService _dueDate;
+        private readonly IPluginService _pluginService;
         private readonly ExceptionHandler _exceptionHandler;
         private readonly RenewalValidator _validator;
 
@@ -43,7 +45,8 @@ namespace PKISharp.WACS
             ICacheService cacheService,
             IDueDateService dueDate,
             RenewalValidator validator,
-            ExceptionHandler exceptionHandler, 
+            ExceptionHandler exceptionHandler,
+            IPluginService pluginService,
             IContainer container)
         {
             _validator = validator;
@@ -56,6 +59,7 @@ namespace PKISharp.WACS
             _certificateService = certificateService;
             _cacheService = cacheService;
             _container = container;
+            _pluginService = pluginService;
             _dueDate = dueDate;
         }
 
@@ -69,8 +73,7 @@ namespace PKISharp.WACS
         {
             _input.CreateSpace();
             _log.Reset();
-            using var ts = _scopeBuilder.Target(_container, renewal, runLevel);
-            using var es = _scopeBuilder.Execution(ts, renewal, runLevel);
+            using var es = _scopeBuilder.Execution(_container, renewal, runLevel);
 
             // Generate the target
             var targetPlugin = es.Resolve<ITargetPlugin>();
@@ -80,7 +83,7 @@ namespace PKISharp.WACS
                 return new RenewResult($"Source plugin is not available. {disabledReason}");
             }
             var target = await targetPlugin.Generate();
-            if (target is INull)
+            if (target == null)
             {
                 return new RenewResult($"Source plugin did not generate source");
             }
@@ -114,7 +117,7 @@ namespace PKISharp.WACS
             {
                 setupTaskScheduler = await _input.PromptYesNo($"[--test] Do you want to automatically renew with these settings?", true);
                 if (!setupTaskScheduler)
-                {           
+                {
                     result.Abort = true;
                 }
             }
@@ -203,7 +206,7 @@ namespace PKISharp.WACS
                 if (!orderContexts.Any(x => x.ShouldRun))
                 {
                     return Abort(renewal);
-                } 
+                }
             }
 
             // Only process orders that are due. In the normal
@@ -220,7 +223,7 @@ namespace PKISharp.WACS
             {
                 _log.Debug("None of the orders are currently due to run");
                 return Abort(renewal);
-            } 
+            }
             if (!renewal.New && !runLevel.HasFlag(RunLevel.Force))
             {
                 _log.Information(LogType.All, "Renewing {renewal}", renewal.LastFriendlyName);
@@ -256,7 +259,7 @@ namespace PKISharp.WACS
             await ProcessOrders(runnableContexts, result);
 
             // Run the post-execution script. Note that this is different
-            // from the script installation plugin, which is handled
+            // from the script installation pluginService, which is handled
             // in the previous step. This is only meant to undo any
             // (firewall?) changes made by the pre-execution script.
             var postScript = _settings.Execution?.DefaultPostExecutionScript;
@@ -414,24 +417,15 @@ namespace PKISharp.WACS
                 }
 
                 // Load the store plugins
-                var storePluginOptions = context.Renewal.StorePluginOptions.
+                var storeContexts = context.Renewal.StorePluginOptions.
                     Where(x => x is not NullStoreOptions).
+                    Select(x => new StorePluginContext(x, context.ExecutionScope)).
                     ToList();
-                var storePlugins = storePluginOptions.
-                    Select(x => context.ExecutionScope.Resolve(x.Instance, new TypedParameter(x.GetType(), x))).
-                    OfType<IStorePlugin>().
-                    Where(x => x is not INull).
-                    ToList();
-                if (storePluginOptions.Count != storePlugins.Count)
-                {
-                    throw new InvalidOperationException("Store plugin/option count mismatch");
-                }
-
-                if (!await HandleStoreAdd(context, context.NewCertificate, storePluginOptions, storePlugins)) 
+                if (!await HandleStoreAdd(context, context.NewCertificate, storeContexts))
                 {
                     return false;
                 }
-                if (!await HandleInstall(context, context.NewCertificate, context.PreviousCertificate, storePlugins))
+                if (!await HandleInstall(context, context.NewCertificate, context.PreviousCertificate, storeContexts))
                 {
                     return false;
                 }
@@ -441,7 +435,7 @@ namespace PKISharp.WACS
                 if (context.PreviousCertificate != null &&
                     context.NewCertificate.Certificate.Thumbprint != context.PreviousCertificate.Certificate.Thumbprint)
                 {
-                    await HandleStoreRemove(context, context.PreviousCertificate, storePluginOptions, storePlugins);
+                    await HandleStoreRemove(context, context.PreviousCertificate, storeContexts);
                 }
             }
             catch (Exception ex)
@@ -465,7 +459,7 @@ namespace PKISharp.WACS
             {
                 return null;
             }
-            if (cachedCertificate.CacheFile.LastWriteTime < 
+            if (cachedCertificate.CacheFile.LastWriteTime <
                 DateTime.Now.AddDays(_settings.Cache.ReuseDays * -1))
             {
                 return null;
@@ -483,7 +477,7 @@ namespace PKISharp.WACS
                 context.Order.FriendlyNameIntermediate,
                 _settings.Cache.ReuseDays,
                 nameof(MainArguments.NoCache).ToLower());
-                return cachedCertificate;
+            return cachedCertificate;
         }
 
         /// <summary>
@@ -520,7 +514,7 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private async Task<CertificateInfo?> GetFromServer(OrderContext context)
         {
-            // Generate the CSR plugin
+            // Generate the CSR pluginService
             var csrPlugin = context.Target.UserCsrBytes == null ? context.ExecutionScope.Resolve<ICsrPlugin>() : null;
             if (csrPlugin != null)
             {
@@ -536,7 +530,7 @@ namespace PKISharp.WACS
             try
             {
                 return await _certificateService.RequestCertificate(csrPlugin, context.RunLevel, context.Order);
-            } 
+            }
             catch (Exception ex)
             {
                 _log.Error(ex, "Error requesting certificate {friendlyName}", context.Order.FriendlyNameIntermediate);
@@ -551,34 +545,32 @@ namespace PKISharp.WACS
         /// <param name="newCertificate"></param>
         /// <returns></returns>
         private async Task<bool> HandleStoreAdd(
-            OrderContext context, 
-            CertificateInfo newCertificate, 
-            List<StorePluginOptions> storePluginOptions, 
-            List<IStorePlugin> storePlugins)
+            OrderContext context,
+            CertificateInfo newCertificate,
+            List<StorePluginContext> stores)
         {
-            // Run store plugin(s)
+            // Run store pluginService(s)
             try
             {
-                var steps = storePluginOptions.Count;
+                var steps = stores.Count;
                 for (var i = 0; i < steps; i++)
                 {
-                    var storeOptions = storePluginOptions[i];
-                    var storePlugin = storePlugins[i];
+                    var store = stores[i];
                     if (steps > 1)
                     {
-                        _log.Information("Store step {n}/{m}: {name}...", i + 1, steps, storeOptions.Name);
+                        _log.Information("Store step {n}/{m}: {name}...", i + 1, steps, store.Meta.Name);
                     }
                     else
                     {
-                        _log.Information("Store with {name}...", storeOptions.Name);
+                        _log.Information("Store with {name}...", store.Meta.Name);
                     }
-                    var (disabled, disabledReason) = storePlugin.Disabled;
+                    var (disabled, disabledReason) = store.Factory.Disabled;
                     if (disabled)
                     {
                         context.OrderResult.AddErrorMessage($"Store plugin is not available. {disabledReason}");
                         return false;
-                    } 
-                    await storePlugin.Save(newCertificate);
+                    }
+                    await store.Plugin.Save(newCertificate);
                 }
             }
             catch (Exception ex)
@@ -601,16 +593,15 @@ namespace PKISharp.WACS
         private async Task HandleStoreRemove(
             OrderContext context,
             CertificateInfo previousCertificate,
-            List<StorePluginOptions> storePluginOptions,
-            List<IStorePlugin> storePlugins)
+            List<StorePluginContext> stores)
         {
-            for (var i = 0; i < storePluginOptions.Count; i++)
+            for (var i = 0; i < stores.Count; i++)
             {
-                if (storePluginOptions[i].KeepExisting != true)
+                if (stores[i].Options.KeepExisting != true)
                 {
                     try
                     {
-                        await storePlugins[i].Delete(previousCertificate);
+                        await stores[i].Plugin.Delete(previousCertificate);
                     }
                     catch (Exception ex)
                     {
@@ -631,43 +622,42 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private async Task<bool> HandleInstall(
             OrderContext context,
-            CertificateInfo newCertificate, 
-            CertificateInfo? previousCertificate, 
-            IEnumerable<IStorePlugin> storePlugins)
+            CertificateInfo newCertificate,
+            CertificateInfo? previousCertificate,
+            List<StorePluginContext> stores)
         {
-            // Run installation plugin(s)
+            // Run installation pluginService(s)
             try
             {
                 var steps = context.Renewal.InstallationPluginOptions.Count;
                 for (var i = 0; i < steps; i++)
                 {
-                    var installOptions = context.Renewal.InstallationPluginOptions[i];
-                    var installPlugin = (IInstallationPlugin)context.ExecutionScope.Resolve(
-                        installOptions.Instance,
-                        new TypedParameter(installOptions.GetType(), installOptions));
-
-                    if (installPlugin is not NullInstallation)
+                    var installOptions = new InstallationPluginContext(
+                        context.Renewal.InstallationPluginOptions[i], 
+                        context.ExecutionScope);
+                                       
+                    if (installOptions.Plugin is not NullInstallation)
                     {
                         if (steps > 1)
                         {
-                            _log.Information("Installation step {n}/{m}: {name}...", i + 1, steps, installOptions.Name);
+                            _log.Information("Installation step {n}/{m}: {name}...", i + 1, steps, installOptions.Meta.Name);
                         }
                         else
                         {
-                            _log.Information("Installing with {name}...", installOptions.Name);
+                            _log.Information("Installing with {name}...", installOptions.Meta.Name);
                         }
-                        var (disabled, disabledReason) = installPlugin.Disabled;
+                        var (disabled, disabledReason) = installOptions.Factory.Disabled;
                         if (disabled)
                         {
                             context.OrderResult.AddErrorMessage($"Installation plugin is not available. {disabledReason}");
                             return false;
                         }
-                        if (!await installPlugin.Install(context.Target, storePlugins, newCertificate, previousCertificate))
+                        if (!await installOptions.Plugin.Install(context.Target, stores.Select(x => x.Meta.Runner), newCertificate, previousCertificate))
                         {
                             // This is not truly fatal, other installation plugins might still be able to do
                             // something useful, and also we don't want to break compatability for users depending
                             // on scripts that return an error
-                            context.OrderResult.AddErrorMessage($"Installation plugin {installOptions.Name} encountered an error");
+                            context.OrderResult.AddErrorMessage($"Installation plugin {installOptions.Meta.Name} encountered an error");
                         }
                     }
                 }

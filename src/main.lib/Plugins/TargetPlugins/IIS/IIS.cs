@@ -33,7 +33,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _userRoleService = roleService;
         }
 
-        public async Task<Target> Generate()
+        public async Task<Target?> Generate()
         {
             // Check if we have any bindings
             var allBindings = _helper.GetBindings();
@@ -41,7 +41,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             if (filteredBindings.Count == 0)
             {
                 _log.Error("No bindings matched, unable to proceed");
-                return new NullTarget();
+                return null;
             }
 
             // Handle common name

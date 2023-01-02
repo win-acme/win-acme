@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.Services;
+﻿using ACMESharp.Authorizations;
+using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Text.Json.Serialization;
@@ -8,23 +9,6 @@ namespace PKISharp.WACS.Plugins.Interfaces
 {
     public interface IPluginOptionsFactory
     {
-        /// <summary>
-        /// Unique identifier
-        /// </summary>
-        string? Name { get; }
-
-        /// <summary>
-        /// Check if name matches
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        bool Match(string name);
-
-        /// <summary>
-        /// Human-understandable description
-        /// </summary>
-        string? Description { get; }
-
         /// <summary>
         /// Which type is used as instance
         /// </summary>
@@ -73,6 +57,7 @@ namespace PKISharp.WACS.Plugins.Interfaces
         public string Name { get; }
         public string Description { get; }
         public bool Hidden { get; }
+        public string ChallengeType { get; }
         public Type Options { get; }
         public Type OptionsFactory { get; }
         public Type OptionsJson { get; }
@@ -103,6 +88,7 @@ namespace PKISharp.WACS.Plugins.Interfaces
         {
             public Guid Id { get; }
             public bool Hidden { get; set; } = false;
+            public string ChallengeType { get; set; } = Http01ChallengeValidationDetails.Http01ChallengeType;
             public string Name { get; set; }
             public string Description { get; set; }
             public Type Options { get; }

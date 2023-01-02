@@ -2,6 +2,7 @@
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Options;
 using System;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Services
 {
@@ -17,21 +18,13 @@ namespace PKISharp.WACS.Services
         ILifetimeScope Legacy(ILifetimeScope main, Uri fromUri, Uri toUri);
 
         /// <summary>
-        /// For revocation and configuration
-        /// </summary>
-        /// <param name="main"></param>
-        /// <param name="runLevel"></param>
-        /// <returns></returns>
-        ILifetimeScope Configuration(ILifetimeScope main, Renewal renewal, RunLevel runLevel);
-
-        /// <summary>
         /// For configuration and renewal
         /// </summary>
         /// <param name="main"></param>
         /// <param name="renewal"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        ILifetimeScope Target(ILifetimeScope main, Renewal renewal, RunLevel runLevel);
+        Task<ILifetimeScope> Target(ILifetimeScope main, Renewal renewal);
 
         /// <summary>
         /// For renewal and creating scheduled task 

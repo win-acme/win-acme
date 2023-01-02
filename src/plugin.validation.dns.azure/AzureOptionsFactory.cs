@@ -15,9 +15,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         private readonly ArgumentsInputService _arguments;
 
-        public AzureOptionsFactory(ArgumentsInputService arguments) : 
-            base(Dns01ChallengeValidationDetails.Dns01ChallengeType) 
-            => _arguments = arguments;
+        public AzureOptionsFactory(ArgumentsInputService arguments) => _arguments = arguments;
 
         private ArgumentResult<string?> ResourceGroupName => _arguments.
             GetString<AzureArguments>(a => a.AzureResourceGroupName).

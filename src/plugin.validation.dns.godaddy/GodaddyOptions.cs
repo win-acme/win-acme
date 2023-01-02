@@ -12,9 +12,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
 
     internal class GodaddyOptions : ValidationPluginOptions<GodaddyDnsValidation>
     {
-        public override string Name => "Godaddy";
-        public override string Description => "Create verification records in Godaddy DNS";
-        public override string ChallengeType => Constants.Dns01ChallengeType;
         [JsonPropertyName("SecretSafe")]
         public ProtectedString? ApiKey { get; set; }
         public ProtectedString? ApiSecret { get; set; }

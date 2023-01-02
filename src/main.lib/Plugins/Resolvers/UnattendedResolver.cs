@@ -2,6 +2,7 @@
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Base.Factories.Null;
 using PKISharp.WACS.Plugins.CsrPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
@@ -14,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Single = PKISharp.WACS.Plugins.OrderPlugins.Single;
 
 namespace PKISharp.WACS.Plugins.Resolvers
 {
@@ -32,24 +34,24 @@ namespace PKISharp.WACS.Plugins.Resolvers
             _settings = settings;
         }
 
-        private async Task<T> GetPlugin<T>(
+        private async Task<Plugin?> GetPlugin<T>(
             ILifetimeScope scope,
             Steps step,
             Type defaultType,
-            T nullResult,
             string className,
             string? defaultParam1 = null,
             string? defaultParam2 = null,
-            Func<IEnumerable<T>, IEnumerable<T>>? filter = null,
-            Func<T, (bool, string?)>? unusable = null) where T: class, IPluginOptionsFactory
+            Func<IEnumerable<PluginFactoryContext<T>>, IEnumerable<PluginFactoryContext<T>>>? filter = null,
+            Func<PluginFactoryContext<T>, (bool, string?)>? unusable = null)
+            where T : IPluginOptionsFactory
         {
             // Helper method to determine final usability state
             // combination of plugin being enabled (e.g. due to missing
             // administrator rights) and being a right fit for the current
             // renewal (e.g. cannot validate wildcards using http-01)
-            (bool, string?) disabledOrUnusable(T plugin)
+            (bool, string?) disabledOrUnusable(PluginFactoryContext<T> plugin)
             {
-                var disabled = plugin.Disabled;
+                var disabled = plugin.Factory.Disabled;
                 if (disabled.Item1)
                 {
                     return disabled;
@@ -62,60 +64,52 @@ namespace PKISharp.WACS.Plugins.Resolvers
             };
 
             // Apply default sorting when no sorting has been provided yet
-            IEnumerable<T> options = new List<T>();
+            IEnumerable<PluginFactoryContext<T>> options = new List<PluginFactoryContext<T>>();
             options = _plugins.
                 GetPlugins(step).
-                Select(x => x.Meta.OptionsFactory).
-                Select(scope.Resolve).
-                OfType<T>().
+                Select(x => new PluginFactoryContext<T>(x, scope)).
                 ToList();
             options = filter != null ? filter(options) : options.Where(x => x is not INull);
             var localOptions = options.Select(x => new {
                 plugin = x,
-                type = x.GetType(),
                 disabled = disabledOrUnusable(x)
             });
 
             // Default out when there are no reasonable options to pick
             if (!localOptions.Any() ||
                 localOptions.All(x => x.disabled.Item1) ||
-                localOptions.All(x => x.plugin is INull))
+                localOptions.All(x => x.plugin.Factory is INull))
             {
-                return nullResult;
+                return null;
             }
 
             var changeInstructions = $"Choose another plugin using the --{className} switch or change the default in settings.json";
             if (!string.IsNullOrEmpty(defaultParam1))
             {
-                var defaultPlugin = default(T);
-                var factory = _plugins.GetPlugin(scope, step, defaultParam1, defaultParam2)?.Meta.OptionsFactory;
-                if (factory != null)
-                {
-                    defaultPlugin = scope.Resolve(factory) as T;
-                }
+                var defaultPlugin = _plugins.GetPlugin(step, defaultParam1, defaultParam2);
                 if (defaultPlugin == null)
                 {
                     _log.Error("Unable to find {n} plugin {p}. " + changeInstructions, className, defaultParam1);
-                    return nullResult;
+                    return null;
                 }
                 else
                 {
-                    defaultType = defaultPlugin.GetType();
+                    return defaultPlugin;
                 }
             }
 
-            var defaultOption = localOptions.First(x => x.type == defaultType);
+            var defaultOption = localOptions.First(x => x.plugin.Meta.Runner == defaultType);
             var defaultTypeDisabled = defaultOption.disabled;
             if (defaultTypeDisabled.Item1)
             {
                 _log.Error("{n} plugin {x} not available: {m}. " + changeInstructions, 
-                    char.ToUpper(className[0]) + className[1..], 
-                    defaultOption.plugin?.Name ?? "Unknown",
+                    step, 
+                    defaultOption.plugin.Meta.Name ?? "Unknown",
                     defaultTypeDisabled.Item2?.TrimEnd('.'));
-                return nullResult;
+                return null;
             }
 
-            return (T)scope.Resolve(defaultType);
+            return defaultOption.plugin.Meta;
         }
 
         /// <summary>
@@ -123,7 +117,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// Renewal
         /// </summary>
         /// <returns></returns>
-        public virtual async Task<ITargetPluginOptionsFactory> GetTargetPlugin(ILifetimeScope scope)
+        public virtual async Task<Plugin?> GetTargetPlugin(ILifetimeScope scope)
         {
             // NOTE: checking the default option here doesn't make 
             // sense because MainArguments.Source is what triggers
@@ -133,8 +127,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 scope,
                 Steps.Target,
                 defaultParam1: string.IsNullOrWhiteSpace(_arguments.Source) ? _arguments.Target : _arguments.Source,
-                defaultType: typeof(ManualOptionsFactory),
-                nullResult: new NullTargetFactory(),
+                defaultType: typeof(Manual),
                 className: "source");
         }
 
@@ -143,7 +136,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// to validate this Renewal
         /// </summary>
         /// <returns></returns>
-        public virtual async Task<IValidationPluginOptionsFactory> GetValidationPlugin(ILifetimeScope scope, Target target)
+        public virtual async Task<Plugin?> GetValidationPlugin(ILifetimeScope scope, Target target)
         {
             var defaultParam2 = _arguments.ValidationMode ?? _settings.Validation.DefaultValidationMode;
             if (string.IsNullOrEmpty(defaultParam2))
@@ -155,9 +148,8 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 Steps.Validation,
                 defaultParam1: _arguments.Validation ?? _settings.Validation.DefaultValidation,
                 defaultParam2: defaultParam2,
-                defaultType: typeof(SelfHostingOptionsFactory),
-                nullResult: new NullValidationFactory(),
-                unusable: (c) => (!c.CanValidate(target), "Unsupported source. Most likely this is because you have included a wildcard identifier (*.example.com), which requires DNS validation."),
+                defaultType: typeof(SelfHosting),
+                unusable: (c) => (!c.Factory.CanValidate(target), "Unsupported source. Most likely this is because you have included a wildcard identifier (*.example.com), which requires DNS validation."),
                 className: "validation");
         }
 
@@ -166,15 +158,14 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// and request the certificate
         /// </summary>
         /// <returns></returns>
-        public virtual async Task<IOrderPluginOptionsFactory> GetOrderPlugin(ILifetimeScope scope, Target target)
+        public virtual async Task<Plugin?> GetOrderPlugin(ILifetimeScope scope, Target target)
         {
             return await GetPlugin<IOrderPluginOptionsFactory>(
                 scope,
                 Steps.Order,
                 defaultParam1: _arguments.Order,
-                defaultType: typeof(SingleOptionsFactory),
-                nullResult: new NullOrderOptionsFactory(),
-                unusable: (c) => (!c.CanProcess(target), "Unsupported source. Most likely this is because you are using a custom CSR which doesn't allow the order to be split."),
+                defaultType: typeof(Single),
+                unusable: (c) => (!c.Factory.CanProcess(target), "Unsupported source. Most likely this is because you are using a custom CSR which doesn't allow the order to be split."),
                 className: "order");
         }
 
@@ -183,14 +174,13 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// and request the certificate
         /// </summary>
         /// <returns></returns>
-        public virtual async Task<ICsrPluginOptionsFactory> GetCsrPlugin(ILifetimeScope scope)
+        public virtual async Task<Plugin?> GetCsrPlugin(ILifetimeScope scope)
         {
             return await GetPlugin<ICsrPluginOptionsFactory>(
                 scope,
                 Steps.Csr,
                 defaultParam1: _arguments.Csr,
-                defaultType: typeof(RsaOptionsFactory),
-                nullResult: new NullCsrFactory(),
+                defaultType: typeof(Rsa),
                 className: "csr");
         }
 
@@ -198,7 +188,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// Get the StorePlugin which is used to persist the certificate
         /// </summary>
         /// <returns></returns>
-        public virtual async Task<IStorePluginOptionsFactory?> GetStorePlugin(ILifetimeScope scope, IEnumerable<IStorePluginOptionsFactory> chosen)
+        public virtual async Task<Plugin?> GetStorePlugin(ILifetimeScope scope, IEnumerable<Plugin> chosen)
         {
             var cmd = _arguments.Store ?? _settings.Store.DefaultStore;
             if (string.IsNullOrEmpty(cmd))
@@ -213,17 +203,14 @@ namespace PKISharp.WACS.Plugins.Resolvers
             var index = chosen.Count();
             if (index == parts.Count)
             {
-                return new NullStoreOptionsFactory();
+                return null;
             }
             return await GetPlugin<IStorePluginOptionsFactory>(
                 scope,
                 Steps.Store,
                 filter: x => x,
                 defaultParam1: parts[index],
-                defaultType: typeof(NullStoreOptionsFactory),
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-                nullResult: default,
-#pragma warning restore CS8625
+                defaultType: typeof(NullStore),
                 className: "store");
         }
 
@@ -232,29 +219,26 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// this ScheduledRenewal
         /// </summary>
         /// <returns></returns>
-        public virtual async Task<IInstallationPluginOptionsFactory?> GetInstallationPlugin(ILifetimeScope scope, IEnumerable<Type> storeTypes, IEnumerable<IInstallationPluginOptionsFactory> chosen)
+        public virtual async Task<Plugin?> GetInstallationPlugin(ILifetimeScope scope, IEnumerable<Plugin> storeTypes, IEnumerable<Plugin> chosen)
         {
             var cmd = _arguments.Installation ?? _settings.Installation.DefaultInstallation;
             var parts = cmd.ParseCsv();
             if (parts == null)
             {
-                return new NullInstallationOptionsFactory();
+                return null;
             }
             var index = chosen.Count();
             if (index == parts.Count)
             {
-                return new NullInstallationOptionsFactory();
+                return null;
             }
             return await GetPlugin<IInstallationPluginOptionsFactory>(
                 scope,
                 Steps.Installation,
                 filter: x => x,
-                unusable: x => { var (a, b) = x.CanInstall(storeTypes, chosen.Select(c => c.InstanceType)); return (!a, b); },
+                unusable: x => { var (a, b) = x.Factory.CanInstall(storeTypes.Select(x => x.Runner), chosen.Select(x => x.Runner)); return (!a, b); },
                 defaultParam1: parts[index],
-                defaultType: typeof(NullInstallationOptionsFactory),
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-                nullResult: default,
-#pragma warning restore CS8625
+                defaultType: typeof(NullInstallation),
                 className: "installation");
         }
     }

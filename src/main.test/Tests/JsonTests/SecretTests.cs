@@ -18,9 +18,9 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
     [TestClass]
     public class SecretTests
     {
-        private static ILifetimeScope _container;
-        private static IPluginService _plugin;
-        private static ILogService _log;
+        private static ILifetimeScope? _container;
+        private static IPluginService? _plugin;
+        private static ILogService? _log;
 
         [ClassInitialize]
         public static void ClassInitialize(TestContext context)
@@ -42,13 +42,13 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
 
         private string Serialize(Renewal renewal)
         {
-            var wacsJson = _container.ResolveNamed<WacsJson>("current");
+            var wacsJson = _container!.ResolveNamed<WacsJson>("current");
             return JsonSerializer.Serialize(renewal, wacsJson.Renewal);
         }
 
         private Renewal Deserialize(string json)
         {
-            var wacsJson = _container.ResolveNamed<WacsJson>("legacy");
+            var wacsJson = _container!.ResolveNamed<WacsJson>("legacy");
             var renewal = JsonSerializer.Deserialize(json, wacsJson.Renewal);
             Assert.IsNotNull(renewal);
             return renewal;
@@ -82,7 +82,7 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
         [TestMethod]
         public void SerializeSecretExternal()
         {
-            Assert.AreEqual(44, _plugin.GetPlugins().Count());
+            Assert.AreEqual(44, _plugin!.GetPlugins().Count());
             var renewal = new Renewal
             {
                 TargetPluginOptions = new ManualOptions(),

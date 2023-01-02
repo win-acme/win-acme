@@ -36,20 +36,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         public override int Order => 2;
 
         /// <summary>
-        /// Match with the legacy target plugin names
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        public override bool Match(string name)
-        {
-            return name.ToLowerInvariant() switch
-            {
-                "iisbinding" or "iissite" or "iissites" => true,
-                _ => base.Match(name),
-            };
-        }
-
-        /// <summary>
         /// Get settings in interactive mode
         /// </summary>
         /// <param name="input"></param>

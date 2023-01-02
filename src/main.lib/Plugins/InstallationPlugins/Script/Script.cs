@@ -3,6 +3,7 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -29,15 +30,14 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             _ssm = secretManager;
         }
 
-        public async Task<bool> Install(Target target, IEnumerable<IStorePlugin> store, CertificateInfo newCertificate, CertificateInfo? oldCertificate)
+        public async Task<bool> Install(Target _, IEnumerable<Type> stores, CertificateInfo newCertificate, CertificateInfo? oldCertificate)
         {
             if (_options.Script != null)
             {
-                var defaultStoreType = store.FirstOrDefault()?.GetType();
                 var defaultStoreInfo = default(StoreInfo?);
-                if (defaultStoreType != null)
+                if (stores.Any())
                 {
-                    defaultStoreInfo = newCertificate.StoreInfo[defaultStoreType];
+                    defaultStoreInfo = newCertificate.StoreInfo[stores.First()];
                 }
                 var parameters = ReplaceParameters(_options.ScriptParameters ?? "", defaultStoreInfo, newCertificate, oldCertificate, false);
                 var censoredParameters = ReplaceParameters(_options.ScriptParameters ?? "", defaultStoreInfo, newCertificate, oldCertificate, true);

@@ -12,9 +12,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
     internal sealed class Route53Options : ValidationPluginOptions<Route53>
     {
-        public override string Name { get; } = "Route53";
-        public override string Description { get; } = "Create verification records in AWS Route 53";
-        public override string ChallengeType { get; } = Constants.Dns01ChallengeType;
         public string? IAMRole { get; set; }
         public string? AccessKeyId { get; set; }
 

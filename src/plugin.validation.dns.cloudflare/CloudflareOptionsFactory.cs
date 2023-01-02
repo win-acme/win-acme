@@ -11,9 +11,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     public class CloudflareOptionsFactory : ValidationPluginOptionsFactory<Cloudflare, CloudflareOptions>
     {
         private readonly ArgumentsInputService _arguments;
-        public CloudflareOptionsFactory(ArgumentsInputService arguments) : 
-            base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => 
-            _arguments = arguments;
+        public CloudflareOptionsFactory(ArgumentsInputService arguments) => _arguments = arguments;
 
         private ArgumentResult<ProtectedString?> ApiKey => _arguments.
             GetProtectedString<CloudflareArguments>(a => a.CloudflareApiToken).

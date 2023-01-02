@@ -12,10 +12,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
     internal sealed class LuaDnsOptions : ValidationPluginOptions<LuaDns>
     {
-        public override string Name { get; } = "LuaDns";
-        public override string Description { get; } = "Create verification records in LuaDns";
-        public override string ChallengeType { get; } = Constants.Dns01ChallengeType;
-
         public string? Username { get; set; }
         [JsonPropertyName("APIKeySafe")]
         public ProtectedString? APIKey { get; set; }

@@ -228,9 +228,16 @@ namespace PKISharp.WACS.Services
         {
             var fakeTarget = new Target(new DnsIdentifier("www.example.com"));
             var resolver = scope.Resolve<IResolver>();
-            var optionsFactory = await resolver.GetValidationPlugin(scope, fakeTarget);
-            var options = await optionsFactory.Aquire(fakeTarget, _input, RunLevel.Advanced);
-            input.ValidationPluginOptions = options;
+            var validationPlugin = await resolver.GetValidationPlugin(scope, fakeTarget);
+            if (validationPlugin != null)
+            {
+                var factory = scope.Resolve(validationPlugin.OptionsFactory) as IValidationPluginOptionsFactory;
+                if (factory is not null)
+                {
+                    var options = await factory.Aquire(fakeTarget, _input, RunLevel.Advanced);
+                    input.ValidationPluginOptions = options;
+                }
+            }
         }
 
         /// <summary>

@@ -12,7 +12,10 @@ using System.Threading.Tasks;
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     [IPlugin.Plugin<NS1Options, NS1OptionsFactory, NS1Json>
-        ("C66CC8BE-3046-46C2-A0BA-EC4EC3E7FE96", "", "")]
+        ("C66CC8BE-3046-46C2-A0BA-EC4EC3E7FE96", 
+        "NS1", 
+        "Create verification records in NS1 DNS",
+        ChallengeType = Constants.Dns01ChallengeType)]
     internal class NS1DnsValidation : DnsValidation<NS1DnsValidation>
     {
         private readonly DnsManagementClient _client;

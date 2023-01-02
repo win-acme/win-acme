@@ -11,7 +11,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         private readonly ArgumentsInputService _arguments;
 
-        public CloudDnsOptionsFactory(ArgumentsInputService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
+        public CloudDnsOptionsFactory(ArgumentsInputService arguments) => _arguments = arguments;
 
         private ArgumentResult<string?> ServiceAccountKey => _arguments.
             GetString<CloudDnsArguments>(a => a.ServiceAccountKey).

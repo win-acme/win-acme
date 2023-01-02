@@ -12,8 +12,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 
     internal sealed class RestOptions : ValidationPluginOptions<Rest>
     {
-        public override string Name => "Rest";
-        public override string Description => "Send verification files to the server by issuing HTTP REST-style requests";
         public ProtectedString? SecurityToken { get; set; }
         public bool? UseHttps { get; set; }
     }

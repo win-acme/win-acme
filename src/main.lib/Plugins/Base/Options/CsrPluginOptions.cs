@@ -9,8 +9,6 @@ namespace PKISharp.WACS.Plugins.Base.Options
 {
     public class CsrPluginOptions : PluginOptions
     {
-        public override string Name => throw new NotImplementedException();
-        public override string Description => throw new NotImplementedException();
         [JsonIgnore]
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
         public override Type Instance => throw new NotImplementedException();
@@ -21,12 +19,8 @@ namespace PKISharp.WACS.Plugins.Base.Options
     public abstract class CsrPluginOptions<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TPlugin> : 
         CsrPluginOptions where TPlugin : ICsrPlugin
     {
-        public abstract override string Name { get; }
-        public abstract override string Description { get; }
         public override void Show(IInputService input)
         {
-            input.Show(null, "[CSR]");
-            input.Show("Plugin", $"{Name} - ({Description})", level: 1);
             if (OcspMustStaple == true)
             {
                 input.Show("OcspMustStaple", "Yes");

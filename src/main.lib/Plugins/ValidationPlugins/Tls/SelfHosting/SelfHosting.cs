@@ -18,7 +18,10 @@ using System.Threading.Tasks;
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
 {
     [IPlugin.Plugin<SelfHostingOptions, SelfHostingOptionsFactory, WacsJsonPlugins>
-        ("a1565064-b208-4467-8ca1-1bd3c08aa500", "SelfHosting", "Answer TLS verification request from win-acme")]
+        ("a1565064-b208-4467-8ca1-1bd3c08aa500", 
+        "SelfHosting", 
+        "Answer TLS verification request from win-acme",
+        ChallengeType = Constants.TlsAlpn01ChallengeType)]
     internal class SelfHosting : Validation<TlsAlpn01ChallengeValidationDetails>
     {
         internal const int DefaultValidationPort = 443;

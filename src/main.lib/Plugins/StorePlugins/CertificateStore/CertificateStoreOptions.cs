@@ -1,5 +1,4 @@
-﻿using PKISharp.WACS.Plugins.Base;
-using PKISharp.WACS.Plugins.Base.Options;
+﻿using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
 
@@ -8,8 +7,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
     internal class CertificateStoreOptions : StorePluginOptions<CertificateStore>
     {
         internal const string PluginName = "CertificateStore";
-        public override string Name => PluginName;
-        public override string Description => "Windows Certificate Store";
 
         /// <summary>
         /// Name of the certificate store to use

@@ -1,5 +1,4 @@
-﻿using PKISharp.WACS.Plugins.Base;
-using PKISharp.WACS.Plugins.Base.Options;
+﻿using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 
@@ -8,8 +7,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
     internal class PemFilesOptions : StorePluginOptions<PemFiles>
     {
         internal const string PluginName = "PemFiles";
-        public override string Name => PluginName;
-        public override string Description => "PEM encoded files (Apache, nginx, etc.)";
 
         /// <summary>
         /// PemFiles password

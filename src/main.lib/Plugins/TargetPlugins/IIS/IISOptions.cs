@@ -7,9 +7,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     internal class IISOptions : TargetPluginOptions<IIS>
     {
-        public override string Name => "IIS";
-        public override string Description => "Read bindings from IIS";
-
         /// <summary>
         /// Common name for the certificate
         /// </summary>

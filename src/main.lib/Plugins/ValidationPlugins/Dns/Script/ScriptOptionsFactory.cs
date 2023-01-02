@@ -15,19 +15,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         private readonly ISettingsService _settings;
         private readonly ArgumentsInputService _arguments;
 
-        public override bool Match(string name)
-        {
-            return name.ToLowerInvariant() switch
-            {
-                "dnsscript" => true,
-                _ => base.Match(name),
-            };
-        }
-
         public ScriptOptionsFactory(
             ILogService log, 
             ISettingsService settings,
-            ArgumentsInputService arguments) : base(Constants.Dns01ChallengeType)
+            ArgumentsInputService arguments)
         {
             _log = log;
             _settings = settings;   

@@ -177,15 +177,12 @@ namespace PKISharp.WACS.Services
             return ret;
         }
 
-        public List<Type> GetResolvable<T>(bool allowNull = false)
+        public List<Type> GetResolvable<T>()
         {
-            var ret = _allTypes.AsEnumerable();
-            ret = ret.Where(type => typeof(T) != type && typeof(T).IsAssignableFrom(type) && !type.IsAbstract);
-            if (!allowNull)
-            {
-                ret = ret.Where(type => !typeof(INull).IsAssignableFrom(type));
-            }
-            return ret.ToList();
+            return _allTypes.
+                AsEnumerable().
+                Where(type => typeof(T) != type && typeof(T).IsAssignableFrom(type) && !type.IsAbstract).
+                ToList();
         }
     }
 }

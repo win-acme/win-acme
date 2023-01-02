@@ -14,12 +14,14 @@ namespace PKISharp.WACS.Services
     {
         private readonly ILogService _log;
         private readonly ICacheService _cacheService;
+        private readonly IPluginService _plugin;
         private readonly ISettingsService _settings;
         private readonly EmailClient _email;
 
         public NotificationService(
             ILogService log,
             ISettingsService setttings,
+            IPluginService pluginService,
             EmailClient email,
             ICacheService certificateService)
         {
@@ -27,6 +29,7 @@ namespace PKISharp.WACS.Services
             _cacheService = certificateService;
             _email = email;
             _settings = setttings;
+            _plugin = pluginService;
         }
 
         /// <summary>
@@ -144,18 +147,18 @@ namespace PKISharp.WACS.Services
                         <tr><td colspan=""2"">{NotificationHosts(renewal)}</td></tr>
                         <tr><td colspan=""2"">&nbsp;</td></tr>
                         <tr><td><b>Plugins</b></td><td></td></tr>
-                        <tr><td>Target: </td><td> {renewal.TargetPluginOptions.Name}</td></tr>";
-                extraMessage += @$"<tr><td>Validation: </td><td> {renewal.ValidationPluginOptions.Name}</td></tr>";
+                        <tr><td>Target: </td><td> {_plugin.GetPlugin(renewal.TargetPluginOptions).Name}</td></tr>";
+                extraMessage += @$"<tr><td>Validation: </td><td> {_plugin.GetPlugin(renewal.ValidationPluginOptions).Name}</td></tr>";
                 if (renewal.OrderPluginOptions != null)
                 {
-                    extraMessage += @$"<tr><td>Order: </td><td> {renewal.OrderPluginOptions.Name}</td></tr>";
+                    extraMessage += @$"<tr><td>Order: </td><td> {_plugin.GetPlugin(renewal.OrderPluginOptions).Name}</td></tr>";
                 }
                 if (renewal.CsrPluginOptions != null)
                 {
-                    extraMessage += @$"<tr><td>Csr: </td><td> {renewal.CsrPluginOptions.Name}</td></tr>";
+                    extraMessage += @$"<tr><td>Csr: </td><td> {_plugin.GetPlugin(renewal.CsrPluginOptions).Name}</td></tr>";
                 }
-                extraMessage += @$"<tr><td>Store: </td><td> {string.Join(", ", renewal.StorePluginOptions.Select(x => x.Name))}</td></tr>";
-                extraMessage += $"<tr><td>Installation: </td><td> {string.Join(", ", renewal.InstallationPluginOptions.Select(x => x.Name))}</td></tr>";
+                extraMessage += @$"<tr><td>Store: </td><td> {string.Join(", ", renewal.StorePluginOptions.Select(x => _plugin.GetPlugin(x).Name))}</td></tr>";
+                extraMessage += $"<tr><td>Installation: </td><td> {string.Join(", ", renewal.InstallationPluginOptions.Select(x => _plugin.GetPlugin(x).Name))}</td></tr>";
                 extraMessage += "</table></p>";
                 return extraMessage;
             }

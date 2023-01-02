@@ -11,7 +11,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     internal sealed class LuaDnsOptionsFactory : ValidationPluginOptionsFactory<LuaDns, LuaDnsOptions>
     {
         private readonly ArgumentsInputService _arguments;
-        public LuaDnsOptionsFactory(ArgumentsInputService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
+        public LuaDnsOptionsFactory(ArgumentsInputService arguments) => _arguments = arguments;
 
         private ArgumentResult<ProtectedString?> ApiKey => _arguments.
             GetProtectedString<LuaDnsArguments>(a => a.LuaDnsAPIKey).

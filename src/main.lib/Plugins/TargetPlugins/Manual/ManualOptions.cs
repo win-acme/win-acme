@@ -7,10 +7,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
     internal class ManualOptions : TargetPluginOptions<Manual>
     {
         public const string DescriptionText = "Manual input";
-
-        public override string Name => "Manual";
-        public override string Description => DescriptionText;
-
         public string? CommonName { get; set; }
         public List<string> AlternativeNames { get; set; } = new List<string>();
 

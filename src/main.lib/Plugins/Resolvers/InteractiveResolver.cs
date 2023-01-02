@@ -14,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Single = PKISharp.WACS.Plugins.OrderPlugins.Single;
 
 namespace PKISharp.WACS.Plugins.Resolvers
 {
@@ -39,30 +40,29 @@ namespace PKISharp.WACS.Plugins.Resolvers
             _runLevel = runLevel;
         }
 
-        private async Task<T> GetPlugin<T>(
+        private async Task<Plugin?> GetPlugin<T>(
             ILifetimeScope scope,
             Steps step,
             Type defaultType,
             Type defaultTypeFallback,
-            T nullResult,
             string className,
             string shortDescription,
             string longDescription,
             string? defaultParam1 = null,
             string? defaultParam2 = null,
-            Func<IEnumerable<T>, IEnumerable<T>>? sort = null,
-            Func<IEnumerable<T>, IEnumerable<T>>? filter = null,
-            Func<T, (bool, string?)>? unusable = null,
-            Func<T, string>? description = null,
+            Func<IEnumerable<PluginFactoryContext<T>>, IEnumerable<PluginFactoryContext<T>>>? sort = null, 
+            Func<IEnumerable<PluginFactoryContext<T>>, IEnumerable<PluginFactoryContext<T>>>? filter = null,
+            Func<PluginFactoryContext<T>, (bool, string?)>? unusable = null,
+            Func<PluginFactoryContext<T>, string>? description = null,
             bool allowAbort = true) where T : class, IPluginOptionsFactory
         {
             // Helper method to determine final usability state
             // combination of plugin being enabled (e.g. due to missing
             // administrator rights) and being a right fit for the current
             // renewal (e.g. cannot validate wildcards using http-01)
-            (bool, string?) disabledOrUnusable(T plugin)
+            (bool, string?) disabledOrUnusable(PluginFactoryContext<T> plugin)
             {
-                var disabled = plugin.Disabled;
+                var disabled = plugin.Factory.Disabled;
                 if (disabled.Item1)
                 {
                     return disabled;
@@ -75,30 +75,25 @@ namespace PKISharp.WACS.Plugins.Resolvers
             };
 
             // Apply default sorting when no sorting has been provided yet
-            IEnumerable<T> options = new List<T>();
+            IEnumerable<PluginFactoryContext<T>> options = new List<PluginFactoryContext<T>>();
             options = _plugins.
                 GetPlugins(step).
-                Where(x => !x.Meta.Hidden).
-                Select(x => x.Meta.OptionsFactory).
-                Select(scope.Resolve).
-                OfType<T>().
+                Where(x => !x.Hidden).
+                Select(x => new PluginFactoryContext<T>(x, scope)).
                 ToList();
             options = filter != null ? filter(options) : options.Where(x => x is not INull);
-            options = sort != null ? sort(options) : options.OrderBy(x => x.Order).ThenBy(x => x.Description);
-
-            var localOptions = options.
-                Select(x => new {
-                    plugin = x, 
-                    type = x.GetType(),
-                    disabled = disabledOrUnusable(x) 
-                });
+            options = sort != null ? sort(options) : options.OrderBy(x => x.Factory.Order).ThenBy(x => x.Meta.Description);
+            var localOptions = options.Select(x => new {
+                plugin = x,
+                disabled = disabledOrUnusable(x)
+            });
 
             // Default out when there are no reasonable options to pick
-            if (!localOptions.Any() || 
-                localOptions.All(x => x.disabled.Item1) || 
-                localOptions.All(x => x.plugin is INull))
+            if (!localOptions.Any() ||
+                localOptions.All(x => x.disabled.Item1) ||
+                localOptions.All(x => x.plugin.Factory is INull))
             {
-                return nullResult;
+                return null;
             }
 
             // Always show the menu in advanced mode, only when no default
@@ -106,30 +101,25 @@ namespace PKISharp.WACS.Plugins.Resolvers
             var showMenu = _runLevel.HasFlag(RunLevel.Advanced);
             if (!string.IsNullOrEmpty(defaultParam1))
             {
-                var defaultPlugin = default(T);
-                var factory = _plugins.GetPlugin(scope, step, defaultParam1, defaultParam2)?.Meta.OptionsFactory;
-                if (factory != null)
+                var defaultPlugin = _plugins.GetPlugin(step, defaultParam1, defaultParam2);
+                if (defaultPlugin != null)
                 {
-                    defaultPlugin = scope.Resolve(factory) as T;
-                }
-                if (defaultPlugin == null)
-                {
-                    _log.Error("Unable to find {n} plugin {p}", className, defaultParam1);
-                    showMenu = true;
+                    defaultType = defaultPlugin.Runner;
                 } 
                 else
                 {
-                    defaultType = defaultPlugin.GetType();
+                    _log.Error("Unable to find {n} plugin {p}", className, defaultParam1);
+                    showMenu = true;
                 }
             }
 
-            var defaultOption = localOptions.FirstOrDefault(x => x.type == defaultType);
+            var defaultOption = localOptions.FirstOrDefault(x => x.plugin.Meta.Runner == defaultType);
             var defaultTypeDisabled = defaultOption?.disabled ?? (true, "Not found");
             if (defaultTypeDisabled.Item1)
             {
                 _log.Warning("{n} plugin {x} not available: {m}",
                     char.ToUpper(className[0]) + className[1..],
-                    defaultOption?.plugin.Name ?? defaultType.Name, 
+                    defaultOption?.plugin.Meta.Name ?? defaultType.Name, 
                     defaultTypeDisabled.Item2);
                 defaultType = defaultTypeFallback;
                 showMenu = true;
@@ -137,7 +127,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
 
             if (!showMenu)
             {
-                return (T)scope.Resolve(defaultType);
+                return defaultOption?.plugin.Meta;
             }
 
             // List options for generating new certificates
@@ -147,40 +137,40 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 _input.Show(null, longDescription);
             }
 
-            Choice<IPluginOptionsFactory?> creator(T plugin, Type type, (bool, string?) disabled) {
-                return Choice.Create<IPluginOptionsFactory?>(
+            Choice<PluginFactoryContext<T>?> creator(PluginFactoryContext<T> plugin, (bool, string?) disabled) {
+                return Choice.Create<PluginFactoryContext<T>?>(
                        plugin,
-                       description: description == null ? plugin.Description : description(plugin),
-                       @default: type == defaultType && !disabled.Item1,
+                       description: description == null ? plugin.Meta.Description : description(plugin),
+                       @default: plugin.Meta.Runner == defaultType && !disabled.Item1,
                        disabled: disabled);
             }
 
             var ret = allowAbort
-                ? (T?)await _input.ChooseOptional(
+                ? await _input.ChooseOptional(
                     shortDescription,
                     localOptions,
-                    x => creator(x.plugin, x.type, x.disabled),
+                    x => creator(x.plugin, x.disabled),
                     "Abort")
-                : (T?)await _input.ChooseRequired(
+                : await _input.ChooseRequired(
                     shortDescription,
                     localOptions,
-                    x => creator(x.plugin, x.type, x.disabled));
-            return ret ?? nullResult;
+                    x => creator(x.plugin, x.disabled));
+
+            return ret?.Meta;
         }
 
         /// <summary>
         /// Allow user to choose a TargetPlugin
         /// </summary>
         /// <returns></returns>
-        public override async Task<ITargetPluginOptionsFactory> GetTargetPlugin(ILifetimeScope scope)
+        public override async Task<Plugin?> GetTargetPlugin(ILifetimeScope scope)
         {
             return await GetPlugin<ITargetPluginOptionsFactory>(
                 scope,
                 Steps.Target,
                 defaultParam1: _settings.Source.DefaultSource,
-                defaultType: typeof(IISOptionsFactory),
-                defaultTypeFallback: typeof(ManualOptionsFactory),
-                nullResult: new NullTargetFactory(),
+                defaultType: typeof(IIS),
+                defaultTypeFallback: typeof(Manual),
                 className: "source",
                 shortDescription: "How shall we determine the domain(s) to include in the certificate?",
                 longDescription: "Please specify how the list of domain names that will be included in the certificate " +
@@ -192,7 +182,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// Allow user to choose a ValidationPlugin
         /// </summary>
         /// <returns></returns>
-        public override async Task<IValidationPluginOptionsFactory> GetValidationPlugin(ILifetimeScope scope, Target target)
+        public override async Task<Plugin?> GetValidationPlugin(ILifetimeScope scope, Target target)
         {
             var defaultParam1 = _settings.Validation.DefaultValidation;
             var defaultParam2 = _settings.Validation.DefaultValidationMode;
@@ -215,7 +205,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     x.
                         OrderBy(x =>
                         {
-                            return x.ChallengeType switch
+                            return x.Meta.ChallengeType switch
                             {
                                 Constants.Http01ChallengeType => 0,
                                 Constants.Dns01ChallengeType => 1,
@@ -223,15 +213,14 @@ namespace PKISharp.WACS.Plugins.Resolvers
                                 _ => 3,
                             };
                         }).
-                        ThenBy(x => x.Order).
-                        ThenBy(x => x.Description),
-                unusable: x => (!x.CanValidate(target), "Unsuppored target. Most likely this is because you have included a wildcard identifier (*.example.com), which requires DNS validation."),
-                description: x => $"[{x.ChallengeType}] {x.Description}",
+                        ThenBy(x => x.Factory.Order).
+                        ThenBy(x => x.Meta.Description),
+                unusable: x => (!x.Factory.CanValidate(target), "Unsuppored target. Most likely this is because you have included a wildcard identifier (*.example.com), which requires DNS validation."),
+                description: x => $"[{x.Meta.ChallengeType}] {x.Meta.Description}",
                 defaultParam1: defaultParam1,
                 defaultParam2: defaultParam2,
-                defaultType: typeof(SelfHostingOptionsFactory),
-                defaultTypeFallback: typeof(FileSystemOptionsFactory),
-                nullResult: new NullValidationFactory(),
+                defaultType: typeof(SelfHosting),
+                defaultTypeFallback: typeof(FileSystem),
                 className: "validation",
                 shortDescription: "How would you like prove ownership for the domain(s)?",
                 longDescription: "The ACME server will need to verify that you are the owner of the domain names that you are requesting" +
@@ -240,7 +229,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     "Various additional plugins are available from https://github.com/win-acme/win-acme/.");
         }
 
-        public override async Task<IOrderPluginOptionsFactory> GetOrderPlugin(ILifetimeScope scope, Target target)
+        public override async Task<Plugin?> GetOrderPlugin(ILifetimeScope scope, Target target)
         {
             if (target.Parts.SelectMany(x => x.Identifiers).Count() > 1)
             {
@@ -248,10 +237,9 @@ namespace PKISharp.WACS.Plugins.Resolvers
                    scope,
                    Steps.Order,
                    defaultParam1: _settings.Order.DefaultPlugin,
-                   defaultType: typeof(SingleOptionsFactory),
-                   defaultTypeFallback: typeof(SingleOptionsFactory),
-                   nullResult: new NullOrderOptionsFactory(),
-                   unusable: (c) => (!c.CanProcess(target), "Unsupported source."),
+                   defaultType: typeof(Single),
+                   defaultTypeFallback: typeof(Single),
+                   unusable: (c) => (!c.Factory.CanProcess(target), "Unsupported source."),
                    className: "order",
                    shortDescription: "Would you like to split this source into multiple certificates?",
                    longDescription: $"By default your source hosts are covered by a single certificate. " +
@@ -265,15 +253,14 @@ namespace PKISharp.WACS.Plugins.Resolvers
             }
         }
 
-        public override async Task<ICsrPluginOptionsFactory> GetCsrPlugin(ILifetimeScope scope)
+        public override async Task<Plugin?> GetCsrPlugin(ILifetimeScope scope)
         {
             return await GetPlugin<ICsrPluginOptionsFactory>(
                scope,
                Steps.Csr,
                defaultParam1: _settings.Csr.DefaultCsr,
-               defaultType: typeof(RsaOptionsFactory),
-               defaultTypeFallback: typeof(EcOptionsFactory),
-               nullResult: new NullCsrFactory(),
+               defaultType: typeof(Rsa),
+               defaultTypeFallback: typeof(Ec),
                className: "csr",
                shortDescription: "What kind of private key should be used for the certificate?",
                longDescription: "After ownership of the domain(s) has been proven, we will create a " +
@@ -282,9 +269,9 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 "are not sure what to pick here, RSA is the safe default.");
         }
 
-        public override async Task<IStorePluginOptionsFactory?> GetStorePlugin(ILifetimeScope scope, IEnumerable<IStorePluginOptionsFactory> chosen)
+        public override async Task<Plugin?> GetStorePlugin(ILifetimeScope scope, IEnumerable<Plugin> chosen)
         {
-            var defaultType = typeof(CertificateStoreOptionsFactory);
+            var defaultType = typeof(CertificateStore);
             var shortDescription = "How would you like to store the certificate?";
             var longDescription = "When we have the certificate, you can store in one or more ways to make it accessible " +
                         "to your applications. The Windows Certificate Store is the default location for IIS (unless you are " +
@@ -293,11 +280,11 @@ namespace PKISharp.WACS.Plugins.Resolvers
             {
                 if (!_runLevel.HasFlag(RunLevel.Advanced))
                 {
-                    return new NullStoreOptionsFactory();
+                    return null;
                 }
                 longDescription = "";
                 shortDescription = "Would you like to store it in another way too?";
-                defaultType = typeof(NullStoreOptionsFactory);
+                defaultType = typeof(NullStore);
             }
             var defaultParam1 = _settings.Store.DefaultStore;
             if (!string.IsNullOrWhiteSpace(_arguments.Store))
@@ -314,8 +301,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 filter: (x) => x, // Disable default null check
                 defaultParam1: defaultParam1,
                 defaultType: defaultType,
-                defaultTypeFallback: typeof(PemFilesOptionsFactory),
-                nullResult: new NullStoreOptionsFactory(),
+                defaultTypeFallback: typeof(PemFiles),
                 className: "store",
                 shortDescription: shortDescription,
                 longDescription: longDescription,
@@ -329,9 +315,9 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <summary>
         /// </summary>
         /// <returns></returns>
-        public override async Task<IInstallationPluginOptionsFactory?> GetInstallationPlugin(ILifetimeScope scope, IEnumerable<Type> storeTypes, IEnumerable<IInstallationPluginOptionsFactory> chosen)
+        public override async Task<Plugin?> GetInstallationPlugin(ILifetimeScope scope, IEnumerable<Plugin> storeTypes, IEnumerable<Plugin> chosen)
         {
-            var defaultType = typeof(InstallationPlugins.IISOptionsFactory);
+            var defaultType = typeof(InstallationPlugins.IIS);
             var shortDescription = "Which installation step should run first?";
             var longDescription = "With the certificate saved to the store(s) of your choice, " +
                 "you may choose one or more steps to update your applications, e.g. to configure " +
@@ -340,11 +326,11 @@ namespace PKISharp.WACS.Plugins.Resolvers
             {
                 if (!_runLevel.HasFlag(RunLevel.Advanced))
                 {
-                    return new NullInstallationOptionsFactory();
+                    return null;
                 }
                 longDescription = "";
                 shortDescription = "Add another installation step?";
-                defaultType = typeof(NullInstallationOptionsFactory);
+                defaultType = typeof(NullInstallation);
             }
             var defaultParam1 = _settings.Installation.DefaultInstallation;
             if (!string.IsNullOrWhiteSpace(_arguments.Installation))
@@ -359,11 +345,10 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 scope,
                 Steps.Installation,
                 filter: x => x, // Disable default null check
-                unusable: x => { var (a, b) = x.CanInstall(storeTypes, chosen.Select(c => c.InstanceType)); return (!a, b); },
+                unusable: x => { var (a, b) = x.Factory.CanInstall(storeTypes.Select(c => c.Runner), chosen.Select(c => c.Runner)); return (!a, b); },
                 defaultParam1: defaultParam1,
                 defaultType: defaultType,
-                defaultTypeFallback: typeof(NullInstallationOptionsFactory),
-                nullResult: new NullInstallationOptionsFactory(),
+                defaultTypeFallback: typeof(NullInstallation),
                 className: "installation",
                 shortDescription: shortDescription,
                 longDescription: longDescription,

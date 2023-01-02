@@ -19,7 +19,10 @@ using System.Threading.Tasks;
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     [IPlugin.Plugin<CloudDnsOptions, CloudDnsOptionsFactory, CloudDnsJson>
-        ("B61505E9-1709-43FD-996F-C74C3686286C", "", "")]
+        ("B61505E9-1709-43FD-996F-C74C3686286C",
+        "GCPDns", 
+        "Create verification records in Google Cloud DNS",
+        ChallengeType = Constants.Dns01ChallengeType)]
     internal class CloudDns: DnsValidation<CloudDns>
     {
         private readonly CloudDnsOptions _options;

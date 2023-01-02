@@ -2,13 +2,17 @@
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins;
+using PKISharp.WACS.Plugins.Base.Factories.Null;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace PKISharp.WACS
 {
@@ -19,7 +23,7 @@ namespace PKISharp.WACS
         private readonly IRenewalStore _renewalStore;
         private readonly MainArguments _args;
         private readonly PasswordGenerator _passwordGenerator;
-        private readonly ISettingsService _settings;
+        private readonly IPluginService _plugin;
         private readonly IContainer _container;
         private readonly IAutofacBuilder _scopeBuilder;
         private readonly IDueDateService _dueDate;
@@ -31,7 +35,7 @@ namespace PKISharp.WACS
             PasswordGenerator passwordGenerator, MainArguments args,
             IRenewalStore renewalStore, IContainer container,
             IInputService input, ILogService log, 
-            ISettingsService settings, IAutofacBuilder autofacBuilder,
+            IPluginService plugin, IAutofacBuilder autofacBuilder,
             NotificationService notification, IDueDateService dueDateService,
             ExceptionHandler exceptionHandler, RenewalExecutor renewalExecutor)
         {
@@ -40,13 +44,13 @@ namespace PKISharp.WACS
             _args = args;
             _input = input;
             _log = log;
-            _settings = settings;
             _container = container;
             _scopeBuilder = autofacBuilder;
             _exceptionHandler = exceptionHandler;
             _renewalExecution = renewalExecutor;
             _notification = notification;
             _dueDate = dueDateService;
+            _plugin = plugin;
         }
 
         /// <summary>
@@ -117,13 +121,17 @@ namespace PKISharp.WACS
                 runLevel |= RunLevel.NoCache;
             }
             _log.Information(LogType.All, "Running in mode: {runLevel}", runLevel);
-            tempRenewal ??= Renewal.Create(_args.Id, _passwordGenerator); 
-            using var configScope = _scopeBuilder.Configuration(_container, tempRenewal, runLevel);
 
+            IResolver resolver = runLevel.HasFlag(RunLevel.Interactive)
+                ? _container.Resolve<InteractiveResolver>(new TypedParameter(typeof(RunLevel), runLevel))
+                : _container.Resolve<UnattendedResolver>();
+
+            tempRenewal ??= Renewal.Create(_args.Id, _passwordGenerator); 
+   
             // Choose the target plugin
             if (steps.HasFlag(Steps.Target))
             {
-                var targetOptions = await SetupTarget(configScope, runLevel);
+                var targetOptions = await SetupTarget(_container, resolver, runLevel);
                 if (targetOptions == null)
                 {
                     return;
@@ -132,19 +140,20 @@ namespace PKISharp.WACS
             }
 
             // Generate initial target
-            using var targetScope = _scopeBuilder.Target(_container, tempRenewal, runLevel);
-            var initialTarget = targetScope.Resolve<Target>();
-            if (initialTarget is INull)
+            using var targetScope = await _scopeBuilder.Target(_container, tempRenewal);
+            var targetPluginName = targetScope.ResolveNamed<Plugin>("target").Name;
+            var initialTarget = targetScope.ResolveOptional<Target>();
+            if (initialTarget == null)
             {
-                _exceptionHandler.HandleException(message: $"Source plugin {tempRenewal.TargetPluginOptions.Name} was unable to generate the certificate parameters.");
+                _exceptionHandler.HandleException(message: $"Source plugin {targetPluginName} was unable to generate the certificate parameters.");
                 return;
             }
             if (!initialTarget.IsValid(_log))
             {
-                _exceptionHandler.HandleException(message: $"Source plugin {tempRenewal.TargetPluginOptions.Name} generated invalid certificate parameters");
+                _exceptionHandler.HandleException(message: $"Source plugin {targetPluginName} generated invalid certificate parameters");
                 return;
             }
-            _log.Information("Source generated using plugin {name}: {target}", tempRenewal.TargetPluginOptions.Name, initialTarget);
+            _log.Information("Source generated using plugin {name}: {target}", targetPluginName, initialTarget);
 
             // Setup the friendly name
             var ask = runLevel.HasFlag(RunLevel.Advanced | RunLevel.Interactive) && steps.HasFlag(Steps.Target);
@@ -153,7 +162,7 @@ namespace PKISharp.WACS
             // Choose the order plugin
             if (steps.HasFlag(Steps.Order))
             {
-                tempRenewal.OrderPluginOptions = await SetupOrder(targetScope, runLevel);
+                tempRenewal.OrderPluginOptions = await SetupOrder(_container, resolver, initialTarget, runLevel);
                 if (tempRenewal.OrderPluginOptions == null)
                 {
                     return;
@@ -163,7 +172,7 @@ namespace PKISharp.WACS
             // Choose the validation plugin
             if (steps.HasFlag(Steps.Validation))
             {
-                var validationOptions = await SetupValidation(targetScope, initialTarget, runLevel);
+                var validationOptions = await SetupValidation(_container, resolver, initialTarget, runLevel);
                 if (validationOptions == null)
                 {
                     return;
@@ -178,7 +187,7 @@ namespace PKISharp.WACS
             }
             else if (steps.HasFlag(Steps.Csr))
             {
-                tempRenewal.CsrPluginOptions = await SetupCsr(configScope, runLevel);
+                tempRenewal.CsrPluginOptions = await SetupCsr(_container, resolver, runLevel);
                 if (tempRenewal.CsrPluginOptions == null)
                 {
                     return;
@@ -188,7 +197,7 @@ namespace PKISharp.WACS
             // Choose store plugin(s)
             if (steps.HasFlag(Steps.Store))
             {
-                var store = await SetupStore(configScope, runLevel); 
+                var store = await SetupStore(_container, resolver, runLevel); 
                 if (store != null)
                 {
                     tempRenewal.StorePluginOptions = store;
@@ -202,7 +211,7 @@ namespace PKISharp.WACS
             // Choose installation plugin(s)
             if (steps.HasFlag(Steps.Installation))
             {
-                var install = await SetupInstallation(configScope, runLevel, tempRenewal, initialTarget);
+                var install = await SetupInstallation(_container, resolver, runLevel, tempRenewal, initialTarget);
                 if (install != null)
                 {
                     tempRenewal.InstallationPluginOptions = install;
@@ -275,41 +284,51 @@ namespace PKISharp.WACS
             renewal.LastFriendlyName = renewal.FriendlyName ?? target.FriendlyName;
         }
 
-        internal async Task<ValidationPluginOptions?> SetupValidation(ILifetimeScope scope, Target target, RunLevel runLevel) => 
+        internal async Task<ValidationPluginOptions?> SetupValidation(ILifetimeScope scope, IResolver resolver, Target target, RunLevel runLevel) => 
             await SetupPlugin<ValidationPluginOptions, IValidationPluginOptionsFactory>(
-                "Validation", scope, runLevel, x => x.Default(target), x => x.Aquire(target, _input, runLevel));
+                Steps.Validation, scope, runLevel, 
+                () => resolver.GetValidationPlugin(scope, target), 
+                x => x.Default(target), x => x.Aquire(target, _input, runLevel));
 
-        internal async Task<OrderPluginOptions?> SetupOrder(ILifetimeScope scope, RunLevel runLevel) => 
+        internal async Task<OrderPluginOptions?> SetupOrder(ILifetimeScope scope, IResolver resolver, Target target, RunLevel runLevel) => 
             await SetupPlugin<OrderPluginOptions, IOrderPluginOptionsFactory>(
-                "Order", scope, runLevel, x => x.Default(), x => x.Aquire(_input, runLevel));
+                Steps.Order, scope, runLevel, 
+                () => resolver.GetOrderPlugin(scope, target),
+                x => x.Default(), x => x.Aquire(_input, runLevel));
 
-        internal async Task<TargetPluginOptions?> SetupTarget(ILifetimeScope scope, RunLevel runLevel) =>
+        internal async Task<TargetPluginOptions?> SetupTarget(ILifetimeScope scope, IResolver resolver, RunLevel runLevel) =>
             await SetupPlugin<TargetPluginOptions, ITargetPluginOptionsFactory>(
-                "Source", scope, runLevel, x => x.Default(), x => x.Aquire(_input, runLevel));
+                Steps.Target, scope, runLevel, 
+                () => resolver.GetTargetPlugin(scope), 
+                x => x.Default(), x => x.Aquire(_input, runLevel));
 
-        internal async Task<CsrPluginOptions?> SetupCsr(ILifetimeScope scope, RunLevel runLevel) => 
+        internal async Task<CsrPluginOptions?> SetupCsr(ILifetimeScope scope, IResolver resolver, RunLevel runLevel) => 
             await SetupPlugin<CsrPluginOptions, ICsrPluginOptionsFactory>(
-                "CSR", scope, runLevel, x => x.Default(), x => x.Aquire(_input, runLevel));
+                Steps.Csr, scope, runLevel, 
+                () => resolver.GetCsrPlugin(scope), 
+                x => x.Default(), x => x.Aquire(_input, runLevel));
 
-        internal async Task<List<StorePluginOptions>?> SetupStore(ILifetimeScope scope, RunLevel runLevel) =>
+        internal async Task<List<StorePluginOptions>?> SetupStore(ILifetimeScope scope, IResolver resolver, RunLevel runLevel) =>
             await SetupPlugins<StorePluginOptions, IStorePluginOptionsFactory>(
-                "Store",
-                scope,
+                Steps.Store,
                 runLevel,
-                (resolver, factories) => resolver.GetStorePlugin(scope, factories),
+                scope,
+                factories => resolver.GetStorePlugin(scope, factories),
                 x => x.Default(),
-                x => x.Aquire(_input, runLevel));
+                x => x.Aquire(_input, runLevel),
+                typeof(NullStore));
 
-        internal async Task<List<InstallationPluginOptions>?> SetupInstallation(ILifetimeScope scope, RunLevel runLevel, Renewal renewal, Target target)
+        internal async Task<List<InstallationPluginOptions>?> SetupInstallation(ILifetimeScope scope, IResolver resolver, RunLevel runLevel, Renewal renewal, Target target)
         {
-            var stores = renewal.StorePluginOptions.Select(x => x.Instance);
+            var stores = renewal.StorePluginOptions.Select(_plugin.GetPlugin);
             return await SetupPlugins<InstallationPluginOptions, IInstallationPluginOptionsFactory>(
-                "Installation",
-                scope,
+                Steps.Installation,
                 runLevel,
-                (resolver, factories) => resolver.GetInstallationPlugin(scope, stores, factories),
+                scope,
+                factories => resolver.GetInstallationPlugin(scope, stores, factories),
                 x => x.Default(target),
-                x => x.Aquire(target, _input, runLevel));
+                x => x.Aquire(target, _input, runLevel),
+                typeof(NullInstallation));
         }
 
         /// <summary>
@@ -325,50 +344,60 @@ namespace PKISharp.WACS
         /// <param name="aquire"></param>
         /// <returns></returns>
         internal async Task<List<TOptions>?> SetupPlugins<TOptions, TOptionsFactory>(
-            string name,
-            ILifetimeScope scope, 
+            Steps step,
             RunLevel runLevel, 
-            Func<IResolver, IEnumerable<TOptionsFactory>, Task<TOptionsFactory?>> next,
+            ILifetimeScope scope,
+            Func<IEnumerable<Plugin>, Task<Plugin?>> next,
             Func<TOptionsFactory, Task<TOptions?>> @default,
-            Func<TOptionsFactory, Task<TOptions?>> aquire)
+            Func<TOptionsFactory, Task<TOptions?>> aquire,
+            Type nullType)
             where TOptionsFactory : IPluginOptionsFactory
             where TOptions : class
         {
-            var resolver = scope.Resolve<IResolver>();
             var ret = new List<TOptions>();
-            var factories = new List<TOptionsFactory>();
+            var factories = new List<Plugin>();
             try
             {
                 while (true)
                 {
-                    var factory = await next(resolver, factories);
-                    if (factory == null)
+                    var plugin = await next(factories);
+                    if (plugin == null)
                     {
-                        _exceptionHandler.HandleException(message: $"{name} plugin could not be selected");
+                        _exceptionHandler.HandleException(message: $"{step} plugin could not be selected");
+                        return null;
+                    }
+                    PluginFactoryContext<TOptionsFactory>? context;
+                    try
+                    {
+                        context = new PluginFactoryContext<TOptionsFactory>(plugin, scope);
+                    }
+                    catch (Exception ex)
+                    {
+                        _exceptionHandler.HandleException(ex);
                         return null;
                     }
                     TOptions? options;
                     try
                     {
                         options = runLevel.HasFlag(RunLevel.Unattended)
-                            ? await @default(factory)
-                            : await aquire(factory);
+                            ? await @default(context.Factory)
+                            : await aquire(context.Factory);
                     }
                     catch (Exception ex)
                     {
-                        _exceptionHandler.HandleException(ex, $"{name} plugin {factory.Name} aborted or failed");
+                        _exceptionHandler.HandleException(ex, $"{step} plugin {plugin.Name} aborted or failed");
                         return null;
                     }
                     if (options == null)
                     {
-                        _exceptionHandler.HandleException(message: $"{name} plugin {factory.Name} was unable to generate options");
+                        _exceptionHandler.HandleException(message: $"{step} plugin {plugin.Name} was unable to generate options");
                         return null;
                     }
-                    var isNull = factory is INull;
+                    var isNull = plugin.Runner == nullType;
                     if (!isNull || factories.Count == 0)
                     {
                         ret.Add(options);
-                        factories.Add(factory);
+                        factories.Add(plugin);
                     }
                     if (isNull)
                     {
@@ -378,7 +407,7 @@ namespace PKISharp.WACS
             }
             catch (Exception ex)
             {
-                _exceptionHandler.HandleException(ex, $"Invalid selection of {name} plugins");
+                _exceptionHandler.HandleException(ex, $"Invalid selection of {step} plugins");
             }
             return ret;
         }
@@ -395,25 +424,36 @@ namespace PKISharp.WACS
         /// <param name="aquire"></param>
         /// <returns></returns>
         internal async Task<TOptions?> SetupPlugin<TOptions, TOptionsFactory>(
-            string name,
+            Steps step,
             ILifetimeScope scope,
             RunLevel runLevel,
+            Func<Task<Plugin?>> resolve,
             Func<TOptionsFactory, Task<TOptions?>> @default,
             Func<TOptionsFactory, Task<TOptions?>> aquire)
             where TOptionsFactory : IPluginOptionsFactory
             where TOptions : class
         {
-            // Choose the options factory
-            var optionsFactory = scope.Resolve<TOptionsFactory>();
-            if (optionsFactory is INull)
+            // Choose the options plugin
+            var plugin = await resolve();
+            if (plugin == null)
             {
-                _exceptionHandler.HandleException(message: $"No {name} plugin could be selected");
+                _exceptionHandler.HandleException(message: $"No {step} plugin could be selected");
                 return null;
             }
-            var (pluginDisabled, pluginDisabledReason) = optionsFactory.Disabled;
+            PluginFactoryContext<TOptionsFactory>? context;
+            try
+            {
+                context = new PluginFactoryContext<TOptionsFactory>(plugin, scope);
+            } 
+            catch (Exception ex)
+            {
+                _exceptionHandler.HandleException(ex);
+                return null;
+            }
+            var (pluginDisabled, pluginDisabledReason) = context.Factory.Disabled;
             if (pluginDisabled)
             {
-                _exceptionHandler.HandleException(message: $"{name} plugin {optionsFactory.Name} is not available. {pluginDisabledReason}");
+                _exceptionHandler.HandleException(message: $"{step} plugin {context.Meta.Name} is not available. {pluginDisabledReason}");
                 return null;
             }
 
@@ -421,18 +461,18 @@ namespace PKISharp.WACS
             try
             {
                 var options = runLevel.HasFlag(RunLevel.Unattended) ?
-                    await @default(optionsFactory) :
-                    await aquire(optionsFactory); 
+                    await @default(context.Factory) :
+                    await aquire(context.Factory); 
                 if (options == null)
                 {
-                    _exceptionHandler.HandleException(message: $"{name} plugin {optionsFactory.Name} was unable to generate options");
+                    _exceptionHandler.HandleException(message: $"{step} plugin {context.Meta.Name} was unable to generate options");
                     return null;
                 }
                 return options;
             }
             catch (Exception ex)
             {
-                _exceptionHandler.HandleException(ex, $"{name} plugin {optionsFactory.Name} aborted or failed");
+                _exceptionHandler.HandleException(ex, $"{step} plugin {context.Meta.Name} aborted or failed");
                 return null;
             }
         }

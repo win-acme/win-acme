@@ -13,10 +13,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
     internal class NS1Options : ValidationPluginOptions<NS1DnsValidation>
     {
-        public override string Name => "NS1";
-        public override string Description => "Create verification records in NS1 DNS";
-        public override string ChallengeType => Constants.Dns01ChallengeType;
-
         [JsonPropertyName("APIKeySafe")]
         public ProtectedString? ApiKey { get; set; }
     }

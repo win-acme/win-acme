@@ -1,14 +1,10 @@
 ﻿using PKISharp.WACS.Configuration;
-using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
     internal class SftpOptions : HttpValidationOptions<Sftp>
     {
-        public override string Name => "SFTP";
-        public override string Description => "Upload verification files via SSH-FTP";
-
         public SftpOptions() : base() { }
         public SftpOptions(HttpValidationOptions<Sftp> source) : base(source) { }
 

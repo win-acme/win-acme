@@ -15,7 +15,10 @@ using System.Threading.Tasks;
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
     [IPlugin.Plugin<RestOptions, RestOptionsFactory, RestJson>
-        ("11ba2994-ea59-4f2f-b9eb-0eaa2fa3cbfa", "", "")]
+        ("11ba2994-ea59-4f2f-b9eb-0eaa2fa3cbfa", 
+        "Rest", 
+        "Send verification files to the server by issuing HTTP REST-style request",
+        ChallengeType = Constants.Dns01ChallengeType)]
     internal sealed class Rest : Validation<Http01ChallengeValidationDetails>
     {
         private readonly ConcurrentBag<(string url, string challengeValue)> _urlsChallenges = new();

@@ -13,10 +13,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
     internal class AzureOptions : ValidationPluginOptions<Azure>, IAzureOptionsCommon
     {
-        public override string Name => "Azure";
-        public override string Description => "Create verification records in Azure DNS";
-        public override string ChallengeType => Constants.Dns01ChallengeType;
-
         public string? AzureEnvironment { get; set; }
         public bool UseMsi { get; set; }
         public string? ClientId { get; set; }
