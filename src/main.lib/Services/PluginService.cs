@@ -139,7 +139,7 @@ namespace PKISharp.WACS.Services
                 foreach (var meta in attributes)
                 {
                     var existing = _plugins.FirstOrDefault(p => p.Id == meta.Id);
-                    if (existing != null)
+                    if (existing != null && !(existing.Hidden || meta.Hidden))
                     {
                         _log.Warning(
                            "Duplicate plugin with key {key}. " +

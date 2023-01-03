@@ -90,8 +90,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
                 scope,
                 types.Select(t => plugins.GetPlugins().First(x => x.Runner == t)),
                 chosen);
-            Assert.IsNotNull(second);
-            Assert.AreEqual(second.OptionsFactory, typeof(NullInstallationOptionsFactory));
+            Assert.IsNull(second);
         }
     }
 }

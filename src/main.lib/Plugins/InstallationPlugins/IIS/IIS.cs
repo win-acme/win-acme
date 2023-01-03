@@ -42,7 +42,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             var centralSslForHttp = false;
             var centralSsl = stores.Contains(typeof(CentralSsl));
             var certificateStore = stores.Contains(typeof(CertificateStore));
-            if (centralSsl == null && certificateStore == null)
+            if (!centralSsl && !certificateStore)
             {
                 // No supported store
                 var errorMessage = "The IIS installation plugin requires the CertificateStore and/or CentralSsl store plugin";
@@ -61,7 +61,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 }
             }
 
-            if (centralSsl != null)
+            if (centralSsl)
             {
                 centralSslForHttp = true;
                 var supported = true;
@@ -77,7 +77,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                     reason = "CentralSsl store is not supported for FTP sites";
                     supported = false;
                 }
-                if (!supported && certificateStore == null)
+                if (!supported && !certificateStore)
                 {
                     // Only throw error if there is no fallback 
                     // available to the CertificateStore plugin.
@@ -116,7 +116,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                         }
                         bindingOptions = bindingOptions.WithSiteId(part.SiteId!.Value);
                         _iisClient.UpdateHttpSite(httpIdentifiers, bindingOptions, oldCertificate?.Certificate.GetCertHash(), newCertificate.SanNames);
-                        if (certificateStore != null) 
+                        if (certificateStore) 
                         {
                             _iisClient.UpdateFtpSite(0, newCertificate, oldCertificate);
                         }

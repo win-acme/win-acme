@@ -363,6 +363,10 @@ namespace PKISharp.WACS
                     var plugin = await next(factories);
                     if (plugin == null)
                     {
+                        plugin = _plugin.GetPlugins(step).Where(x => x.Runner == nullType).FirstOrDefault();
+                    }
+                    if (plugin == null)
+                    {
                         _exceptionHandler.HandleException(message: $"{step} plugin could not be selected");
                         return null;
                     }
