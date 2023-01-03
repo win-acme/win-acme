@@ -174,7 +174,7 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterType<AdminService>();
             WacsJson.Configure(builder);
             _ = builder.RegisterType<UserRoleService>().As<IUserRoleService>().SingleInstance();
-            _ = builder.RegisterType<ValidationOptionsService>().As<IValidationOptionsService>().As<ValidationOptionsService>().SingleInstance().WithAttributeFiltering(); ;
+            _ = builder.RegisterType<ValidationOptionsService>().As<IValidationOptionsService>().As<ValidationOptionsService>().SingleInstance().WithAttributeFiltering();
             _ = builder.RegisterType<InputService>().As<IInputService>().SingleInstance();
             _ = builder.RegisterType<ProxyService>().As<IProxyService>().SingleInstance();
             _ = builder.RegisterType<UpdateClient>().SingleInstance();

@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using Org.BouncyCastle.Math.EC.Rfc7748;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
@@ -190,6 +191,10 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <returns></returns>
         public virtual async Task<Plugin?> GetStorePlugin(ILifetimeScope scope, IEnumerable<Plugin> chosen)
         {
+            var nullResult = _plugins.
+                GetPlugins(Steps.Store).
+                Where(x => x.Runner == typeof(NullStore)).
+                FirstOrDefault();
             var cmd = _arguments.Store ?? _settings.Store.DefaultStore;
             if (string.IsNullOrEmpty(cmd))
             {
@@ -198,12 +203,12 @@ namespace PKISharp.WACS.Plugins.Resolvers
             var parts = cmd.ParseCsv();
             if (parts == null)
             {
-                return null;
+                return nullResult;
             }
             var index = chosen.Count();
             if (index == parts.Count)
             {
-                return null;
+                return nullResult;
             }
             return await GetPlugin<IStorePluginOptionsFactory>(
                 scope,
@@ -223,14 +228,18 @@ namespace PKISharp.WACS.Plugins.Resolvers
         {
             var cmd = _arguments.Installation ?? _settings.Installation.DefaultInstallation;
             var parts = cmd.ParseCsv();
+            var nullResult = _plugins.
+                GetPlugins(Steps.Installation).
+                Where(x => x.Runner == typeof(NullInstallation)).
+                FirstOrDefault();
             if (parts == null)
             {
-                return null;
+                return nullResult;
             }
             var index = chosen.Count();
             if (index == parts.Count)
             {
-                return null;
+                return nullResult;
             }
             return await GetPlugin<IInstallationPluginOptionsFactory>(
                 scope,

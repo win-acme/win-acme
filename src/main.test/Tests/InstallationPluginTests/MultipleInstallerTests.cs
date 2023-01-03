@@ -84,17 +84,14 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
                 types.Select(t => plugins.GetPlugins().First(x => x.Runner == t)),
                 chosen);
             Assert.IsNotNull(first);
-            if (first != null)
-            {
-                Assert.IsInstanceOfType(first, typeof(IISOptionsFactory));
-                chosen.Add(first);
-                var second = await resolver.GetInstallationPlugin(
-                    scope,
-                    types.Select(t => plugins.GetPlugins().First(x => x.Runner == t)),
-                    chosen);
-                Assert.IsNotNull(second);
-                Assert.IsInstanceOfType(second, typeof(NullInstallationOptionsFactory));
-            }
+            Assert.AreEqual(first.OptionsFactory, typeof(IISOptionsFactory));
+            chosen.Add(first);
+            var second = await resolver.GetInstallationPlugin(
+                scope,
+                types.Select(t => plugins.GetPlugins().First(x => x.Runner == t)),
+                chosen);
+            Assert.IsNotNull(second);
+            Assert.AreEqual(second.OptionsFactory, typeof(NullInstallationOptionsFactory));
         }
     }
 }
