@@ -1,5 +1,6 @@
 ﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
@@ -11,8 +12,11 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    [IPlugin.Plugin<CentralSslOptions, CentralSslOptionsFactory, WacsJsonPlugins>
-        ("af1f77b6-4e7b-4f96-bba5-c2eeb4d0dd42", CentralSslOptions.PluginName, "IIS Central Certificate Store (.pfx per host)")]
+    [IPlugin.Plugin<
+        CentralSslOptions, CentralSslOptionsFactory, 
+        DefaultCapability, WacsJsonPlugins>
+        ("af1f77b6-4e7b-4f96-bba5-c2eeb4d0dd42", 
+        CentralSslOptions.PluginName, "IIS Central Certificate Store (.pfx per host)")]
     internal class CentralSsl : IStorePlugin
     {
         private readonly ILogService _log;

@@ -8,7 +8,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     /// <summary>
     /// Azure Key Vault
     /// </summary>
-    internal class KeyVaultOptionsFactory : StorePluginOptionsFactory<KeyVault, KeyVaultOptions>
+    internal class KeyVaultOptionsFactory : PluginOptionsFactory<KeyVaultOptions>
     {
         private readonly ArgumentsInputService _arguments;
 

@@ -10,7 +10,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public GodaddyJson(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
     }
 
-    internal class GodaddyOptions : ValidationPluginOptions<GodaddyDnsValidation>
+    internal class GodaddyOptions : ValidationPluginOptions
     {
         [JsonPropertyName("SecretSafe")]
         public ProtectedString? ApiKey { get; set; }

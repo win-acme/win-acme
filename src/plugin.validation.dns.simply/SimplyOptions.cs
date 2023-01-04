@@ -10,7 +10,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public SimplyJson(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
     }
 
-    internal class SimplyOptions : ValidationPluginOptions<SimplyDnsValidation>
+    internal class SimplyOptions : ValidationPluginOptions
     {
         public string? Account { get; set; }
         public ProtectedString? ApiKey { get; set; }

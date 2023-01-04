@@ -1,12 +1,11 @@
 ﻿using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
-using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    internal class CsrOptionsFactory : TargetPluginOptionsFactory<Csr, CsrOptions>, IPluginOptionsFactory<CsrOptions>
+    internal class CsrOptionsFactory : PluginOptionsFactory<CsrOptions>
     {
         private readonly ILogService _log;
         private readonly ArgumentsInputService _arguments;

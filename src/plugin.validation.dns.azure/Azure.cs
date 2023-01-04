@@ -2,6 +2,7 @@
 using Microsoft.Azure.Management.Dns.Models;
 using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Plugins.Azure.Common;
+using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
@@ -19,7 +20,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     /// <summary>
     /// Handle creation of DNS records in Azure
     /// </summary>
-    [IPlugin.Plugin<AzureOptions, AzureOptionsFactory, AzureJson>
+    [IPlugin.Plugin<
+        AzureOptions, AzureOptionsFactory,
+        DnsValidationCapability, AzureJson>
         ("aa57b028-45fb-4aca-9cac-a63d94c76b4a",
         "Azure",
         "Create verification records in Azure DNS",

@@ -1,6 +1,5 @@
 ﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.CsrPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
@@ -12,24 +11,28 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    [IPlugin.Plugin<IISFtpOptions, IISOptionsFactory, WacsJsonPlugins>
-        ("13058a79-5084-48af-b047-634e0ee222f4", "IISFTP", "Create or update FTP bindings in IIS", Hidden = true)]
-    [IPlugin.Plugin<IISOptions, IISOptionsFactory, WacsJsonPlugins>
-        ("ea6a5be3-f8de-4d27-a6bd-750b619b2ee2", "IIS", "Create or update bindings in IIS")]
+    [IPlugin.Plugin<
+        IISFtpOptions, IISOptionsFactory, 
+        IISCapability, WacsJsonPlugins>
+        ("13058a79-5084-48af-b047-634e0ee222f4", 
+        "IISFTP", "Create or update FTP bindings in IIS", Hidden = true)]
+    [IPlugin.Plugin<
+        IISOptions, IISOptionsFactory, 
+        IISCapability, WacsJsonPlugins>
+        ("ea6a5be3-f8de-4d27-a6bd-750b619b2ee2", 
+        "IIS", "Create or update bindings in IIS")]
     internal class IIS : IInstallationPlugin
     {
         private readonly ILogService _log;
         private readonly IIISClient _iisClient;
         private readonly IISOptions _options;
-        private readonly IUserRoleService _userRoleService;
 
-        public IIS(IISFtpOptions options, IIISClient iisClient, ILogService log, IUserRoleService userRoleService) : this((IISOptions)options, iisClient, log, userRoleService) { }
-        public IIS(IISOptions options, IIISClient iisClient, ILogService log, IUserRoleService userRoleService)
+        public IIS(IISFtpOptions options, IIISClient iisClient, ILogService log) : this((IISOptions)options, iisClient, log) { }
+        public IIS(IISOptions options, IIISClient iisClient, ILogService log)
         {
             _iisClient = iisClient;
             _log = log;
             _options = options;
-            _userRoleService = userRoleService;
         }
 
         Task<bool> IInstallationPlugin.Install(
@@ -133,22 +136,6 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             }
 
             return Task.FromResult(true);
-        }
-
-        (bool, string?) IPlugin.Disabled => Disabled(_userRoleService, _iisClient);
-
-        internal static (bool, string?) Disabled(IUserRoleService userRoleService, IIISClient iisClient)
-        {
-            var (allow, reason) = userRoleService.AllowIIS;
-            if (!allow)
-            {
-                return (true, reason);
-            }
-            if (!iisClient.Sites.Any())
-            {
-                return (true, "No IIS sites available.");
-            }
-            return (false, null);
         }
     }
 }

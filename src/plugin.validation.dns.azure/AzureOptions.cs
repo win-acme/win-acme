@@ -11,7 +11,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public AzureJson(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
     }
 
-    internal class AzureOptions : ValidationPluginOptions<Azure>, IAzureOptionsCommon
+    internal class AzureOptions : ValidationPluginOptions, IAzureOptionsCommon
     {
         public string? AzureEnvironment { get; set; }
         public bool UseMsi { get; set; }

@@ -2,5 +2,5 @@
 
 namespace PKISharp.WACS.Plugins.OrderPlugins
 {
-    internal class HostOptions : OrderPluginOptions<Host> { }
+    internal class HostOptions : OrderPluginOptions { }
 }

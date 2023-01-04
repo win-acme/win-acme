@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.Clients;
+using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
@@ -7,9 +8,12 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    [IPlugin.Plugin<SftpOptions, SftpOptionsFactory, WacsJsonPlugins>
-        ("048aa2e7-2bce-4d3e-b731-6e0ed8b8170d", "SFTP", "Upload verification files via SSH-FTP")]
-    internal class Sftp : HttpValidation<SftpOptions, Sftp>
+    [IPlugin.Plugin<
+        SftpOptions, SftpOptionsFactory,
+        HttpValidationCapability, WacsJsonPlugins>
+        ("048aa2e7-2bce-4d3e-b731-6e0ed8b8170d", 
+        "SFTP", "Upload verification files via SSH-FTP")]
+    internal class Sftp : HttpValidation<SftpOptions>
     {
         private readonly SshFtpClient _sshFtpClient;
 

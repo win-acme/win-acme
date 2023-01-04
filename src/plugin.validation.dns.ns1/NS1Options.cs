@@ -11,7 +11,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public NS1Json(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
     }
 
-    internal class NS1Options : ValidationPluginOptions<NS1DnsValidation>
+    internal class NS1Options : ValidationPluginOptions
     {
         [JsonPropertyName("APIKeySafe")]
         public ProtectedString? ApiKey { get; set; }

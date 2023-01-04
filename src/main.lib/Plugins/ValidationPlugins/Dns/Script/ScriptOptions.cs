@@ -2,7 +2,7 @@
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    internal class ScriptOptions : ValidationPluginOptions<Script>
+    internal class ScriptOptions : ValidationPluginOptions
     {
         public string? Script { get; set; }
         public string? CreateScript { get; set; }

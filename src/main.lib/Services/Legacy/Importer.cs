@@ -2,7 +2,6 @@
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Plugins.Base.Factories.Null;
 using PKISharp.WACS.Plugins.CsrPlugins;
 using PKISharp.WACS.Services.Serialization;
 using System;
@@ -352,7 +351,7 @@ namespace PKISharp.WACS.Services.Legacy
                         });
                         break;
                     case "none":
-                        ret.InstallationPluginOptions.Add(new NullInstallationOptions());
+                        ret.InstallationPluginOptions.Add(new Install.NullOptions());
                         break;
                 }
             }

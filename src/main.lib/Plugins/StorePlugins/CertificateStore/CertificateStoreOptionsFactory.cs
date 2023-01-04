@@ -8,15 +8,13 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    internal class CertificateStoreOptionsFactory : 
-        StorePluginOptionsFactory<CertificateStore, CertificateStoreOptions>
+    internal class CertificateStoreOptionsFactory : PluginOptionsFactory<CertificateStoreOptions>
     {
         private readonly ArgumentsInputService _arguments;
         private readonly IIISClient _iisClient;
         private readonly ISettingsService _settingsService;
 
         public CertificateStoreOptionsFactory(
-            IUserRoleService userRoleService,
             ArgumentsInputService arguments,
             ISettingsService settings,
             IIISClient iisClient)
@@ -24,7 +22,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             _arguments = arguments;
             _iisClient = iisClient;
             _settingsService = settings;
-            Disabled = CertificateStore.Disabled(userRoleService);
         }
 
         public override async Task<CertificateStoreOptions?> Aquire(IInputService inputService, RunLevel runLevel)

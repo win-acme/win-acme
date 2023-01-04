@@ -2,10 +2,10 @@
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    internal class FileSystemOptions : HttpValidationOptions<FileSystem>
+    internal class FileSystemOptions : HttpValidationOptions
     {
         public FileSystemOptions() : base() { }
-        public FileSystemOptions(HttpValidationOptions<FileSystem> source) : base(source) { }
+        public FileSystemOptions(HttpValidationOptions? source) : base(source) { }
 
         /// <summary>
         /// Alternative site for validation. The path will be

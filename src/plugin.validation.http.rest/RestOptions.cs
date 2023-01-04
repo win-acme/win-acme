@@ -10,7 +10,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         public RestJson(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
     }
 
-    internal sealed class RestOptions : ValidationPluginOptions<Rest>
+    internal sealed class RestOptions : ValidationPluginOptions
     {
         public ProtectedString? SecurityToken { get; set; }
         public bool? UseHttps { get; set; }

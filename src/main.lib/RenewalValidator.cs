@@ -133,7 +133,7 @@ namespace PKISharp.WACS
         {
             // Execute them per group, where one group means one validation plugin
             var multipleOrders = authorizations.Any(x => x.Order != authorizations.First().Order);
-            var validationScope = _scopeBuilder.Validation(authorizations.First().Order.ExecutionScope, pluginOptions);
+            var validationScope = _scopeBuilder.Plugin<IValidationPlugin>(authorizations.First().Order.ExecutionScope, pluginOptions);
             var plugin = validationScope.Resolve<IValidationPlugin>();
             var contexts = authorizations.Select(context =>
             {
@@ -243,7 +243,7 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private ValidationPluginContext? GetInstances(ILifetimeScope scope, ValidationPluginOptions options)
         {
-            var validationScope = _scopeBuilder.Validation(scope, options);
+            var validationScope = _scopeBuilder.Plugin<IValidationPlugin>(scope, options);
             try
             {
                 return new ValidationPluginContext(options, validationScope);
@@ -263,7 +263,10 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private bool CanValidate(AuthorizationContext context, ValidationPluginOptions options)
         {
-            var plugin = GetInstances(context.Order.ExecutionScope, options);
+            var identifier = Identifier.Parse(context.Authorization.Identifier);
+            var dummyTarget = new Target(identifier);
+            var targetScope = _scopeBuilder.SubTarget(context.Order.ExecutionScope, dummyTarget);
+            var plugin = GetInstances(targetScope, options);
             if (plugin == null)
             {
                 _log.Warning("Validation plugin not found or not created");
@@ -276,9 +279,8 @@ namespace PKISharp.WACS
                 return false;
             }
 
-            var identifier = Identifier.Parse(context.Authorization.Identifier);
-            var dummyTarget = new Target(identifier);
-            if (!plugin.Factory.CanValidate(dummyTarget))
+          
+            if (!plugin.Factory.CanValidate())
             {
                 _log.Warning("Validation plugin {name} cannot validate identifier {identifier}", plugin.Meta.Name, identifier.Value);
                 return false;
@@ -384,7 +386,7 @@ namespace PKISharp.WACS
                     _log.Verbose("Skip authorization because the order has already failed");
                     continue;
                 }
-                using var validationScope = _scopeBuilder.Validation(parameter.OrderContext.ExecutionScope, parameter.Options);
+                using var validationScope = _scopeBuilder.Plugin<IValidationPlugin>(parameter.OrderContext.ExecutionScope, parameter.Options);
                 await ParallelValidation(
                     ParallelOperations.None, 
                     validationScope, 

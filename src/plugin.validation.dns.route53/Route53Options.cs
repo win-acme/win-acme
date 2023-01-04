@@ -10,7 +10,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public Route53Json(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
     }
 
-    internal sealed class Route53Options : ValidationPluginOptions<Route53>
+    internal sealed class Route53Options : ValidationPluginOptions
     {
         public string? IAMRole { get; set; }
         public string? AccessKeyId { get; set; }

@@ -2,5 +2,5 @@
 
 namespace PKISharp.WACS.Plugins.OrderPlugins
 {
-    internal class SingleOptions : OrderPluginOptions<Single> { }
+    internal class SingleOptions : OrderPluginOptions { }
 }

@@ -267,7 +267,7 @@ namespace PKISharp.WACS
 
             foreach (var renewal in selectedRenewals)
             {
-                using var targetScope = await _scopeBuilder.Target(_container, renewal);
+                using var targetScope = await _scopeBuilder.MainTarget(_container, renewal);
                 var target = targetScope.ResolveOptional<Target>();
                 if (target == null)
                 {

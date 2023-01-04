@@ -1,15 +1,13 @@
-﻿using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Extensions;
+﻿using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    internal class ScriptOptionsFactory : ValidationPluginOptionsFactory<Script, ScriptOptions>
+    internal class ScriptOptionsFactory : PluginOptionsFactory<ScriptOptions>
     {
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
@@ -52,7 +50,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             Validate(x => Task.FromResult(x!.Value is >= 0 and <= 3), "invalid value").
             DefaultAsNull();
 
-        public override async Task<ScriptOptions?> Aquire(Target target, IInputService input, RunLevel runLevel)
+        public override async Task<ScriptOptions?> Aquire(IInputService input, RunLevel runLevel)
         {
             var ret = new ScriptOptions();
             var createScript = await CreateScript.Interactive(input).GetValue();
@@ -101,7 +99,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return ret;
         }
 
-        public override async Task<ScriptOptions?> Default(Target target)
+        public override async Task<ScriptOptions?> Default()
         {
             var ret = new ScriptOptions();
             var commonScript = await CommonScript.GetValue();
@@ -149,8 +147,5 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 options.DeleteScript = string.IsNullOrWhiteSpace(deleteInput) ? null : deleteInput;
             }
         }
-
-        public override bool CanValidate(Target target) => target.Parts.SelectMany(x => x.Identifiers).All(x => x.Type == IdentifierType.DnsName);
     }
-
 }

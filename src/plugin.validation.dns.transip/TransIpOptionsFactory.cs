@@ -1,5 +1,4 @@
-﻿using ACMESharp.Authorizations;
-using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
@@ -12,7 +11,7 @@ using TransIp.Library;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    internal sealed class TransIpOptionsFactory : ValidationPluginOptionsFactory<TransIp, TransIpOptions>
+    internal sealed class TransIpOptionsFactory : PluginOptionsFactory<TransIpOptions>
     {
         private readonly ArgumentsInputService _arguments;
         private readonly SecretServiceManager _ssm;
@@ -23,7 +22,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             ArgumentsInputService arguments,
             SecretServiceManager ssm,
             ILogService log,
-            IProxyService proxy) 
+            Target target,
+            IProxyService proxy) : base(target)
         {
             _arguments = arguments;
             _ssm = ssm;
@@ -40,7 +40,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             Validate(x => Task.FromResult(CheckKey(_ssm.EvaluateSecret(x?.Value))), "invalid private key").
             Required();
 
-        public override async Task<TransIpOptions?> Aquire(Target target, IInputService input, RunLevel runLevel)
+        public override async Task<TransIpOptions?> Aquire(IInputService input, RunLevel runLevel)
         {
             return new TransIpOptions()
             {
@@ -49,7 +49,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             };
         }
 
-        public override async Task<TransIpOptions?> Default(Target target)
+        public override async Task<TransIpOptions?> Default()
         {
             var login = await Login.GetValue();
 
@@ -88,6 +88,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return false;
         }
 
-        public override bool CanValidate(Target target) => target.Parts.SelectMany(x => x.Identifiers).All(x => x.Type == IdentifierType.DnsName);
+        public override bool CanValidate() => target.Parts.SelectMany(x => x.Identifiers).All(x => x.Type == IdentifierType.DnsName);
     }
 }

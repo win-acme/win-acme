@@ -46,7 +46,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             return x.Default().Result;
         }
 
-        private Target Target(IISOptions options)
+        private Target? Target(IISOptions options)
         {
             var plugin = new IIS(log, userRoleService, helper, options);
             return plugin.Generate().Result;
@@ -69,6 +69,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                     Assert.IsNull(options.CommonName);
                     Assert.IsNull(options.ExcludeHosts);
                     var target = Target(options);
+                    Assert.IsNotNull(target);
                     Assert.AreEqual(target.IsValid(log), true);
                     Assert.AreEqual(target.CommonName.Value, site.Bindings.First().Host); // First binding
                     Assert.AreEqual(target.IIS, true);
@@ -94,6 +95,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                 Assert.AreEqual(options.CommonName, commonName);
                 Assert.IsNull(options.ExcludeHosts);
                 var target = Target(options);
+                Assert.IsNotNull(target);
                 Assert.AreEqual(target.IsValid(log), true);
                 Assert.AreEqual(target.CommonName.Value, commonName); // First binding
             }
@@ -114,6 +116,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                 Assert.AreEqual(options.CommonName, uniHost);
                 Assert.IsNull(options.ExcludeHosts);
                 var target = Target(options);
+                Assert.IsNotNull(target);
                 Assert.AreEqual(target.IsValid(log), true);
                 Assert.AreEqual(target.CommonName.Value, uniHost); // First binding
             }
@@ -132,6 +135,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                 Assert.IsNotNull(options.ExcludeHosts);
                 Assert.AreEqual(options.ExcludeHosts?.Count, site.Bindings.Count() - 2);
                 var target = Target(options);
+                Assert.IsNotNull(target);
                 Assert.AreEqual(target.IsValid(log), true);
                 Assert.IsFalse(target.Parts.First().Identifiers.Any(x => x.Value == "test.example.com"));
                 Assert.IsFalse(target.Parts.First().Identifiers.Any(x => x.Value == "four.example.com"));
@@ -172,6 +176,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             var site = iis.GetSite(siteId);
             var options = new IISSiteOptions() { SiteId = siteId, CommonName = "missing.example.com" };
             var target = Target(options);
+            Assert.IsNotNull(target);
             Assert.AreEqual(target.IsValid(log), true);
             Assert.AreEqual(target.CommonName.Value, site.Bindings.First().Host);
         }

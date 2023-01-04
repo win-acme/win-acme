@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    internal class ManualOptions : TargetPluginOptions<Manual>
+    internal class ManualOptions : TargetPluginOptions
     {
         public const string DescriptionText = "Manual input";
         public string? CommonName { get; set; }

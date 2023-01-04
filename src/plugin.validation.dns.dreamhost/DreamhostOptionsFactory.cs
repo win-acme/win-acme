@@ -1,9 +1,6 @@
-﻿using ACMESharp.Authorizations;
-using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.Base.Factories;
+﻿using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
@@ -11,7 +8,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     /// <summary>
     /// Azure DNS validation
     /// </summary>
-    internal class DreamhostOptionsFactory : ValidationPluginOptionsFactory<DreamhostDnsValidation, DreamhostOptions>
+    internal class DreamhostOptionsFactory : PluginOptionsFactory<DreamhostOptions>
     {
         private readonly ArgumentsInputService _arguments;
 
@@ -21,7 +18,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             GetProtectedString<DreamhostArguments>(a => a.ApiKey).
             Required();
 
-        public override async Task<DreamhostOptions?> Aquire(Target target, IInputService input, RunLevel runLevel)
+        public override async Task<DreamhostOptions?> Aquire(IInputService input, RunLevel runLevel)
         {
             return new DreamhostOptions()
             {
@@ -29,7 +26,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             };
         }
 
-        public override async Task<DreamhostOptions?> Default(Target target)
+        public override async Task<DreamhostOptions?> Default()
         {
             return new DreamhostOptions()
             {
@@ -37,6 +34,5 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             };
         }
 
-        public override bool CanValidate(Target target) => target.Parts.SelectMany(x => x.Identifiers).All(x => x.Type == IdentifierType.DnsName);
     }
 }

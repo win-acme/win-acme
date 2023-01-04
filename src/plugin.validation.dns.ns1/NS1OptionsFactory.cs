@@ -1,9 +1,6 @@
-﻿using ACMESharp.Authorizations;
-using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.Base.Factories;
+﻿using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
@@ -11,7 +8,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     /// <summary>
     /// Azure DNS validation
     /// </summary>
-    internal class NS1OptionsFactory : ValidationPluginOptionsFactory<NS1DnsValidation, NS1Options>
+    internal class NS1OptionsFactory : PluginOptionsFactory<NS1Options>
     {
         private readonly ArgumentsInputService _arguments;
 
@@ -21,7 +18,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             GetProtectedString<NS1Arguments>(a => a.ApiKey).
             Required();
 
-        public override async Task<NS1Options?> Aquire(Target target, IInputService input, RunLevel runLevel)
+        public override async Task<NS1Options?> Aquire(IInputService input, RunLevel runLevel)
         {
             return new NS1Options()
             {
@@ -29,14 +26,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             };
         }
 
-        public override async Task<NS1Options?> Default(Target target)
+        public override async Task<NS1Options?> Default()
         {
             return new NS1Options()
             {
                 ApiKey = await ApiKey.GetValue(),
             };
         }
-
-        public override bool CanValidate(Target target) => target.Parts.SelectMany(x => x.Identifiers).All(x => x.Type == IdentifierType.DnsName);
     }
 }

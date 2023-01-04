@@ -11,8 +11,11 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    [IPlugin.Plugin<SelfHostingOptions, SelfHostingOptionsFactory, WacsJsonPlugins>
-        ("c7d5e050-9363-4ba1-b3a8-931b31c618b7", "SelfHosting", "Serve verification files from memory")]
+    [IPlugin.Plugin<
+        SelfHostingOptions, SelfHostingOptionsFactory, 
+        SelfHostingCapability, WacsJsonPlugins>
+        ("c7d5e050-9363-4ba1-b3a8-931b31c618b7", 
+        "SelfHosting", "Serve verification files from memory")]
     internal class SelfHosting : Validation<Http01ChallengeValidationDetails>
     {
         internal const int DefaultHttpValidationPort = 80;

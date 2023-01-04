@@ -1,6 +1,8 @@
 ﻿using Autofac;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Options;
+using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Threading.Tasks;
 
@@ -24,7 +26,15 @@ namespace PKISharp.WACS.Services
         /// <param name="renewal"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        Task<ILifetimeScope> Target(ILifetimeScope main, Renewal renewal);
+        Task<ILifetimeScope> MainTarget(ILifetimeScope main, Renewal renewal);
+
+        /// <summary>
+        /// For different targets split up by the order plugin
+        /// </summary>
+        /// <param name="main"></param>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        ILifetimeScope SubTarget(ILifetimeScope main, Target target);
 
         /// <summary>
         /// For renewal and creating scheduled task 
@@ -36,23 +46,12 @@ namespace PKISharp.WACS.Services
         ILifetimeScope Execution(ILifetimeScope target, Renewal renewal, RunLevel runLevel);
 
         /// <summary>
-        /// For a single order, each order needs
-        /// it own instance of the ICsrPlugin
+        /// Sub-scopes for specif plugins
         /// </summary>
-        /// <param name="target"></param>
-        /// <param name="renewal"></param>
-        /// <param name="runLevel"></param>
-        /// <returns></returns>
-        ILifetimeScope Order(ILifetimeScope execution);
-
-        /// <summary>
-        /// Validation of a single identifier
-        /// </summary>
+        /// <typeparam name="T"></typeparam>
         /// <param name="execution"></param>
         /// <param name="options"></param>
-        /// <param name="target"></param>
-        /// <param name="identifier"></param>
         /// <returns></returns>
-        ILifetimeScope Validation(ILifetimeScope execution, ValidationPluginOptions options);
+        ILifetimeScope Plugin<T>(ILifetimeScope execution, PluginOptions? options) where T : IPlugin;
     }
 }

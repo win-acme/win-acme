@@ -1,5 +1,4 @@
-﻿using PKISharp.WACS.Plugins.Base.Factories.Null;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 using Csr = PKISharp.WACS.Plugins.CsrPlugins;
 using Store = PKISharp.WACS.Plugins.StorePlugins;
 using Installation = PKISharp.WACS.Plugins.InstallationPlugins;
@@ -41,8 +40,8 @@ namespace PKISharp.WACS.Services.Serialization
     [JsonSerializable(typeof(Installation.IISFtpOptions))]
     [JsonSerializable(typeof(Installation.IISOptions), TypeInfoPropertyName = "InstallationIISOptions")]
     [JsonSerializable(typeof(Installation.ScriptOptions), TypeInfoPropertyName = "InstallationScriptOptions")]
-    [JsonSerializable(typeof(NullInstallationOptions))]
-    [JsonSerializable(typeof(NullStoreOptions))]
+    [JsonSerializable(typeof(Installation.NullOptions), TypeInfoPropertyName = "InstallationNullOptions")]
+    [JsonSerializable(typeof(Store.NullOptions), TypeInfoPropertyName = "StoreNullOptions")]
     internal partial class WacsJsonPlugins : JsonSerializerContext
     {
         public WacsJsonPlugins(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }

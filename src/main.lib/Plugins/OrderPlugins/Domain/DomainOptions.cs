@@ -2,5 +2,5 @@
 
 namespace PKISharp.WACS.Plugins.OrderPlugins
 {
-    internal class DomainOptions : OrderPluginOptions<Domain> { }
+    internal class DomainOptions : OrderPluginOptions { }
 }

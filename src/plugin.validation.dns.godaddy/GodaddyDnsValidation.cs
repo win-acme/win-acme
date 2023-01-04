@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.ValidationPlugins.Dns;
 using PKISharp.WACS.Plugins.ValidationPlugins.Godaddy;
@@ -11,7 +12,9 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    [IPlugin.Plugin<GodaddyOptions, GodaddyOptionsFactory, GodaddyJson>
+    [IPlugin.Plugin<
+        GodaddyOptions, GodaddyOptionsFactory, 
+        DnsValidationCapability, GodaddyJson>
         ("966c4c3d-1572-44c7-9134-5e2bc8fa021d", 
         "Godaddy", 
         "Create verification records in Godaddy DNS",

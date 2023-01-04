@@ -11,7 +11,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public TransIpJson(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
     }
 
-    internal sealed class TransIpOptions : ValidationPluginOptions<TransIp>
+    internal sealed class TransIpOptions : ValidationPluginOptions
     {
         public string? Login { get; set; }
         public ProtectedString? PrivateKey { get; set; }

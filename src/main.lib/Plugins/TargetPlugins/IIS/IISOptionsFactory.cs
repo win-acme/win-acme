@@ -2,7 +2,6 @@
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
-using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
@@ -12,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    internal class IISOptionsFactory : TargetPluginOptionsFactory<IIS, IISOptions>, IPluginOptionsFactory<IISOptions>
+    internal class IISOptionsFactory : PluginOptionsFactory<IISOptions>
     {
         private readonly IISHelper _iisHelper;
         private readonly ILogService _log;
@@ -23,14 +22,12 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             ILogService log,
             IISHelper iisHelper,
             MainArguments args,
-            ArgumentsInputService arguments,
-            IUserRoleService userRoleService)
+            ArgumentsInputService arguments)
         {
             _iisHelper = iisHelper;
             _log = log;
             _arguments = arguments;
             _args = args;
-            Disabled = IIS.Disabled(userRoleService);
         }
 
         public override int Order => 2;

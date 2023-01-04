@@ -8,29 +8,37 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    [IPlugin.Plugin<IISSitesOptions, IISOptionsFactory, WacsJsonPlugins>
-        ("cdd79a68-4a87-4039-bee8-5a0ebdca41cb", "IISSites", "Read sites from IIS (legacy)", Hidden = true)]
-    [IPlugin.Plugin<IISSiteOptions, IISOptionsFactory, WacsJsonPlugins>
-        ("d7940b23-f570-460e-ab15-2c822a79009b", "IISSite", "Read site from IIS (legacy)", Hidden = true)]
-    [IPlugin.Plugin<IISBindingOptions, IISOptionsFactory, WacsJsonPlugins>
-        ("2f5dd428-0f5d-4c8a-8fd0-56fc1b5985ce", "IISBinding", "Read bindings from IIS (legacy)", Hidden = true)]
-    [IPlugin.Plugin<IISOptions, IISOptionsFactory, WacsJsonPlugins>
-        ("54deb3ee-b5df-4381-8485-fe386054055b", "IIS", "Read bindings from IIS")]
+    [IPlugin.Plugin<
+        IISSitesOptions, IISOptionsFactory, 
+        IISCapability, WacsJsonPlugins>
+        ("cdd79a68-4a87-4039-bee8-5a0ebdca41cb", 
+        "IISSites", "Read sites from IIS (legacy)", Hidden = true)]
+    [IPlugin.Plugin<
+        IISSiteOptions, IISOptionsFactory,
+        IISCapability, WacsJsonPlugins>
+        ("d7940b23-f570-460e-ab15-2c822a79009b", 
+        "IISSite", "Read site from IIS (legacy)", Hidden = true)]
+    [IPlugin.Plugin<
+        IISBindingOptions, IISOptionsFactory, 
+        IISCapability, WacsJsonPlugins>
+        ("2f5dd428-0f5d-4c8a-8fd0-56fc1b5985ce", 
+        "IISBinding", "Read bindings from IIS (legacy)", Hidden = true)]
+    [IPlugin.Plugin<
+        IISOptions, IISOptionsFactory, 
+        IISCapability, WacsJsonPlugins>
+        ("54deb3ee-b5df-4381-8485-fe386054055b", 
+        "IIS", "Read bindings from IIS")]
     internal class IIS : ITargetPlugin
     {
         private readonly ILogService _log;
         private readonly IISOptions _options;
         private readonly IISHelper _helper;
-        private readonly IUserRoleService _userRoleService;
 
-        public IIS(
-            ILogService logService, IUserRoleService roleService,
-            IISHelper helper, IISOptions options)
+        public IIS(ILogService logService, IISHelper helper, IISOptions options)
         {
             _log = logService;
             _options = options;
             _helper = helper;
-            _userRoleService = roleService;
         }
 
         public async Task<Target?> Generate()
@@ -129,21 +137,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                     SiteType = group.First().SiteType
                 });
             return new Target(friendlyNameSuggestion, commonName, parts.ToList());
-        }
-
-        (bool, string?) IPlugin.Disabled => Disabled(_userRoleService);
-
-        internal static (bool, string?) Disabled(IUserRoleService userRoleService) 
-        {
-            var (allow, reason) = userRoleService.AllowIIS;
-            if (!allow)
-            {
-                return (true, reason);
-            } 
-            else
-            {
-                return (false, null);
-            }
         }
     }
 }

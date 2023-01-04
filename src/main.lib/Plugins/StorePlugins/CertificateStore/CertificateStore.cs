@@ -16,7 +16,9 @@ using static System.IO.FileSystemAclExtensions;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    [IPlugin.Plugin<CertificateStoreOptions, CertificateStoreOptionsFactory, WacsJsonPlugins>
+    [IPlugin.Plugin<
+        CertificateStoreOptions, CertificateStoreOptionsFactory, 
+        CertificateStoreCapability, WacsJsonPlugins>
         ("e30adc8e-d756-4e16-a6f2-450f784b1a97", CertificateStoreOptions.PluginName, "Windows Certificate Store")]
     internal class CertificateStore : IStorePlugin, IDisposable
     {
@@ -356,20 +358,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
             _store.Close();
             return possibles.OrderByDescending(x => x.NotBefore).FirstOrDefault();
-        }
-
-        (bool, string?) IPlugin.Disabled => Disabled(_userRoleService);
-
-        internal static (bool, string?) Disabled(IUserRoleService userRoleService)
-        {
-            if (userRoleService.AllowCertificateStore) 
-            {
-                return (false, null);
-            } 
-            else 
-            {
-                return (true, "Run as administrator to allow certificate store access.");
-            }
         }
 
         #region IDisposable

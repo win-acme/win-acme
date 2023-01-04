@@ -2,5 +2,5 @@
 
 namespace PKISharp.WACS.Plugins.CsrPlugins
 {
-    internal class EcOptions : CsrPluginOptions<Ec> { }
+    internal class EcOptions : CsrPluginOptions { }
 }

@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.ValidationPlugins.Dns.NS1;
 using PKISharp.WACS.Services;
@@ -11,7 +12,9 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    [IPlugin.Plugin<NS1Options, NS1OptionsFactory, NS1Json>
+    [IPlugin.Plugin<
+        NS1Options, NS1OptionsFactory,
+        DnsValidationCapability, NS1Json>
         ("C66CC8BE-3046-46C2-A0BA-EC4EC3E7FE96", 
         "NS1", 
         "Create verification records in NS1 DNS",

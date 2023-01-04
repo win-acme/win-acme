@@ -3,10 +3,10 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    internal class SftpOptions : HttpValidationOptions<Sftp>
+    internal class SftpOptions : HttpValidationOptions
     {
         public SftpOptions() : base() { }
-        public SftpOptions(HttpValidationOptions<Sftp> source) : base(source) { }
+        public SftpOptions(HttpValidationOptions? source) : base(source) { }
 
         /// <summary>
         /// Credentials to use for SFTP connection

@@ -11,32 +11,20 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    internal class IISOptionsFactory : InstallationPluginFactory<IIS, IISOptions>
+    internal class IISOptionsFactory : PluginOptionsFactory<IISOptions>
     {
         public override int Order => 5;
         private readonly IIISClient _iisClient;
         private readonly ArgumentsInputService _arguments;
+        private readonly Target _target;
 
-        public IISOptionsFactory(IIISClient iisClient, ArgumentsInputService arguments, IUserRoleService userRoleService)
+        public IISOptionsFactory(IIISClient iisClient, Target target, ArgumentsInputService arguments)
         {
             _iisClient = iisClient;
             _arguments = arguments;
-            Disabled = IIS.Disabled(userRoleService, iisClient);
+            _target = target;
         }
 
-        public override (bool, string?) CanInstall(IEnumerable<Type> storeTypes, IEnumerable<Type> installationTypes)
-        {
-            if (installationTypes.Contains(typeof(IIS)))
-            {
-                return (false, "Cannot be used more than once in a renewal.");
-            }
-            if (storeTypes.Contains(typeof(CertificateStore)) || storeTypes.Contains(typeof(CentralSsl))) 
-            {
-                return (true, null);
-            }
-            return (false, "Requires CertificateStore or CentralSsl store plugin.");
-        }
-    
         private ArgumentResult<int?> NewBindingPort => _arguments.
             GetInt<IISArguments>(x => x.SSLPort).
             WithDefault(IISClient.DefaultBindingPort).
@@ -59,7 +47,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             Validate(x => Task.FromResult(_iisClient.GetSite(x!.Value) != null), "invalid site").
             Validate(x => Task.FromResult(_iisClient.GetSite(x!.Value).Type == IISSiteType.Ftp), "not an ftp site");
 
-        public override async Task<IISOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
+        public override async Task<IISOptions?> Aquire(IInputService inputService, RunLevel runLevel)
         {
             var ret = new IISOptions()
             {
@@ -72,7 +60,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                    "itself. Therefor you'll never need to run this installation step twice.");
        
             var ask = true;
-            if (target.IIS)
+            if (_target.IIS)
             {
                 inputService.CreateSpace();
                 inputService.Show(null,
@@ -92,10 +80,10 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             return ret;
         }
 
-        public override async Task<IISOptions> Default(Target target)
+        public override async Task<IISOptions?> Default()
         {
             var siteId = await FtpSite.GetValue();
-            siteId ??= await InstallationSite.Required(!target.IIS).GetValue();
+            siteId ??= await InstallationSite.Required(!_target.IIS).GetValue();
             var ret = new IISOptions()
             {
                 NewBindingPort = await NewBindingPort.GetValue(),

@@ -11,7 +11,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public DomeneshopJson(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
     }
 
-    internal class DomeneshopOptions : ValidationPluginOptions<DomeneshopDnsValidation>
+    internal class DomeneshopOptions : ValidationPluginOptions
     {
         [JsonPropertyName("SecretSafe")]
         public ProtectedString? ClientId { get; set; }

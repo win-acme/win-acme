@@ -1,6 +1,7 @@
 ﻿using Abstractions.Integrations.Domeneshop;
 
 using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.ValidationPlugins.Dns;
 using PKISharp.WACS.Services;
@@ -14,10 +15,11 @@ using Options = Abstractions.Integrations.Domeneshop.DomeneshopOptions;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    [IPlugin.Plugin<DomeneshopOptions, DomeneshopOptionsFactory, DomeneshopJson>
+    [IPlugin.Plugin<
+        DomeneshopOptions, DomeneshopOptionsFactory,
+        DnsValidationCapability, DomeneshopJson>
         ("0BD9B320-08E0-4BFE-A535-B979886187E4",
-        "Domeneshop",
-        "Create verification records in Domeneshop DNS",
+        "Domeneshop", "Create verification records in Domeneshop DNS",
         ChallengeType = Constants.Dns01ChallengeType)]
     internal class DomeneshopDnsValidation : DnsValidation<DomeneshopDnsValidation>
     {

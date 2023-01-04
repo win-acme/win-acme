@@ -81,14 +81,14 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             var resolver = scope.Resolve<IResolver>();
             var first = await resolver.GetInstallationPlugin(
                 scope, 
-                types.Select(t => plugins.GetPlugins().First(x => x.Runner == t)),
+                types.Select(t => plugins.GetPlugins().First(x => x.Backend == t)),
                 chosen);
             Assert.IsNotNull(first);
             Assert.AreEqual(first.OptionsFactory, typeof(IISOptionsFactory));
             chosen.Add(first);
             var second = await resolver.GetInstallationPlugin(
                 scope,
-                types.Select(t => plugins.GetPlugins().First(x => x.Runner == t)),
+                types.Select(t => plugins.GetPlugins().First(x => x.Backend == t)),
                 chosen);
             Assert.IsNull(second);
         }

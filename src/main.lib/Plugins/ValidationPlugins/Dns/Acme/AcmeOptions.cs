@@ -2,7 +2,7 @@
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    internal class AcmeOptions : ValidationPluginOptions<Acme>
+    internal class AcmeOptions : ValidationPluginOptions
     {
         public string? BaseUri { get; set; }
     }

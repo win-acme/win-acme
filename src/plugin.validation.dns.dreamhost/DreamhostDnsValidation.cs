@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.ValidationPlugins.Dns;
 using PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost;
@@ -11,10 +12,11 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    [IPlugin.Plugin<DreamhostOptions, DreamhostOptionsFactory, DreamhostJson>
+    [IPlugin.Plugin<
+        DreamhostOptions, DreamhostOptionsFactory,
+        DnsValidationCapability, DreamhostJson>
         ("2bfb3ef8-64b8-47f1-8185-ea427b793c1a", 
-        "Dreamhost",
-        "Create verification records in Dreamhost DNS",
+        "Dreamhost", "Create verification records in Dreamhost DNS",
         ChallengeType = Constants.Dns01ChallengeType)]
     internal class DreamhostDnsValidation : DnsValidation<DreamhostDnsValidation>
     {

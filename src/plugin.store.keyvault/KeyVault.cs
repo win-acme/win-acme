@@ -3,7 +3,7 @@ using Azure.Core.Pipeline;
 using Azure.Identity;
 using Azure.Security.KeyVault.Certificates;
 using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.Azure.Common;
+using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
@@ -18,8 +18,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     /// <summary>
     /// Handle creation of DNS records in Azure
     /// </summary>
-    [IPlugin.Plugin<KeyVaultOptions, KeyVaultOptionsFactory, KeyVaultJson>
-        ("dbfa91e2-28c0-4b37-857c-df6575dbb388", "", "")]
+    [IPlugin.Plugin<
+        KeyVaultOptions, KeyVaultOptionsFactory, 
+        DefaultCapability, KeyVaultJson>
+        ("dbfa91e2-28c0-4b37-857c-df6575dbb388", 
+        "KeyVault", 
+        "Store certificate in Azure Key Vault")]
     internal class KeyVault : IStorePlugin
     {
         private CertificateClient? _azureKeyVaultClient;

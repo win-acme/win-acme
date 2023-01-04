@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.Clients;
+using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
@@ -7,9 +8,12 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    [IPlugin.Plugin<FtpOptions, FtpOptionsFactory, WacsJsonPlugins>
-        ("bc27d719-dcf2-41ff-bf08-54db7ea49c48", "FTP", "Upload verification files via FTP(S)")]
-    internal class Ftp : HttpValidation<FtpOptions, Ftp>
+    [IPlugin.Plugin<
+        FtpOptions, FtpOptionsFactory, 
+        HttpValidationCapability, WacsJsonPlugins>
+        ("bc27d719-dcf2-41ff-bf08-54db7ea49c48",
+        "FTP", "Upload verification files via FTP(S)")]
+    internal class Ftp : HttpValidation<FtpOptions>
     {
         private readonly FtpClient _ftpClient;
 

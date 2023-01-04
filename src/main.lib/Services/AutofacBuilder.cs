@@ -1,17 +1,14 @@
 ﻿using Autofac;
 using Microsoft.Win32;
-using Org.BouncyCastle.Asn1.X509;
-using Org.BouncyCastle.Ocsp;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Host.Services.Legacy;
 using PKISharp.WACS.Plugins;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
-using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Plugins.StorePlugins;
-using PKISharp.WACS.Plugins.ValidationPlugins;
 using PKISharp.WACS.Services.Legacy;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Threading.Tasks;
 
@@ -94,7 +91,7 @@ namespace PKISharp.WACS.Services
         /// <param name="main"></param>
         /// <param name="renewal"></param>
         /// <returns></returns>
-        public async Task<ILifetimeScope> Target(ILifetimeScope parent, Renewal renewal)
+        public async Task<ILifetimeScope> MainTarget(ILifetimeScope parent, Renewal renewal)
         {
             var options = renewal.TargetPluginOptions;
             if (options == null ||
@@ -109,7 +106,7 @@ namespace PKISharp.WACS.Services
             var intermediateScope = parent.BeginLifetimeScope("target-inner", builder =>
             {
                 builder.RegisterInstance(options).As<TargetPluginOptions>().As(options.GetType());
-                builder.RegisterType(plugin.Runner).As<ITargetPlugin>();
+                builder.RegisterType(plugin.Backend).As<ITargetPlugin>();
                 builder.RegisterInstance(plugin).Keyed<Plugin>("target");
             });
             var pluginService = parent.Resolve<IPluginService>();
@@ -134,74 +131,44 @@ namespace PKISharp.WACS.Services
         /// <returns></returns>
         public ILifetimeScope Execution(ILifetimeScope target, Renewal renewal, RunLevel runLevel)
         {
-            return target.BeginLifetimeScope("execution", builder =>
+            var ret = target.BeginLifetimeScope("execution", builder =>
             {
                 builder.Register(c => runLevel).As<RunLevel>();
                 builder.RegisterType<FindPrivateKey>().SingleInstance();
                 builder.RegisterInstance(renewal);
-                builder.RegisterInstance(renewal.StorePluginOptions).As(renewal.StorePluginOptions.GetType());
-                if (renewal.CsrPluginOptions != null)
+                if (_plugins.TryGetPlugin(renewal.TargetPluginOptions, out var targetPlugin))
                 {
-                    builder.RegisterInstance(renewal.CsrPluginOptions).As(renewal.CsrPluginOptions.GetType());
+                    builder.RegisterInstance(renewal.TargetPluginOptions).As(renewal.TargetPluginOptions.GetType());
+                    builder.RegisterType(targetPlugin.Backend).As<ITargetPlugin>().SingleInstance();
                 }
-                if (renewal.OrderPluginOptions != null)
-                {
-                    builder.RegisterInstance(renewal.OrderPluginOptions).As(renewal.OrderPluginOptions.GetType());
-                }
-                builder.RegisterInstance(renewal.TargetPluginOptions).As(renewal.TargetPluginOptions.GetType());
-                if (renewal.CsrPluginOptions != null)
-                {
-                    builder.RegisterType(renewal.CsrPluginOptions.Instance).As<ICsrPlugin>().SingleInstance();
-                }
-                if (renewal.OrderPluginOptions != null)
-                {
-                    builder.RegisterType(renewal.OrderPluginOptions.Instance).As<IOrderPlugin>().SingleInstance();
-                }
-                else
-                {
-                    builder.RegisterType<Plugins.OrderPlugins.Single>().As<IOrderPlugin>().SingleInstance();
-                }
-                builder.RegisterType(renewal.TargetPluginOptions.Instance).As<ITargetPlugin>().SingleInstance();
+                // Backup/default for when the renewal doesn't have 
+                // an order plugin defined.
+                builder.RegisterType<Plugins.OrderPlugins.Single>().As<IOrderPlugin>().SingleInstance();
             });
+            return ret;
         }
 
         /// <summary>
-        /// For a single order within the renewal
+        /// For a single plugin step within the renewal
         /// </summary>
         /// <param name="target"></param>
         /// <param name="renewal"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        public ILifetimeScope Order(ILifetimeScope execution)
+        public ILifetimeScope Plugin<T>(ILifetimeScope execution, PluginOptions? options) where T: IPlugin
         {
-            var renewal = execution.Resolve<Renewal>();
-            return execution.BeginLifetimeScope("order", builder =>
+            return execution.BeginLifetimeScope(typeof(T).Name, builder =>
             {
-                if (renewal.CsrPluginOptions != null)
+                if (_plugins.TryGetPlugin(options, out var plugin))
                 {
-                    builder.RegisterType(renewal.CsrPluginOptions.Instance).As<ICsrPlugin>().SingleInstance();
+                    builder.RegisterInstance(options).As(options.GetType());
+                    builder.RegisterType(plugin.Backend).As<T>().SingleInstance();
                 }
             });
         }
 
-        /// <summary>
-        /// Validation
-        /// </summary>
-        /// <param name="execution"></param>
-        /// <param name="options"></param>
-        /// <param name="target"></param>
-        /// <param name="identifier"></param>
-        /// <returns></returns>
-        public ILifetimeScope Validation(ILifetimeScope execution, ValidationPluginOptions options)
-        {
-            return execution.BeginLifetimeScope("validation", builder =>
-            {
-                builder.RegisterType<HttpValidationParameters>();
-                builder.RegisterInstance(options).As(options.GetType());
-                builder.RegisterType(options.Instance).
-                    As<IValidationPlugin>().
-                    SingleInstance();
-            });
-        }
+        public ILifetimeScope SubTarget(ILifetimeScope main, DomainObjects.Target target) => 
+            main.BeginLifetimeScope("subtarget", 
+                builder => builder.RegisterInstance(target));
     }
 }

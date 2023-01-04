@@ -3,11 +3,10 @@ using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    internal class PemFilesOptionsFactory : StorePluginOptionsFactory<PemFiles, PemFilesOptions>
+    internal class PemFilesOptionsFactory : PluginOptionsFactory<PemFilesOptions>
     {
         private readonly ILogService _log;
         private readonly ArgumentsInputService _arguments;

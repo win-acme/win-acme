@@ -3,10 +3,10 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    internal class WebDavOptions : HttpValidationOptions<WebDav>
+    internal class WebDavOptions : HttpValidationOptions
     {
         public WebDavOptions() : base() { }
-        public WebDavOptions(HttpValidationOptions<WebDav> source) : base(source) { }
+        public WebDavOptions(HttpValidationOptions? source) : base(source) { }
 
         /// <summary>
         /// Credentials to use for WebDav connection

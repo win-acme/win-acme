@@ -3,10 +3,10 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    internal class FtpOptions : HttpValidationOptions<Ftp>
+    internal class FtpOptions : HttpValidationOptions
     {
         public FtpOptions() : base() { }
-        public FtpOptions(HttpValidationOptions<Ftp> source) : base(source) { }
+        public FtpOptions(HttpValidationOptions? source) : base(source) { }
 
         /// <summary>
         /// Credentials to use for WebDav connection

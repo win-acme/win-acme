@@ -4,7 +4,7 @@ using PKISharp.WACS.Services.Serialization;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    internal class PemFilesOptions : StorePluginOptions<PemFiles>
+    internal class PemFilesOptions : StorePluginOptions
     {
         internal const string PluginName = "PemFiles";
 

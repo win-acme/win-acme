@@ -2,5 +2,5 @@
 
 namespace PKISharp.WACS.Plugins.CsrPlugins
 {
-    internal class RsaOptions : CsrPluginOptions<Rsa> {}
+    internal class RsaOptions : CsrPluginOptions {}
 }

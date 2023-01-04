@@ -11,7 +11,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public DreamhostJson(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
     }
 
-    internal class DreamhostOptions : ValidationPluginOptions<DreamhostDnsValidation>
+    internal class DreamhostOptions : ValidationPluginOptions
     {
         [JsonPropertyName("SecretSafe")]
         public ProtectedString? ApiKey { get; set; }

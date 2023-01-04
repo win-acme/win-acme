@@ -4,7 +4,7 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    internal class ScriptOptions : InstallationPluginOptions<Script>
+    internal class ScriptOptions : InstallationPluginOptions
     {
         public string? Script { get; set; }
         public string? ScriptParameters { get; set; }

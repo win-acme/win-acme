@@ -17,10 +17,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     /// <summary>
     /// Base implementation for HTTP-01 validation plugins
     /// </summary>
-    internal abstract class HttpValidation<TOptions, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TPlugin> :
+    internal abstract class HttpValidation<TOptions> :
         Validation<Http01ChallengeValidationDetails>
-        where TOptions : HttpValidationOptions<TPlugin>
-        where TPlugin : IValidationPlugin
+        where TOptions : HttpValidationOptions
     {
         private readonly List<string> _filesWritten = new();
 
@@ -191,7 +190,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                     var destination = CombinePath(_path, challenge.HttpResourcePath.Replace(partialPath, "web.config"));
                     if (!_filesWritten.Contains(destination))
                     {
-                        var content = HttpValidation<TOptions, TPlugin>.GetWebConfig().Value;
+                        var content = HttpValidation<TOptions>.GetWebConfig().Value;
                         if (content != null)
                         {
                             _log.Debug("Writing web.config");
@@ -215,7 +214,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         private static Lazy<string?> GetWebConfig() => new(() => {
             try
             {
-                return File.ReadAllText(HttpValidation<TOptions, TPlugin>.TemplateWebConfig);
+                return File.ReadAllText(HttpValidation<TOptions>.TemplateWebConfig);
             } 
             catch 
             {

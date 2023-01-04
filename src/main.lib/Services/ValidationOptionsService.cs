@@ -2,6 +2,7 @@
 using Autofac.Features.AttributeFilters;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.TargetPlugins;
@@ -226,15 +227,14 @@ namespace PKISharp.WACS.Services
         /// <returns></returns>
         private async Task UpdateOptions(ILifetimeScope scope, GlobalValidationPluginOptions input)
         {
-            var fakeTarget = new Target(new DnsIdentifier("www.example.com"));
             var resolver = scope.Resolve<IResolver>();
-            var validationPlugin = await resolver.GetValidationPlugin(scope, fakeTarget);
+            var validationPlugin = await resolver.GetValidationPlugin();
             if (validationPlugin != null)
             {
-                var factory = scope.Resolve(validationPlugin.OptionsFactory) as IValidationPluginOptionsFactory;
+                var factory = scope.Resolve(validationPlugin.OptionsFactory) as PluginOptionsFactory<ValidationPluginOptions>;
                 if (factory is not null)
                 {
-                    var options = await factory.Aquire(fakeTarget, _input, RunLevel.Advanced);
+                    var options = await factory.Aquire( _input, RunLevel.Advanced);
                     input.ValidationPluginOptions = options;
                 }
             }

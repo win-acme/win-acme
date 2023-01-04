@@ -2,5 +2,5 @@
 
 namespace PKISharp.WACS.Plugins.OrderPlugins
 {
-    internal class SiteOptions : OrderPluginOptions<Site> { }
+    internal class SiteOptions : OrderPluginOptions { }
 }

@@ -1,6 +1,7 @@
 ﻿using Org.BouncyCastle.Pkcs;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
@@ -12,7 +13,9 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    [IPlugin.Plugin<PemFilesOptions, PemFilesOptionsFactory, WacsJsonPlugins>
+    [IPlugin.Plugin<
+        PemFilesOptions, PemFilesOptionsFactory, 
+        DefaultCapability, WacsJsonPlugins>
         ("e57c70e4-cd60-4ba6-80f6-a41703e21031", "PemFiles", "PEM encoded files (Apache, nginx, etc.)")]
     internal class PemFiles : IStorePlugin
     {

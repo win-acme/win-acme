@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    internal class IISOptions : TargetPluginOptions<IIS>
+    internal class IISOptions : TargetPluginOptions
     {
         /// <summary>
         /// Common name for the certificate

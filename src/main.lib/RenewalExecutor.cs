@@ -6,7 +6,6 @@ using PKISharp.WACS.Context;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins;
-using PKISharp.WACS.Plugins.Base.Factories.Null;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
@@ -186,7 +185,7 @@ namespace PKISharp.WACS
         private async Task<RenewResult> HandleOrders(ILifetimeScope execute, Renewal renewal, List<Order> orders, RunLevel runLevel)
         {
             // Build context
-            var orderContexts = orders.Select(order => new OrderContext(_scopeBuilder.Order(execute), order, runLevel)).ToList();
+            var orderContexts = orders.Select(order => new OrderContext(_scopeBuilder.Plugin<IOrderPlugin>(execute, renewal.OrderPluginOptions), order, runLevel)).ToList();
 
             // Check if renewal is needed at the root level
             var mainDue = ShouldRunRenewal(renewal, runLevel);

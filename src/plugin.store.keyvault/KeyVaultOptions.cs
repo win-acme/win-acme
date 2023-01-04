@@ -11,7 +11,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public KeyVaultJson(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
     }
 
-    internal class KeyVaultOptions : StorePluginOptions<KeyVault>, IAzureOptionsCommon
+    internal class KeyVaultOptions : StorePluginOptions, IAzureOptionsCommon
     {
         public string? AzureEnvironment { get; set; }
         public bool UseMsi { get; set; }

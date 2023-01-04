@@ -4,6 +4,8 @@ using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Security;
+using PKISharp.WACS.Plugins.Base.Capabilities;
+using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
@@ -11,9 +13,12 @@ using System;
 
 namespace PKISharp.WACS.Plugins.CsrPlugins
 {
-    [IPlugin.Plugin<EcOptions, EcOptionsFactory, WacsJsonPlugins>
-        ("9aadcf71-5241-4c4f-aee1-bfe3f6be3489", "EC", "Elliptic Curve key")]
-    internal class Ec : CsrPlugin<Ec, EcOptions>
+    [IPlugin.Plugin<
+        EcOptions, CsrPluginOptionsFactory<EcOptions>, 
+        DefaultCapability, WacsJsonPlugins>
+        ("9aadcf71-5241-4c4f-aee1-bfe3f6be3489", 
+        "EC", "Elliptic Curve key")]
+    internal class Ec : CsrPlugin<EcOptions>
     {
         public Ec(
             ILogService log,

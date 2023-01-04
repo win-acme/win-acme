@@ -3,6 +3,7 @@ using Org.BouncyCastle.Asn1.Pkcs;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Pkcs;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
@@ -14,8 +15,11 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    [IPlugin.Plugin<CsrOptions, CsrOptionsFactory, WacsJsonPlugins>
-        ("5C3DB0FB-840B-469F-B5A7-0635D8E9A93D", CsrOptions.NameLabel, "CSR created by another program")]
+    [IPlugin.Plugin<
+        CsrOptions, CsrOptionsFactory, 
+        DefaultCapability, WacsJsonPlugins>
+        ("5C3DB0FB-840B-469F-B5A7-0635D8E9A93D", 
+        CsrOptions.NameLabel, "CSR created by another program")]
     internal class Csr : ITargetPlugin
     {
         private readonly ILogService _log;

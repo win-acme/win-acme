@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    internal sealed class CloudDnsOptionsFactory : ValidationPluginOptionsFactory<CloudDns, CloudDnsOptions>
+    internal sealed class CloudDnsOptionsFactory : PluginOptionsFactory<CloudDnsOptions>
     {
         private readonly ArgumentsInputService _arguments;
 
@@ -21,7 +21,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             GetString<CloudDnsArguments>(a => a.ProjectId).
             Required();
 
-        public override async Task<CloudDnsOptions?> Aquire(Target target, IInputService input, RunLevel runLevel)
+        public override async Task<CloudDnsOptions?> Aquire(IInputService input, RunLevel runLevel)
         {
             return new CloudDnsOptions
             {
@@ -31,7 +31,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         }
 
 
-        public override async Task<CloudDnsOptions?> Default(Target target)
+        public override async Task<CloudDnsOptions?> Default()
         {
             return new CloudDnsOptions
             {
@@ -39,7 +39,5 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 ProjectId = await ProjectId.GetValue()
             };
         }
-
-        public override bool CanValidate(Target target) => target.Parts.SelectMany(x => x.Identifiers).All(x => x.Type == IdentifierType.DnsName);
     }
 }

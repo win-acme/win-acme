@@ -10,7 +10,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public LuaDnsJson(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
     }
 
-    internal sealed class LuaDnsOptions : ValidationPluginOptions<LuaDns>
+    internal sealed class LuaDnsOptions : ValidationPluginOptions
     {
         public string? Username { get; set; }
         [JsonPropertyName("APIKeySafe")]

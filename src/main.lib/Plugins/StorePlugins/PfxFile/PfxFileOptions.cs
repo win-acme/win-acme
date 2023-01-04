@@ -5,7 +5,7 @@ using PKISharp.WACS.Services.Serialization;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    internal class PfxFileOptions : StorePluginOptions<PfxFile>
+    internal class PfxFileOptions : StorePluginOptions
     {
         /// <summary>
         /// Path to the folder

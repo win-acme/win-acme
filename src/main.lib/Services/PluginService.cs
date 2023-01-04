@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using PKISharp.WACS.Plugins;
+using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services.Serialization;
 using System;
@@ -55,7 +56,8 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="options"></param>
         /// <returns></returns>
-        public Plugin GetPlugin(PluginOptionsBase options) {
+        public Plugin GetPlugin(PluginOptionsBase options) 
+        {
             if (TryGetPlugin(options, out var plugin)) 
             {
                 return plugin;
@@ -69,7 +71,7 @@ namespace PKISharp.WACS.Services
         /// <param name="options"></param>
         /// <param name="plugin"></param>
         /// <returns></returns>
-        public bool TryGetPlugin(PluginOptionsBase? options, [NotNullWhen(true)] out Plugin? plugin)
+        public bool TryGetPlugin([NotNullWhen(true)] PluginOptionsBase? options, [NotNullWhen(true)] out Plugin? plugin)
         {
             plugin = default;
             if (options == null)
@@ -116,11 +118,14 @@ namespace PKISharp.WACS.Services
         /// <param name="builder"></param>
         internal void Configure(ContainerBuilder builder)
         {
+            builder.RegisterType<PluginHelper>();
+            builder.Register(c => c.Resolve<PluginHelper>(new TypedParameter(typeof(IContainer), c.Resolve<ILifetimeScope>()))).As<PluginHelper>().InstancePerLifetimeScope();
             _plugins.ForEach(p =>
             {
-                builder.RegisterType(p.Runner);
-                builder.RegisterType(p.OptionsJson);
-                builder.RegisterType(p.OptionsFactory);
+                builder.RegisterType(p.Backend).InstancePerLifetimeScope();
+                builder.RegisterType(p.OptionsJson).InstancePerLifetimeScope();
+                builder.RegisterType(p.OptionsFactory).InstancePerLifetimeScope();
+                builder.RegisterType(p.Capability).InstancePerLifetimeScope();
             });
         }
 
@@ -147,7 +152,7 @@ namespace PKISharp.WACS.Services
                            "{Name2} from {Location2}",
                            meta.Id,
                            type.FullName, type.Assembly.Location,
-                           existing.Runner.FullName, existing.Runner.Assembly.Location);
+                           existing.Backend.FullName, existing.Backend.Assembly.Location);
                         continue;
                     }
                     _plugins.Add(new Plugin(type, meta, step));

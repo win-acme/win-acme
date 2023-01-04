@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    internal class PfxFileOptionsFactory : StorePluginOptionsFactory<PfxFile, PfxFileOptions>
+    internal class PfxFileOptionsFactory : PluginOptionsFactory<PfxFileOptions>
     {
         private readonly ILogService _log;
         private readonly ArgumentsInputService _arguments;

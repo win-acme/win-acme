@@ -10,7 +10,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public CloudflareJson(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
     }
 
-    public class CloudflareOptions : ValidationPluginOptions<Cloudflare>
+    public class CloudflareOptions : ValidationPluginOptions
     {
         public ProtectedString? ApiToken { get; set; }
     }

@@ -8,7 +8,7 @@ using PKISharp.WACS.Services.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    internal class DigitalOceanOptionsFactory : ValidationPluginOptionsFactory<DigitalOcean, DigitalOceanOptions>
+    internal class DigitalOceanOptionsFactory : PluginOptionsFactory<DigitalOceanOptions>
     {
         private readonly ArgumentsInputService _arguments;
 
@@ -18,7 +18,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             GetProtectedString<DigitalOceanArguments>(a => a.ApiToken).
             Required();
 
-        public override async Task<DigitalOceanOptions?> Aquire(Target target, IInputService inputService, RunLevel runLevel)
+        public override async Task<DigitalOceanOptions?> Aquire(IInputService inputService, RunLevel runLevel)
         {
             return new DigitalOceanOptions
             {
@@ -26,14 +26,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             };
         }
 
-        public override async Task<DigitalOceanOptions?> Default(Target target)
+        public override async Task<DigitalOceanOptions?> Default()
         {
             return new DigitalOceanOptions
             {
                 ApiToken = await ApiKey.GetValue()
             };
         }
-
-        public override bool CanValidate(Target target) => target.Parts.SelectMany(x => x.Identifiers).All(x => x.Type == IdentifierType.DnsName);
     }
 }

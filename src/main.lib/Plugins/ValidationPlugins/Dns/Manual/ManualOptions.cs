@@ -2,5 +2,5 @@
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    internal class ManualOptions : ValidationPluginOptions<Manual> { }
+    internal class ManualOptions : ValidationPluginOptions { }
 }

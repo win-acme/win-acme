@@ -1,12 +1,11 @@
-﻿using PKISharp.WACS.Plugins.Base;
-using PKISharp.WACS.Plugins.Base.Options;
+﻿using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    internal class CentralSslOptions : StorePluginOptions<CentralSsl>
+    internal class CentralSslOptions : StorePluginOptions
     {
         /// <summary>
         /// Path to the Central Ssl store

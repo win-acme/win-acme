@@ -86,7 +86,7 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
                               }}
                             }}";
                 var renewal = Deserialize(input);
-                _log!.Information(plugin.Runner.Name);
+                _log!.Information(plugin.Backend.Name);
                 Assert.IsInstanceOfType(renewal.ValidationPluginOptions, plugin.Options);
                 Assert.AreEqual(_plugin.GetPlugin(renewal.ValidationPluginOptions), plugin);
             }
@@ -103,7 +103,7 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
                               }}
                             }}";
                 var renewal = Deserialize(input);
-                _log!.Information(plugin.Runner.Name);
+                _log!.Information(plugin.Backend.Name);
                 Assert.IsInstanceOfType(renewal.CsrPluginOptions, plugin.Options);
                 Assert.AreEqual(_plugin.GetPlugin(renewal.CsrPluginOptions!), plugin);
             }
@@ -120,7 +120,7 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
                               }}
                             }}";
                 var renewal = Deserialize(input);
-                _log!.Information(plugin.Runner.Name);
+                _log!.Information(plugin.Backend.Name);
                 Assert.IsInstanceOfType(renewal.OrderPluginOptions, plugin.Options);
                 Assert.AreEqual(_plugin.GetPlugin(renewal.OrderPluginOptions!), plugin);
             }
@@ -137,7 +137,7 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
                               }}
                             }}";
                 var renewal = Deserialize(input);
-                _log!.Information(plugin.Runner.Name);
+                _log!.Information(plugin.Backend.Name);
                 Assert.IsInstanceOfType(renewal.StorePluginOptions[0], plugin.Options);
                 Assert.AreEqual(_plugin.GetPlugin(renewal.StorePluginOptions[0]!), plugin);
             }
@@ -154,7 +154,7 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
                               }}]
                             }}";
                 var renewal = Deserialize(input);
-                _log!.Information(plugin.Runner.Name);
+                _log!.Information(plugin.Backend.Name);
                 Assert.IsInstanceOfType(renewal.StorePluginOptions[0], plugin.Options);
                 Assert.AreEqual(_plugin.GetPlugin(renewal.StorePluginOptions[0]!), plugin);
             }
@@ -171,7 +171,7 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
                               }}]
                             }}";
                 var renewal = Deserialize(input);
-                _log!.Information(plugin.Runner.Name);
+                _log!.Information(plugin.Backend.Name);
                 Assert.IsInstanceOfType(renewal.InstallationPluginOptions[0], plugin.Options);
                 Assert.AreEqual(_plugin.GetPlugin(renewal.InstallationPluginOptions[0]!), plugin);
             }

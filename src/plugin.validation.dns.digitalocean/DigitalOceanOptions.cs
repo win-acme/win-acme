@@ -11,7 +11,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public DigitalOceanJson(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
     }
 
-    internal class DigitalOceanOptions : ValidationPluginOptions<DigitalOcean>
+    internal class DigitalOceanOptions : ValidationPluginOptions
     {
         public ProtectedString? ApiToken { get; set; }
     }

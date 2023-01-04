@@ -45,7 +45,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             return x.Default().Result;
         }
 
-        private Target Target(IISOptions options)
+        private Target? Target(IISOptions options)
         {
             var plugin = new IIS(log, userRoleService, helper, options);
             return plugin.Generate().Result;
