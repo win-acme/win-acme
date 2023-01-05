@@ -2,7 +2,7 @@
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Context;
 using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins;
+using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
@@ -39,6 +39,7 @@ namespace PKISharp.WACS
         private readonly ISettingsService _settings;
         private readonly IValidationOptionsService _validationOptions;
         private readonly ExceptionHandler _exceptionHandler;
+        private readonly PluginHelper _pluginHelper;
         private readonly AcmeClient _acmeClient;
 
         public RenewalValidator(
@@ -47,6 +48,7 @@ namespace PKISharp.WACS
             ILogService log,
             IPluginService plugin,
             AcmeClient acmeClient,
+            PluginHelper pluginHelper,
             IValidationOptionsService validationOptions,
             ExceptionHandler exceptionHandler)
         {
@@ -57,6 +59,7 @@ namespace PKISharp.WACS
             _settings = settings;
             _acmeClient = acmeClient; 
             _plugin = plugin;
+            _pluginHelper = pluginHelper;
         }
 
         /// <summary>
@@ -234,28 +237,6 @@ namespace PKISharp.WACS
         }
 
         /// <summary>
-        /// Get instances of IValidationPlugin and IValidationPluginOptionsFactory
-        /// based on an instance of ValidationPluginOptions.
-        /// TODO: more cache here
-        /// </summary>
-        /// <param name="scope"></param>
-        /// <param name="options"></param>
-        /// <returns></returns>
-        private ValidationPluginContext? GetInstances(ILifetimeScope scope, ValidationPluginOptions options)
-        {
-            var validationScope = _scopeBuilder.Plugin<IValidationPlugin>(scope, options);
-            try
-            {
-                return new ValidationPluginContext(options, validationScope);
-            } 
-            catch (Exception ex)
-            {
-                _log.Error(ex, $"Unable to resolve plugin");
-                return null;
-            }
-        }
-
-        /// <summary>
         /// Will the selected validation plugin be able to validate the authorisation?
         /// </summary>
         /// <param name="authorization"></param>
@@ -266,21 +247,14 @@ namespace PKISharp.WACS
             var identifier = Identifier.Parse(context.Authorization.Identifier);
             var dummyTarget = new Target(identifier);
             var targetScope = _scopeBuilder.SubTarget(context.Order.ExecutionScope, dummyTarget);
-            var plugin = GetInstances(targetScope, options);
-            if (plugin == null)
-            {
-                _log.Warning("Validation plugin not found or not created");
-                return false;
-            }
-            var (disabled, disabledReason) = plugin.Factory.Disabled;
+            var plugin = _pluginHelper.Backend<IValidationPlugin, IValidationPluginCapability>(options);
+            var (disabled, disabledReason) = plugin.Capability.Disabled;
             if (disabled)
             {
                 _log.Warning("Validation plugin {name} is not available. {disabledReason}", plugin.Meta.Name, disabledReason);
                 return false;
             }
-
-          
-            if (!plugin.Factory.CanValidate())
+            if (!plugin.Capability.CanValidate())
             {
                 _log.Warning("Validation plugin {name} cannot validate identifier {identifier}", plugin.Meta.Name, identifier.Value);
                 return false;

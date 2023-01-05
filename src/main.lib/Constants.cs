@@ -25,7 +25,9 @@ namespace PKISharp.WACS
     public enum Steps
     {
         None = 0,
+        [Obsolete("Use Source")]
         Target = 1,
+        Source = 1,
         Order = 2,
         Csr = 4,
         Validation = 8,
