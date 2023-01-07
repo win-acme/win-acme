@@ -1,6 +1,4 @@
-﻿using PKISharp.WACS.Plugins.Base.Factories;
-using PKISharp.WACS.Plugins.Base.Options;
-using PKISharp.WACS.Plugins.Interfaces;
+﻿using PKISharp.WACS.Plugins.Interfaces;
 
 namespace PKISharp.WACS.Plugins.Base
 {

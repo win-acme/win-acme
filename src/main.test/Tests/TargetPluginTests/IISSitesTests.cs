@@ -41,13 +41,13 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             var secretService = new SecretServiceManager(new Mock.Services.SecretService(), input, log);
             var argsInput = new ArgumentsInputService(log, optionsParser, input, secretService);
             var args = new MainArguments();
-            var x = new IISOptionsFactory(log, helper, args, argsInput, userRoleService);
+            var x = new IISOptionsFactory(log, helper, args, argsInput);
             return x.Default().Result;
         }
 
         private Target? Target(IISOptions options)
         {
-            var plugin = new IIS(log, userRoleService, helper, options);
+            var plugin = new IIS(log, helper, options);
             return plugin.Generate().Result;
         }
 

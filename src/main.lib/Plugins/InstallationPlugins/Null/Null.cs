@@ -15,6 +15,6 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         "None", "No (additional) installation steps")]
     internal class Null : IInstallationPlugin
     {
-        Task<bool> IInstallationPlugin.Install(Target target, IEnumerable<Type> stores, CertificateInfo newCertificateInfo, CertificateInfo? oldCertificateInfo) => Task.FromResult(true);
+        Task<bool> IInstallationPlugin.Install(IEnumerable<Type> stores, CertificateInfo newCertificateInfo, CertificateInfo? oldCertificateInfo) => Task.FromResult(true);
     }
 }

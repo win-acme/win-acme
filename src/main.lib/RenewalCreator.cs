@@ -138,9 +138,10 @@ namespace PKISharp.WACS
             }
 
             // Generate initial target
-            using var targetScope = await _scopeBuilder.MainTarget(_container, tempRenewal);
-            var targetPluginName = targetScope.ResolveNamed<Plugin>("target").Name;
-            var initialTarget = targetScope.ResolveOptional<Target>();
+            using var targetScope = _scopeBuilder.PluginBackend<ITargetPlugin, IPluginCapability, TargetPluginOptions>(_container, tempRenewal.TargetPluginOptions);
+            var targetBackend = targetScope.Resolve<ITargetPlugin>();
+            var targetPluginName = targetScope.Resolve<Plugin>().Name;
+            var initialTarget = await targetBackend.Generate();
             if (initialTarget == null)
             {
                 _exceptionHandler.HandleException(message: $"Source plugin {targetPluginName} was unable to generate the certificate parameters.");

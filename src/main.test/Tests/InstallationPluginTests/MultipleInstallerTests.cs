@@ -5,7 +5,6 @@ using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Plugins;
-using PKISharp.WACS.Plugins.Base.Factories.Null;
 using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.Resolvers;
@@ -80,14 +79,12 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             var scope = builder.Build();
             var resolver = scope.Resolve<IResolver>();
             var first = await resolver.GetInstallationPlugin(
-                scope, 
                 types.Select(t => plugins.GetPlugins().First(x => x.Backend == t)),
                 chosen);
             Assert.IsNotNull(first);
             Assert.AreEqual(first.OptionsFactory, typeof(IISOptionsFactory));
-            chosen.Add(first);
+            chosen.Add(first.Meta);
             var second = await resolver.GetInstallationPlugin(
-                scope,
                 types.Select(t => plugins.GetPlugins().First(x => x.Backend == t)),
                 chosen);
             Assert.IsNull(second);

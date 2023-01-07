@@ -26,17 +26,18 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         private readonly ILogService _log;
         private readonly IIISClient _iisClient;
         private readonly IISOptions _options;
+        private readonly Target _target;
 
-        public IIS(IISFtpOptions options, IIISClient iisClient, ILogService log) : this((IISOptions)options, iisClient, log) { }
-        public IIS(IISOptions options, IIISClient iisClient, ILogService log)
+        public IIS(IISFtpOptions options, IIISClient iisClient, ILogService log, Target target) : this((IISOptions)options, iisClient, log, target) { }
+        public IIS(IISOptions options, IIISClient iisClient, ILogService log, Target target)
         {
+            _target = target;
             _iisClient = iisClient;
             _log = log;
             _options = options;
         }
 
         Task<bool> IInstallationPlugin.Install(
-            Target source, 
             IEnumerable<Type> stores,
             CertificateInfo newCertificate,
             CertificateInfo? oldCertificate)
@@ -57,7 +58,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             if (_options.SiteId != null)
             {
                 var siteType = _iisClient.GetSite(_options.SiteId.Value).Type; 
-                foreach (var part in source.Parts)
+                foreach (var part in _target.Parts)
                 {
                     part.SiteId = _options.SiteId;
                     part.SiteType = siteType;
@@ -75,7 +76,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                     supported = false;
                     centralSslForHttp = false;
                 }
-                if (source.Parts.Any(p => p.SiteType == IISSiteType.Ftp)) 
+                if (_target.Parts.Any(p => p.SiteType == IISSiteType.Ftp)) 
                 {
                     reason = "CentralSsl store is not supported for FTP sites";
                     supported = false;
@@ -89,7 +90,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 } 
             }
 
-            foreach (var part in source.Parts)
+            foreach (var part in _target.Parts)
             {
                 var httpIdentifiers = part.Identifiers.OfType<DnsIdentifier>();
                 var bindingOptions = new BindingOptions();

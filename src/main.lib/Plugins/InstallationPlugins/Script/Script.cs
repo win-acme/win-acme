@@ -34,7 +34,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             _ssm = secretManager;
         }
 
-        public async Task<bool> Install(Target _, IEnumerable<Type> stores, CertificateInfo newCertificate, CertificateInfo? oldCertificate)
+        public async Task<bool> Install(IEnumerable<Type> stores, CertificateInfo newCertificate, CertificateInfo? oldCertificate)
         {
             if (_options.Script != null)
             {

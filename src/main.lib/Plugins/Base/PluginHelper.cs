@@ -1,7 +1,5 @@
 ﻿using Autofac;
 using PKISharp.WACS.Plugins.Interfaces;
-using PKISharp.WACS.Services;
-using PKISharp.WACS.Services.Serialization;
 using System;
 
 namespace PKISharp.WACS.Plugins.Base
@@ -9,34 +7,8 @@ namespace PKISharp.WACS.Plugins.Base
     internal class PluginHelper
     {
         private readonly ILifetimeScope _scope;
-        private readonly IPluginService _pluginService;
 
-        public PluginHelper(ILifetimeScope scope, IPluginService pluginService)
-        {
-            _pluginService = pluginService;
-            _scope = scope;
-        }
-
-        /// <summary>
-        /// Helper method to construct a backend (execution)
-        /// part of the plugin based on previously configured
-        /// options
-        /// </summary>
-        /// <typeparam name="TOptionsFactory"></typeparam>
-        /// <typeparam name="TCapability"></typeparam>
-        /// <param name="plugin"></param>
-        /// <returns></returns>
-        public PluginBackend<TBackend, TCapability>
-            Backend<TBackend, TCapability>(PluginOptions options)
-            where TCapability : IPluginCapability
-            where TBackend : IPlugin
-        {
-            var meta = _pluginService.GetPlugin(options);
-            return new PluginBackend<TBackend, TCapability>(
-                 meta,
-                 Resolve<TBackend>(meta.Backend, new TypedParameter(meta.Options, options)),
-                 Resolve<TCapability>(meta.Capability));
-        }
+        public PluginHelper(ILifetimeScope scope) => _scope = scope;
 
         /// <summary>
         /// Helper method to construct a frontend (configuration)
@@ -47,7 +19,7 @@ namespace PKISharp.WACS.Plugins.Base
         /// <typeparam name="TCapability"></typeparam>
         /// <param name="plugin"></param>
         /// <returns></returns>
-        public PluginFrontend<TOptionsFactory, TCapability> 
+        public PluginFrontend<TOptionsFactory, TCapability>
             Frontend<TOptionsFactory, TCapability>(Plugin plugin)
             where TCapability : IPluginCapability
             where TOptionsFactory : IPluginOptionsFactory

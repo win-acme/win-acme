@@ -23,7 +23,7 @@ namespace PKISharp.WACS.Services.Serialization
         public override bool CanConvert(Type typeToConvert) => typeof(PluginOptionsBase).IsAssignableFrom(typeToConvert);
 
         /// <summary>
-        /// Override reading to allow strongly typed object return, based on Plugin
+        /// Override reading to allow strongly typed object return, based on PluginBackend
         /// </summary>
         /// <param name="reader"></param>
         /// <param name="typeToConvert"></param>

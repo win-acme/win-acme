@@ -20,23 +20,6 @@ namespace PKISharp.WACS.Services
         ILifetimeScope Legacy(ILifetimeScope main, Uri fromUri, Uri toUri);
 
         /// <summary>
-        /// For configuration and renewal
-        /// </summary>
-        /// <param name="main"></param>
-        /// <param name="renewal"></param>
-        /// <param name="runLevel"></param>
-        /// <returns></returns>
-        Task<ILifetimeScope> MainTarget(ILifetimeScope main, Renewal renewal);
-
-        /// <summary>
-        /// For different targets split up by the order plugin
-        /// </summary>
-        /// <param name="main"></param>
-        /// <param name="target"></param>
-        /// <returns></returns>
-        ILifetimeScope SubTarget(ILifetimeScope main, Target target);
-
-        /// <summary>
         /// For renewal and creating scheduled task 
         /// </summary>
         /// <param name="target"></param>
@@ -46,12 +29,31 @@ namespace PKISharp.WACS.Services
         ILifetimeScope Execution(ILifetimeScope target, Renewal renewal, RunLevel runLevel);
 
         /// <summary>
-        /// Sub-scopes for specif plugins
+        /// For different targets split up by the order plugin
+        /// </summary>
+        /// <param name="main"></param>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        ILifetimeScope Order(ILifetimeScope execution, Order order);
+
+        /// <summary>
+        /// Fake scope to check validation availability
+        /// </summary>
+        /// <param name="main"></param>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        ILifetimeScope Target(ILifetimeScope execution, Target target);
+
+        /// <summary>
+        /// Sub-scopes for specific plugins
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="execution"></param>
         /// <param name="options"></param>
         /// <returns></returns>
-        ILifetimeScope Plugin<T>(ILifetimeScope execution, PluginOptions? options) where T : IPlugin;
+        ILifetimeScope PluginBackend<TBackend, TCapability, TOptions>(ILifetimeScope execution, TOptions options, string key = "default")
+            where TBackend : IPlugin
+            where TCapability : IPluginCapability
+            where TOptions : PluginOptions;
     }
 }

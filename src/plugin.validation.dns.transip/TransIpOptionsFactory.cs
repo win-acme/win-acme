@@ -5,7 +5,6 @@ using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using TransIp.Library;
 
@@ -22,8 +21,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             ArgumentsInputService arguments,
             SecretServiceManager ssm,
             ILogService log,
-            Target target,
-            IProxyService proxy) : base(target)
+            IProxyService proxy)
         {
             _arguments = arguments;
             _ssm = ssm;
@@ -87,7 +85,5 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
             return false;
         }
-
-        public override bool CanValidate() => target.Parts.SelectMany(x => x.Identifiers).All(x => x.Type == IdentifierType.DnsName);
     }
 }

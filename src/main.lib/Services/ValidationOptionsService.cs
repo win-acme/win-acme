@@ -231,12 +231,8 @@ namespace PKISharp.WACS.Services
             var validationPlugin = await resolver.GetValidationPlugin();
             if (validationPlugin != null)
             {
-                var factory = scope.Resolve(validationPlugin.OptionsFactory) as PluginOptionsFactory<ValidationPluginOptions>;
-                if (factory is not null)
-                {
-                    var options = await factory.Aquire( _input, RunLevel.Advanced);
-                    input.ValidationPluginOptions = options;
-                }
+                var options = await validationPlugin.OptionsFactory.Aquire( _input, RunLevel.Advanced);
+                input.ValidationPluginOptions = options;
             }
         }
 

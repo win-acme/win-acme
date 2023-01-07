@@ -86,7 +86,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             };
             var container = new MockContainer().TestScope();
             var installer = new Script(renewal, options, new Clients.ScriptClient(log, settings), container.Resolve<SecretServiceManager>());
-            installer.Install(target, new List<Type>(), newCert, oldCert).Wait();
+            installer.Install(new List<Type>(), newCert, oldCert).Wait();
         }
 
         [TestMethod]

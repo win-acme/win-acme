@@ -50,7 +50,7 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
         [TestMethod]
         public void DeserializeTargetCorrect()
         {
-            foreach (var target in _plugin!.GetPlugins(Steps.Target))
+            foreach (var target in _plugin!.GetPlugins(Steps.Source))
             {
                 var input = @$"{{
                               ""TargetPluginOptions"": {{

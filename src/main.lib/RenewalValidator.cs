@@ -3,6 +3,7 @@ using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Context;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
@@ -39,7 +40,6 @@ namespace PKISharp.WACS
         private readonly ISettingsService _settings;
         private readonly IValidationOptionsService _validationOptions;
         private readonly ExceptionHandler _exceptionHandler;
-        private readonly PluginHelper _pluginHelper;
         private readonly AcmeClient _acmeClient;
 
         public RenewalValidator(
@@ -48,7 +48,6 @@ namespace PKISharp.WACS
             ILogService log,
             IPluginService plugin,
             AcmeClient acmeClient,
-            PluginHelper pluginHelper,
             IValidationOptionsService validationOptions,
             ExceptionHandler exceptionHandler)
         {
@@ -59,7 +58,6 @@ namespace PKISharp.WACS
             _settings = settings;
             _acmeClient = acmeClient; 
             _plugin = plugin;
-            _pluginHelper = pluginHelper;
         }
 
         /// <summary>
@@ -136,7 +134,7 @@ namespace PKISharp.WACS
         {
             // Execute them per group, where one group means one validation plugin
             var multipleOrders = authorizations.Any(x => x.Order != authorizations.First().Order);
-            var validationScope = _scopeBuilder.Plugin<IValidationPlugin>(authorizations.First().Order.ExecutionScope, pluginOptions);
+            var validationScope = _scopeBuilder.PluginBackend<IValidationPlugin, IValidationPluginCapability, ValidationPluginOptions>(authorizations.First().Order.OrderScope, pluginOptions);
             var plugin = validationScope.Resolve<IValidationPlugin>();
             var contexts = authorizations.Select(context =>
             {
@@ -246,22 +244,24 @@ namespace PKISharp.WACS
         {
             var identifier = Identifier.Parse(context.Authorization.Identifier);
             var dummyTarget = new Target(identifier);
-            var targetScope = _scopeBuilder.SubTarget(context.Order.ExecutionScope, dummyTarget);
-            var plugin = _pluginHelper.Backend<IValidationPlugin, IValidationPluginCapability>(options);
-            var (disabled, disabledReason) = plugin.Capability.Disabled;
+            var targetScope = _scopeBuilder.Target(context.Order.OrderScope, dummyTarget);
+            var plugin = _plugin.GetPlugin(options);
+            var pluginHelper = targetScope.Resolve<PluginHelper>();
+            var pluginFrontend = pluginHelper.Frontend<PluginOptionsFactory<ValidationPluginOptions>, IValidationPluginCapability>(plugin);
+            var (disabled, disabledReason) = pluginFrontend.Capability.Disabled;
             if (disabled)
             {
-                _log.Warning("Validation plugin {name} is not available. {disabledReason}", plugin.Meta.Name, disabledReason);
+                _log.Warning("Validation plugin {name} is not available. {disabledReason}", plugin.Name, disabledReason);
                 return false;
             }
-            if (!plugin.Capability.CanValidate())
+            if (!pluginFrontend.Capability.CanValidate())
             {
-                _log.Warning("Validation plugin {name} cannot validate identifier {identifier}", plugin.Meta.Name, identifier.Value);
+                _log.Warning("Validation plugin {name} cannot validate identifier {identifier}", plugin.Name, identifier.Value);
                 return false;
             }
-            if (!context.Authorization.Challenges.Any(x => x.Type == plugin.Meta.ChallengeType))
+            if (!context.Authorization.Challenges.Any(x => x.Type == pluginFrontend.Meta.ChallengeType))
             {
-                _log.Warning("No challenge of type {challengeType} available", plugin.Meta.ChallengeType);
+                _log.Warning("No challenge of type {challengeType} available", pluginFrontend.Meta.ChallengeType);
                 return context.Authorization.Status == AcmeClient.AuthorizationValid;
             }
             return true;
@@ -360,7 +360,7 @@ namespace PKISharp.WACS
                     _log.Verbose("Skip authorization because the order has already failed");
                     continue;
                 }
-                using var validationScope = _scopeBuilder.Plugin<IValidationPlugin>(parameter.OrderContext.ExecutionScope, parameter.Options);
+                using var validationScope = _scopeBuilder.PluginBackend<IValidationPlugin, IValidationPluginCapability, ValidationPluginOptions>(parameter.OrderContext.OrderScope, parameter.Options);
                 await ParallelValidation(
                     ParallelOperations.None, 
                     validationScope, 
@@ -383,7 +383,7 @@ namespace PKISharp.WACS
         private static async Task<Protocol.Authorization?> GetAuthorizationDetails(OrderContext context, string authorizationUri)
         {
             // Get authorization challenge details from server
-            var client = context.ExecutionScope.Resolve<AcmeClient>();
+            var client = context.OrderScope.Resolve<AcmeClient>();
             Protocol.Authorization? authorization;
             try
             {

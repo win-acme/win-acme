@@ -137,11 +137,5 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
             }
             return Task.CompletedTask;
         }
-
-        public (bool, string?) Disabled => IsDisabled(_userRoleService);
-        internal static (bool, string?) IsDisabled(IUserRoleService userRoleService)
-        {
-
-        }
     }
 }

@@ -4,6 +4,8 @@ using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
@@ -255,6 +257,26 @@ namespace PKISharp.WACS
         }
 
         /// <summary>
+        /// Helper to get target for a renewal
+        /// </summary>
+        /// <param name="renewal"></param>
+        /// <returns></returns>
+        private async Task<Target?> GetTarget(Renewal renewal)
+        {
+            try
+            {
+                using var targetScope = _scopeBuilder.PluginBackend<ITargetPlugin, IPluginCapability, TargetPluginOptions>(_container, renewal.TargetPluginOptions);
+                var targetBackend = targetScope.Resolve<ITargetPlugin>();
+                return await targetBackend.Generate();
+            } 
+            catch
+            {
+                
+            }
+            return null;
+        }
+
+        /// <summary>
         /// Check if there are multiple renewals installing to the same site 
         /// or requesting certificates for the same domains
         /// </summary>
@@ -267,14 +289,13 @@ namespace PKISharp.WACS
 
             foreach (var renewal in selectedRenewals)
             {
-                using var targetScope = await _scopeBuilder.MainTarget(_container, renewal);
-                var target = targetScope.ResolveOptional<Target>();
-                if (target == null)
+                var initialTarget = await GetTarget(renewal);
+                if (initialTarget == null)
                 {
-                    _log.Warning("Unable to generate target for renewal {id}", renewal.Id);
+                    _log.Warning("Unable to generate source for renewal {renewal}, analysis incomplete", renewal.FriendlyName);
                     continue;
                 }
-                foreach (var targetPart in target.Parts)
+                foreach (var targetPart in initialTarget.Parts)
                 {
                     if (targetPart.SiteId != null)
                     {
