@@ -1,5 +1,6 @@
 ﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
@@ -12,7 +13,7 @@ using System.Threading.Tasks;
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
     [IPlugin.Plugin<
-        IISFtpOptions, IISOptionsFactory, 
+        IISFtpOptions, PluginOptionsFactory<IISFtpOptions>, 
         IISCapability, WacsJsonPlugins>
         ("13058a79-5084-48af-b047-634e0ee222f4", 
         "IISFTP", "Create or update FTP bindings in IIS", Hidden = true)]

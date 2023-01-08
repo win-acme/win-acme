@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services.Serialization;
@@ -55,5 +56,17 @@ namespace PKISharp.WACS.Services
             where TBackend : IPlugin
             where TCapability : IPluginCapability
             where TOptions : PluginOptions;
+
+        /// <summary>
+        /// Plugin selection/configuration methods
+        /// </summary>
+        /// <typeparam name="TOptionsFactory"></typeparam>
+        /// <typeparam name="TCapability"></typeparam>
+        /// <param name="execution"></param>
+        /// <param name="plugin"></param>
+        /// <returns></returns>
+        ILifetimeScope PluginFrontend<TCapability, TOptions>(ILifetimeScope execution, Plugin plugin)
+            where TCapability : IPluginCapability
+            where TOptions : PluginOptions, new();
     }
 }

@@ -1,16 +1,17 @@
 ﻿using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Services.Serialization;
 
 namespace PKISharp.WACS.Plugins.Base
 {
-    internal class PluginFrontend<TFactory, TCapability>
+    internal class PluginFrontend<TCapability, TOptions>
         where TCapability : IPluginCapability
-        where TFactory : IPluginOptionsFactory
+        where TOptions : PluginOptions, new()
     {
-        public TFactory OptionsFactory { get; }
+        public IPluginOptionsFactory<TOptions> OptionsFactory { get; }
         public TCapability Capability { get; }
         public Plugin Meta { get; }
 
-        public PluginFrontend(Plugin meta, TFactory factory, TCapability capability)
+        public PluginFrontend(Plugin meta, IPluginOptionsFactory<TOptions> factory, TCapability capability)
         {
             Meta = meta;
             OptionsFactory = factory;

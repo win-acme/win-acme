@@ -4,6 +4,7 @@ using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins;
 using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
@@ -55,34 +56,36 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             var input = new Mock.Services.InputService(new List<string>());
             _ = builder.RegisterInstance(input).As<IInputService>();
             _ = builder.RegisterType<SecretService>().As<ISecretService>();
-            _ = builder.RegisterType<SecretServiceManager>();
+            _ = builder.RegisterType<SecretServiceManager>(); 
+            _ = builder.RegisterType<AutofacBuilder>().As<IAutofacBuilder>();
+            _ = builder.RegisterInstance(new Target(new DnsIdentifier("www.example.com")));
             _ = builder.RegisterInstance(plugins).
-                As<IPluginService>().
-                SingleInstance();
+                    As<IPluginService>().
+                    SingleInstance();
             _ = builder.RegisterInstance(settings).
-              As<ISettingsService>().
-              SingleInstance();
+                  As<ISettingsService>().
+                  SingleInstance();
             _ = builder.RegisterInstance(log).
-                As<ILogService>().
-                SingleInstance();
+                    As<ILogService>().
+                    SingleInstance();
             _ = builder.RegisterType<Mock.Clients.MockIISClient>().
-                As<IIISClient>().
-                SingleInstance();
+                    As<IIISClient>().
+                    SingleInstance();
             _ = builder.RegisterType<ArgumentsParser>().
-                SingleInstance().
-                WithParameter(new TypedParameter(typeof(string[]), commandLine.Split(' ')));
+                    SingleInstance().
+                    WithParameter(new TypedParameter(typeof(string[]), commandLine.Split(' ')));
             _ = builder.RegisterType<Mock.Services.UserRoleService>().As<IUserRoleService>().SingleInstance();
             _ = builder.RegisterType<UnattendedResolver>().As<IResolver>();
             _ = builder.Register(c => c.Resolve<ArgumentsParser>().GetArguments<MainArguments>()!).SingleInstance();
             plugins.Configure(builder);
             
             var scope = builder.Build();
-            var resolver = scope.Resolve<IResolver>();
+            var resolver = scope.Resolve<IResolver>(new TypedParameter(typeof(ILifetimeScope), scope));
             var first = await resolver.GetInstallationPlugin(
                 types.Select(t => plugins.GetPlugins().First(x => x.Backend == t)),
                 chosen);
             Assert.IsNotNull(first);
-            Assert.AreEqual(first.OptionsFactory, typeof(IISOptionsFactory));
+            Assert.AreEqual(first.OptionsFactory.GetType(), typeof(IISOptionsFactory));
             chosen.Add(first.Meta);
             var second = await resolver.GetInstallationPlugin(
                 types.Select(t => plugins.GetPlugins().First(x => x.Backend == t)),

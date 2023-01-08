@@ -1,8 +1,5 @@
-﻿using ACMESharp.Authorizations;
-using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.Base.Factories;
+﻿using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns

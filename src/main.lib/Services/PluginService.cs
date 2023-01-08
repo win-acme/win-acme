@@ -1,6 +1,8 @@
 ﻿using Autofac;
 using PKISharp.WACS.Plugins;
 using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.Base.Factories;
+using PKISharp.WACS.Plugins.CsrPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services.Serialization;
 using System;
@@ -118,8 +120,6 @@ namespace PKISharp.WACS.Services
         /// <param name="builder"></param>
         internal void Configure(ContainerBuilder builder)
         {
-            builder.RegisterType<PluginHelper>();
-            builder.Register(c => c.Resolve<PluginHelper>(new TypedParameter(typeof(IContainer), c.Resolve<ILifetimeScope>()))).As<PluginHelper>().InstancePerLifetimeScope();
             _plugins.ForEach(p =>
             {
                 builder.RegisterType(p.Backend).InstancePerLifetimeScope();

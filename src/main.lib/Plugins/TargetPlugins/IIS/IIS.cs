@@ -1,5 +1,6 @@
 ﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
@@ -9,17 +10,17 @@ using System.Threading.Tasks;
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     [IPlugin.Plugin<
-        IISSitesOptions, IISOptionsFactory, 
+        IISSitesOptions, PluginOptionsFactory<IISSitesOptions>, 
         IISCapability, WacsJsonPlugins>
         ("cdd79a68-4a87-4039-bee8-5a0ebdca41cb", 
         "IISSites", "Read sites from IIS (legacy)", Hidden = true)]
     [IPlugin.Plugin<
-        IISSiteOptions, IISOptionsFactory,
+        IISSiteOptions, PluginOptionsFactory<IISSiteOptions>,
         IISCapability, WacsJsonPlugins>
         ("d7940b23-f570-460e-ab15-2c822a79009b", 
         "IISSite", "Read site from IIS (legacy)", Hidden = true)]
     [IPlugin.Plugin<
-        IISBindingOptions, IISOptionsFactory, 
+        IISBindingOptions, PluginOptionsFactory<IISBindingOptions>, 
         IISCapability, WacsJsonPlugins>
         ("2f5dd428-0f5d-4c8a-8fd0-56fc1b5985ce", 
         "IISBinding", "Read bindings from IIS (legacy)", Hidden = true)]

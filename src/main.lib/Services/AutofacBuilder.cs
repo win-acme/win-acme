@@ -153,15 +153,15 @@ namespace PKISharp.WACS.Services
             {
                 throw new Exception($"Unknown {typeof(TBackend).Name} plugin {options.Plugin}");
             }
-            if (plugin.Backend is not TBackend) 
+            if (!plugin.Backend.IsAssignableTo(typeof(TBackend))) 
             {
                 throw new Exception($"{plugin.Backend.Name} is not a {typeof(TBackend).Name}");
             }
-            if (plugin.Capability is not TCapability)
+            if (!plugin.Capability.IsAssignableTo(typeof(TCapability)))
             {
                 throw new Exception($"{plugin.Capability.Name} is not a {typeof(TCapability).Name}");
             }
-            if (plugin.Options is not TOptions)
+            if (!plugin.Options.IsAssignableTo(typeof(TOptions)))
             {
                 throw new Exception($"{plugin.Options.Name} is not a {typeof(TOptions).Name}");
             }
@@ -175,6 +175,35 @@ namespace PKISharp.WACS.Services
                 });
         }
 
-         
+        /// <summary>
+        /// For a single plugin step within the renewal
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="renewal"></param>
+        /// <param name="runLevel"></param>
+        /// <returns></returns>
+        public ILifetimeScope PluginFrontend<TCapability, TOptions>(ILifetimeScope execution, Plugin plugin)
+            where TCapability : IPluginCapability
+            where TOptions : PluginOptions, new()
+        {
+            _log.Verbose("Autofac: creating {name}<{backend}> scope with parent {tag}", nameof(PluginFrontend), typeof(TOptions).Name, execution.Tag);
+            if (!plugin.Capability.IsAssignableTo(typeof(TCapability)))
+            {
+                throw new Exception($"{plugin.Capability.Name} is not a {typeof(TCapability).Name}");
+            }
+            var genericFactory = typeof(IPluginOptionsFactory<>).MakeGenericType(plugin.Options);
+            if (!plugin.OptionsFactory.IsAssignableTo(genericFactory))
+            {
+                throw new Exception($"{plugin.OptionsFactory.Name} is not a {genericFactory.Name}");
+            }
+            return execution.BeginLifetimeScope(typeof(TOptions).Name,
+                builder => {
+                    builder.RegisterInstance(plugin).As<Plugin>();
+                    builder.RegisterType(plugin.OptionsFactory).As<IPluginOptionsFactory<TOptions>>().As(genericFactory).SingleInstance();
+                    builder.RegisterType(plugin.Capability).As<TCapability>().SingleInstance();
+                    builder.Register(c => new PluginFrontend<TCapability, TOptions>(plugin, c.Resolve<IPluginOptionsFactory<TOptions>>(), c.Resolve<TCapability>())).As<PluginFrontend<TCapability, TOptions>>();
+                });
+        }
+
     }
 }

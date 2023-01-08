@@ -1,5 +1,4 @@
 ﻿using PKISharp.WACS.Plugins.Base;
-using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Base.Options;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -8,16 +7,16 @@ namespace PKISharp.WACS.Plugins.Interfaces
 {
     internal interface IResolver
     {
-        Task<PluginFrontend<PluginOptionsFactory<TargetPluginOptions>, IPluginCapability>?> GetTargetPlugin();
+        Task<PluginFrontend<IPluginCapability, TargetPluginOptions>?> GetTargetPlugin();
 
-        Task<PluginFrontend<PluginOptionsFactory<ValidationPluginOptions>, IValidationPluginCapability>?> GetValidationPlugin();
+        Task<PluginFrontend<IValidationPluginCapability, ValidationPluginOptions>?> GetValidationPlugin();
        
-        Task<PluginFrontend<PluginOptionsFactory<OrderPluginOptions>, IOrderPluginCapability>?> GetOrderPlugin();
+        Task<PluginFrontend<IOrderPluginCapability, OrderPluginOptions>?> GetOrderPlugin();
 
-        Task<PluginFrontend<PluginOptionsFactory<CsrPluginOptions>, IPluginCapability>?> GetCsrPlugin();
+        Task<PluginFrontend<IPluginCapability, CsrPluginOptions>?> GetCsrPlugin();
 
-        Task<PluginFrontend<PluginOptionsFactory<StorePluginOptions>, IPluginCapability>?> GetStorePlugin(IEnumerable<Plugin> chosen);
+        Task<PluginFrontend<IPluginCapability, StorePluginOptions>?> GetStorePlugin(IEnumerable<Plugin> chosen);
 
-        Task<PluginFrontend<PluginOptionsFactory<InstallationPluginOptions>, IInstallationPluginCapability>?> GetInstallationPlugin(IEnumerable<Plugin> storeType, IEnumerable<Plugin> chosen);
+        Task<PluginFrontend<IInstallationPluginCapability, InstallationPluginOptions>?> GetInstallationPlugin(IEnumerable<Plugin> storeType, IEnumerable<Plugin> chosen);
     }
 }

@@ -1,10 +1,11 @@
-﻿using PKISharp.WACS.Services;
+﻿using MorseCode.ITask;
+using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
-using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.Interfaces
 {
-    public interface IPluginOptionsFactory
+    public interface IPluginOptionsFactory<out TOptions>
+        where TOptions: PluginOptions, new()
     {
         /// <summary>
         /// How its sorted in the menu
@@ -15,13 +16,13 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// Check or get information needed (interactive)
         /// </summary>
         /// <param name="target"></param>
-        Task<PluginOptions?> Aquire(IInputService inputService, RunLevel runLevel);
+        ITask<TOptions?> Aquire(IInputService inputService, RunLevel runLevel);
 
         /// <summary>
         /// Check information needed (unattended)
         /// </summary>
         /// <param name="target"></param>
-        Task<PluginOptions?> Default();
+        ITask<TOptions?> Default();
     }
 
 }

@@ -324,7 +324,7 @@ namespace PKISharp.WACS
         internal async Task<List<TOptions>?> SetupPlugins<TOptions, TCapability>(
             Steps step,
             RunLevel runLevel,
-            Func<IEnumerable<Plugin>, Task<PluginFrontend<PluginOptionsFactory<TOptions>, TCapability>?>> next,
+            Func<IEnumerable<Plugin>, Task<PluginFrontend<TCapability, TOptions>?>> next,
             Type nullType)
             where TCapability : IPluginCapability
             where TOptions : PluginOptions, new()
@@ -391,7 +391,7 @@ namespace PKISharp.WACS
         internal async Task<TOptions?> SetupPlugin<TOptions, TCapability>(
             Steps step,
             RunLevel runLevel,
-            Func<Task<PluginFrontend<PluginOptionsFactory<TOptions>, TCapability>?>> resolve)
+            Func<Task<PluginFrontend<TCapability, TOptions>?>> resolve)
             where TCapability : IPluginCapability
             where TOptions : PluginOptions, new()
         {
@@ -434,8 +434,8 @@ namespace PKISharp.WACS
             // in the scope so that plugin system can make 
             // decisions based on its properties
             return runLevel.HasFlag(RunLevel.Interactive)
-                ? scope.Resolve<InteractiveResolver>(new TypedParameter(typeof(RunLevel), runLevel))
-                : scope.Resolve<UnattendedResolver>();
+                ? scope.Resolve<InteractiveResolver>(new TypedParameter(typeof(ILifetimeScope), scope), new TypedParameter(typeof(RunLevel), runLevel))
+                : scope.Resolve<UnattendedResolver>(new TypedParameter(typeof(ILifetimeScope), scope));
         }
     }
 }

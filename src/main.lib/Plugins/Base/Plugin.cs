@@ -7,7 +7,7 @@ namespace PKISharp.WACS.Plugins
     /// <summary>
     /// Metadata for a specific plugin
     /// </summary>
-    [DebuggerDisplay("{Runner.Name}")]
+    [DebuggerDisplay("{Backend.Name}")]
     public class Plugin
     {
         public Guid Id { get; set; }

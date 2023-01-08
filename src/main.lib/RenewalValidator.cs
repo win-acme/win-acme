@@ -246,8 +246,8 @@ namespace PKISharp.WACS
             var dummyTarget = new Target(identifier);
             var targetScope = _scopeBuilder.Target(context.Order.OrderScope, dummyTarget);
             var plugin = _plugin.GetPlugin(options);
-            var pluginHelper = targetScope.Resolve<PluginHelper>();
-            var pluginFrontend = pluginHelper.Frontend<PluginOptionsFactory<ValidationPluginOptions>, IValidationPluginCapability>(plugin);
+            var pluginHelper = _scopeBuilder.PluginFrontend<IValidationPluginCapability, ValidationPluginOptions>(targetScope, plugin);
+            var pluginFrontend = pluginHelper.Resolve<PluginFrontend<IValidationPluginCapability, ValidationPluginOptions>>();
             var (disabled, disabledReason) = pluginFrontend.Capability.Disabled;
             if (disabled)
             {

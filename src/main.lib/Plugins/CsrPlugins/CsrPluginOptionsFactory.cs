@@ -9,12 +9,15 @@ namespace PKISharp.WACS.Plugins.Base.Factories
     /// CsrPluginFactory base implementation
     /// </summary>
     /// <typeparam name="TPlugin"></typeparam>
-    public abstract class CsrPluginOptionsFactory<TOptions> :
+    public class CsrPluginOptionsFactory<TOptions> :
         PluginOptionsFactory<TOptions>
         where TOptions : CsrPluginOptions, new()
     {
-        protected ArgumentsInputService Arguments { get; set; }
-        protected CsrPluginOptionsFactory(ArgumentsInputService arguments) => Arguments = arguments;
+        private ArgumentsInputService Arguments { get; }
+
+        public CsrPluginOptionsFactory(ArgumentsInputService arguments) 
+            => Arguments = arguments;
+        
         protected ArgumentResult<bool?> OcspMustStaple => Arguments.
             GetBool<CsrArguments>(x => x.OcspMustStaple).
             WithDefault(false).

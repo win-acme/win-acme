@@ -19,7 +19,7 @@ namespace PKISharp.WACS.Plugins.Interfaces
         protected sealed class PluginAttribute<TOptions, TOptionsFactory, TCapability, TJson> : 
             Attribute, IPluginMeta
             where TOptions : PluginOptions, new()
-            where TOptionsFactory : IPluginOptionsFactory
+            where TOptionsFactory : IPluginOptionsFactory<TOptions>
             where TJson : JsonSerializerContext
         {
             public Guid Id { get; }

@@ -88,7 +88,7 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
                 var renewal = Deserialize(input);
                 _log!.Information(plugin.Backend.Name);
                 Assert.IsInstanceOfType(renewal.ValidationPluginOptions, plugin.Options);
-                Assert.AreEqual(_plugin.GetPlugin(renewal.ValidationPluginOptions), plugin);
+                Assert.AreEqual(_plugin.GetPlugin(renewal.ValidationPluginOptions).Backend, plugin.Backend);
             }
         }
 

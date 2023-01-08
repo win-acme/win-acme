@@ -2,7 +2,6 @@
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base;
-using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.CsrPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
@@ -10,8 +9,10 @@ using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Plugins.ValidationPlugins.Http;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Single = PKISharp.WACS.Plugins.OrderPlugins.Single;
@@ -24,9 +25,10 @@ namespace PKISharp.WACS.Plugins.Resolvers
         private readonly MainArguments _arguments;
         private readonly ISettingsService _settings;
         private readonly ILogService _log;
-        private readonly PluginHelper _pluginHelper;
+        private readonly IAutofacBuilder _autofacBuilder;
         private readonly IInputService _input;
         private readonly RunLevel _runLevel;
+        private readonly ILifetimeScope _scope;
 
         public InteractiveResolver(
             ILogService log,
@@ -34,46 +36,50 @@ namespace PKISharp.WACS.Plugins.Resolvers
             ISettingsService settings,
             MainArguments arguments,
             IPluginService pluginService,
-            PluginHelper pluginHelper,
+            ILifetimeScope scope,
+            IAutofacBuilder autofacBuilder,
             RunLevel runLevel)
         {
             _log = log;
             _settings = settings;
             _arguments = arguments;
             _input = inputService;
+            _scope = scope;
             _runLevel = runLevel;
-            _pluginHelper = pluginHelper;
+            _autofacBuilder = autofacBuilder;
             _plugins = pluginService;
         }
 
-        private record struct PluginChoice<TOptionsFactory, TCapability>(
-            PluginFrontend<TOptionsFactory, TCapability> Frontend,
+        [DebuggerDisplay("{Meta.Name}")]
+        private record struct PluginChoice<TCapability, TOptions>(
+            Plugin Meta,
+            PluginFrontend<TCapability, TOptions> Frontend,
             (bool, string?) Disabled,
             string Description,
             bool Default)
-            where TOptionsFactory : IPluginOptionsFactory
-            where TCapability : IPluginCapability;
+            where TCapability : IPluginCapability
+            where TOptions : PluginOptions, new();
 
-        private async Task<PluginFrontend<TOptionsFactory, TCapability>?> 
-            GetPlugin<TOptionsFactory, TCapability>(
+        private async Task<PluginFrontend<TCapability, TOptions>?> 
+            GetPlugin<TCapability, TOptions>(
                 Steps step,
                 IEnumerable<Type> defaultBackends,
                 string shortDescription,
                 string longDescription,
                 string? defaultParam1 = null,
                 string? defaultParam2 = null,
-                Func<PluginFrontend<TOptionsFactory, TCapability>, int>? sort = null, 
+                Func<PluginFrontend<TCapability, TOptions>, int>? sort = null, 
                 Func<TCapability, (bool, string?)>? unusable = null,
                 Func<Plugin, string>? description = null,
                 bool allowAbort = true) 
-                where TOptionsFactory : IPluginOptionsFactory
                 where TCapability : IPluginCapability
+                where TOptions : PluginOptions, new()
         {
             // Helper method to determine final usability state
             // combination of plugin being enabled (e.g. due to missing
             // administrator rights) and being a right fit for the current
             // renewal (e.g. cannot validate wildcards using http-01)
-            (bool, string?) disabledOrUnusable(PluginFrontend<TOptionsFactory, TCapability> plugin)
+            (bool, string?) disabledOrUnusable(PluginFrontend<TCapability, TOptions> plugin)
             {
                 var disabled = plugin.Capability.Disabled;
                 if (disabled.Item1)
@@ -90,13 +96,16 @@ namespace PKISharp.WACS.Plugins.Resolvers
             // Apply default sorting when no sorting has been provided yet
             var options = _plugins.
                 GetPlugins(step).
-                Select(_pluginHelper.Frontend<TOptionsFactory, TCapability>).
+                Select(x => _autofacBuilder.PluginFrontend<TCapability, TOptions>(_scope, x)).
+                Select(x => x.Resolve<PluginFrontend<TCapability, TOptions>>()).
                 OrderBy(sort ??= (x) => 1).
                 ThenBy(x => x.OptionsFactory.Order).
                 ThenBy(x => x.Meta.Description).
                 Where(x => !x.Meta.Hidden).
-                Select(plugin => new PluginChoice<TOptionsFactory, TCapability>(
-                    plugin, disabledOrUnusable(plugin),
+                Select(plugin => new PluginChoice<TCapability, TOptions>(
+                    plugin.Meta,
+                    plugin,
+                    disabledOrUnusable(plugin),
                     description == null ? plugin.Meta.Description : description(plugin.Meta),
                     false)).
                 ToList();
@@ -125,7 +134,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 }
             }
 
-            var defaultOption = default(PluginChoice<TOptionsFactory, TCapability>);
+            var defaultOption = default(PluginChoice<TCapability, TOptions>);
             foreach (var backend in defaultBackends.Distinct())
             {
                 defaultOption = options.FirstOrDefault(x => x.Frontend.Meta.Backend == backend);
@@ -157,8 +166,8 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 _input.Show(null, longDescription);
             }
 
-            Choice<PluginFrontend<TOptionsFactory, TCapability>?> creator(PluginChoice<TOptionsFactory, TCapability> choice) {
-                return Choice.Create<PluginFrontend<TOptionsFactory, TCapability>?>(
+            Choice<PluginFrontend<TCapability, TOptions>?> creator(PluginChoice<TCapability, TOptions> choice) {
+                return Choice.Create<PluginFrontend<TCapability, TOptions>?>(
                        choice.Frontend,
                        description: choice.Description,
                        @default: choice.Default,
@@ -174,9 +183,9 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// Allow user to choose a TargetPlugin
         /// </summary>
         /// <returns></returns>
-        public async Task<PluginFrontend<PluginOptionsFactory<TargetPluginOptions>, IPluginCapability>?> GetTargetPlugin()
+        public async Task<PluginFrontend<IPluginCapability, TargetPluginOptions>?> GetTargetPlugin()
         {
-            return await GetPlugin<PluginOptionsFactory<TargetPluginOptions>, IPluginCapability>(
+            return await GetPlugin<IPluginCapability, TargetPluginOptions>(
                 Steps.Source,
                 defaultParam1: _settings.Source.DefaultSource,
                 defaultBackends: new List<Type>() { typeof(IIS), typeof(Manual) },
@@ -190,7 +199,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// Allow user to choose a ValidationPlugin
         /// </summary>
         /// <returns></returns>
-        public async Task<PluginFrontend<PluginOptionsFactory<ValidationPluginOptions>, IValidationPluginCapability>?> GetValidationPlugin()
+        public async Task<PluginFrontend<IValidationPluginCapability, ValidationPluginOptions>?> GetValidationPlugin()
         {
             var defaultParam1 = _settings.Validation.DefaultValidation;
             var defaultParam2 = _settings.Validation.DefaultValidationMode;
@@ -206,7 +215,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             {
                 defaultParam2 = _arguments.ValidationMode;
             }
-            return await GetPlugin<PluginOptionsFactory<ValidationPluginOptions>, IValidationPluginCapability>(
+            return await GetPlugin<IValidationPluginCapability, ValidationPluginOptions>(
                 Steps.Validation,
                 sort: frontend =>
                 {
@@ -230,9 +239,9 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     "Various additional plugins are available from https://github.com/win-acme/win-acme/.");
         }
 
-        public async Task<PluginFrontend<PluginOptionsFactory<OrderPluginOptions>, IOrderPluginCapability>?> GetOrderPlugin()
+        public async Task<PluginFrontend<IOrderPluginCapability, OrderPluginOptions>?> GetOrderPlugin()
         {
-            return await GetPlugin<PluginOptionsFactory<OrderPluginOptions>, IOrderPluginCapability>(
+            return await GetPlugin<IOrderPluginCapability, OrderPluginOptions>(
                    Steps.Order,
                    defaultParam1: _settings.Order.DefaultPlugin,
                    defaultBackends: new List<Type>() { typeof(Single) },
@@ -244,9 +253,9 @@ namespace PKISharp.WACS.Plugins.Resolvers
                         $"you may choose to convert one source into multiple certificates, using different strategies.");
         }
 
-        public async Task<PluginFrontend<PluginOptionsFactory<CsrPluginOptions>, IPluginCapability>?> GetCsrPlugin()
+        public async Task<PluginFrontend<IPluginCapability, CsrPluginOptions>?> GetCsrPlugin()
         {
-            return await GetPlugin<PluginOptionsFactory<CsrPluginOptions>, IPluginCapability>(
+            return await GetPlugin<IPluginCapability, CsrPluginOptions>(
                Steps.Csr,
                defaultParam1: _settings.Csr.DefaultCsr,
                defaultBackends: new List<Type>() { typeof(Rsa), typeof(Ec) },
@@ -257,7 +266,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 "are not sure what to pick here, RSA is the safe default.");
         }
 
-        public async Task<PluginFrontend<PluginOptionsFactory<StorePluginOptions>, IPluginCapability>?> GetStorePlugin(IEnumerable<Plugin> chosen)
+        public async Task<PluginFrontend<IPluginCapability, StorePluginOptions>?> GetStorePlugin(IEnumerable<Plugin> chosen)
         {
             var defaultType = typeof(CertificateStore);
             var shortDescription = "How would you like to store the certificate?";
@@ -281,7 +290,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             }
             var csv = defaultParam1.ParseCsv();
             defaultParam1 = csv?.Count > chosen.Count() ? csv[chosen.Count()] : "";
-            return await GetPlugin<PluginOptionsFactory<StorePluginOptions>, IPluginCapability>(
+            return await GetPlugin<IPluginCapability, StorePluginOptions>(
                 Steps.Store,
                 defaultParam1: defaultParam1,
                 defaultBackends: new List<Type>() { defaultType, typeof(PfxFile) },
@@ -297,7 +306,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <summary>
         /// </summary>
         /// <returns></returns>
-        public async Task<PluginFrontend<PluginOptionsFactory<InstallationPluginOptions>, IInstallationPluginCapability>?> 
+        public async Task<PluginFrontend<IInstallationPluginCapability, InstallationPluginOptions>?> 
             GetInstallationPlugin(IEnumerable<Plugin> stores, IEnumerable<Plugin> installation)
         {
             var defaultType = typeof(InstallationPlugins.IIS);
@@ -322,7 +331,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             }
             var csv = defaultParam1.ParseCsv();
             defaultParam1 = csv?.Count > installation.Count() ? csv[installation.Count()] : "";
-            return await GetPlugin<PluginOptionsFactory<InstallationPluginOptions>, IInstallationPluginCapability>(
+            return await GetPlugin<IInstallationPluginCapability, InstallationPluginOptions>(
                 Steps.Installation,
                 unusable: x => { var (a, b) = x.CanInstall(stores.Select(x => x.Backend), installation.Select(x => x.Backend)); return (!a, b); },
                 defaultParam1: defaultParam1,
