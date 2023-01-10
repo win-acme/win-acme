@@ -78,9 +78,9 @@ namespace PKISharp.WACS
             // Check the initial, combined target for the renewal
             using var es = _scopeBuilder.Execution(_container, renewal, runLevel);
             var targetPlugin = es.Resolve<PluginBackend<ITargetPlugin, IPluginCapability, TargetPluginOptions>>();
-            if (targetPlugin.Capability.Disabled.Item1)
+            if (targetPlugin.Capability.State.Disabled)
             {
-                return new RenewResult($"Source plugin {targetPlugin.Meta.Name} is disabled. {targetPlugin.Capability.Disabled.Item2}");
+                return new RenewResult($"Source plugin {targetPlugin.Meta.Name} is disabled. {targetPlugin.Capability.State.Reason}");
             }
             var target = await targetPlugin.Backend.Generate();
             if (target == null)
@@ -90,7 +90,7 @@ namespace PKISharp.WACS
             _log.Information("Plugin {targetPluginName} generated source", targetPlugin.Meta.Name);
 
             // Create one or more orders from the target
-            var orderPlugin = es.Resolve<PluginBackend<IOrderPlugin, IOrderPluginCapability, OrderPluginOptions>>();
+            var orderPlugin = es.Resolve<PluginBackend<IOrderPlugin, IPluginCapability, OrderPluginOptions>>();
             var orders = orderPlugin.Backend.Split(renewal, target).ToList();
             if (orders == null || !orders.Any())
             {
@@ -422,7 +422,7 @@ namespace PKISharp.WACS
                 // Load the store plugins
                 var storeContexts = context.Renewal.StorePluginOptions.
                     Where(x => x is not Plugins.StorePlugins.NullOptions).
-                    Select(x => _scopeBuilder.PluginBackend<IStorePlugin, IPluginCapability, StorePluginOptions>(context.OrderScope, x)).
+                    Select(x => _scopeBuilder.PluginBackend<IStorePlugin, StorePluginOptions>(context.OrderScope, x)).
                     ToList();
                 if (!await HandleStoreAdd(context, context.NewCertificate, storeContexts))
                 {
@@ -521,10 +521,10 @@ namespace PKISharp.WACS
             var csrPlugin = context.Target.UserCsrBytes == null ? context.OrderScope.Resolve<PluginBackend<ICsrPlugin, IPluginCapability, CsrPluginOptions>>() : null;
             if (csrPlugin != null)
             {
-                var (disabled, disabledReason) = csrPlugin.Capability.Disabled;
-                if (disabled)
+                var state = csrPlugin.Capability.State;
+                if (state.Disabled)
                 {
-                    context.OrderResult.AddErrorMessage($"CSR plugin is not available. {disabledReason}");
+                    context.OrderResult.AddErrorMessage($"CSR plugin is not available. {state.Disabled}");
                     return null;
                 }
             }
@@ -567,10 +567,10 @@ namespace PKISharp.WACS
                     {
                         _log.Information("Store with {name}...", store.Meta.Name);
                     }
-                    var (disabled, disabledReason) = store.Capability.Disabled;
-                    if (disabled)
+                    var state = store.Capability.State;
+                    if (state.Disabled)
                     {
-                        context.OrderResult.AddErrorMessage($"Store plugin is not available. {disabledReason}");
+                        context.OrderResult.AddErrorMessage($"Store plugin is not available. {state.Reason}");
                         return false;
                     }
                     await store.Backend.Save(newCertificate);
@@ -650,10 +650,10 @@ namespace PKISharp.WACS
                     {
                         _log.Information("Installing with {name}...", installationPlugin.Meta.Name);
                     }
-                    var (disabled, disabledReason) = installationPlugin.Capability.Disabled;
-                    if (disabled)
+                    var state = installationPlugin.Capability.State;
+                    if (state.Disabled)
                     {
-                        context.OrderResult.AddErrorMessage($"Installation plugin is not available. {disabledReason}");
+                        context.OrderResult.AddErrorMessage($"Installation plugin is not available. {state.Reason}");
                         return false;
                     }
                     if (!await installationPlugin.Backend.Install(stores.Select(x => x.Resolve<IStorePlugin>().GetType()), newCertificate, previousCertificate))

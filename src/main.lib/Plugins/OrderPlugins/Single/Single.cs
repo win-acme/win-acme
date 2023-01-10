@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Plugins.OrderPlugins
 {
     [IPlugin.Plugin<
         SingleOptions, PluginOptionsFactory<SingleOptions>, 
-        OrderCapability, WacsJsonPlugins>
+        DefaultCapability, WacsJsonPlugins>
         ("b705fa7c-1152-4436-8913-e433d7f84c82", 
         "Single", "Single certificate")]
     class Single : IOrderPlugin

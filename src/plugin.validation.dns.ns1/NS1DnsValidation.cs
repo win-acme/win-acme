@@ -17,8 +17,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         DnsValidationCapability, NS1Json>
         ("C66CC8BE-3046-46C2-A0BA-EC4EC3E7FE96", 
         "NS1", 
-        "Create verification records in NS1 DNS",
-        ChallengeType = Constants.Dns01ChallengeType)]
+        "Create verification records in NS1 DNS")]
     internal class NS1DnsValidation : DnsValidation<NS1DnsValidation>
     {
         private readonly DnsManagementClient _client;

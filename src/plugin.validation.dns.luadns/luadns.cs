@@ -22,8 +22,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         DnsValidationCapability, LuaDnsJson>
         ("3b0c3cca-db98-40b7-b678-b34791070d42", 
         "LuaDns", 
-        "Create verification records in LuaDns",
-        ChallengeType = Constants.Dns01ChallengeType)]
+        "Create verification records in LuaDns")]
     internal sealed class LuaDns : DnsValidation<LuaDns>
     {
         private class ZoneData

@@ -21,7 +21,6 @@ namespace PKISharp.WACS.Plugins
         public Type OptionsFactory => Meta.OptionsFactory;
         public Type OptionsJson => Meta.OptionsJson;
         public Type Capability => Meta.Capability;
-        public string ChallengeType => Meta.ChallengeType;
 
         public Plugin(Type source, IPluginMeta meta, Steps step)
         {

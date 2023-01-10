@@ -11,7 +11,6 @@ namespace PKISharp.WACS.Plugins.Interfaces
         public string Name { get; }
         public string Description { get; }
         public bool Hidden { get; }
-        public string ChallengeType { get; }
         public Type Capability { get; }
         public Type Options { get; }
         public Type OptionsFactory { get; }

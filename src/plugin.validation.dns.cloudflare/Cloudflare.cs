@@ -22,8 +22,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         DnsValidationCapability, CloudflareJson>
         ("73af2c2e-4cf1-4198-a4c8-1129003cfb75", 
         "Cloudflare", 
-        "Create verification records in Cloudflare DNS",
-        ChallengeType = Constants.Dns01ChallengeType)]
+        "Create verification records in Cloudflare DNS")]
     public class Cloudflare : DnsValidation<Cloudflare>, IDisposable
     {
         private readonly CloudflareOptions _options;

@@ -54,7 +54,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         private record struct PluginChoice<TCapability, TOptions>(
             Plugin Meta,
             PluginFrontend<TCapability, TOptions> Frontend,
-            (bool, string?) Disabled,
+            State State,
             string Description,
             bool Default)
             where TCapability : IPluginCapability
@@ -69,8 +69,8 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 string? defaultParam1 = null,
                 string? defaultParam2 = null,
                 Func<PluginFrontend<TCapability, TOptions>, int>? sort = null, 
-                Func<TCapability, (bool, string?)>? unusable = null,
-                Func<Plugin, string>? description = null,
+                Func<TCapability, State>? state = null,
+                Func<PluginFrontend<TCapability, TOptions>, string>? description = null,
                 bool allowAbort = true) 
                 where TCapability : IPluginCapability
                 where TOptions : PluginOptions, new()
@@ -79,18 +79,18 @@ namespace PKISharp.WACS.Plugins.Resolvers
             // combination of plugin being enabled (e.g. due to missing
             // administrator rights) and being a right fit for the current
             // renewal (e.g. cannot validate wildcards using http-01)
-            (bool, string?) disabledOrUnusable(PluginFrontend<TCapability, TOptions> plugin)
+            State combinedState(PluginFrontend<TCapability, TOptions> plugin)
             {
-                var disabled = plugin.Capability.Disabled;
-                if (disabled.Item1)
+                var baseState = plugin.Capability.State;
+                if (baseState.Disabled)
                 {
-                    return disabled;
+                    return baseState;
                 }
-                else if (unusable != null)
+                else if (state != null)
                 {
-                    return unusable(plugin.Capability);
+                    return state(plugin.Capability);
                 }
-                return (false, null);
+                return State.EnabledState();
             };
 
             // Apply default sorting when no sorting has been provided yet
@@ -105,13 +105,13 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 Select(plugin => new PluginChoice<TCapability, TOptions>(
                     plugin.Meta,
                     plugin,
-                    disabledOrUnusable(plugin),
-                    description == null ? plugin.Meta.Description : description(plugin.Meta),
+                    combinedState(plugin),
+                    description == null ? plugin.Meta.Description : description(plugin),
                     false)).
                 ToList();
            
             // Default out when there are no reasonable plugins to pick
-            if (!options.Any() || options.All(x => x.Disabled.Item1))
+            if (!options.Any() || options.All(x => x.State.Disabled))
             {
                 return null;
             }
@@ -138,13 +138,12 @@ namespace PKISharp.WACS.Plugins.Resolvers
             foreach (var backend in defaultBackends.Distinct())
             {
                 defaultOption = options.FirstOrDefault(x => x.Frontend.Meta.Backend == backend);
-                var defaultTypeDisabled = defaultOption.Disabled;
-                if (defaultTypeDisabled.Item1)
+                if (defaultOption.State.Disabled)
                 {
                     _log.Warning("{n} plugin {x} not available: {m}",
                         char.ToUpper(className[0]) + className[1..],
                         defaultOption.Frontend.Meta.Name ?? backend.Name,
-                        defaultTypeDisabled.Item2);
+                        defaultOption.State.Reason);
                     showMenu = true;
                 }
                 else
@@ -171,7 +170,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                        choice.Frontend,
                        description: choice.Description,
                        @default: choice.Default,
-                       disabled: choice.Disabled);
+                       state: choice.State);
             }
 
             return allowAbort
@@ -219,7 +218,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 Steps.Validation,
                 sort: frontend =>
                 {
-                    return frontend.Meta.ChallengeType switch
+                    return frontend.Capability.ChallengeType switch
                     {
                         Constants.Http01ChallengeType => 0,
                         Constants.Dns01ChallengeType => 1,
@@ -227,8 +226,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                         _ => 3,
                     };
                 },
-                unusable: x => (!x.CanValidate(), "Unsuppored target. Most likely this is because you have included a wildcard identifier (*.example.com), which requires DNS validation."),
-                description: x => $"[{x.ChallengeType}] {x.Description}",
+                description: x => $"[{x.Capability.ChallengeType}] {x.Meta.Description}",
                 defaultParam1: defaultParam1,
                 defaultParam2: defaultParam2,
                 defaultBackends: new List<Type>() { typeof(SelfHosting), typeof(FileSystem) },
@@ -239,13 +237,12 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     "Various additional plugins are available from https://github.com/win-acme/win-acme/.");
         }
 
-        public async Task<PluginFrontend<IOrderPluginCapability, OrderPluginOptions>?> GetOrderPlugin()
+        public async Task<PluginFrontend<IPluginCapability, OrderPluginOptions>?> GetOrderPlugin()
         {
-            return await GetPlugin<IOrderPluginCapability, OrderPluginOptions>(
+            return await GetPlugin<IPluginCapability, OrderPluginOptions>(
                    Steps.Order,
                    defaultParam1: _settings.Order.DefaultPlugin,
                    defaultBackends: new List<Type>() { typeof(Single) },
-                   unusable: (c) => (!c.CanProcess(), "Unsupported source."),
                    shortDescription: "Would you like to split this source into multiple certificates?",
                    longDescription: $"By default your source hosts are covered by a single certificate. " +
                         $"But if you want to avoid the {Constants.MaxNames} domain limit, want to prevent " +
@@ -333,7 +330,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             defaultParam1 = csv?.Count > installation.Count() ? csv[installation.Count()] : "";
             return await GetPlugin<IInstallationPluginCapability, InstallationPluginOptions>(
                 Steps.Installation,
-                unusable: x => { var (a, b) = x.CanInstall(stores.Select(x => x.Backend), installation.Select(x => x.Backend)); return (!a, b); },
+                state: x => x.CanInstall(stores.Select(x => x.Backend), installation.Select(x => x.Backend)),
                 defaultParam1: defaultParam1,
                 defaultBackends: new List<Type>() { defaultType, typeof(InstallationPlugins.Null) },
                 shortDescription: shortDescription,

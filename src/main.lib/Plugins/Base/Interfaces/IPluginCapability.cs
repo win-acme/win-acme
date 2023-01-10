@@ -1,51 +1,38 @@
-﻿using System.Collections.Generic;
-using System;
+﻿using System;
+using System.Collections.Generic;
 
 namespace PKISharp.WACS.Plugins.Interfaces
 {
     public interface IPluginCapability
     {
         /// <summary>
-        /// Indicates whether the plugin is currently disabled and why
+        /// Indicates whether the plugin is usable in the current context.
         /// </summary>
         /// <returns></returns>
-        (bool, string?) Disabled { get; }
+        State State { get; }
     }
 
     /// <summary>
-    /// Handles configuration
+    /// Handles installation
     /// </summary>
     public interface IInstallationPluginCapability : IPluginCapability
     {
         /// <summary>
-        /// Can this plugin be used?
+        /// Can this plugin be selected given the current other selections.
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        (bool, string?) CanInstall(IEnumerable<Type> storeTypes, IEnumerable<Type> installationTypes);
+        State CanInstall(IEnumerable<Type> storeTypes, IEnumerable<Type> installationTypes);
     }
 
     /// <summary>
-    /// Handles configuration
-    /// </summary>
-    public interface IOrderPluginCapability : IPluginCapability
-    {
-        /// <summary>
-        /// Can this plugin be used?
-        /// </summary>
-        bool CanProcess();
-    }
-
-    /// <summary>
-    /// Handles configuration
+    /// Handles validation
     /// </summary>
     public interface IValidationPluginCapability : IPluginCapability
     {
         /// <summary>
-        /// Can this plugin be used?
+        /// Which type of challenge can this plugin handle
         /// </summary>
-        /// <param name="target"></param>
-        /// <returns></returns>
-        bool CanValidate();
+        string ChallengeType { get; }
     }
 }

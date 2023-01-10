@@ -1,5 +1,6 @@
 ﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Plugins.Base.Capabilities;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
 using System;
@@ -19,34 +20,34 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             _iisClient = iisClient;
         }
 
-        public override (bool, string?) Disabled
+        public override State State
         {
             get
             {
-                var (allow, reason) = _userRole.AllowIIS;
-                if (!allow)
+                var state = _userRole.IISState;
+                if (state.Disabled)
                 {
-                    return (true, reason);
+                    return state;
                 }
                 if (!_iisClient.Sites.Any())
                 {
-                    return (true, "No IIS sites available.");
+                    return State.DisabledState("No IIS sites detected.");
                 }
-                return (false, null);
+                return State.EnabledState();
             }
         }
 
-        public override (bool, string?) CanInstall(IEnumerable<Type> storeTypes, IEnumerable<Type> installationTypes)
+        public override State CanInstall(IEnumerable<Type> storeTypes, IEnumerable<Type> installationTypes)
         {
             if (installationTypes.Contains(typeof(IIS)))
             {
-                return (false, "Cannot be used more than once in a renewal.");
+                return State.DisabledState("Cannot be used more than once in a renewal.");
             }
             if (storeTypes.Contains(typeof(CertificateStore)) || storeTypes.Contains(typeof(CentralSsl)))
             {
-                return (true, null);
+                return State.EnabledState();
             }
-            return (false, "Requires CertificateStore or CentralSsl store plugin.");
+            return State.DisabledState("Requires CertificateStore or CentralSsl store plugin.");
         }
     }
 }

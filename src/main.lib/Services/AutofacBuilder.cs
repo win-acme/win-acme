@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using Microsoft.Win32;
+using Org.BouncyCastle.Crypto.Paddings;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Host.Services.Legacy;
@@ -107,8 +108,8 @@ namespace PKISharp.WACS.Services
                 builder.RegisterType<FindPrivateKey>().SingleInstance();
                 builder.RegisterInstance(renewal);
             });
-            ret = PluginBackend<ITargetPlugin, IPluginCapability, TargetPluginOptions>(ret, renewal.TargetPluginOptions, "target");
-            ret = PluginBackend<IOrderPlugin, IOrderPluginCapability, OrderPluginOptions>(ret, renewal.OrderPluginOptions ?? new SingleOptions(), "order");
+            ret = PluginBackend<ITargetPlugin, TargetPluginOptions>(ret, renewal.TargetPluginOptions, "target");
+            ret = PluginBackend<IOrderPlugin, OrderPluginOptions>(ret, renewal.OrderPluginOptions ?? new SingleOptions(), "order");
             return ret;
         }
 
@@ -135,6 +136,20 @@ namespace PKISharp.WACS.Services
             _log.Verbose("Autofac: creating {name} scope with parent {tag}", nameof(Target), execution.Tag);
             return execution.BeginLifetimeScope($"target", builder => builder.RegisterInstance(target));
         }
+
+        /// <summary>
+        /// Shortcut for backends using the IPluginCapability
+        /// </summary>
+        /// <typeparam name="TBackend"></typeparam>
+        /// <typeparam name="TOptions"></typeparam>
+        /// <param name="execution"></param>
+        /// <param name="options"></param>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        public ILifetimeScope PluginBackend<TBackend, TOptions>(ILifetimeScope execution, TOptions options, string key) 
+            where TBackend : IPlugin
+            where TOptions : PluginOptions
+            => PluginBackend<TBackend, IPluginCapability, TOptions>(execution, options, key);
 
         /// <summary>
         /// For a single plugin step within the renewal

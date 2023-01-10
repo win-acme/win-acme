@@ -11,7 +11,7 @@ namespace PKISharp.WACS.Plugins.Interfaces
 
         Task<PluginFrontend<IValidationPluginCapability, ValidationPluginOptions>?> GetValidationPlugin();
        
-        Task<PluginFrontend<IOrderPluginCapability, OrderPluginOptions>?> GetOrderPlugin();
+        Task<PluginFrontend<IPluginCapability, OrderPluginOptions>?> GetOrderPlugin();
 
         Task<PluginFrontend<IPluginCapability, CsrPluginOptions>?> GetCsrPlugin();
 

@@ -134,7 +134,7 @@ namespace PKISharp.WACS
         {
             // Execute them per group, where one group means one validation plugin
             var multipleOrders = authorizations.Any(x => x.Order != authorizations.First().Order);
-            var validationScope = _scopeBuilder.PluginBackend<IValidationPlugin, IValidationPluginCapability, ValidationPluginOptions>(authorizations.First().Order.OrderScope, pluginOptions);
+            var validationScope = _scopeBuilder.PluginBackend<IValidationPlugin, ValidationPluginOptions>(authorizations.First().Order.OrderScope, pluginOptions);
             var plugin = validationScope.Resolve<IValidationPlugin>();
             var contexts = authorizations.Select(context =>
             {
@@ -248,20 +248,15 @@ namespace PKISharp.WACS
             var plugin = _plugin.GetPlugin(options);
             var pluginHelper = _scopeBuilder.PluginFrontend<IValidationPluginCapability, ValidationPluginOptions>(targetScope, plugin);
             var pluginFrontend = pluginHelper.Resolve<PluginFrontend<IValidationPluginCapability, ValidationPluginOptions>>();
-            var (disabled, disabledReason) = pluginFrontend.Capability.Disabled;
-            if (disabled)
+            var state = pluginFrontend.Capability.State;
+            if (state.Disabled)
             {
-                _log.Warning("Validation plugin {name} is not available. {disabledReason}", plugin.Name, disabledReason);
+                _log.Warning("Validation plugin {name} is not available. {disabledReason}", plugin.Name, state.Reason);
                 return false;
             }
-            if (!pluginFrontend.Capability.CanValidate())
+            if (!context.Authorization.Challenges.Any(x => x.Type == pluginFrontend.Capability.ChallengeType))
             {
-                _log.Warning("Validation plugin {name} cannot validate identifier {identifier}", plugin.Name, identifier.Value);
-                return false;
-            }
-            if (!context.Authorization.Challenges.Any(x => x.Type == pluginFrontend.Meta.ChallengeType))
-            {
-                _log.Warning("No challenge of type {challengeType} available", pluginFrontend.Meta.ChallengeType);
+                _log.Warning("No challenge of type {challengeType} available", pluginFrontend.Capability.ChallengeType);
                 return context.Authorization.Status == AcmeClient.AuthorizationValid;
             }
             return true;

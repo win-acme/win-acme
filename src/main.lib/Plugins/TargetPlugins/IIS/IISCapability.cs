@@ -1,5 +1,6 @@
 ﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Plugins.Base.Capabilities;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System.Linq;
 
@@ -16,20 +17,20 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _iisClient = iisClient;
         }
 
-        public override (bool, string?) Disabled
+        public override State State
         {
             get
             {
-                var (allow, reason) = _userRole.AllowIIS;
-                if (!allow)
+                var state = _userRole.IISState;
+                if (state.Disabled)
                 {
-                    return (true, reason);
+                    return state;
                 }
                 if (!_iisClient.Sites.Any())
                 {
-                    return (true, "No IIS sites available.");
+                    return State.DisabledState("No IIS sites detected.");
                 }
-                return (false, null);
+                return State.EnabledState();
             }
         }
     }

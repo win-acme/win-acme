@@ -13,8 +13,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         ManualOptions, PluginOptionsFactory<ManualOptions>, 
         DnsValidationCapability, WacsJsonPlugins>
         ("e45d62b9-f9a8-441e-b95f-c5ee0dcd8040", 
-        "Manual", "Create verification records manually (auto-renew not possible)",
-        ChallengeType = Constants.Dns01ChallengeType)]
+        "Manual", "Create verification records manually (auto-renew not possible)")]
     internal class Manual : DnsValidation<Manual>
     {
         private readonly IInputService _input;

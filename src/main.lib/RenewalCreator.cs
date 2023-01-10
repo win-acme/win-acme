@@ -138,7 +138,7 @@ namespace PKISharp.WACS
             }
 
             // Generate initial target
-            using var targetScope = _scopeBuilder.PluginBackend<ITargetPlugin, IPluginCapability, TargetPluginOptions>(_container, tempRenewal.TargetPluginOptions);
+            using var targetScope = _scopeBuilder.PluginBackend<ITargetPlugin, TargetPluginOptions>(_container, tempRenewal.TargetPluginOptions);
             var targetBackend = targetScope.Resolve<ITargetPlugin>();
             var targetPluginName = targetScope.Resolve<Plugin>().Name;
             var initialTarget = await targetBackend.Generate();

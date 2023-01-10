@@ -1,6 +1,8 @@
-﻿using Autofac;
+﻿using ACMESharp.Authorizations;
+using Autofac;
 using PKISharp.WACS.Plugins;
 using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.CsrPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
@@ -105,10 +107,23 @@ namespace PKISharp.WACS.Services
             var plugins = GetPlugins(step).
                 Where(s => string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase)).
                 ToList();
-            if (step == Steps.Validation && plugins.Count > 1)
+            if (step == Steps.Validation)
             {
+                var validationCapability = typeof(object);
+                switch (parameter?.ToLower())
+                {
+                    case Http01ChallengeValidationDetails.Http01ChallengeType:
+                        validationCapability = typeof(HttpValidationCapability);
+                        break;
+                    case Dns01ChallengeValidationDetails.Dns01ChallengeType:
+                        validationCapability = typeof(HttpValidationCapability);
+                        break;
+                    case TlsAlpn01ChallengeValidationDetails.TlsAlpn01ChallengeType:
+                        validationCapability = typeof(HttpValidationCapability);
+                        break;
+                }
                 plugins = plugins.
-                    Where(x => string.Equals(x.ChallengeType, parameter, StringComparison.InvariantCultureIgnoreCase)).
+                    Where(x => x.Capability.IsAssignableTo(validationCapability)).
                     ToList();
             }
             return plugins.FirstOrDefault();

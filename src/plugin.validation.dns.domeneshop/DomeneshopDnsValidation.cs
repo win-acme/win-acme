@@ -19,8 +19,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         DomeneshopOptions, DomeneshopOptionsFactory,
         DnsValidationCapability, DomeneshopJson>
         ("0BD9B320-08E0-4BFE-A535-B979886187E4",
-        "Domeneshop", "Create verification records in Domeneshop DNS",
-        ChallengeType = Constants.Dns01ChallengeType)]
+        "Domeneshop", "Create verification records in Domeneshop DNS")]
     internal class DomeneshopDnsValidation : DnsValidation<DomeneshopDnsValidation>
     {
         private readonly DomeneshopClient _client;

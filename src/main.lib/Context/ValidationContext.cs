@@ -4,6 +4,7 @@ using Autofac;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins;
+using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 
@@ -22,7 +23,6 @@ namespace PKISharp.WACS.Context
             Authorization = authorization.Authorization;
             Label = authorization.Label;
             Options = options;
-            ChallengeType = plugin.ChallengeType;
             Name = plugin.Name;
         }
         public OrderContext OrderContext { get; }
@@ -30,7 +30,6 @@ namespace PKISharp.WACS.Context
         public TargetPart TargetPart { get; }
         public Authorization Authorization { get; }
         public string Label { get; }
-        public string ChallengeType { get; }
         public string Name { get; }
     }
 
@@ -46,9 +45,10 @@ namespace PKISharp.WACS.Context
             Authorization = parameters.Authorization;
             OrderResult = parameters.OrderContext.OrderResult;
             Scope = scope;
-            ChallengeType = parameters.ChallengeType;
             PluginName = parameters.Name;
-            ValidationPlugin = scope.Resolve<IValidationPlugin>();
+            var backend = scope.Resolve<PluginBackend<IValidationPlugin, IValidationPluginCapability, ValidationPluginOptions>>();
+            ValidationPlugin = backend.Backend;
+            ChallengeType = backend.Capability.ChallengeType;
             Valid = parameters.Authorization.Status == AcmeClient.AuthorizationValid;
         }
         public bool Valid { get; }

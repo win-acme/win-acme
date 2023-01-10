@@ -24,7 +24,6 @@ namespace PKISharp.WACS.Plugins.Interfaces
         {
             public Guid Id { get; }
             public bool Hidden { get; set; } = false;
-            public string ChallengeType { get; set; } = Http01ChallengeValidationDetails.Http01ChallengeType;
             public string Name { get; set; }
             public string Description { get; set; }
             public Type Options { get; }

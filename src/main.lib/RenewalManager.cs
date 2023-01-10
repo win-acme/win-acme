@@ -113,7 +113,16 @@ namespace PKISharp.WACS
                 }
                 await _input.WritePagedList(choices);
                 displayAll = false;
-                
+
+                var noneState = none ? State.DisabledState("No renewals selected.") : State.EnabledState();
+                var sortFilterState = selectedRenewals.Count() < 2 ? State.DisabledState("Not enough renewals to sort/filter.") : State.EnabledState(); ;
+                var editState =
+                    selectedRenewals.Count() != 1 
+                        ? none 
+                            ? State.DisabledState("No renewals selected.") 
+                            : State.DisabledState("Multiple renewals selected.") 
+                        : State.EnabledState();
+
                 var options = new List<Choice<Func<Task>>>();
                 if (displayLimited)
                 {
@@ -125,28 +134,24 @@ namespace PKISharp.WACS
                 options.Add(
                     Choice.Create<Func<Task>>(
                         async () => { quit = true; await EditRenewal(selectedRenewals.First()); },
-                        "Edit renewal", "E",
-                        @disabled: (selectedRenewals.Count() != 1, none ? "No renewals selected." : "Multiple renewals selected.")));
+                        "Edit renewal", "E", state: editState));
                 if (selectedRenewals.Count() > 1)
                 {
                     options.Add(
                         Choice.Create<Func<Task>>(
                             async () => selectedRenewals = await FilterRenewalsMenu(selectedRenewals),
-                            all ? "Apply filter" : "Apply additional filter", "F",
-                            @disabled: (selectedRenewals.Count() < 2, "Not enough renewals to filter.")));
+                            all ? "Apply filter" : "Apply additional filter", "F", state: sortFilterState));
                     options.Add(
                         Choice.Create<Func<Task>>(
                              async () => selectedRenewals = await SortRenewalsMenu(selectedRenewals),
-                            "Sort renewals", "S",
-                            @disabled: (selectedRenewals.Count() < 2, "Not enough renewals to sort.")));
+                            "Sort renewals", "S", state: sortFilterState));
                 }
                 if (!all)
                 {
                     options.Add(
                         Choice.Create<Func<Task>>(
                             () => { selectedRenewals = originalSelection; return Task.CompletedTask; },
-                            "Reset sorting and filtering", "X",
-                            @disabled: (all, "No filters have been applied yet.")));
+                            "Reset sorting and filtering", "X"));
                 }
                 options.Add(
                     Choice.Create<Func<Task>>(
@@ -172,24 +177,20 @@ namespace PKISharp.WACS
                             } 
                         },
                         $"Show details for {selectionLabel}", "D",
-                        @disabled: (none, "No renewals selected.")));
+                        state: noneState));
                 options.Add(
                     Choice.Create<Func<Task>>(() => Run(selectedRenewals, RunLevel.Interactive),
-                        $"Run {selectionLabel}", "R",
-                        @disabled: (none, "No renewals selected."))); ;
+                        $"Run {selectionLabel}", "R", state: noneState));
                 options.Add(
                     Choice.Create<Func<Task>>(() => Run(selectedRenewals, RunLevel.Interactive | RunLevel.Force),
-                        $"Run {selectionLabel} (force)", "Z",
-                        @disabled: (none, "No renewals selected.")));
+                        $"Run {selectionLabel} (force)", "Z", state: noneState));
                 options.Add(
                     Choice.Create<Func<Task>>(() => Run(selectedRenewals, RunLevel.Interactive | RunLevel.Force | RunLevel.NoCache),
-                        $"Run {selectionLabel} (force, no cache)", "X",
-                        @disabled: (none, "No renewals selected.")));
+                        $"Run {selectionLabel} (force, no cache)", "X", state: noneState));
                 options.Add(
                     Choice.Create<Func<Task>>(
                         async () => selectedRenewals = await Analyze(selectedRenewals),
-                        $"Analyze duplicates for {selectionLabel}", "U",
-                        @disabled: (none, "No renewals selected.")));
+                        $"Analyze duplicates for {selectionLabel}", "U", state: noneState));
                 options.Add(
                     Choice.Create<Func<Task>>(
                         async () => {
@@ -205,8 +206,7 @@ namespace PKISharp.WACS
                                 selectedRenewals = originalSelection;
                             }
                         },
-                        $"Cancel {selectionLabel}", "C",
-                        @disabled: (none, "No renewals selected.")));
+                        $"Cancel {selectionLabel}", "C", state: noneState));
                 options.Add(
                     Choice.Create<Func<Task>>(
                         async () => {
@@ -216,8 +216,7 @@ namespace PKISharp.WACS
                                 await RevokeCertificates(selectedRenewals);
                             }
                         },
-                        $"Revoke certificate(s) for {selectionLabel}", "V",
-                        @disabled: (none, "No renewals selected.")));
+                        $"Revoke certificate(s) for {selectionLabel}", "V", state: noneState));
                 options.Add(
                     Choice.Create<Func<Task>>(
                         () => { quit = true; return Task.CompletedTask; },
@@ -265,7 +264,7 @@ namespace PKISharp.WACS
         {
             try
             {
-                using var targetScope = _scopeBuilder.PluginBackend<ITargetPlugin, IPluginCapability, TargetPluginOptions>(_container, renewal.TargetPluginOptions);
+                using var targetScope = _scopeBuilder.PluginBackend<ITargetPlugin, TargetPluginOptions>(_container, renewal.TargetPluginOptions);
                 var targetBackend = targetScope.Resolve<ITargetPlugin>();
                 return await targetBackend.Generate();
             } 

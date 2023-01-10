@@ -14,14 +14,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         DnsValidationCapability, WacsJsonPlugins>
         ("8f1da72e-f727-49f0-8546-ef69e5ecec32", 
         "DnsScript", "Create verification records with your own script", 
-        Hidden = true,
-        ChallengeType = Constants.Dns01ChallengeType)]
+        Hidden = true)]
     [IPlugin.Plugin<
         ScriptOptions, ScriptOptionsFactory,
         DnsValidationCapability, WacsJsonPlugins>
         ("8f1da72e-f727-49f0-8546-ef69e5ecec32", 
-        "Script", "Create verification records with your own script",
-        ChallengeType = Constants.Dns01ChallengeType)]
+        "Script", "Create verification records with your own script")]
     internal class Script : DnsValidation<Script>
     {
         private readonly ScriptClient _scriptClient;

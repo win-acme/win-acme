@@ -58,6 +58,17 @@ namespace PKISharp.WACS.Services
             where TOptions : PluginOptions;
 
         /// <summary>
+        /// Sub-scopes for specific plugins (shorthand, assumes IPluginCapability)
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="execution"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        ILifetimeScope PluginBackend<TBackend, TOptions>(ILifetimeScope execution, TOptions options, string key = "default")
+            where TBackend : IPlugin
+            where TOptions : PluginOptions;
+
+        /// <summary>
         /// Plugin selection/configuration methods
         /// </summary>
         /// <typeparam name="TOptionsFactory"></typeparam>

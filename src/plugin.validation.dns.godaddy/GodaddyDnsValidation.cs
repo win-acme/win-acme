@@ -17,8 +17,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         DnsValidationCapability, GodaddyJson>
         ("966c4c3d-1572-44c7-9134-5e2bc8fa021d", 
         "Godaddy", 
-        "Create verification records in Godaddy DNS",
-        ChallengeType = Constants.Dns01ChallengeType)]
+        "Create verification records in Godaddy DNS")]
     internal class GodaddyDnsValidation : DnsValidation<GodaddyDnsValidation>
     {
         private readonly DnsManagementClient _client;

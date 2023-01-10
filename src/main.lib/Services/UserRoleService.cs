@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.Clients.IIS;
+using PKISharp.WACS.Plugins.Interfaces;
 
 namespace PKISharp.WACS.Services
 {
@@ -17,24 +18,24 @@ namespace PKISharp.WACS.Services
 
         public bool AllowCertificateStore => _adminService.IsAdmin;
 
-        public (bool, string?) AllowIIS
+        public bool AllowLegacy => _adminService.IsAdmin;
+
+        public bool AllowSelfHosting => _adminService.IsAdmin;
+
+        public State IISState
         {
             get
             {
                 if (!_adminService.IsAdmin)
                 {
-                    return (false, "Run as administrator to allow access to IIS.");
+                    return State.DisabledState("Run as administrator to allow access to IIS.");
                 }
                 if (_iisClient.Version.Major <= 6)
                 {
-                    return (false, "No supported version of IIS detected.");
+                    return State.DisabledState("No supported version of IIS detected.");
                 }
-                return (true, null);
+                return State.EnabledState();
             }
         }
-
-        public bool AllowLegacy => _adminService.IsAdmin;
-
-        public bool AllowSelfHosting => _adminService.IsAdmin;
     }
 }

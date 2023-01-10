@@ -1,4 +1,5 @@
-﻿using System;
+﻿using PKISharp.WACS.Plugins.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -28,11 +29,11 @@ namespace PKISharp.WACS.Services
             string? description = null,
             string? command = null,
             bool @default = false,
-            (bool, string?)? disabled = null,
+            State? state = null,
             ConsoleColor? color = null)
         {
             var newItem = new Choice<TItem>(item);
-            disabled ??= (false, null);
+            state ??= State.EnabledState();
             // Default description is item.ToString, but it may 
             // be overruled by the optional parameter here
             if (!string.IsNullOrEmpty(description))
@@ -41,8 +42,8 @@ namespace PKISharp.WACS.Services
             }
             newItem.Command = command;
             newItem.Color = color;
-            newItem.Disabled = disabled.Value.Item1;
-            newItem.DisabledReason = disabled.Value.Item2;
+            newItem.Disabled = state.Value.Disabled;
+            newItem.DisabledReason = state.Value.Reason;
             newItem.Default = @default;
             return newItem;
         }

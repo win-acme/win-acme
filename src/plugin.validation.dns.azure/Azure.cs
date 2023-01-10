@@ -25,8 +25,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         DnsValidationCapability, AzureJson>
         ("aa57b028-45fb-4aca-9cac-a63d94c76b4a",
         "Azure",
-        "Create verification records in Azure DNS",
-        ChallengeType = Constants.Dns01ChallengeType)]
+        "Create verification records in Azure DNS")]
     internal class Azure : DnsValidation<Azure>
     {
         private DnsManagementClient? _azureDnsClient;
