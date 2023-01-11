@@ -1,12 +1,13 @@
 ﻿using Autofac;
 using Microsoft.Win32;
-using Org.BouncyCastle.Crypto.Paddings;
+using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Host.Services.Legacy;
 using PKISharp.WACS.Plugins;
 using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
+using PKISharp.WACS.Plugins.CsrPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.OrderPlugins;
 using PKISharp.WACS.Plugins.StorePlugins;
@@ -110,6 +111,7 @@ namespace PKISharp.WACS.Services
             });
             ret = PluginBackend<ITargetPlugin, TargetPluginOptions>(ret, renewal.TargetPluginOptions, "target");
             ret = PluginBackend<IOrderPlugin, OrderPluginOptions>(ret, renewal.OrderPluginOptions ?? new SingleOptions(), "order");
+            ret = PluginBackend<ICsrPlugin, CsrPluginOptions>(ret, renewal.CsrPluginOptions ?? new RsaOptions(), "csr");
             return ret;
         }
 
@@ -180,7 +182,7 @@ namespace PKISharp.WACS.Services
             {
                 throw new Exception($"{plugin.Options.Name} is not a {typeof(TOptions).Name}");
             }
-            return execution.BeginLifetimeScope(typeof(TBackend).Name,
+            return execution.BeginLifetimeScope($"{nameof(PluginBackend)}<{typeof(TBackend).Name}>",
                 builder => {
                     builder.RegisterInstance(plugin).As<Plugin>().Named<Plugin>(key);
                     builder.RegisterInstance(options).As<TOptions>().As(options.GetType());
@@ -211,8 +213,11 @@ namespace PKISharp.WACS.Services
             {
                 throw new Exception($"{plugin.OptionsFactory.Name} is not a {genericFactory.Name}");
             }
-            return execution.BeginLifetimeScope(typeof(TOptions).Name,
+            return execution.BeginLifetimeScope(
+                $"{nameof(PluginFrontend)}<{typeof(TOptions).Name}>",
                 builder => {
+                    // So that we don't create a new IIS client for every single plugin
+                    builder.RegisterInstance(execution.Resolve<IIISClient>());
                     builder.RegisterInstance(plugin).As<Plugin>();
                     builder.RegisterType(plugin.OptionsFactory).As<IPluginOptionsFactory<TOptions>>().As(genericFactory).SingleInstance();
                     builder.RegisterType(plugin.Capability).As<TCapability>().SingleInstance();

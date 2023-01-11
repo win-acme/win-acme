@@ -1,6 +1,7 @@
 ﻿using PKISharp.WACS.Plugins.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Services
@@ -21,7 +22,7 @@ namespace PKISharp.WACS.Services
         string FormatDate(DateTime date);
     }
 
-
+    [DebuggerDisplay("{Description}")]
     public class Choice
     {
         public static Choice<TItem> Create<TItem>(

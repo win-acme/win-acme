@@ -51,14 +51,30 @@ namespace PKISharp.WACS.Plugins.Resolvers
         }
 
         [DebuggerDisplay("{Meta.Name}")]
-        private record struct PluginChoice<TCapability, TOptions>(
-            Plugin Meta,
-            PluginFrontend<TCapability, TOptions> Frontend,
-            State State,
-            string Description,
-            bool Default)
+        private class PluginChoice<TCapability, TOptions> 
             where TCapability : IPluginCapability
-            where TOptions : PluginOptions, new();
+            where TOptions : PluginOptions, new()
+        {
+            public Plugin Meta { get; }
+            public PluginFrontend<TCapability, TOptions> Frontend { get; }
+            public State State { get; }
+            public string Description { get; }
+            public bool Default { get; set; }
+
+            public PluginChoice(
+                Plugin meta, 
+                PluginFrontend<TCapability, TOptions> frontend,
+                State state,
+                string description,
+                bool @default)
+            {
+                Meta = meta;
+                Frontend = frontend;
+                State = state;
+                Description = description;
+                Default = @default;
+            }
+        }
 
         private async Task<PluginFrontend<TCapability, TOptions>?> 
             GetPlugin<TCapability, TOptions>(
@@ -96,12 +112,12 @@ namespace PKISharp.WACS.Plugins.Resolvers
             // Apply default sorting when no sorting has been provided yet
             var options = _plugins.
                 GetPlugins(step).
+                Where(x => !x.Hidden).
                 Select(x => _autofacBuilder.PluginFrontend<TCapability, TOptions>(_scope, x)).
                 Select(x => x.Resolve<PluginFrontend<TCapability, TOptions>>()).
-                OrderBy(sort ??= (x) => 1).
+                OrderBy(sort ??= x => 1).
                 ThenBy(x => x.OptionsFactory.Order).
                 ThenBy(x => x.Meta.Description).
-                Where(x => !x.Meta.Hidden).
                 Select(plugin => new PluginChoice<TCapability, TOptions>(
                     plugin.Meta,
                     plugin,
@@ -138,6 +154,11 @@ namespace PKISharp.WACS.Plugins.Resolvers
             foreach (var backend in defaultBackends.Distinct())
             {
                 defaultOption = options.FirstOrDefault(x => x.Frontend.Meta.Backend == backend);
+                if (defaultOption == null)
+                {
+                    showMenu = true;
+                    continue;
+                }
                 if (defaultOption.State.Disabled)
                 {
                     _log.Warning("{n} plugin {x} not available: {m}",
@@ -155,7 +176,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
 
             if (!showMenu)
             {
-                return defaultOption.Frontend;
+                return defaultOption!.Frontend;
             }
 
             // List plugins for generating new certificates
@@ -246,8 +267,9 @@ namespace PKISharp.WACS.Plugins.Resolvers
                    shortDescription: "Would you like to split this source into multiple certificates?",
                    longDescription: $"By default your source hosts are covered by a single certificate. " +
                         $"But if you want to avoid the {Constants.MaxNames} domain limit, want to prevent " +
-                        $"information disclosure via the SAN list, and/or reduce the impact of a single validation failure," +
-                        $"you may choose to convert one source into multiple certificates, using different strategies.");
+                        $"information disclosure via the SAN list, and/or reduce the operational impact of " +
+                        $"a single validation failure, you may choose to convert one source into multiple " +
+                        $"certificates, using different strategies.");
         }
 
         public async Task<PluginFrontend<IPluginCapability, CsrPluginOptions>?> GetCsrPlugin()

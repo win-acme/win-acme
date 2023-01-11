@@ -138,9 +138,9 @@ namespace PKISharp.WACS
             }
 
             // Generate initial target
-            using var targetScope = _scopeBuilder.PluginBackend<ITargetPlugin, TargetPluginOptions>(_container, tempRenewal.TargetPluginOptions);
-            var targetBackend = targetScope.Resolve<ITargetPlugin>();
-            var targetPluginName = targetScope.Resolve<Plugin>().Name;
+            using var targetPluginScope = _scopeBuilder.PluginBackend<ITargetPlugin, TargetPluginOptions>(_container, tempRenewal.TargetPluginOptions);
+            var targetBackend = targetPluginScope.Resolve<ITargetPlugin>();
+            var targetPluginName = targetPluginScope.Resolve<Plugin>().Name;
             var initialTarget = await targetBackend.Generate();
             if (initialTarget == null)
             {
@@ -161,6 +161,7 @@ namespace PKISharp.WACS
             // Create new resolver in a scope that knows
             // about the target so that other plugins can
             // make decisions based on that.
+            var targetScope = _scopeBuilder.Target(targetPluginScope, initialTarget);
             resolver = CreateResolver(targetScope, runLevel);
 
             // Choose the order plugin
