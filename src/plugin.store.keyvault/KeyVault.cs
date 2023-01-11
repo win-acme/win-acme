@@ -1,8 +1,6 @@
-﻿using Azure.Core;
-using Azure.Core.Pipeline;
-using Azure.Identity;
-using Azure.Security.KeyVault.Certificates;
+﻿using Azure.Security.KeyVault.Certificates;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.Azure.Common;
 using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
@@ -26,44 +24,26 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         "Store certificate in Azure Key Vault")]
     internal class KeyVault : IStorePlugin
     {
-        private CertificateClient? _azureKeyVaultClient;
-        private readonly IProxyService _proxyService;
         private readonly KeyVaultOptions _options;
         private readonly ILogService _log;
-        private readonly SecretServiceManager _ssm;
+        private readonly AzureHelpers _helpers;
 
         public KeyVault(KeyVaultOptions options, SecretServiceManager ssm, IProxyService proxyService, ILogService log)
         {
             _options = options;
-            _proxyService = proxyService;
             _log = log;
-            _ssm = ssm;
-        }
-
-        private Task<CertificateClient> GetClient()
-        {
-            if (_azureKeyVaultClient == null)
-            {
-                var credential = _options.UseMsi
-                    ? new ManagedIdentityCredential()
-                    : (TokenCredential)new ClientSecretCredential(
-                        _options.TenantId,
-                        _options.ClientId,
-                        _ssm.EvaluateSecret(_options.Secret?.Value));
-                var options = new CertificateClientOptions
-                {
-                    Transport = new HttpClientTransport(_proxyService.GetHttpClient())
-                };
-                var client = new CertificateClient(new Uri($"https://{_options.VaultName}.vault.azure.net/"), credential, options);
-                _azureKeyVaultClient = client;
-            }
-            return Task.FromResult(_azureKeyVaultClient);
+            _helpers = new AzureHelpers(options, proxyService, ssm);
         }
 
         public Task Delete(CertificateInfo certificateInfo) => Task.CompletedTask;
         public async Task Save(CertificateInfo certificateInfo)
         {
-            var client = await GetClient();
+            var client = new CertificateClient(
+                new Uri($"https://{_options.VaultName}.vault.azure.net/"),
+                _helpers.TokenCredential,
+                new CertificateClientOptions() {
+                    Transport = _helpers.ArmOptions.Transport
+                });
             var importOptions = new ImportCertificateOptions(
                 _options.CertificateName,
                 await File.ReadAllBytesAsync(certificateInfo.CacheFile!.FullName));
@@ -78,7 +58,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                         Path = _options.VaultName,
                         Name = _options.CertificateName
                     });
-            } 
+            }
             catch (Exception ex)
             {
                 _log.Error(ex, "Error importing certificate to KeyVault");
@@ -86,5 +66,4 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         }
     }
-
 }

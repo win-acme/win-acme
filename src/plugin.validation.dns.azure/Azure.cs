@@ -1,5 +1,8 @@
-﻿using Microsoft.Azure.Management.Dns;
-using Microsoft.Azure.Management.Dns.Models;
+﻿using Azure.Core;
+using Azure.ResourceManager;
+using Azure.ResourceManager.Dns;
+using Azure.ResourceManager.Dns.Models;
+using Azure.ResourceManager.Resources;
 using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Plugins.Azure.Common;
 using PKISharp.WACS.Plugins.Base.Capabilities;
@@ -28,12 +31,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         "Create verification records in Azure DNS")]
     internal class Azure : DnsValidation<Azure>
     {
-        private DnsManagementClient? _azureDnsClient;
+        private ArmClient? _armClient;
+        private ResourceGroupResource? _resourceGroupResource;
+
         private readonly IProxyService _proxyService;
         private readonly AzureOptions _options;
         private readonly AzureHelpers _helpers;
-        private readonly Dictionary<string, Dictionary<string, RecordSet?>> _recordSets;
-        private IEnumerable<Zone>? _hostedZones;
+        private readonly Dictionary<DnsZoneResource, Dictionary<string, DnsTxtRecordResource>> _recordSets = new();
+        private IEnumerable<DnsZoneResource>? _hostedZones;
         
         public Azure(AzureOptions options,
             LookupClientProvider dnsClient,
@@ -44,8 +49,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             _options = options;
             _proxyService = proxyService;
-            _recordSets = new Dictionary<string, Dictionary<string, RecordSet?>>();
-            _helpers = new AzureHelpers(_options, log, ssm);
+            _helpers = new AzureHelpers(options, proxyService, ssm);
         }
 
         /// <summary>
@@ -68,29 +72,46 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             {
                 return false;
             }
-            // Create or update record set parameters
-            var txtRecord = new TxtRecord(new[] { record.Value });
+            var relativeKey = RelativeRecordName(zone.Data.Name, record.Authority.Domain);
             if (!_recordSets.ContainsKey(zone))
             {
-                _recordSets.Add(zone, new Dictionary<string, RecordSet?>());
+                _recordSets.Add(zone, new());
             }
-            var zoneRecords = _recordSets[zone];
-            var relativeKey = RelativeRecordName(zone, record.Authority.Domain);
-            if (!zoneRecords.ContainsKey(relativeKey))
+            if (!_recordSets[zone].ContainsKey(relativeKey))
             {
-                zoneRecords.Add(
-                    relativeKey, 
-                    new RecordSet
-                    {
-                        TTL = 0,
-                        TxtRecords = new List<TxtRecord> { txtRecord }
-                    });
-            } 
-            else if (zoneRecords[relativeKey] != null)
-            {
-                zoneRecords[relativeKey]!.TxtRecords.Add(txtRecord);
+                var response = await zone.GetDnsTxtRecordAsync(relativeKey);
+                var currentRecords = response.Value;
+                _recordSets[zone].Add(relativeKey, currentRecords);
             }
+            var txtRecord = new DnsTxtRecordInfo();
+            txtRecord.Values.Add(record.Value);
+            _recordSets[zone][relativeKey].Data.DnsTxtRecords.Add(txtRecord);
             return true;
+        }
+
+        public override async Task DeleteRecord(DnsValidationRecord record)
+        {
+            var zone = await GetHostedZone(record.Authority.Domain);
+            if (zone == null)
+            {
+                return;
+            }
+            var relativeKey = RelativeRecordName(zone.Data.Name, record.Authority.Domain);
+            if (!_recordSets.ContainsKey(zone))
+            {
+                return;
+            }
+            if (!_recordSets[zone].ContainsKey(relativeKey))
+            {
+                return;
+            }
+            var txtResource = _recordSets[zone][relativeKey];
+            var removeList = txtResource.Data.DnsTxtRecords.Where(x => x.Values.Contains(record.Value));
+            foreach (var remove in removeList)
+            {
+                _ = txtResource.Data.DnsTxtRecords.Remove(remove);
+            }
+            _ = await txtResource.UpdateAsync(txtResource.Data);
         }
 
         /// <summary>
@@ -104,7 +125,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             {
                 foreach (var domain in _recordSets[zone].Keys)
                 {
-                    updateTasks.Add(CreateOrUpdateRecordSet(zone, domain));
+                    updateTasks.Add(CreateOrUpdateRecordSet(zone, _recordSets[zone][domain]));
                 }
             }
             await Task.WhenAll(updateTasks);
@@ -116,41 +137,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         /// <param name="zone"></param>
         /// <param name="domain"></param>
         /// <returns></returns>
-        private async Task CreateOrUpdateRecordSet(string zone, string domain)
+        private async Task CreateOrUpdateRecordSet(DnsZoneResource zone, DnsTxtRecordResource txtRecords)
         {
             try
             {
-                var newSet = _recordSets[zone][domain];
-                var client = await GetClient();
-                try
-                {
-                    var originalSet = await client.RecordSets.GetAsync(_options.ResourceGroupName,
-                                            zone,
-                                            domain,
-                                            RecordType.TXT);
-                    _recordSets[zone][domain] = originalSet;
-                } 
-                catch
-                {
-                    _recordSets[zone][domain] = null;
-                }
-                if (newSet == null)
-                {
-                    await client.RecordSets.DeleteAsync(
-                        _options.ResourceGroupName,
-                        zone,
-                        domain,
-                        RecordType.TXT);
-                } 
-                else
-                {
-                    _ = await client.RecordSets.CreateOrUpdateAsync(
-                        _options.ResourceGroupName,
-                        zone,
-                        domain,
-                        RecordType.TXT,
-                        newSet);
-                }      
+                _ = await txtRecords.UpdateAsync(txtRecords.Data);
             } 
             catch (Exception ex)
             {
@@ -158,18 +149,34 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
         }
 
-        private async Task<DnsManagementClient> GetClient()
+        private ArmClient Client
         {
-            if (_azureDnsClient == null)
+            get
             {
-                var credentials = await _helpers.GetCredentials();
-                _azureDnsClient = new DnsManagementClient(credentials, _proxyService.GetHttpClient(), true)
-                {
-                    BaseUri = _helpers.ResourceManagersEndpoint,
-                    SubscriptionId = _options.SubscriptionId
-                };
+                _armClient ??= new ArmClient(
+                        _helpers.TokenCredential,
+                        _options.SubscriptionId,
+                        _helpers.ArmOptions);
+                return _armClient;
             }
-            return _azureDnsClient;
+        }
+
+        /// <summary>
+        /// Get the resource group
+        /// </summary>
+        /// <returns></returns>
+        private async Task<ResourceGroupResource> ResourceGroup()
+        {
+            if (_resourceGroupResource != null)
+            {
+                return _resourceGroupResource;
+            }
+            var subscription = _options.SubscriptionId == null
+                ? await Client.GetDefaultSubscriptionAsync()
+                : Client.GetSubscriptionResource(new ResourceIdentifier(_options.SubscriptionId));
+            var resourceGroup = await subscription.GetResourceGroupAsync(_options.ResourceGroupName);
+            _resourceGroupResource = resourceGroup.Value;
+            return _resourceGroupResource;
         }
 
         /// <summary>
@@ -177,32 +184,30 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         /// </summary>
         /// <param name="recordName"></param>
         /// <returns></returns>
-        private async Task<string?> GetHostedZone(string recordName)
+        private async Task<DnsZoneResource?> GetHostedZone(string recordName)
         {
+            var resourceGroup = await ResourceGroup();
+
+            // Option to bypass the best match finder
             if (!string.IsNullOrEmpty(_options.HostedZone))
             {
-                return _options.HostedZone;
+                return await resourceGroup.GetDnsZoneAsync(_options.HostedZone);
             }
 
             // Cache so we don't have to repeat this more than once for each renewal
             if (_hostedZones == null)
             {
-                var client = await GetClient();
-                var zones = new List<Zone>();
-                var response = await client.Zones.ListByResourceGroupAsync(_options.ResourceGroupName);
+                var zones = new List<DnsZoneResource>();
+                var response = resourceGroup.GetDnsZones();
                 zones.AddRange(response);
-                while (!string.IsNullOrEmpty(response.NextPageLink))
-                {
-                    response = await client.Zones.ListByResourceGroupNextAsync(response.NextPageLink);
-                }
                 _log.Debug("Found {count} hosted zones in Azure Resource Group {rg}", zones.Count, _options.ResourceGroupName);
                 _hostedZones = zones;
             }
 
-            var hostedZone = FindBestMatch(_hostedZones.ToDictionary(x => x.Name), recordName);
+            var hostedZone = FindBestMatch(_hostedZones.ToDictionary(x => x.Data.Name), recordName);
             if (hostedZone != null)
             {
-                return hostedZone.Name;
+                return hostedZone;
             }
             _log.Error(
                 "Can't find hosted zone for {recordName} in resource group {ResourceGroupName}",
