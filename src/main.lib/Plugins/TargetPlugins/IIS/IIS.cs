@@ -10,17 +10,17 @@ using System.Threading.Tasks;
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     [IPlugin.Plugin<
-        IISSitesOptions, PluginOptionsFactory<IISSitesOptions>, 
+        IISSitesOptions, IISSitesOptionsFactory, 
         IISCapability, WacsJsonPlugins>
         ("cdd79a68-4a87-4039-bee8-5a0ebdca41cb", 
         "IISSites", "Read sites from IIS (legacy)", Hidden = true)]
     [IPlugin.Plugin<
-        IISSiteOptions, PluginOptionsFactory<IISSiteOptions>,
+        IISSiteOptions, IISSiteOptionsFactory,
         IISCapability, WacsJsonPlugins>
         ("d7940b23-f570-460e-ab15-2c822a79009b", 
         "IISSite", "Read site from IIS (legacy)", Hidden = true)]
     [IPlugin.Plugin<
-        IISBindingOptions, PluginOptionsFactory<IISBindingOptions>, 
+        IISBindingOptions, IISBindingOptionsFactory, 
         IISCapability, WacsJsonPlugins>
         ("2f5dd428-0f5d-4c8a-8fd0-56fc1b5985ce", 
         "IISBinding", "Read bindings from IIS (legacy)", Hidden = true)]

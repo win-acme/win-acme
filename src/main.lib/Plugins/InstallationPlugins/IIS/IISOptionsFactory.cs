@@ -7,7 +7,8 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    internal class IISOptionsFactory : PluginOptionsFactory<IISOptions>
+    internal class IISOptionsFactory<TOptions> : PluginOptionsFactory<TOptions>
+        where TOptions: IISOptions, new()
     {
         public override int Order => 5;
         private readonly IIISClient _iisClient;
@@ -43,9 +44,9 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             Validate(x => Task.FromResult(_iisClient.GetSite(x!.Value) != null), "invalid site").
             Validate(x => Task.FromResult(_iisClient.GetSite(x!.Value).Type == IISSiteType.Ftp), "not an ftp site");
 
-        public override async Task<IISOptions?> Aquire(IInputService inputService, RunLevel runLevel)
+        public override async Task<TOptions?> Aquire(IInputService inputService, RunLevel runLevel)
         {
-            var ret = new IISOptions()
+            var ret = new TOptions()
             {
                 NewBindingPort = await NewBindingPort.GetValue(),
                 NewBindingIp = await NewBindingIp.GetValue()
@@ -76,11 +77,11 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             return ret;
         }
 
-        public override async Task<IISOptions?> Default()
+        public override async Task<TOptions?> Default()
         {
             var siteId = await FtpSite.GetValue();
             siteId ??= await InstallationSite.Required(!_target.IIS).GetValue();
-            var ret = new IISOptions()
+            var ret = new TOptions()
             {
                 NewBindingPort = await NewBindingPort.GetValue(),
                 NewBindingIp = await NewBindingIp.GetValue(),
@@ -88,5 +89,21 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             };
             return ret;
         }
+    }
+
+    /// <summary>
+    /// FTP options factory
+    /// </summary>
+    internal class IISFTPOptionsFactory : IISOptionsFactory<IISFtpOptions>
+    {
+        public IISFTPOptionsFactory(IIISClient iisClient, Target target, ArgumentsInputService arguments) : base(iisClient, target, arguments) { }
+    }
+
+    /// <summary>
+    /// Regular options factory
+    /// </summary>
+    internal class IISOptionsFactory : IISOptionsFactory<IISOptions>
+    {
+        public IISOptionsFactory(IIISClient iisClient, Target target, ArgumentsInputService arguments) : base(iisClient, target, arguments) { }
     }
 }

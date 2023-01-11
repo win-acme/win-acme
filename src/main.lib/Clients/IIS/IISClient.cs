@@ -6,7 +6,6 @@ using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.ServiceProcess;
 
@@ -19,7 +18,7 @@ namespace PKISharp.WACS.Clients.IIS
         public const string DefaultBindingIp = "*";
 
         public Version Version { get; set; }
-        [SuppressMessage("Code Quality", "IDE0069:Disposable fields should be disposed", Justification = "Actually is disposed")]
+
         private readonly ILogService _log;
         private ServerManager? _serverManager;
         private List<IISSiteWrapper>? _sites = null;
