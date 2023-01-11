@@ -32,7 +32,7 @@
 	<ItemGroup>
 		<PackageReference Include="Autofac" Version="6.5.0" />
 		<PackageReference Include="DnsClient" Version="1.7.0" />
-		<PackageReference Include="FluentFTP" Version="42.1.0" />
+		<PackageReference Include="FluentFTP" Version="43.0.1" />
 		<PackageReference Include="MailKit" Version="3.4.3" />
 		<PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="7.0.0" />

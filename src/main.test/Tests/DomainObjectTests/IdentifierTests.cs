@@ -14,7 +14,7 @@ namespace PKISharp.WACS.UnitTests.Tests.DomainObjectTests
             Assert.AreEqual(new DnsIdentifier("a.com"), new DnsIdentifier("a.com"));
             Assert.AreEqual(new DnsIdentifier("A.com"), new DnsIdentifier("a.COM"));
             Assert.AreNotEqual(new DnsIdentifier("a.com"), new DnsIdentifier("b.com"));
-            Assert.AreNotEqual(new DnsIdentifier("a.com"), new UpnIdentifier("a.com"));
+            Assert.AreNotEqual<Identifier>(new DnsIdentifier("a.com"), new UpnIdentifier("a.com"));
 
             var list = new List<Identifier>() { new DnsIdentifier("a.com") };
             Assert.IsTrue(list.Contains(new DnsIdentifier("a.com")));
