@@ -6,8 +6,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 {
     internal class PemFilesOptions : StorePluginOptions
     {
-        internal const string PluginName = "PemFiles";
-
         /// <summary>
         /// PemFiles password
         /// </summary>

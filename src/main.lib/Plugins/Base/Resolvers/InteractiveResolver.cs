@@ -247,7 +247,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                         _ => 3,
                     };
                 },
-                description: x => $"[{x.Capability.ChallengeType}] {x.Meta.Description}",
+                description: x => $"[{x.Capability.ChallengeType.Replace("-01", "")}] {x.Meta.Description}",
                 defaultParam1: defaultParam1,
                 defaultParam2: defaultParam2,
                 defaultBackends: new List<Type>() { typeof(SelfHosting), typeof(FileSystem) },

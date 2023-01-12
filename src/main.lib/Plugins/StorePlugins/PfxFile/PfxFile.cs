@@ -16,10 +16,12 @@ namespace PKISharp.WACS.Plugins.StorePlugins
     [IPlugin.Plugin<
         PfxFileOptions, PfxFileOptionsFactory, 
         DefaultCapability, WacsJsonPlugins>
-        ("2a2c576f-7637-4ade-b8db-e8613b0bb33e", 
-        "PfxFile", "PFX archive")]
+        ("2a2c576f-7637-4ade-b8db-e8613b0bb33e",
+        Name, "PFX archive")]
     internal class PfxFile : IStorePlugin
     {
+        internal const string Name = "PfxFile";
+
         private readonly ILogService _log;
         private readonly string _path;
         private readonly string? _name;
@@ -103,7 +105,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 GetType(),
                 new StoreInfo()
                 {
-                    Name = PfxFileOptions.PluginName,
+                    Name = Name,
                     Path = _path
                 });
         }

@@ -17,8 +17,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// </summary>
         [JsonPropertyName("PfxPasswordProtected")]
         public ProtectedString? PfxPassword { get; set; }
-
-        internal const string PluginName = "CentralSsl";
         
         /// <summary>
         /// Show details to the user

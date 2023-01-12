@@ -19,9 +19,11 @@ namespace PKISharp.WACS.Plugins.StorePlugins
     [IPlugin.Plugin<
         CertificateStoreOptions, CertificateStoreOptionsFactory, 
         CertificateStoreCapability, WacsJsonPlugins>
-        ("e30adc8e-d756-4e16-a6f2-450f784b1a97", CertificateStoreOptions.PluginName, "Windows Certificate Store")]
+        ("e30adc8e-d756-4e16-a6f2-450f784b1a97", 
+        Name, "Windows Certificate Store")]
     internal class CertificateStore : IStorePlugin, IDisposable
     {
+        internal const string Name = "CertificateStore";
         private const string DefaultStoreName = nameof(StoreName.My);
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
@@ -135,7 +137,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 GetType(),
                 new StoreInfo()
                 {
-                    Name = CertificateStoreOptions.PluginName,
+                    Name = Name,
                     Path = _store.Name
                 });
             return Task.CompletedTask;

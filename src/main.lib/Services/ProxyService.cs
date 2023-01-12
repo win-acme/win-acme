@@ -74,6 +74,11 @@ namespace PKISharp.WACS.Services
 
             public LoggingHttpClientHandler(ILogService log) => _log = log;
 
+            protected override HttpResponseMessage Send(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                return SendAsync(request, cancellationToken).Result;
+            }
+
             protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             {
                 _log.Debug("Send {method} to {uri}", request.Method, request.RequestUri);

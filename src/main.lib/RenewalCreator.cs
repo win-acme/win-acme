@@ -400,7 +400,7 @@ namespace PKISharp.WACS
             var plugin = await resolve();
             if (plugin == null)
             {
-                _exceptionHandler.HandleException(message: $"No {step} plugin could be selected");
+                _exceptionHandler.HandleException(message: $"{step} plugin could not be selected");
                 return null;
             }
             // Configure the plugin

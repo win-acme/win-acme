@@ -207,7 +207,7 @@ namespace PKISharp.WACS.Services
             {
                 if (!Console.IsOutputRedirected)
                 {
-                    Console.SetCursorPosition(left, top);
+                    Console.SetCursorPosition(left, top - 1);
                 }
                 Console.WriteLine("<Enter>");
                 Console.WriteLine();

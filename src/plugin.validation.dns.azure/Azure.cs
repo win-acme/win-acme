@@ -1,4 +1,5 @@
-﻿using Azure.Core;
+﻿using Azure;
+using Azure.Core;
 using Azure.ResourceManager;
 using Azure.ResourceManager.Dns;
 using Azure.ResourceManager.Dns.Models;
@@ -34,10 +35,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         private ArmClient? _armClient;
         private ResourceGroupResource? _resourceGroupResource;
 
-        private readonly IProxyService _proxyService;
         private readonly AzureOptions _options;
         private readonly AzureHelpers _helpers;
-        private readonly Dictionary<DnsZoneResource, Dictionary<string, DnsTxtRecordResource>> _recordSets = new();
+        private readonly Dictionary<DnsZoneResource, Dictionary<string, DnsTxtRecordData>> _recordSets = new();
         private IEnumerable<DnsZoneResource>? _hostedZones;
         
         public Azure(AzureOptions options,
@@ -48,7 +48,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             ISettingsService settings) : base(dnsClient, log, settings)
         {
             _options = options;
-            _proxyService = proxyService;
             _helpers = new AzureHelpers(options, proxyService, ssm);
         }
 
@@ -61,7 +60,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public override ParallelOperations Parallelism => ParallelOperations.Answer;
 
         /// <summary>
-        /// Create record in Azure DNS
+        /// Mark DNS record for creation
         /// </summary>
         /// <param name="record"></param>
         /// <returns></returns>
@@ -79,16 +78,25 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
             if (!_recordSets[zone].ContainsKey(relativeKey))
             {
-                var response = await zone.GetDnsTxtRecordAsync(relativeKey);
-                var currentRecords = response.Value;
-                _recordSets[zone].Add(relativeKey, currentRecords);
+                var currentRecords = zone.GetDnsTxtRecords().FirstOrDefault(x => x.Data.Name == relativeKey);
+                var currentRecord = currentRecords?.Data;
+                if (currentRecord == null)
+                {
+                    currentRecord = new DnsTxtRecordData() { TtlInSeconds = 0 };
+                }
+                _recordSets[zone].Add(relativeKey, currentRecord);
             }
             var txtRecord = new DnsTxtRecordInfo();
             txtRecord.Values.Add(record.Value);
-            _recordSets[zone][relativeKey].Data.DnsTxtRecords.Add(txtRecord);
+            _recordSets[zone][relativeKey].DnsTxtRecords.Add(txtRecord);
             return true;
         }
 
+        /// <summary>
+        /// Mark DNS record for removal
+        /// </summary>
+        /// <param name="record"></param>
+        /// <returns></returns>
         public override async Task DeleteRecord(DnsValidationRecord record)
         {
             var zone = await GetHostedZone(record.Authority.Domain);
@@ -106,12 +114,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 return;
             }
             var txtResource = _recordSets[zone][relativeKey];
-            var removeList = txtResource.Data.DnsTxtRecords.Where(x => x.Values.Contains(record.Value));
+            var removeList = txtResource.DnsTxtRecords.Where(x => x.Values.Contains(record.Value)).ToList();
             foreach (var remove in removeList)
             {
-                _ = txtResource.Data.DnsTxtRecords.Remove(remove);
+                _ = txtResource.DnsTxtRecords.Remove(remove);
             }
-            _ = await txtResource.UpdateAsync(txtResource.Data);
         }
 
         /// <summary>
@@ -125,7 +132,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             {
                 foreach (var domain in _recordSets[zone].Keys)
                 {
-                    updateTasks.Add(CreateOrUpdateRecordSet(zone, _recordSets[zone][domain]));
+                    updateTasks.Add(PersistRecordSet(zone, domain, _recordSets[zone][domain]));
                 }
             }
             await Task.WhenAll(updateTasks);
@@ -137,15 +144,27 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         /// <param name="zone"></param>
         /// <param name="domain"></param>
         /// <returns></returns>
-        private async Task CreateOrUpdateRecordSet(DnsZoneResource zone, DnsTxtRecordResource txtRecords)
+        private async Task PersistRecordSet(DnsZoneResource zone, string domain, DnsTxtRecordData txtRecords)
         {
             try
             {
-                _ = await txtRecords.UpdateAsync(txtRecords.Data);
+                var txtRecordCollection = zone.GetDnsTxtRecords();
+                if (!txtRecords.DnsTxtRecords.Any())
+                {
+                    var existing = txtRecordCollection.FirstOrDefault(x => x.Data.Name == domain);
+                    if (existing != null)
+                    {
+                        _ = await existing.DeleteAsync(WaitUntil.Started);
+                    }
+                }
+                else
+                {
+                    _ = await txtRecordCollection.CreateOrUpdateAsync(WaitUntil.Completed, domain, txtRecords);
+                }
             } 
             catch (Exception ex)
             {
-                _log.Error(ex, "Error updating DNS records in {zone} ({domain})", zone, domain);
+                _log.Error(ex, "Error updating DNS records in {zone}", zone.Data.Name);
             }
         }
 
@@ -173,7 +192,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
             var subscription = _options.SubscriptionId == null
                 ? await Client.GetDefaultSubscriptionAsync()
-                : Client.GetSubscriptionResource(new ResourceIdentifier(_options.SubscriptionId));
+                : Client.GetSubscriptions().FirstOrDefault(x => x.Id.SubscriptionId == _options.SubscriptionId);
+            if (subscription == null)
+            {
+                throw new Exception($"Unable to find subscription {_options.SubscriptionId}");
+            }
             var resourceGroup = await subscription.GetResourceGroupAsync(_options.ResourceGroupName);
             _resourceGroupResource = resourceGroup.Value;
             return _resourceGroupResource;

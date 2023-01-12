@@ -15,10 +15,12 @@ namespace PKISharp.WACS.Plugins.StorePlugins
     [IPlugin.Plugin<
         CentralSslOptions, CentralSslOptionsFactory, 
         DefaultCapability, WacsJsonPlugins>
-        ("af1f77b6-4e7b-4f96-bba5-c2eeb4d0dd42", 
-        CentralSslOptions.PluginName, "IIS Central Certificate Store (.pfx per host)")]
+        ("af1f77b6-4e7b-4f96-bba5-c2eeb4d0dd42",
+        Name, "IIS Central Certificate Store (.pfx per host)")]
     internal class CentralSsl : IStorePlugin
     {
+        internal const string Name = "CentralSsl";
+
         private readonly ILogService _log;
         private readonly string _path;
         private readonly string? _password;
@@ -78,7 +80,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 GetType(),
                 new StoreInfo()
                 {
-                    Name = CentralSslOptions.PluginName,
+                    Name = Name,
                     Path = _path
                 });
         }

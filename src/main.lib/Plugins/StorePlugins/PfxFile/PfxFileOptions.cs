@@ -22,8 +22,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// </summary>
         public ProtectedString? PfxPassword { get; set; }
 
-        internal const string PluginName = "PfxFile";
-
         /// <summary>
         /// Show details to the user
         /// </summary>

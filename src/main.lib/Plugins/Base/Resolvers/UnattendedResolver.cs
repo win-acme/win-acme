@@ -5,7 +5,6 @@ using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.CsrPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
-using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Plugins.ValidationPlugins.Http;
 using PKISharp.WACS.Services;
@@ -15,7 +14,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using Single = PKISharp.WACS.Plugins.OrderPlugins.Single;
 
 namespace PKISharp.WACS.Plugins.Resolvers
 {
@@ -147,15 +145,10 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <returns></returns>
         public async Task<PluginFrontend<IValidationPluginCapability, ValidationPluginOptions>?> GetValidationPlugin()
         {
-            var validationMode = _arguments.ValidationMode ?? _settings.Validation.DefaultValidationMode;
-            if (string.IsNullOrEmpty(validationMode))
-            {
-                validationMode = Constants.Http01ChallengeType;
-            }
             return await GetPlugin<IValidationPluginCapability, ValidationPluginOptions>(
                 Steps.Validation,
                 defaultParam1: _arguments.Validation ?? _settings.Validation.DefaultValidation,
-                defaultParam2: validationMode,
+                defaultParam2: _arguments.ValidationMode ?? _settings.Validation.DefaultValidationMode,
                 defaultBackend: typeof(SelfHosting));
         }
 
@@ -169,7 +162,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             return await GetPlugin<IPluginCapability, OrderPluginOptions>(
                 Steps.Order,
                 defaultParam1: _arguments.Order,
-                defaultBackend: typeof(Single));
+                defaultBackend: typeof(OrderPlugins.Single));
         }
 
         /// <summary>
@@ -191,24 +184,21 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <returns></returns>
         public async Task<PluginFrontend<IPluginCapability, StorePluginOptions>?> GetStorePlugin(IEnumerable<Plugin> chosen)
         {
-            var cmd = _arguments.Store ?? _settings.Store.DefaultStore;
-            if (string.IsNullOrEmpty(cmd))
+            var defaultStore = _arguments.Store ?? _settings.Store.DefaultStore;
+            if (string.IsNullOrWhiteSpace(defaultStore))
             {
-                cmd = CertificateStoreOptions.PluginName;
+                defaultStore = StorePlugins.CertificateStore.Name;
             }
-            var parts = cmd.ParseCsv();
+            var parts = defaultStore.ParseCsv();
             if (parts == null)
             {
                 return null;
             }
             var index = chosen.Count();
-            if (index == parts.Count)
-            {
-                return null;
-            }
+            defaultStore = index == parts.Count ? StorePlugins.Null.Name : parts[index];
             return await GetPlugin<IPluginCapability, StorePluginOptions>(
                 Steps.Store,
-                defaultParam1: parts[index],
+                defaultParam1: defaultStore,
                 defaultBackend: typeof(StorePlugins.Null));
         }
 
@@ -220,21 +210,21 @@ namespace PKISharp.WACS.Plugins.Resolvers
         public async Task<PluginFrontend<IInstallationPluginCapability, InstallationPluginOptions>?> 
             GetInstallationPlugin(IEnumerable<Plugin> stores, IEnumerable<Plugin> installation)
         {
-            var cmd = _arguments.Installation ?? _settings.Installation.DefaultInstallation;
-            var parts = cmd.ParseCsv();
+            var defaultInstallation = _arguments.Installation ?? _settings.Installation.DefaultInstallation;
+            var parts = defaultInstallation.ParseCsv();
             if (parts == null)
             {
-                return null;
-            }
-            var index = installation.Count();
-            if (index == parts.Count)
+                defaultInstallation = InstallationPlugins.Null.Name;
+            } 
+            else
             {
-                return null;
+                var index = installation.Count();
+                defaultInstallation = index == parts.Count ? InstallationPlugins.Null.Name : parts[index];
             }
             return await GetPlugin<IInstallationPluginCapability, InstallationPluginOptions>(
                 Steps.Installation,
                 state: x => x.CanInstall(stores.Select(x => x.Backend), installation.Select(x => x.Backend)),
-                defaultParam1: parts[index],
+                defaultParam1: defaultInstallation,
                 defaultBackend: typeof(InstallationPlugins.Null));
         }
     }

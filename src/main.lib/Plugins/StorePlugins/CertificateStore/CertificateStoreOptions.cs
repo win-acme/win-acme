@@ -6,8 +6,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 {
     internal class CertificateStoreOptions : StorePluginOptions
     {
-        internal const string PluginName = "CertificateStore";
-
         /// <summary>
         /// Name of the certificate store to use
         /// </summary>
