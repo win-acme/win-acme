@@ -2,6 +2,7 @@
 using PKISharp.WACS.Plugins.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -177,12 +178,19 @@ namespace PKISharp.WACS.Services
             return ret;
         }
 
-        public List<Type> GetResolvable<T>()
+        public List<TypeDescriptor> GetResolvable<T>()
         {
             return _allTypes.
                 AsEnumerable().
                 Where(type => typeof(T) != type && typeof(T).IsAssignableFrom(type) && !type.IsAbstract).
+                Select(type => new TypeDescriptor() { Type = type }).
                 ToList();
+        }
+
+        public struct TypeDescriptor
+        {
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)]
+            public Type Type;
         }
     }
 }

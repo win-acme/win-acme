@@ -1,5 +1,4 @@
-﻿using Autofac.Features.AttributeFilters;
-using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services.Serialization;
@@ -8,27 +7,23 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Services
 {
     internal class RenewalStoreDisk : RenewalStore
     {
-        private readonly WacsJson _wacsJsonRead;
-        private readonly WacsJson _wacsJsonWrite;
+        private readonly WacsJson _wacsJson;
 
         public RenewalStoreDisk(
             ISettingsService settings,
             ILogService log,
             IInputService input,
             PasswordGenerator password,
-            [KeyFilter("legacy")] WacsJson wacsJsonRead,
-            [KeyFilter("current")] WacsJson wacsJsonWrite,
+            WacsJson wacsJson,
             IDueDateService dueDate) :
             base(settings, log, input, password, dueDate)
         {
-            _wacsJsonRead = wacsJsonRead;
-            _wacsJsonWrite = wacsJsonWrite;
+            _wacsJson = wacsJson;
         }
 
         /// <summary>
@@ -66,7 +61,7 @@ namespace PKISharp.WACS.Services
                     try
                     {
                         var text = File.ReadAllText(rj.FullName);
-                        var result = JsonSerializer.Deserialize(text, _wacsJsonRead.Renewal);
+                        var result = JsonSerializer.Deserialize(text, _wacsJson.Renewal);
                         if (result == null)
                         {
                             throw new Exception("result is empty");
@@ -148,7 +143,7 @@ namespace PKISharp.WACS.Services
                     {
                         try
                         {
-                            var renewalContent = JsonSerializer.Serialize(renewal, _wacsJsonWrite.Renewal);
+                            var renewalContent = JsonSerializer.Serialize(renewal, _wacsJson.Renewal);
                             if (string.IsNullOrWhiteSpace(renewalContent))
                             {
                                 throw new Exception("Serialization yielded empty result");

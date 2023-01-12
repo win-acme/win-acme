@@ -33,7 +33,7 @@ namespace PKISharp.WACS.Services
             IInputService input, 
             ILogService log,
             ISettingsService settings,
-            [KeyFilter("current")] WacsJson wacsJson)
+            WacsJson wacsJson)
         {
             _input = input;
             _log = log;

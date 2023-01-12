@@ -151,11 +151,11 @@ namespace PKISharp.WACS.Services
         /// <param name="step"></param>
         private void AddPluginType<T>(Steps step)
         {
-            var types = _assemblyService.GetResolvable<T>();
-            ListPlugins(types, step.ToString().ToLower());
+            var types = _assemblyService.GetResolvable<T>().ToList();
+            ListPlugins(types.Select(x => x.Type), step.ToString().ToLower());
             foreach (var type in types)
             {
-                var attributes = type.GetCustomAttributes(true).OfType<IPluginMeta>();
+                var attributes = type.Type.GetCustomAttributes(true).OfType<IPluginMeta>();
                 foreach (var meta in attributes)
                 {
                     var existing = _plugins.FirstOrDefault(p => p.Id == meta.Id);
@@ -166,15 +166,15 @@ namespace PKISharp.WACS.Services
                            "{Name1} from {Location1} and " +
                            "{Name2} from {Location2}",
                            meta.Id,
-                           type.FullName, type.Assembly.Location,
+                           type.Type.FullName, type.Type.Assembly.Location,
                            existing.Backend.FullName, existing.Backend.Assembly.Location);
                         continue;
                     }
-                    _plugins.Add(new Plugin(type, meta, step));
+                    _plugins.Add(new Plugin(type.Type, meta, step));
                 }
                 if (!attributes.Any()) 
                 {
-                    _log.Warning("Missing metadata on {type} from {location}", type.FullName, type.Assembly.Location);                  
+                    _log.Warning("Missing metadata on {type} from {location}", type.Type.FullName, type.Type.Assembly.Location);                  
                 }
             }
         }

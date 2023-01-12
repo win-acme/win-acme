@@ -90,7 +90,8 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             var second = await resolver.GetInstallationPlugin(
                 types.Select(t => plugins.GetPlugins().First(x => x.Backend == t)),
                 chosen);
-            Assert.IsNull(second);
+            Assert.IsNotNull(second);
+            Assert.AreEqual(second.OptionsFactory.GetType(), typeof(Plugins.InstallationPlugins.NullOptionsFactory));
         }
     }
 }

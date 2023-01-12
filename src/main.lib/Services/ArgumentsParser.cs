@@ -25,9 +25,9 @@ namespace PKISharp.WACS.Configuration
         public IEnumerable<IArgumentsProvider> ArgumentsProviders(AssemblyService assemblyService)
         {
             var argumentGroups = assemblyService.GetResolvable<IArguments>();
-            return argumentGroups.Select(([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor | DynamicallyAccessedMemberTypes.PublicProperties)] x) =>
+            return argumentGroups.Select(x =>
                 {
-                    var type = typeof(BaseArgumentsProvider<>).MakeGenericType(x);
+                    var type = typeof(BaseArgumentsProvider<>).MakeGenericType(x.Type);
                     var constr = type.GetConstructor(Array.Empty<Type>());
                     if (constr == null)
                     {

@@ -42,13 +42,13 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
 
         private string Serialize(Renewal renewal)
         {
-            var wacsJson = _container!.ResolveNamed<WacsJson>("current");
+            var wacsJson = _container!.Resolve<WacsJson>();
             return JsonSerializer.Serialize(renewal, wacsJson.Renewal);
         }
 
         private Renewal Deserialize(string json)
         {
-            var wacsJson = _container!.ResolveNamed<WacsJson>("legacy");
+            var wacsJson = _container!.Resolve<WacsJson>();
             var renewal = JsonSerializer.Deserialize(json, wacsJson.Renewal);
             Assert.IsNotNull(renewal);
             return renewal;
