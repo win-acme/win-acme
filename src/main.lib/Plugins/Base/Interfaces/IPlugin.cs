@@ -1,6 +1,7 @@
 ﻿using ACMESharp.Authorizations;
 using PKISharp.WACS.Services.Serialization;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.Interfaces
@@ -26,9 +27,13 @@ namespace PKISharp.WACS.Plugins.Interfaces
             public bool Hidden { get; set; } = false;
             public string Name { get; set; }
             public string Description { get; set; }
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
             public Type Options { get; }
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
             public Type OptionsFactory { get; }
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
             public Type OptionsJson { get; }
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
             public Type Capability { get; }
 
             public PluginAttribute(string id, string name, string description)

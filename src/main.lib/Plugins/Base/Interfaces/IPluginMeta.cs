@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace PKISharp.WACS.Plugins.Interfaces
 {
@@ -11,9 +12,13 @@ namespace PKISharp.WACS.Plugins.Interfaces
         public string Name { get; }
         public string Description { get; }
         public bool Hidden { get; }
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
         public Type Capability { get; }
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
         public Type Options { get; }
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
         public Type OptionsFactory { get; }
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
         public Type OptionsJson { get; }
     }
 

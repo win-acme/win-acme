@@ -343,7 +343,7 @@ namespace PKISharp.WACS.Services
             }
             var defaults = baseChoices.Where(x => x.Default);
             var cancel = Choice.Create(default(TResult), nullLabel, _cancelCommand);
-            if (defaults.Count() == 0)
+            if (!defaults.Any())
             {
                 cancel.Command = "<Enter>";
                 cancel.Default = true;
@@ -407,12 +407,9 @@ namespace PKISharp.WACS.Services
                         Where(t => string.Equals(t.Command, choice, StringComparison.InvariantCultureIgnoreCase)).
                         FirstOrDefault();
 
-                    if (selected == null)
-                    {
-                        selected = choices.
+                    selected ??= choices.
                             Where(t => string.Equals(t.Description, choice, StringComparison.InvariantCultureIgnoreCase)).
                             FirstOrDefault();
-                    }
 
                     if (selected != null && selected.Disabled)
                     {
@@ -465,10 +462,7 @@ namespace PKISharp.WACS.Services
                     Take(_settings.UI.PageSize);
                 foreach (var target in page)
                 {
-                    if (target.Command == null)
-                    {
-                        target.Command = (currentIndex + 1).ToString();
-                    }
+                    target.Command ??= (currentIndex + 1).ToString();
 
                     if (!string.IsNullOrEmpty(target.Command))
                     {
