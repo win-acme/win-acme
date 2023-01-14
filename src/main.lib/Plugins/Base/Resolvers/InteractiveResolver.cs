@@ -294,10 +294,6 @@ namespace PKISharp.WACS.Plugins.Resolvers
                         "managing a cluster of them).";
             if (chosen.Any())
             {
-                if (!_runLevel.HasFlag(RunLevel.Advanced))
-                {
-                    return null;
-                }
                 longDescription = "";
                 shortDescription = "Would you like to store it in another way too?";
                 defaultType = typeof(StorePlugins.Null);
@@ -335,10 +331,6 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 "the new thumbprint, or to update bindings.";
             if (installation.Any())
             {
-                if (!_runLevel.HasFlag(RunLevel.Advanced))
-                {
-                    return null;
-                }
                 longDescription = "";
                 shortDescription = "Add another installation step?";
                 defaultType = typeof(InstallationPlugins.Null);
