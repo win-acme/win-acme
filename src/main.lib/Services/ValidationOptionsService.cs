@@ -5,6 +5,7 @@ using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services.Serialization;
 using System;
@@ -22,6 +23,7 @@ namespace PKISharp.WACS.Services
         private readonly IInputService _input;
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
+        private readonly IAutofacBuilder _autofac;
         private readonly WacsJson _wacsJson;
         private List<GlobalValidationPluginOptions>? _options;
 
@@ -32,9 +34,11 @@ namespace PKISharp.WACS.Services
         public ValidationOptionsService(
             IInputService input, 
             ILogService log,
-            ISettingsService settings,
+            ISettingsService settings, 
+            IAutofacBuilder autofac,
             WacsJson wacsJson)
         {
+            _autofac = autofac;
             _input = input;
             _log = log;
             _settings = settings;
@@ -227,11 +231,15 @@ namespace PKISharp.WACS.Services
         /// <returns></returns>
         private async Task UpdateOptions(ILifetimeScope scope, GlobalValidationPluginOptions input)
         {
-            var resolver = scope.Resolve<IResolver>();
+            var dummy = new Target(new DnsIdentifier("www.example.com"));
+            var target = _autofac.Target(scope, dummy);
+            var resolver = scope.Resolve<InteractiveResolver>(
+                new TypedParameter(typeof(ILifetimeScope), target),
+                new TypedParameter(typeof(RunLevel), RunLevel.Advanced));
             var validationPlugin = await resolver.GetValidationPlugin();
             if (validationPlugin != null)
             {
-                var options = await validationPlugin.OptionsFactory.Aquire( _input, RunLevel.Advanced);
+                var options = await validationPlugin.OptionsFactory.Aquire(_input, RunLevel.Advanced);
                 input.ValidationPluginOptions = options;
             }
         }

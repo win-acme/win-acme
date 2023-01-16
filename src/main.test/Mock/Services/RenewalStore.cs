@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace PKISharp.WACS.UnitTests.Mock.Services
 {
-    class MockRenewalStore : RenewalStore
+    class MockRenewalStore : IRenewalStoreBackend
     {
         /// <summary>
         /// Local cache to prevent superfluous reading and
@@ -13,13 +13,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         /// </summary>
         internal List<Renewal> _renewalsCache;
 
-        public MockRenewalStore(
-          ISettingsService settings, 
-          ILogService log,
-          IInputService input, 
-          PasswordGenerator password,
-          IDueDateService dueDate) :
-          base(settings, log, input, password, dueDate)
+        public MockRenewalStore()
         {
             _renewalsCache = new List<Renewal>
             {
@@ -27,7 +21,14 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
             };
         }
 
-        protected override IEnumerable<Renewal> ReadRenewals() => _renewalsCache;
-        protected override void WriteRenewals(IEnumerable<Renewal> Renewals) => _renewalsCache = Renewals.Where(x => !x.Deleted).ToList();
+        public IEnumerable<Renewal> Read()
+        {
+            return _renewalsCache.Where(x => !x.Deleted).ToList();
+        }
+
+        public void Write(IEnumerable<Renewal> renewals)
+        {
+            _renewalsCache = renewals.ToList();
+        }
     }
 }

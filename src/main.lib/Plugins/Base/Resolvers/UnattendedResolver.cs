@@ -93,13 +93,12 @@ namespace PKISharp.WACS.Plugins.Resolvers
             }
 
             var className = step.ToString().ToLower();
-            var changeInstructions = $"Choose another plugin using the --{className} switch or change the default in settings.json";
             if (!string.IsNullOrEmpty(defaultParam1))
             {
                 var defaultPlugin = _plugins.GetPlugin(step, defaultParam1, defaultParam2);
                 if (defaultPlugin == null)
                 {
-                    _log.Error("Unable to find {n} plugin {p}. " + changeInstructions, className, defaultParam1);
+                    _log.Error("Unable to find {n} plugin {p}. Choose another plugin using the {className} switch or change the default in settings.json", step, defaultParam1, $"--{className}");
                     return null;
                 }
                 else
@@ -111,10 +110,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             var defaultOption = options.OrderBy(x => x.Meta.Hidden).First(x => x.Meta.Backend == defaultBackend);
             if (defaultOption.State.Disabled)
             {
-                _log.Error("{n} plugin {x} not available: {m}. " + changeInstructions, 
-                    step, 
-                    defaultOption.Frontend.Meta.Name ?? "Unknown",
-                    defaultOption.State.Reason?.TrimEnd('.'));
+                _log.Error("{n} plugin {x} not available: {m}. Choose another plugin using the {className} switch or change the default in settings.json", step, defaultOption.Frontend.Meta.Name ?? "Unknown", defaultOption.State.Reason?.TrimEnd('.'), $"--{className}");
                 return null;
             }
 

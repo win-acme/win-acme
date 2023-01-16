@@ -12,11 +12,13 @@ namespace PKISharp.WACS.Services.Serialization
     internal class PluginOptionsConverter : JsonConverter<PluginOptionsBase>
     {
         private readonly IPluginService _pluginService;
+        private readonly ILogService _log;
         private readonly ILifetimeScope _scope;
 
         public PluginOptionsConverter(ILifetimeScope context) 
         {
             _pluginService = context.Resolve<IPluginService>();
+            _log = context.Resolve<ILogService>();
             _scope = context;
         }
 
@@ -35,6 +37,9 @@ namespace PKISharp.WACS.Services.Serialization
             var neutral = JsonSerializer.Deserialize(ref readerClone, WacsJson.Default.PluginOptionsBase);
             if (!_pluginService.TryGetPlugin(neutral, out var plugin))
             {
+                _log.Error("Unable to find {typeToConvert} plugin {id}", 
+                    typeToConvert.Name.Replace("PluginOptions", "").Replace("Target", "Source").ToLower(), 
+                    neutral?.Plugin);
                 reader.Skip();
                 return null;
             }

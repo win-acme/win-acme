@@ -89,7 +89,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                     "Enable parallel execution?",
                     new List<Choice<int?>>()
                     {
-                        Choice.Create<int?>(null, "Run everything one by one (default)"),
+                        Choice.Create<int?>(null, "Run everything one by one", @default: true),
                         Choice.Create<int?>(1, "Allow multiple instances of the script to run at the same time"),
                         Choice.Create<int?>(2, "Allow multiple records to be validated at the same time"),
                         Choice.Create<int?>(3, "Allow both modes of parallelism")
@@ -105,7 +105,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var commonScript = await CommonScript.GetValue();
             var createScript = await CreateScript.GetValue();
             var deleteScript = await DeleteScript.GetValue();
-            ProcessScripts(ret, commonScript, createScript, deleteScript);
+            if (!ProcessScripts(ret, commonScript, createScript, deleteScript))
+            {
+                return null;
+            }
             ret.DeleteScriptArguments = await DeleteScriptArguments.GetValue();
             ret.CreateScriptArguments = await CreateScriptArguments.GetValue();
             ret.Parallelism = await Parallelism.GetValue();
@@ -119,7 +122,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         /// <param name="commonInput"></param>
         /// <param name="createInput"></param>
         /// <param name="deleteInput"></param>
-        private void ProcessScripts(ScriptOptions options, string? commonInput, string? createInput, string? deleteInput)
+        private bool ProcessScripts(ScriptOptions options, string? commonInput, string? createInput, string? deleteInput)
         {
             if (!string.IsNullOrWhiteSpace(commonInput))
             {
@@ -146,6 +149,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 options.CreateScript = string.IsNullOrWhiteSpace(createInput) ? null : createInput;
                 options.DeleteScript = string.IsNullOrWhiteSpace(deleteInput) ? null : deleteInput;
             }
+            if (options.CreateScript == null && options.Script == null)
+            {
+                _log.Error("Missing --dnsscript or --dnscreatescript");
+                return false;
+            }
+            return true;
         }
     }
 }

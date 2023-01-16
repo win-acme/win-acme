@@ -183,10 +183,10 @@ namespace PKISharp.WACS
                         $"Run {selectionLabel}", "R", state: noneState));
                 options.Add(
                     Choice.Create<Func<Task>>(() => Run(selectedRenewals, RunLevel.Interactive | RunLevel.Force),
-                        $"Run {selectionLabel} (force)", "Z", state: noneState));
+                        $"Run {selectionLabel} (force)", "S", state: noneState));
                 options.Add(
                     Choice.Create<Func<Task>>(() => Run(selectedRenewals, RunLevel.Interactive | RunLevel.Force | RunLevel.NoCache),
-                        $"Run {selectionLabel} (force, no cache)", "X", state: noneState));
+                        $"Run {selectionLabel} (force, no cache)", "T", state: noneState));
                 options.Add(
                     Choice.Create<Func<Task>>(
                         async () => selectedRenewals = await Analyze(selectedRenewals),

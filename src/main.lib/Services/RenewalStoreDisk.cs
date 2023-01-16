@@ -1,5 +1,4 @@
 ﻿using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services.Serialization;
 using System;
@@ -10,19 +9,22 @@ using System.Text.Json;
 
 namespace PKISharp.WACS.Services
 {
-    internal class RenewalStoreDisk : RenewalStore
+    internal class RenewalStoreDisk : IRenewalStoreBackend
     {
         private readonly WacsJson _wacsJson;
+        private readonly ISettingsService _settings;
+        private readonly IDueDateService _dueDate;
+        private readonly ILogService _log;
 
         public RenewalStoreDisk(
             ISettingsService settings,
+            IDueDateService dueDate,
             ILogService log,
-            IInputService input,
-            PasswordGenerator password,
-            WacsJson wacsJson,
-            IDueDateService dueDate) :
-            base(settings, log, input, password, dueDate)
+            WacsJson wacsJson) : base()
         {
+            _dueDate = dueDate;
+            _settings = settings;
+            _log = log;
             _wacsJson = wacsJson;
         }
 
@@ -35,7 +37,7 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// Parse renewals from store
         /// </summary>
-        protected override IEnumerable<Renewal> ReadRenewals()
+        public IEnumerable<Renewal> Read()
         {
             if (_renewalsCache == null)
             {
@@ -70,33 +72,25 @@ namespace PKISharp.WACS.Services
                         {
                             throw new Exception($"mismatch between filename and id {result.Id}");
                         }
-                        if (result.TargetPluginOptions == null)
+                        if (result.TargetPluginOptions == null || result.TargetPluginOptions.Plugin == null)
                         {
-                            throw new Exception("missing TargetPluginOptions");
+                            throw new Exception("missing source plugin options");
                         }
-                        if (result.TargetPluginOptions.GetType() == typeof(TargetPluginOptions))
+                        if (result.ValidationPluginOptions == null || result.ValidationPluginOptions.Plugin == null)
                         {
-                            throw new Exception($"missing source plugin {result.TargetPluginOptions.Plugin}");
-                        }
-                        if (result.ValidationPluginOptions == null)
-                        {
-                            throw new Exception("missing ValidationPluginOptions");
-                        }
-                        if (result.ValidationPluginOptions.GetType() == typeof(ValidationPluginOptions))
-                        {
-                            throw new Exception($"missing validation plugin {result.ValidationPluginOptions.Plugin}");
+                            throw new Exception("missing validation plugin options");
                         }
                         if (result.StorePluginOptions == null)
                         {
-                            throw new Exception("missing StorePluginOptions");
+                            throw new Exception("missing store plugin options");
                         }
                         if (result.CsrPluginOptions == null && result.TargetPluginOptions is not CsrOptions)
                         {
-                            throw new Exception("missing CsrPluginOptions");
+                            throw new Exception("missing csr plugin options");
                         }
                         if (result.InstallationPluginOptions == null)
                         {
-                            throw new Exception("missing InstallationPluginOptions");
+                            throw new Exception("missing installation plugin options");
                         }
                         if (string.IsNullOrEmpty(result.LastFriendlyName))
                         {
@@ -113,7 +107,7 @@ namespace PKISharp.WACS.Services
                         _log.Error("Unable to read renewal {renewal}: {reason}", rj.Name, ex.Message);
                     }
                 }
-                _renewalsCache = list.OrderBy(x => _dueDateService.DueDate(x)).ToList();
+                _renewalsCache = list.OrderBy(_dueDate.DueDate).ToList();
             }
             return _renewalsCache;
         }
@@ -123,7 +117,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="BaseUri"></param>
         /// <param name="Renewals"></param>
-        protected override void WriteRenewals(IEnumerable<Renewal> Renewals)
+        public void Write(IEnumerable<Renewal> Renewals)
         {
             var list = Renewals.ToList();
             list.ForEach(renewal =>
@@ -169,7 +163,7 @@ namespace PKISharp.WACS.Services
                     renewal.Updated = false;
                 }
             });
-            _renewalsCache = list.Where(x => !x.Deleted).OrderBy(x => _dueDateService.DueDate(x)).ToList();
+            _renewalsCache = list.Where(x => !x.Deleted).OrderBy(_dueDate.DueDate).ToList();
         }
 
         /// <summary>
