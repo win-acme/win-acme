@@ -2,6 +2,7 @@
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services.Serialization;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 
@@ -87,7 +88,7 @@ namespace PKISharp.WACS.Services
         /// <param name="what"></param>
         /// <param name="secret"></param>
         /// <returns></returns>
-        protected P GetArgument<T, P>(Expression<Func<T, P>> action) where T : class, IArguments, new()
+        protected P GetArgument<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T, P>(Expression<Func<T, P>> action) where T : class, IArguments, new()
         {
             var returnValue = default(P);
             var args = _arguments.GetArguments<T>();

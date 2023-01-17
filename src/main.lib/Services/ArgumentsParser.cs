@@ -39,7 +39,7 @@ namespace PKISharp.WACS.Configuration
                 }).ToList();
         }
 
-        public T? GetArguments<T>() where T : class, new()
+        public T? GetArguments<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>() where T : class, new()
         {
             foreach (var provider in _providers)
             {
