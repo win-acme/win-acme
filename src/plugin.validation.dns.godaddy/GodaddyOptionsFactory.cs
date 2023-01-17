@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     /// <summary>
-    /// Azure DNS validation
+    /// Godaddy DNS validation
     /// </summary>
     internal class GodaddyOptionsFactory : PluginOptionsFactory<GodaddyOptions>
     {

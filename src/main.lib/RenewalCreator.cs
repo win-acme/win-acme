@@ -127,7 +127,7 @@ namespace PKISharp.WACS
 
             // Choose the target plugin
             var resolver = CreateResolver(_container, runLevel);
-            if (steps.HasFlag(Steps.Target))
+            if (steps.HasFlag(Steps.Source))
             {
                 var targetOptions = await SetupTarget(resolver, runLevel);
                 if (targetOptions == null)
@@ -155,7 +155,7 @@ namespace PKISharp.WACS
             _log.Information("Source generated using plugin {name}: {target}", targetPluginName, initialTarget);
 
             // Setup the friendly name
-            var ask = runLevel.HasFlag(RunLevel.Advanced | RunLevel.Interactive) && steps.HasFlag(Steps.Target);
+            var ask = runLevel.HasFlag(RunLevel.Advanced | RunLevel.Interactive) && steps.HasFlag(Steps.Source);
             await SetupFriendlyName(tempRenewal, initialTarget, ask);
 
             // Create new resolver in a scope that knows

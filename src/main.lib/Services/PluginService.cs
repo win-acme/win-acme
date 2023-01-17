@@ -25,7 +25,7 @@ namespace PKISharp.WACS.Services
             _log = logger;
             _assemblyService = assemblyService;
             _plugins = new List<Plugin>();
-            AddPluginType<ITargetPlugin>(Steps.Target);
+            AddPluginType<ITargetPlugin>(Steps.Source);
             AddPluginType<IValidationPlugin>(Steps.Validation);
             AddPluginType<IOrderPlugin>(Steps.Order);
             AddPluginType<ICsrPlugin>(Steps.Csr);

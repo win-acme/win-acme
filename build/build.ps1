@@ -13,26 +13,28 @@ $BuildFolder = Join-Path -Path $RepoRoot "build"
 & dotnet restore $RepoRoot\src\main\wacs.csproj
 
 # Clean solution
-& dotnet clean $RepoRoot\src\main\wacs.csproj -c "Release" -r win-x64 /p:SelfContained=true
-& dotnet clean $RepoRoot\src\main\wacs.csproj -c "Release" -r win-x86 /p:SelfContained=true
-& dotnet clean $RepoRoot\src\main\wacs.csproj -c "Release" -r win-arm64 /p:SelfContained=true
-& dotnet clean $RepoRoot\src\main\wacs.csproj -c "ReleaseTrimmed" -r win-x64 --self-contained
-& dotnet clean $RepoRoot\src\main\wacs.csproj -c "ReleaseTrimmed" -r win-x86 --self-contained 
-& dotnet clean $RepoRoot\src\main\wacs.csproj -c "ReleaseTrimmed" -r win-arm64 --self-contained 
+foreach ($release in @("Release", "ReleaseTrimmed")) {
+	foreach ($arch in @("win-x64", "win-x86", "win-arm64")) {
+		Write-Host "Clean $arch $release..."
+		& dotnet clean $RepoRoot\src\main\wacs.csproj -c $release -r $arch /p:SelfContained=true
+	}
+}
 
 # Build main
 & dotnet pack $RepoRoot\src\main\wacs.csproj -c "Release" /p:PublishSingleFile=false /p:PublishReadyToRun=false
-& dotnet publish $RepoRoot\src\main\wacs.csproj -c "Release" -r win-x64 --self-contained
-& dotnet publish $RepoRoot\src\main\wacs.csproj -c "Release" -r win-x86 --self-contained
-& dotnet publish $RepoRoot\src\main\wacs.csproj -c "Release" -r win-arm64 --self-contained
-& dotnet publish $RepoRoot\src\main\wacs.csproj -c "ReleaseTrimmed" -r win-x64 --self-contained
-& dotnet publish $RepoRoot\src\main\wacs.csproj -c "ReleaseTrimmed" -r win-x86 --self-contained
-& dotnet publish $RepoRoot\src\main\wacs.csproj -c "ReleaseTrimmed" -r win-arm64 --self-contained
+foreach ($release in @("Release", "ReleaseTrimmed")) {
+	foreach ($arch in @("win-x64", "win-x86", "win-arm64")) {
+		Write-Host "Publish $arch $release..."
+		& dotnet publish $RepoRoot\src\main\wacs.csproj -c $release -r $arch --self-contained
+	}
+}
 
+# Build plugins
 & dotnet publish $RepoRoot\src\plugin.store.keyvault\wacs.store.keyvault.csproj -c "Release"
 & dotnet publish $RepoRoot\src\plugin.validation.dns.azure\wacs.validation.dns.azure.csproj -c "Release"
 & dotnet publish $RepoRoot\src\plugin.validation.dns.cloudflare\wacs.validation.dns.cloudflare.csproj -c "Release"
 & dotnet publish $RepoRoot\src\plugin.validation.dns.digitalocean\wacs.validation.dns.digitalocean.csproj -c "Release"
+& dotnet publish $RepoRoot\src\plugin.validation.dns.dnsmadeeasy\wacs.validation.dns.dnsmadeeasy.csproj -c "Release"
 & dotnet publish $RepoRoot\src\plugin.validation.dns.domeneshop\wacs.validation.dns.domeneshop.csproj -c "Release"
 & dotnet publish $RepoRoot\src\plugin.validation.dns.dreamhost\wacs.validation.dns.dreamhost.csproj -c "Release"
 & dotnet publish $RepoRoot\src\plugin.validation.dns.godaddy\wacs.validation.dns.godaddy.csproj -c "Release"

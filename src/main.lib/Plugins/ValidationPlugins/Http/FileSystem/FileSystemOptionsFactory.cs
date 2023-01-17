@@ -14,7 +14,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     {
         private readonly IIISClient _iisClient;
         private readonly ILogService _log;
-        private readonly Target _target;
 
         public FileSystemOptionsFactory(
             Target target,
@@ -24,7 +23,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         {
             _log = log;
             _iisClient = iisClient;
-            _target = target;
         }
 
         public override bool PathIsValid(string path) => path.ValidPath(_log);

@@ -102,8 +102,17 @@ PlatformRelease "ReleaseTrimmed" win-x64
 PlatformRelease "ReleaseTrimmed" win-x86
 PlatformRelease "ReleaseTrimmed" win-arm64
 
-PluginRelease plugin.validation.dns.dreamhost @(
-	"PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost.dll"
+PluginRelease plugin.store.keyvault @(
+	"Azure.Core.dll",
+	"Azure.Identity.dll",
+	"Azure.Security.KeyVault.Certificates.dll",
+	"Microsoft.Identity.Client.dll",
+	"Microsoft.Identity.Client.Extensions.Msal.dll",
+	"PKISharp.WACS.Plugins.Azure.Common.dll",
+	"PKISharp.WACS.Plugins.StorePlugins.KeyVault.dll",
+	"Microsoft.Bcl.AsyncInterfaces.dll",
+	"Microsoft.Rest.ClientRuntime.dll",
+	"System.Memory.Data.dll"
 )
 PluginRelease plugin.validation.dns.azure @(
 	"PKISharp.WACS.Plugins.Azure.Common.dll",
@@ -117,19 +126,6 @@ PluginRelease plugin.validation.dns.azure @(
 	"Microsoft.Rest.ClientRuntime.dll",
 	"PKISharp.WACS.Plugins.ValidationPlugins.Azure.dll"
 )
-PluginRelease plugin.validation.dns.route53 @(
-	"AWSSDK.Core.dll", 
-	"AWSSDK.Route53.dll",
-	"PKISharp.WACS.Plugins.ValidationPlugins.Route53.dll"
-)
-PluginRelease plugin.validation.dns.domeneshop @(
-	"Abstractions.Integrations.Domeneshop.Models.dll", 
-	"Abstractions.Integrations.Domeneshop.dll",
-	"PKISharp.WACS.Plugins.ValidationPlugins.Domeneshop.dll"
-)
-PluginRelease plugin.validation.dns.luadns @(
-	"PKISharp.WACS.Plugins.ValidationPlugins.LuaDns.dll"
-)
 PluginRelease plugin.validation.dns.cloudflare @(
 	"FluentCloudflare.dll", 
 	"PKISharp.WACS.Plugins.ValidationPlugins.Cloudflare.dll"
@@ -139,9 +135,17 @@ PluginRelease plugin.validation.dns.digitalocean @(
 	"RestSharp.dll", 
 	"PKISharp.WACS.Plugins.ValidationPlugins.DigitalOcean.dll"
 )
-PluginRelease plugin.validation.dns.transip @(
-	"Newtonsoft.Json.dll",
-	"PKISharp.WACS.Plugins.ValidationPlugins.TransIp.dll"
+PluginRelease plugin.validation.dns.dnsmadeeasy @(
+	"PKISharp.WACS.Plugins.ValidationPlugins.DnsMadeEasy.dll"
+	"Newtonsoft.Json.dll"
+)
+PluginRelease plugin.validation.dns.domeneshop @(
+	"Abstractions.Integrations.Domeneshop.Models.dll", 
+	"Abstractions.Integrations.Domeneshop.dll",
+	"PKISharp.WACS.Plugins.ValidationPlugins.Domeneshop.dll"
+)
+PluginRelease plugin.validation.dns.dreamhost @(
+	"PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost.dll"
 )
 PluginRelease plugin.validation.dns.godaddy @(
 	"Newtonsoft.Json.dll",
@@ -155,23 +159,23 @@ PluginRelease plugin.validation.dns.googledns @(
 	"Google.Apis.Dns.v1.dll",
 	"PKISharp.WACS.Plugins.ValidationPlugins.GoogleDns.dll"
 )
-PluginRelease plugin.validation.dns.simply @(
-	"PKISharp.WACS.Plugins.ValidationPlugins.Simply.dll"
+PluginRelease plugin.validation.dns.luadns @(
+	"PKISharp.WACS.Plugins.ValidationPlugins.LuaDns.dll"
 )
 PluginRelease plugin.validation.dns.ns1 @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.NS1.dll"
 )
-PluginRelease plugin.store.keyvault @(
-	"Azure.Core.dll",
-	"Azure.Identity.dll",
-	"Azure.Security.KeyVault.Certificates.dll",
-	"Microsoft.Identity.Client.dll",
-	"Microsoft.Identity.Client.Extensions.Msal.dll",
-	"PKISharp.WACS.Plugins.Azure.Common.dll",
-	"PKISharp.WACS.Plugins.StorePlugins.KeyVault.dll",
-	"Microsoft.Bcl.AsyncInterfaces.dll",
-	"Microsoft.Rest.ClientRuntime.dll",
-	"System.Memory.Data.dll"
+PluginRelease plugin.validation.dns.route53 @(
+	"AWSSDK.Core.dll", 
+	"AWSSDK.Route53.dll",
+	"PKISharp.WACS.Plugins.ValidationPlugins.Route53.dll"
+)
+PluginRelease plugin.validation.dns.simply @(
+	"PKISharp.WACS.Plugins.ValidationPlugins.Simply.dll"
+)
+PluginRelease plugin.validation.dns.transip @(
+	"Newtonsoft.Json.dll",
+	"PKISharp.WACS.Plugins.ValidationPlugins.TransIp.dll"
 )
 PluginRelease plugin.validation.http.rest @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.Rest.dll"
