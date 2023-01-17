@@ -7,11 +7,11 @@
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)'=='Debug'">
-		<WarningLevel>1</WarningLevel>
+		<WarningLevel>4</WarningLevel>
 		<DefineConstants>DEBUG;PLUGGABLE</DefineConstants>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)'=='DebugTrimmed'">
-		<WarningLevel>1</WarningLevel>
+		<WarningLevel>4</WarningLevel>
 		<DefineConstants>DEBUG</DefineConstants>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)'=='Release'">

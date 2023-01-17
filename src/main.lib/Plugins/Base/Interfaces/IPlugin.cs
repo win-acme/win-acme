@@ -17,7 +17,11 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// <typeparam name="TOptionsFactory"></typeparam>
         /// <typeparam name="TJson"></typeparam>
         [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
-        protected sealed class PluginAttribute<TOptions, TOptionsFactory, TCapability, TJson> : 
+        protected sealed class PluginAttribute<
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TOptions,
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TOptionsFactory,
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TCapability,
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TJson> : 
             Attribute, IPluginMeta
             where TOptions : PluginOptions, new()
             where TOptionsFactory : IPluginOptionsFactory<TOptions>

@@ -115,7 +115,9 @@ namespace PKISharp.WACS.Services
         protected List<Type> LoadFromDiskReal(IEnumerable<FileInfo> dllFiles)
         {
 #if !PLUGGABLE
+#pragma warning disable IDE0022 // Use expression body for methods
             return new List<Type>();
+#pragma warning restore IDE0022 // Use expression body for methods
 #else
             var allAssemblies = new List<Assembly>();
             foreach (var file in dllFiles)

@@ -31,80 +31,77 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.DnsMadeEasy
         #region Lookup Domain Id
         public async Task<string> LookupDomainId(string domain)
         {
-            using (var client = GetClient())
+            using var client = GetClient();
+            var buildApiUrl = $"V2.0/dns/managed/name?domainname={domain}";
+
+            var response = await client.GetAsync(buildApiUrl);
+            if (response.StatusCode == HttpStatusCode.OK)
             {
-                var buildApiUrl = $"V2.0/dns/managed/name?domainname={domain}";
+                string json = await response.Content.ReadAsStringAsync();
+                var request = JsonConvert.DeserializeObject<DomainResponse>(json);
 
-                var response = await client.GetAsync(buildApiUrl);
-                if (response.StatusCode == HttpStatusCode.OK)
-                {
-                    string json = await response.Content.ReadAsStringAsync();
-                    var request = JsonConvert.DeserializeObject<DomainResponse>(json);
+                if (request == null || request.id == null)
+                    throw new ArgumentNullException($"Unexpected null response for {domain}");
 
-                    if (request == null)
-                        throw new ArgumentNullException($"Unexpected null response for {domain}");
+                if (string.Compare(request.name, domain, true) != 0)
+                    throw new InvalidDataException($"Domain returned an unexpected result requested: {domain} != {request.name}");
 
-                    if (string.Compare(request.name, domain, true) != 0)
-                        throw new InvalidDataException($"Domain returned an unexpected result requested: {domain} != {request.name}");
-
-                    return request.id;
-                }
-                else
-                {
-                    var content = await response.Content.ReadAsStringAsync();
-                    throw new Exception(content);
-                }
+                return request.id;
+            }
+            else
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                throw new Exception(content);
             }
         }
         class DomainResponse
         {
-            public string id { get; set; }
-            public string name { get; set; }
-            public string type { get; set; }
+            public string? id { get; set; }
+            public string? name { get; set; }
+            public string? type { get; set; }
         }
         #endregion
 
         #region Lookup Domain Record Id
         public async Task<string[]> LookupDomainRecordId(string domainId, string recordName, RecordType type)
         {
-            using (var client = GetClient())
+            using var client = GetClient();
+            string recordType = type.ToString();
+            var buildApiUrl = $"V2.0/dns/managed/{domainId}/records?recordName={recordName}&type={recordType}";
+
+            var response = await client.GetAsync(buildApiUrl);
+            if (response.StatusCode == HttpStatusCode.OK)
             {
-                string recordType = type.ToString();
-                var buildApiUrl = $"V2.0/dns/managed/{domainId}/records?recordName={recordName}&type={recordType}";
+                string json = await response.Content.ReadAsStringAsync();
+                var request = JsonConvert.DeserializeObject<DomainResponseCollection>(json);
 
-                var response = await client.GetAsync(buildApiUrl);
-                if (response.StatusCode == HttpStatusCode.OK)
+                if (request == null || request.data == null || request.data.Length == 0)
+                    return Array.Empty<string>();
+
+                List<string> recordId = new();
+                foreach (var result in request.data)
                 {
-                    string json = await response.Content.ReadAsStringAsync();
-                    var request = JsonConvert.DeserializeObject<DomainResponseCollection>(json);
-
-                    if (request == null || request.data == null || request.data.Length == 0)
-                        return Array.Empty<string>();
-
-                    List<string> recordId = new List<string>();
-                    foreach (var result in request.data)
+                    if (string.Compare(result.name, recordName, true) == 0 &&
+                        string.Compare(result.type, recordType, true) == 0 &&
+                        result.id != null)
                     {
-                        if (string.Compare(result.name, recordName, true) == 0 && string.Compare(result.type, recordType, true) == 0)
-                            recordId.Add(result.id);
+                        recordId.Add(result.id);
                     }
+                }
 
-                    return recordId.ToArray();
-                }
-                else
-                {
-                    var content = await response.Content.ReadAsStringAsync();
-                    throw new Exception(content);
-                }
+                return recordId.ToArray();
+            }
+            else
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                throw new Exception(content);
             }
         }
         class DomainResponseCollection
         {
-            public DomainRequest[] data { get; set; }
+            public DomainRequest[]? data { get; set; }
         }
-        class DomainRequest : DomainResponse
-        {
-            public string id { get; set; }
-        }
+        class DomainRequest : DomainResponse {}
         #endregion
 
         private HttpClient GetClient()
