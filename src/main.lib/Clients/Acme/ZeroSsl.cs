@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -39,7 +40,7 @@ namespace PKISharp.WACS.Clients.Acme
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
-                    var result = JsonSerializer.Deserialize<ZeroSslEabCredential>(content);
+                    var result = JsonSerializer.Deserialize(content, WacsJson.Default.ZeroSslEabCredential);
                     if (result == null)
                     {
                         _log.Error("Unexpected response while attemting to register at ZeroSsl");
@@ -82,7 +83,7 @@ namespace PKISharp.WACS.Clients.Acme
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
-                    var result = JsonSerializer.Deserialize<ZeroSslEabCredential>(content);
+                    var result = JsonSerializer.Deserialize(content, WacsJson.Default.ZeroSslEabCredential);
                     if (result == null)
                     {
                         _log.Error("Invalid response while attemting to obtain credential from ZeroSsl");
