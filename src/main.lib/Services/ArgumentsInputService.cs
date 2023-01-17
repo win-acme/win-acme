@@ -26,24 +26,24 @@ namespace PKISharp.WACS.Services
             _input = input;
             _secretService = secretService;
         }
-        public ArgumentResult<ProtectedString?> GetProtectedString<T>(Expression<Func<T, string?>> expression, bool allowEmtpy = false)
-            where T : class, IArguments,
+        public ArgumentResult<ProtectedString?> GetProtectedString<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>
+            (Expression<Func<T, string?>> expression, bool allowEmtpy = false) where T : class, IArguments,
             new() => new(GetArgument(expression).Protect(allowEmtpy), GetMetaData(expression),
                 async args => (await _secretService.GetSecret(args.Label, args.Default?.Value, allowEmtpy ? "" : null, args.Required, args.Multiline)).Protect(allowEmtpy),
                 _log, allowEmtpy);
 
-        public ArgumentResult<string?> GetString<T>(Expression<Func<T, string?>> expression)
-            where T : class, IArguments, new() =>
+        public ArgumentResult<string?> GetString<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>
+            (Expression<Func<T, string?>> expression) where T : class, IArguments, new() =>
             new(GetArgument(expression), GetMetaData(expression),
                 async args => await _input.RequestString(args.Label), _log);
 
-        public ArgumentResult<bool?> GetBool<T>(Expression<Func<T, bool?>> expression)
-            where T : class, IArguments, new() =>
+        public ArgumentResult<bool?> GetBool<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>
+            (Expression<Func<T, bool?>> expression) where T : class, IArguments, new() =>
             new(GetArgument(expression), GetMetaData(expression),
                 async args => await _input.PromptYesNo(args.Label, args.Default == true), _log);
 
-        public ArgumentResult<long?> GetLong<T>(Expression<Func<T, long?>> expression)
-            where T : class, IArguments, new() => 
+        public ArgumentResult<long?> GetLong<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>
+            (Expression<Func<T, long?>> expression) where T : class, IArguments, new() => 
             new(GetArgument(expression), GetMetaData(expression),
                 async args => {
                     var str = await _input.RequestString(args.Label);
@@ -58,8 +58,8 @@ namespace PKISharp.WACS.Services
                     }
                 }, _log);
 
-        public ArgumentResult<int?> GetInt<T>(Expression<Func<T, int?>> expression)
-            where T : class, IArguments, new() =>
+        public ArgumentResult<int?> GetInt<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>
+            (Expression<Func<T, int?>> expression) where T : class, IArguments, new() =>
             new(GetArgument(expression), GetMetaData(expression),
                 args => _input.RequestInt(args.Label), _log);
 

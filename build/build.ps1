@@ -25,7 +25,11 @@ foreach ($release in @("Release", "ReleaseTrimmed")) {
 foreach ($release in @("Release", "ReleaseTrimmed")) {
 	foreach ($arch in @("win-x64", "win-x86", "win-arm64")) {
 		Write-Host "Publish $arch $release..."
-		& dotnet publish $RepoRoot\src\main\wacs.csproj -c $release -r $arch --self-contained
+		$extra = ""
+		if ($release -endswith "Trimmed") {
+			$extra = "/p:warninglevel=0"
+		}
+		& dotnet publish $RepoRoot\src\main\wacs.csproj -c $release -r $arch --self-contained $extra
 	}
 }
 
