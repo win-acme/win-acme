@@ -15,7 +15,7 @@ namespace PKISharp.WACS.Configuration
     /// PluginService for each implementation of IArgumentsStandalone
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class BaseArgumentsProvider<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T> : 
+    public class BaseArgumentsProvider<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.PublicConstructors)] T> : 
         IArgumentsProvider<T> 
         where T : class, IArguments, new()
     {
@@ -53,7 +53,9 @@ namespace PKISharp.WACS.Configuration
                 {
                     throw new InvalidOperationException();
                 }
+#pragma warning disable IL2075 // We know that this type is preserved
                 var typedMethod = setupMethod.MakeGenericMethod(property.PropertyType);
+#pragma warning restore IL2075
                 var result = typedMethod.Invoke(parser, new[] { property });
 
                 var clob = typeof(ICommandLineOptionBuilderFluent<>).MakeGenericType(property.PropertyType);
