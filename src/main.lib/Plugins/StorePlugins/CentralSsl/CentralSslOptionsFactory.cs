@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    internal class CentralSslOptionsFactory : StorePluginOptionsFactory<CentralSsl, CentralSslOptions>
+    internal class CentralSslOptionsFactory : PluginOptionsFactory<CentralSslOptions>
     {
         private readonly ILogService _log;
         private readonly ArgumentsInputService _argumentInput;

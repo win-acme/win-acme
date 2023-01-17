@@ -1,41 +1,37 @@
-﻿using PKISharp.WACS.Extensions;
-using System;
-using System.Diagnostics.CodeAnalysis;
-using System.Text.Json.Serialization;
+﻿using PKISharp.WACS.Plugins;
 
 namespace PKISharp.WACS.Services.Serialization
 {
     /// <summary>
-    /// Non-generic base class needed for serialization
+    /// For initial JSON deserialization
     /// </summary>
-    public abstract class PluginOptions
+    public class PluginOptionsBase
     {
-        public PluginOptions() => Plugin = GetType().PluginId();
-
         /// <summary>
-        /// Contains the unique GUID of the plugin
+        /// Identifier for the plugin
         /// </summary>
         public string? Plugin { get; set; }
+    }
 
+    /// <summary>
+    /// Non-generic base class needed for serialization
+    /// </summary>
+    public abstract class PluginOptions : PluginOptionsBase
+    {
         /// <summary>
         /// Describe the plugin to the user
         /// </summary>
         /// <param name="input"></param>
+        internal void Show(IInputService input, IPluginService plugin) {
+            var meta = plugin.GetPlugin(this);
+            input.Show(null, $"[{meta.Step}]");
+            input.Show("Plugin", $"{meta.Name} - ({meta.Description})", level: 1);
+        }
+
+        /// <summary>
+        /// Report additional settings to the user
+        /// </summary>
+        /// <param name="input"></param>
         public virtual void Show(IInputService input) { }
-
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
-        public abstract Type Instance { get; }
-
-        /// <summary>
-        /// Short name for the plugin to be shown in the menu and e-mails
-        /// </summary>
-        [JsonIgnore]
-        public abstract string Name { get; }
-
-        /// <summary>
-        /// One-line description for the plugin to be shown in the menu
-        /// </summary>
-        [JsonIgnore]
-        public abstract string Description { get; }
     }
 }

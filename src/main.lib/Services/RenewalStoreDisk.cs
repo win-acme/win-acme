@@ -1,5 +1,4 @@
 ﻿using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services.Serialization;
 using System;
@@ -7,17 +6,27 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Services
 {
-    internal class RenewalStoreDisk : RenewalStore
+    internal class RenewalStoreDisk : IRenewalStoreBackend
     {
+        private readonly WacsJson _wacsJson;
+        private readonly ISettingsService _settings;
+        private readonly IDueDateService _dueDate;
+        private readonly ILogService _log;
+
         public RenewalStoreDisk(
-            ISettingsService settings, ILogService log, 
-            IInputService input, PasswordGenerator password, IDueDateService dueDate,
-            IPluginService plugin, ICacheService certificateService) :
-            base(settings, log, input, password, plugin, dueDate, certificateService) { }
+            ISettingsService settings,
+            IDueDateService dueDate,
+            ILogService log,
+            WacsJson wacsJson) : base()
+        {
+            _dueDate = dueDate;
+            _settings = settings;
+            _log = log;
+            _wacsJson = wacsJson;
+        }
 
         /// <summary>
         /// Local cache to prevent superfluous reading and
@@ -28,7 +37,7 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// Parse renewals from store
         /// </summary>
-        protected override IEnumerable<Renewal> ReadRenewals()
+        public IEnumerable<Renewal> Read()
         {
             if (_renewalsCache == null)
             {
@@ -53,18 +62,8 @@ namespace PKISharp.WACS.Services
                 {
                     try
                     {
-                        var storeConverter = new PluginOptionsConverter<StorePluginOptions>(_plugin.PluginOptionTypes<StorePluginOptions>(), _log);
                         var text = File.ReadAllText(rj.FullName);
-                        var options = new JsonSerializerOptions();
-                        options.PropertyNameCaseInsensitive = true;
-                        options.Converters.Add(new ProtectedStringConverter(_log, _settings)); 
-                        options.Converters.Add(new StoresPluginOptionsConverter(storeConverter));
-                        options.Converters.Add(new PluginOptionsConverter<TargetPluginOptions>(_plugin.PluginOptionTypes<TargetPluginOptions>(), _log));
-                        options.Converters.Add(new PluginOptionsConverter<CsrPluginOptions>(_plugin.PluginOptionTypes<CsrPluginOptions>(), _log));
-                        options.Converters.Add(new PluginOptionsConverter<OrderPluginOptions>(_plugin.PluginOptionTypes<OrderPluginOptions>(), _log));
-                        options.Converters.Add(new PluginOptionsConverter<ValidationPluginOptions>(_plugin.PluginOptionTypes<ValidationPluginOptions>(), _log));
-                        options.Converters.Add(new PluginOptionsConverter<InstallationPluginOptions>(_plugin.PluginOptionTypes<InstallationPluginOptions>(), _log));
-                        var result = JsonSerializer.Deserialize<Renewal>(text, options);
+                        var result = JsonSerializer.Deserialize(text, _wacsJson.Renewal);
                         if (result == null)
                         {
                             throw new Exception("result is empty");
@@ -73,33 +72,25 @@ namespace PKISharp.WACS.Services
                         {
                             throw new Exception($"mismatch between filename and id {result.Id}");
                         }
-                        if (result.TargetPluginOptions == null)
+                        if (result.TargetPluginOptions == null || result.TargetPluginOptions.Plugin == null)
                         {
-                            throw new Exception("missing TargetPluginOptions");
+                            throw new Exception("missing source plugin options");
                         }
-                        if (result.TargetPluginOptions.GetType() == typeof(TargetPluginOptions))
+                        if (result.ValidationPluginOptions == null || result.ValidationPluginOptions.Plugin == null)
                         {
-                            throw new Exception($"missing source plugin {result.TargetPluginOptions.Plugin}");
-                        }
-                        if (result.ValidationPluginOptions == null)
-                        {
-                            throw new Exception("missing ValidationPluginOptions");
-                        }
-                        if (result.ValidationPluginOptions.GetType() == typeof(ValidationPluginOptions))
-                        {
-                            throw new Exception($"missing validation plugin {result.ValidationPluginOptions.Plugin}");
+                            throw new Exception("missing validation plugin options");
                         }
                         if (result.StorePluginOptions == null)
                         {
-                            throw new Exception("missing StorePluginOptions");
+                            throw new Exception("missing store plugin options");
                         }
-                        if (result.CsrPluginOptions == null && result.TargetPluginOptions.Name != CsrOptions.NameLabel)
+                        if (result.CsrPluginOptions == null && result.TargetPluginOptions is not CsrOptions)
                         {
-                            throw new Exception("missing CsrPluginOptions");
+                            throw new Exception("missing csr plugin options");
                         }
                         if (result.InstallationPluginOptions == null)
                         {
-                            throw new Exception("missing InstallationPluginOptions");
+                            throw new Exception("missing installation plugin options");
                         }
                         if (string.IsNullOrEmpty(result.LastFriendlyName))
                         {
@@ -116,7 +107,7 @@ namespace PKISharp.WACS.Services
                         _log.Error("Unable to read renewal {renewal}: {reason}", rj.Name, ex.Message);
                     }
                 }
-                _renewalsCache = list.OrderBy(x => _dueDateService.DueDate(x)).ToList();
+                _renewalsCache = list.OrderBy(_dueDate.DueDate).ToList();
             }
             return _renewalsCache;
         }
@@ -126,7 +117,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="BaseUri"></param>
         /// <param name="Renewals"></param>
-        protected override void WriteRenewals(IEnumerable<Renewal> Renewals)
+        public void Write(IEnumerable<Renewal> Renewals)
         {
             var list = Renewals.ToList();
             list.ForEach(renewal =>
@@ -146,11 +137,7 @@ namespace PKISharp.WACS.Services
                     {
                         try
                         {
-                            var options = new JsonSerializerOptions();
-                            options.WriteIndented = true;
-                            options.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-                            options.Converters.Add(new ProtectedStringConverter(_log, _settings));
-                            var renewalContent = JsonSerializer.Serialize(renewal, options);
+                            var renewalContent = JsonSerializer.Serialize(renewal, _wacsJson.Renewal);
                             if (string.IsNullOrWhiteSpace(renewalContent))
                             {
                                 throw new Exception("Serialization yielded empty result");
@@ -176,7 +163,7 @@ namespace PKISharp.WACS.Services
                     renewal.Updated = false;
                 }
             });
-            _renewalsCache = list.Where(x => !x.Deleted).OrderBy(x => _dueDateService.DueDate(x)).ToList();
+            _renewalsCache = list.Where(x => !x.Deleted).OrderBy(_dueDate.DueDate).ToList();
         }
 
         /// <summary>

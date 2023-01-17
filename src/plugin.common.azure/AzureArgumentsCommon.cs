@@ -19,7 +19,7 @@ namespace PKISharp.WACS.Plugins.Azure.Common
         [CommandLine(Description = "Application/client identifier. Found/created in Azure AD > App registrations.")]
         public string? AzureClientId { get; set; }
 
-        [CommandLine(Description = "Client secret. Found/created under Azure AD > App registrations.")]
+        [CommandLine(Description = "Client secret. Found/created under Azure AD > App registrations.", Secret = true)]
         public string? AzureSecret { get; set; }
     }
 }

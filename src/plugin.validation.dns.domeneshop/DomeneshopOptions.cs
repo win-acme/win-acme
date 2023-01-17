@@ -5,12 +5,14 @@ using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    [Plugin("0BD9B320-08E0-4BFE-A535-B979886187E4")]
-    internal class DomeneshopOptions : ValidationPluginOptions<DomeneshopDnsValidation>
+    [JsonSerializable(typeof(DomeneshopOptions))]
+    internal partial class DomeneshopJson : JsonSerializerContext
     {
-        public override string Name => "Domeneshop";
-        public override string Description => "Create verification records in Domeneshop DNS";
-        public override string ChallengeType => Constants.Dns01ChallengeType;
+        public DomeneshopJson(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
+    }
+
+    internal class DomeneshopOptions : ValidationPluginOptions
+    {
         [JsonPropertyName("SecretSafe")]
         public ProtectedString? ClientId { get; set; }
         public ProtectedString? ClientSecret { get; set; }

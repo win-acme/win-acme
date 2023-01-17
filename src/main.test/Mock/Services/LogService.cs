@@ -17,6 +17,8 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         public ConcurrentQueue<string> ErrorMessages { get; } = new ConcurrentQueue<string>();
         public ConcurrentQueue<string> VerboseMessages { get; } = new ConcurrentQueue<string>();
 
+        public LogService() : this(false) {}
+
         public LogService(bool throwErrors)
         {
             _throwErrors = throwErrors;

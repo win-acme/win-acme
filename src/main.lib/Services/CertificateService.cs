@@ -42,7 +42,7 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// Request certificate from the ACME server
         /// </summary>
-        /// <param name="csrPlugin">Plugin used to generate CSR if it has not been provided in the target</param>
+        /// <param name="csrPlugin">PluginBackend used to generate CSR if it has not been provided in the target</param>
         /// <param name="runLevel"></param>
         /// <param name="renewal"></param>
         /// <param name="target"></param>

@@ -1,22 +1,23 @@
 ﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
-using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
-using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    internal abstract class HttpValidationOptionsFactory<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TPlugin, TOptions> :
-        ValidationPluginOptionsFactory<TPlugin, TOptions>
-        where TPlugin : IValidationPlugin
-        where TOptions : HttpValidationOptions<TPlugin>, new()
+    internal abstract class HttpValidationOptionsFactory<TOptions> : 
+        PluginOptionsFactory<TOptions>
+        where TOptions : HttpValidationOptions, new()
     {
         protected readonly ArgumentsInputService _arguments;
+        protected readonly Target _target;
 
-        public HttpValidationOptionsFactory(ArgumentsInputService arguments) => _arguments = arguments;
+        public HttpValidationOptionsFactory(ArgumentsInputService arguments, Target target) 
+        {
+            _arguments = arguments;
+            _target = target;
+        }
 
         private ArgumentResult<string?> GetPath(bool allowEmpty)
         {
@@ -42,9 +43,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <summary>
         /// Get webroot path manually
         /// </summary>
-        public async Task<HttpValidationOptions<TPlugin>> BaseAquire(Target target, IInputService input)
+        public async Task<HttpValidationOptions?> BaseAquire(IInputService input)
         {
-            var allowEmpty = AllowEmtpy(target);
+            var allowEmpty = AllowEmtpy();
             var webRootHint = WebrootHint(allowEmpty);
             var pathGetter = GetPath(allowEmpty);
             pathGetter = webRootHint.Length > 1
@@ -53,20 +54,20 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             return new TOptions
             {
                 Path = await pathGetter.GetValue(),
-                CopyWebConfig = target.IIS || await GetCopyWebConfig().Interactive(input, "Copy default web.config before validation?").GetValue() == true
+                CopyWebConfig = _target.IIS || await GetCopyWebConfig().Interactive(input, "Copy default web.config before validation?").GetValue() == true
             };
         }
 
         /// <summary>
         /// Basic parameters shared by http validation plugins
         /// </summary>
-        public async Task<HttpValidationOptions<TPlugin>> BaseDefault(Target target)
+        public async Task<HttpValidationOptions> BaseDefault()
         {
-            var allowEmpty = AllowEmtpy(target);
+            var allowEmpty = AllowEmtpy();
             return new TOptions
             {
                 Path = await GetPath(allowEmpty).GetValue(),
-                CopyWebConfig = target.IIS || await GetCopyWebConfig().GetValue() == true
+                CopyWebConfig = _target.IIS || await GetCopyWebConfig().GetValue() == true
             };
         }
 
@@ -76,7 +77,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        public virtual bool AllowEmtpy(Target target) => false;
+        public virtual bool AllowEmtpy() => false;
 
         /// <summary>
         /// Check if the webroot makes sense

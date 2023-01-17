@@ -1,15 +1,16 @@
-﻿using Autofac;
-using PKISharp.WACS.Plugins.Interfaces;
+﻿using PKISharp.WACS.Plugins;
 using PKISharp.WACS.Services.Serialization;
-using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace PKISharp.WACS.Services
 {
     public interface IPluginService
     {
-        IEnumerable<T> GetFactories<T>(ILifetimeScope scope) where T: IPluginOptionsFactory;
-        T? GetFactory<T>(ILifetimeScope scope, string name, string? parameter = null) where T : IPluginOptionsFactory;
-        IEnumerable<Type> PluginOptionTypes<T>() where T : PluginOptions;
+        IEnumerable<Plugin> GetPlugins();
+        IEnumerable<Plugin> GetPlugins(Steps step);
+        bool TryGetPlugin([NotNullWhen(true)] PluginOptionsBase? options, [NotNullWhen(true)] out Plugin? plugin);
+        Plugin GetPlugin(PluginOptionsBase options);
+        Plugin? GetPlugin(Steps step, string name, string? parameter = null);
     }
 }

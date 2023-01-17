@@ -1,4 +1,6 @@
 ﻿using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Plugins.Base.Capabilities;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.Runtime.Versioning;
@@ -10,6 +12,12 @@ using TransIp.Library.Dto;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
+    [IPlugin.Plugin<
+        TransIpOptions, TransIpOptionsFactory, 
+        DnsValidationCapability, TransIpJson>
+        ("c49a7a9a-f8c9-494a-a6a4-c6b9daae7d9d", 
+        "TransIp", 
+        "Create verification records at TransIp")]
     internal sealed class TransIp : DnsValidation<TransIp>
     {
         private readonly DnsService _dnsService;

@@ -5,8 +5,7 @@ using PKISharp.WACS.Services.Serialization;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    [Plugin("2a2c576f-7637-4ade-b8db-e8613b0bb33e")]
-    internal class PfxFileOptions : StorePluginOptions<PfxFile>
+    internal class PfxFileOptions : StorePluginOptions
     {
         /// <summary>
         /// Path to the folder
@@ -22,10 +21,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// PfxFile password
         /// </summary>
         public ProtectedString? PfxPassword { get; set; }
-
-        internal const string PluginName = "PfxFile";
-        public override string Name => PluginName;
-        public override string Description => "PFX archive";
 
         /// <summary>
         /// Show details to the user

@@ -1,8 +1,11 @@
 ﻿using Autofac;
+using Autofac.Features.AttributeFilters;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services.Serialization;
 using System;
@@ -20,19 +23,26 @@ namespace PKISharp.WACS.Services
         private readonly IInputService _input;
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
-        private readonly IPluginService _plugin;
+        private readonly IAutofacBuilder _autofac;
+        private readonly WacsJson _wacsJson;
         private List<GlobalValidationPluginOptions>? _options;
 
         /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="input"></param>
-        public ValidationOptionsService(IInputService input, ILogService log, ISettingsService settings, IPluginService plugin)
+        public ValidationOptionsService(
+            IInputService input, 
+            ILogService log,
+            ISettingsService settings, 
+            IAutofacBuilder autofac,
+            WacsJson wacsJson)
         {
+            _autofac = autofac;
             _input = input;
             _log = log;
             _settings = settings;
-            _plugin = plugin;
+            _wacsJson = wacsJson;
         }
 
         /// <summary>
@@ -76,10 +86,7 @@ namespace PKISharp.WACS.Services
                 }
                 return;
             }
-            var options = new JsonSerializerOptions();
-            options.WriteIndented = true;
-            options.Converters.Add(new ProtectedStringConverter(_log, _settings));
-            var rawJson = JsonSerializer.Serialize(_options, options);
+            var rawJson = JsonSerializer.Serialize(_options, _wacsJson.ListGlobalValidationPluginOptions);
             await File.WriteAllTextAsync(Store.FullName, rawJson);
         }
 
@@ -94,11 +101,7 @@ namespace PKISharp.WACS.Services
                 try
                 {
                     var rawJson = await File.ReadAllTextAsync(Store.FullName);
-                    var options = new JsonSerializerOptions();
-                    options.PropertyNameCaseInsensitive = true;
-                    options.Converters.Add(new ProtectedStringConverter(_log, _settings));
-                    options.Converters.Add(new PluginOptionsConverter<ValidationPluginOptions>(_plugin.PluginOptionTypes<ValidationPluginOptions>(), _log));
-                    _options = JsonSerializer.Deserialize<List<GlobalValidationPluginOptions>>(rawJson, options);
+                    _options = JsonSerializer.Deserialize(rawJson, _wacsJson.ListGlobalValidationPluginOptions);
                     if (_options == null)
                     {
                         throw new Exception();
@@ -228,11 +231,17 @@ namespace PKISharp.WACS.Services
         /// <returns></returns>
         private async Task UpdateOptions(ILifetimeScope scope, GlobalValidationPluginOptions input)
         {
-            var fakeTarget = new Target(new DnsIdentifier("www.example.com"));
-            var resolver = scope.Resolve<IResolver>();
-            var optionsFactory = await resolver.GetValidationPlugin(scope, fakeTarget);
-            var options = await optionsFactory.Aquire(fakeTarget, _input, RunLevel.Advanced);
-            input.ValidationPluginOptions = options;
+            var dummy = new Target(new DnsIdentifier("www.example.com"));
+            var target = _autofac.Target(scope, dummy);
+            var resolver = scope.Resolve<InteractiveResolver>(
+                new TypedParameter(typeof(ILifetimeScope), target),
+                new TypedParameter(typeof(RunLevel), RunLevel.Advanced));
+            var validationPlugin = await resolver.GetValidationPlugin();
+            if (validationPlugin != null)
+            {
+                var options = await validationPlugin.OptionsFactory.Aquire(_input, RunLevel.Advanced);
+                input.ValidationPluginOptions = options;
+            }
         }
 
         /// <summary>
@@ -281,10 +290,6 @@ namespace PKISharp.WACS.Services
         /// </summary>
         public class GlobalValidationPluginOptions
         {
-            private string? _pattern;
-            private string? _regex;
-            private Regex? _parsedRegex;
-
             /// <summary>
             /// Priority of this rule (lower number = higher priority)
             /// </summary>
@@ -293,29 +298,13 @@ namespace PKISharp.WACS.Services
             /// <summary>
             /// Direct input of a regular expression
             /// </summary>
-            public string? Regex
-            {
-                get => _regex;
-                set
-                {
-                    _regex = value;
-                    _parsedRegex = null;
-                }
-            }
+            public string? Regex { get; set; }
 
             /// <summary>
             /// Input of a pattern like used in other
             /// parts of the software as well, e.g.
             /// </summary>
-            public string? Pattern
-            {
-                get => _pattern;
-                set
-                {
-                    _pattern = value;
-                    _parsedRegex = null;
-                }
-            }
+            public string? Pattern { get; set; }
 
             /// <summary>
             /// The actual validation options that 
@@ -327,23 +316,17 @@ namespace PKISharp.WACS.Services
             /// Convert the user settings into a Regex that will be 
             /// matched with the identifier.
             /// </summary>
-            private Regex? ParsedRegex
+            private Regex? ParsedRegex()
             {
-                get
+                if (Pattern != null)
                 {
-                    if (_parsedRegex == null)
-                    {
-                        if (Pattern != null)
-                        {
-                            _parsedRegex = new Regex(Pattern.PatternToRegex());
-                        }
-                        if (Regex != null)
-                        {
-                            _parsedRegex = new Regex(Regex);
-                        }
-                    }
-                    return _parsedRegex;
+                    return new Regex(Pattern.PatternToRegex());
                 }
+                if (Regex != null)
+                {
+                    return new Regex(Regex);
+                }
+                return null;
             }
 
             /// <summary>
@@ -354,11 +337,12 @@ namespace PKISharp.WACS.Services
             /// <returns></returns>
             public bool Match(Identifier identifier)
             {
-                if (ParsedRegex == null)
+                var regex = ParsedRegex();
+                if (regex == null)
                 {
                     return false;
                 }
-                return ParsedRegex.IsMatch(identifier.Value);
+                return regex.IsMatch(identifier.Value);
             }
         }
     }

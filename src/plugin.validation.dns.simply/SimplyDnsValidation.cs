@@ -1,4 +1,7 @@
 ﻿using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Plugins.Base.Capabilities;
+using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Plugins.ValidationPlugins.Dns;
 using PKISharp.WACS.Plugins.ValidationPlugins.Simply;
 using PKISharp.WACS.Services;
 using System;
@@ -10,6 +13,12 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
+    [IPlugin.Plugin<
+        SimplyOptions, SimplyOptionsFactory,
+        DnsValidationCapability, SimplyJson>
+        ("3693c40c-7c2f-4b70-aead-27869d8cbdf3", 
+        "Simply", 
+        "Create verification records in Simply DNS")]
     internal class SimplyDnsValidation : DnsValidation<SimplyDnsValidation>
     {
         private readonly SimplyDnsClient _client;

@@ -3,6 +3,12 @@ using System.Collections.Generic;
 
 namespace PKISharp.WACS.Services
 {
+    internal interface IRenewalStoreBackend
+    {
+        IEnumerable<Renewal> Read();
+        void Write(IEnumerable<Renewal> renewals);
+    }
+
     internal interface IRenewalStore
     {
         IEnumerable<Renewal> FindByArguments(string? id, string? friendlyName);

@@ -75,7 +75,7 @@
     "DefaultValidationMode": null,
     "DisableMultiThreading": true,
     "CleanupFolders": true,
-    "PreValidateDns": true,
+    "PreValidateDns": false,
     "PreValidateDnsRetryCount": 5,
     "PreValidateDnsRetryInterval": 30,
     "AllowDnsSubstitution": true,

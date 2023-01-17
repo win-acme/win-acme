@@ -1,20 +1,18 @@
-﻿using PKISharp.WACS.Plugins.Base;
-using PKISharp.WACS.Plugins.Base.Options;
+﻿using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services.Serialization;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    [Plugin("3693c40c-7c2f-4b70-aead-27869d8cbdf3")]
-    internal class SimplyOptions : ValidationPluginOptions<SimplyDnsValidation>
+    [JsonSerializable(typeof(SimplyOptions))]
+    internal partial class SimplyJson : JsonSerializerContext
     {
-        public override string Name => "Simply";
+        public SimplyJson(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
+    }
 
-        public override string Description => "Create verification records in Simply DNS";
-
-        public override string ChallengeType => Constants.Dns01ChallengeType;
-
+    internal class SimplyOptions : ValidationPluginOptions
+    {
         public string? Account { get; set; }
-
         public ProtectedString? ApiKey { get; set; }
     }
 }

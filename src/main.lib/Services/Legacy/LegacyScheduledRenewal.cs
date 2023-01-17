@@ -30,7 +30,7 @@ namespace PKISharp.WACS.Services.Legacy
         public string? CertificateStore { get; set; }
 
         /// <summary>
-        /// Legacy, replaced by HostIsDns parameter on Target
+        /// Legacy, replaced by HostIsDns parameter on MainTarget
         /// </summary>
         public bool? San { get; set; }
 

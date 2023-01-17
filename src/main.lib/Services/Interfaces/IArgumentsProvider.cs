@@ -12,7 +12,7 @@ namespace PKISharp.WACS.Services
         string Name { get; }
 
         /// <summary>
-        /// Group (e.g. Target, Validation, Store)
+        /// Group (e.g. MainTarget, Validation, Store)
         /// </summary>
         string Group { get; }
 

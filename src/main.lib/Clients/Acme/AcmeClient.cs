@@ -279,7 +279,7 @@ namespace PKISharp.WACS.Clients.Acme
             var eabKid = _accountArguments.EabKeyIdentifier;
             var eabKey = _accountArguments.EabKey;
             var eabAlg = _accountArguments.EabAlgorithm ?? "HS256";
-            var eabFlow = client.Directory?.Meta?.ExternalAccountRequired == "true";
+            var eabFlow = client.Directory?.Meta?.ExternalAccountRequired ?? false;
             var zeroSslFlow = _settings.BaseUri.Host.Contains("zerossl.com");
 
             // Warn about unneeded EAB

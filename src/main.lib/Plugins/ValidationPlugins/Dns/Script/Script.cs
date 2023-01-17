@@ -1,12 +1,25 @@
 ﻿using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
+    [IPlugin.Plugin<
+        ScriptOptions, ScriptOptionsFactory, 
+        DnsValidationCapability, WacsJsonPlugins>
+        ("8f1da72e-f727-49f0-8546-ef69e5ecec32", 
+        "DnsScript", "Create verification records with your own script", 
+        Hidden = true)]
+    [IPlugin.Plugin<
+        ScriptOptions, ScriptOptionsFactory,
+        DnsValidationCapability, WacsJsonPlugins>
+        ("8f1da72e-f727-49f0-8546-ef69e5ecec32", 
+        "Script", "Create verification records with your own script")]
     internal class Script : DnsValidation<Script>
     {
         private readonly ScriptClient _scriptClient;

@@ -13,7 +13,6 @@ using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
@@ -26,10 +25,9 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
     /// <summary>
     /// Common implementation between RSA and EC certificates
     /// </summary>
-    public abstract class CsrPlugin<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TPlugin, TOptions> : 
+    public abstract class CsrPlugin<TOptions> : 
         ICsrPlugin
-        where TOptions : CsrPluginOptions<TPlugin>
-        where TPlugin : ICsrPlugin
+        where TOptions : CsrPluginOptions
     {
         protected readonly ILogService _log;
         protected readonly ISettingsService _settings;
@@ -61,7 +59,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             var keys = await GetKeys();
 
             ProcessMustStaple(extensions);
-            CsrPlugin<TPlugin, TOptions>.ProcessSan(identifiers, extensions);
+            CsrPlugin<TOptions>.ProcessSan(identifiers, extensions);
 
             var csr = new Pkcs10CertificationRequest(
                 new Asn1SignatureFactory(GetSignatureAlgorithm(), keys.Private),

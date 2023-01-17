@@ -2,6 +2,7 @@
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace PKISharp.WACS.Configuration
@@ -26,7 +27,7 @@ namespace PKISharp.WACS.Configuration
             var argumentGroups = assemblyService.GetResolvable<IArguments>();
             return argumentGroups.Select(x =>
                 {
-                    var type = typeof(BaseArgumentsProvider<>).MakeGenericType(x);
+                    var type = typeof(BaseArgumentsProvider<>).MakeGenericType(x.Type);
                     var constr = type.GetConstructor(Array.Empty<Type>());
                     if (constr == null)
                     {

@@ -6,13 +6,12 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    internal class FtpOptionsFactory : HttpValidationOptionsFactory<Ftp, FtpOptions>
+    internal class FtpOptionsFactory : HttpValidationOptionsFactory<FtpOptions>
     {
         private readonly ILogService _log;
 
-        public FtpOptionsFactory(
-            ILogService log,
-            ArgumentsInputService arguments) : base(arguments) 
+        public FtpOptionsFactory(ILogService log, Target target, ArgumentsInputService arguments) : 
+            base(arguments, target) 
             => _log = log;
 
         public override bool PathIsValid(string path)
@@ -38,17 +37,18 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             };
         }
 
-        public override async Task<FtpOptions?> Default(Target target)
+        public override async Task<FtpOptions?> Default()
         {
-            return new FtpOptions(await BaseDefault(target))
+            return new FtpOptions(await BaseDefault())
             {
                 Credential = await NetworkCredentialOptions.Create(_arguments)
             };
         }
 
-        public override async Task<FtpOptions?> Aquire(Target target, IInputService inputService, RunLevel runLevel)
+        public override async Task<FtpOptions?> Aquire(IInputService inputService, RunLevel runLevel)
         {
-            return new FtpOptions(await BaseAquire(target, inputService))
+            var baseOptions = await BaseAquire(inputService);
+            return new FtpOptions(baseOptions)
             {
                 Credential = await NetworkCredentialOptions.Create(_arguments, inputService, "FTP(S) server")
             };

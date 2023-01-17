@@ -1,7 +1,7 @@
 ﻿using Autofac;
-using PKISharp.WACS.Plugins.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -9,7 +9,7 @@ using System.Runtime.Loader;
 
 namespace PKISharp.WACS.Services
 {
-    public class AssemblyService
+    public partial class AssemblyService
     {
         private readonly List<Type> _allTypes;
         internal readonly ILogService _log;
@@ -17,9 +17,150 @@ namespace PKISharp.WACS.Services
         public AssemblyService(ILogService logger)
         {
             _log = logger;
-            _allTypes = GetTypes();
+            _allTypes = new List<Type>();
+            _allTypes.AddRange(BuiltInTypes());
+            _allTypes.AddRange(LoadFromDisk());
         }
 
+        internal static List<Type> BuiltInTypes()
+        {
+            return new()
+            {
+                // Arguments
+                typeof(Configuration.Arguments.MainArguments),
+                typeof(Configuration.Arguments.AccountArguments),
+                typeof(Configuration.Arguments.NetworkCredentialArguments),
+  
+                // Target plugins
+                typeof(Plugins.TargetPlugins.Csr),
+                typeof(Plugins.TargetPlugins.IIS), typeof(Plugins.TargetPlugins.IISArguments),
+                typeof(Plugins.TargetPlugins.Manual), typeof(Plugins.TargetPlugins.ManualArguments),
+
+                // Validation plugins
+                typeof(Plugins.ValidationPlugins.HttpValidationArguments),
+                typeof(Plugins.ValidationPlugins.Dns.Acme), typeof(Plugins.ValidationPlugins.Dns.AcmeArguments),
+                typeof(Plugins.ValidationPlugins.Dns.Manual),
+                typeof(Plugins.ValidationPlugins.Dns.Script), typeof(Plugins.ValidationPlugins.Dns.ScriptArguments),
+                typeof(Plugins.ValidationPlugins.Http.FileSystem), typeof(Plugins.ValidationPlugins.Http.FileSystemArguments),
+                typeof(Plugins.ValidationPlugins.Http.Ftp),
+                typeof(Plugins.ValidationPlugins.Http.SelfHosting), typeof(Plugins.ValidationPlugins.Http.SelfHostingArguments),
+                typeof(Plugins.ValidationPlugins.Http.Sftp),
+                typeof(Plugins.ValidationPlugins.Http.WebDav),
+                typeof(Plugins.ValidationPlugins.Tls.SelfHosting), typeof(Plugins.ValidationPlugins.Tls.SelfHostingArguments),
+
+                // Order plugins
+                typeof(Plugins.OrderPlugins.Domain),
+                typeof(Plugins.OrderPlugins.Host),
+                typeof(Plugins.OrderPlugins.Single),
+                typeof(Plugins.OrderPlugins.Site),
+
+                // CSR plugins
+                typeof(Plugins.CsrPlugins.CsrArguments),
+                typeof(Plugins.CsrPlugins.Ec),
+                typeof(Plugins.CsrPlugins.Rsa),
+
+                // Store plugins
+                typeof(Plugins.StorePlugins.CertificateStore), typeof(Plugins.StorePlugins.CertificateStoreArguments),
+                typeof(Plugins.StorePlugins.CentralSsl), typeof(Plugins.StorePlugins.CentralSslArguments),
+                typeof(Plugins.StorePlugins.PemFiles), typeof(Plugins.StorePlugins.PemFilesArguments),
+                typeof(Plugins.StorePlugins.PfxFile), typeof(Plugins.StorePlugins.PfxFileArguments),
+                typeof(Plugins.StorePlugins.Null),
+
+                // Installation plugins
+                typeof(Plugins.InstallationPlugins.IIS), typeof(Plugins.InstallationPlugins.IISArguments),
+                typeof(Plugins.InstallationPlugins.Script), typeof(Plugins.InstallationPlugins.ScriptArguments),
+                typeof(Plugins.InstallationPlugins.Null)
+            };
+        }
+
+        private static readonly List<string> IgnoreLibraries = new() {
+            "clrcompression.dll",
+            "clrjit.dll",
+            "coreclr.dll",
+            "wacs.dll",
+            "wacs.lib.dll",
+            "mscordbi.dll",
+            "mscordaccore.dll"
+        };
+
+        protected List<Type> LoadFromDisk()
+        {
+            if (string.IsNullOrEmpty(VersionService.PluginPath))
+            {
+                return new List<Type>();
+            }
+            var pluginDirectory = new DirectoryInfo(VersionService.PluginPath);
+            if (!pluginDirectory.Exists)
+            {
+                return new List<Type>();
+            }
+            var dllFiles = pluginDirectory.
+                EnumerateFiles("*.dll", SearchOption.AllDirectories).
+                Where(x => !IgnoreLibraries.Contains(x.Name));
+            if (!VersionService.Pluggable)
+            {
+                if (dllFiles.Any())
+                {
+                    _log.Error("This version of the program does not support external plugins, please download the pluggable version.");
+                }
+                return new List<Type>();
+            } 
+            else
+            {
+                return LoadFromDiskReal(dllFiles);
+            }
+
+        }
+
+        protected List<Type> LoadFromDiskReal(IEnumerable<FileInfo> dllFiles)
+        {
+#if !PLUGGABLE
+            return new List<Type>();
+#else
+            var allAssemblies = new List<Assembly>();
+            foreach (var file in dllFiles)
+            {
+                try
+                {
+                    allAssemblies.Add(AssemblyLoadContext.Default.LoadFromAssemblyPath(file.FullName));
+                }
+                catch (BadImageFormatException)
+                {
+                    // Not a .NET Assembly (likely runtime)
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Error loading assembly {assembly}", file);
+                }
+            }
+
+            var ret = new List<Type>();
+            foreach (var assembly in allAssemblies)
+            {
+                IEnumerable<Type> types = new List<Type>();
+                try
+                {
+                    types = GetTypesFromAssembly(assembly).ToList();
+                }
+                catch (ReflectionTypeLoadException rex)
+                {
+                    types = rex.Types.OfType<Type>();
+                    foreach (var lex in rex.LoaderExceptions.OfType<Exception>())
+                    {
+                        _log.Error(lex, "Error loading type from {assembly}", assembly.FullName);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Error loading types from assembly {assembly}", assembly.FullName);
+                }
+                ret.AddRange(types);
+            }
+            return ret;
+#endif
+        }
+
+#if PLUGGABLE
         internal IEnumerable<Type> GetTypesFromAssembly(Assembly assembly)
         {
             if (assembly.DefinedTypes == null)
@@ -61,131 +202,21 @@ namespace PKISharp.WACS.Services
                 }
                 );
         }
+#endif
 
-        internal virtual List<Type> GetTypes()
+        public List<TypeDescriptor> GetResolvable<T>()
         {
-            var scanned = new List<Assembly>();
-            var ret = new List<Type>();
-
-            // Load from the current app domain
-            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                if (!string.IsNullOrEmpty(assembly.FullName) && assembly.FullName.Contains("wacs"))
-                {
-                    IEnumerable<Type> types = new List<Type>();
-                    try
-                    {
-                        types = GetTypesFromAssembly(assembly).ToList();
-                    }
-                    catch (ReflectionTypeLoadException rex)
-                    {
-                        types = rex.Types.OfType<Type>();
-                        foreach (var lex in rex.LoaderExceptions.OfType<Exception>())
-                        {
-                            _log.Error(lex, "Error loading type from {assembly}: {reason}", assembly.FullName, lex.Message);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _log.Error("Error loading types from assembly {assembly}: {@ex}", assembly.FullName, ex);
-                    }
-                    ret.AddRange(types);
-                }
-                scanned.Add(assembly);
-            }
-
-            // Load external plugins from additional .dll files
-            // put in the application folder by the user
-            if (!string.IsNullOrEmpty(VersionService.PluginPath))
-            {
-                ret.AddRange(LoadFromDisk(scanned));
-            }
-
-            return ret;
+            return _allTypes.
+                AsEnumerable().
+                Where(type => typeof(T) != type && typeof(T).IsAssignableFrom(type) && !type.IsAbstract).
+                Select(([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] type) => new TypeDescriptor() { Type = type }).
+                ToList();
         }
 
-        private static readonly List<string> IgnoreLibraries = new() {
-            "clrcompression.dll",
-            "clrjit.dll",
-            "coreclr.dll",
-            "mscordbi.dll",
-            "mscordaccore.dll"
-        };
-
-        private List<Type> LoadFromDisk(List<Assembly> scanned)
+        public struct TypeDescriptor
         {
-            var pluginDirectory = new DirectoryInfo(VersionService.PluginPath);
-            if (!pluginDirectory.Exists)
-            {
-                return new List<Type>();
-            }
-            var dllFiles = pluginDirectory.
-                EnumerateFiles("*.dll", SearchOption.AllDirectories).
-                Where(x => !IgnoreLibraries.Contains(x.Name));
-            if (!VersionService.Pluggable)
-            {
-                if (dllFiles.Any())
-                {
-                    _log.Error("This version of the program does not support external plugins, please download the pluggable version.");
-                }
-                return new List<Type>();
-            }
-
-            var allAssemblies = new List<Assembly>();
-            foreach (var file in dllFiles)
-            {
-                try
-                {
-                    allAssemblies.Add(AssemblyLoadContext.Default.LoadFromAssemblyPath(file.FullName));
-                }
-                catch (BadImageFormatException)
-                {
-                    // Not a .NET Assembly (likely runtime)
-                }
-                catch (Exception ex)
-                {
-                    _log.Error(ex, "Error loading assembly {assembly}", file);
-                }
-            }
-
-            var ret = new List<Type>();
-            foreach (var assembly in allAssemblies)
-            {
-                IEnumerable<Type> types = new List<Type>();
-                try
-                {
-                    if (!scanned.Contains(assembly))
-                    {
-                        types = GetTypesFromAssembly(assembly).ToList();
-                    }
-                }
-                catch (ReflectionTypeLoadException rex)
-                {
-                    types = rex.Types.OfType<Type>();
-                    foreach (var lex in rex.LoaderExceptions.OfType<Exception>())
-                    {
-                        _log.Error(lex, "Error loading type from {assembly}", assembly.FullName);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _log.Error(ex, "Error loading types from assembly {assembly}", assembly.FullName);
-                }
-                ret.AddRange(types);
-            }
-            return ret;
-        }
-
-        public List<Type> GetResolvable<T>(bool allowNull = false)
-        {
-            var ret = _allTypes.AsEnumerable();
-            ret = ret.Where(type => typeof(T) != type && typeof(T).IsAssignableFrom(type) && !type.IsAbstract);
-            ret = ret.Where(type => !typeof(IIgnore).IsAssignableFrom(type));
-            if (!allowNull)
-            {
-                ret = ret.Where(type => !typeof(INull).IsAssignableFrom(type));
-            }
-            return ret.ToList();
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)]
+            public Type Type;
         }
     }
 }

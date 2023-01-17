@@ -11,24 +11,6 @@ namespace PKISharp.WACS.Extensions
     public static class TypeExtensions
     {
         /// <summary>
-        /// Get the plugin identifier
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        public static string? PluginId(this Type type)
-        {
-            var attr = type.GetCustomAttributes(true).OfType<PluginAttribute>();
-            if (attr.Any())
-            {
-                return attr.First().Id.ToString();
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        /// <summary>
         /// Get all metadata about this class
         /// </summary>
         public static IEnumerable<(CommandLineAttribute, PropertyInfo)> CommandLineProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] this Type type)

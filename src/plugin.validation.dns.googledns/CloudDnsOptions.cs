@@ -1,17 +1,18 @@
-﻿using PKISharp.WACS.Plugins.Base;
-using PKISharp.WACS.Plugins.Base.Options;
+﻿using PKISharp.WACS.Plugins.Base.Options;
+using PKISharp.WACS.Services.Serialization;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    [Plugin("B61505E9-1709-43FD-996F-C74C3686286C")]
-    internal class CloudDnsOptions : ValidationPluginOptions<CloudDns>
+    [JsonSerializable(typeof(CloudDnsOptions))]
+    internal partial class CloudDnsJson : JsonSerializerContext
     {
-        public override string Name => "GCPDns";
-        public override string Description => "Create verification records in Google Cloud DNS";
-        public override string ChallengeType => Constants.Dns01ChallengeType;
+        public CloudDnsJson(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
+    }
 
+    internal class CloudDnsOptions : ValidationPluginOptions
+    {
         public string? ServiceAccountKeyPath { get; set; }
-
         public string? ProjectId { get; set; }
     }
 }

@@ -1,7 +1,9 @@
 ﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.IO;
 using System.Linq;
@@ -11,8 +13,15 @@ using Bc = Org.BouncyCastle;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
+    [IPlugin.Plugin<
+        PfxFileOptions, PfxFileOptionsFactory, 
+        DefaultCapability, WacsJsonPlugins>
+        ("2a2c576f-7637-4ade-b8db-e8613b0bb33e",
+        Name, "PFX archive")]
     internal class PfxFile : IStorePlugin
     {
+        internal const string Name = "PfxFile";
+
         private readonly ILogService _log;
         private readonly string _path;
         private readonly string? _name;
@@ -96,7 +105,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 GetType(),
                 new StoreInfo()
                 {
-                    Name = PfxFileOptions.PluginName,
+                    Name = Name,
                     Path = _path
                 });
         }

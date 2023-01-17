@@ -5,9 +5,11 @@ using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Context;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Plugins.Base.Factories.Null;
+using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
+using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
@@ -30,6 +32,7 @@ namespace PKISharp.WACS
         private readonly ICertificateService _certificateService;
         private readonly ICacheService _cacheService;
         private readonly IDueDateService _dueDate;
+        private readonly IPluginService _pluginService;
         private readonly ExceptionHandler _exceptionHandler;
         private readonly RenewalValidator _validator;
 
@@ -43,7 +46,8 @@ namespace PKISharp.WACS
             ICacheService cacheService,
             IDueDateService dueDate,
             RenewalValidator validator,
-            ExceptionHandler exceptionHandler, 
+            ExceptionHandler exceptionHandler,
+            IPluginService pluginService,
             IContainer container)
         {
             _validator = validator;
@@ -56,11 +60,12 @@ namespace PKISharp.WACS
             _certificateService = certificateService;
             _cacheService = cacheService;
             _container = container;
+            _pluginService = pluginService;
             _dueDate = dueDate;
         }
 
         /// <summary>
-        /// Determine if the renewal should be executes
+        /// Determine if the renewal should be executed
         /// </summary>
         /// <param name="renewal"></param>
         /// <param name="runLevel"></param>
@@ -69,40 +74,41 @@ namespace PKISharp.WACS
         {
             _input.CreateSpace();
             _log.Reset();
-            using var ts = _scopeBuilder.Target(_container, renewal, runLevel);
-            using var es = _scopeBuilder.Execution(ts, renewal, runLevel);
 
-            // Generate the target
-            var targetPlugin = es.Resolve<ITargetPlugin>();
-            var (disabled, disabledReason) = targetPlugin.Disabled;
-            if (disabled)
+            // Check the initial, combined target for the renewal
+            using var es = _scopeBuilder.Execution(_container, renewal, runLevel);
+            var targetPlugin = es.Resolve<PluginBackend<ITargetPlugin, IPluginCapability, TargetPluginOptions>>();
+            if (targetPlugin.Capability.State.Disabled)
             {
-                return new RenewResult($"Source plugin is not available. {disabledReason}");
+                return new RenewResult($"Source plugin {targetPlugin.Meta.Name} is disabled. {targetPlugin.Capability.State.Reason}");
             }
-            var target = await targetPlugin.Generate();
-            if (target is INull)
+            var target = await targetPlugin.Backend.Generate();
+            if (target == null)
             {
-                return new RenewResult($"Source plugin did not generate source");
+                return new RenewResult($"Plugin {targetPlugin.Meta.Name} did not generate a source");
             }
+            _log.Information("Plugin {targetPluginName} generated source", targetPlugin.Meta.Name);
 
-            // Create one or more orders based on the target
-            var orderPlugin = es.Resolve<IOrderPlugin>();
-            var orders = orderPlugin.Split(renewal, target);
+            // Create one or more orders from the target
+            var orderPlugin = es.Resolve<PluginBackend<IOrderPlugin, IPluginCapability, OrderPluginOptions>>();
+            var orders = orderPlugin.Backend.Split(renewal, target).ToList();
             if (orders == null || !orders.Any())
             {
-                return new RenewResult("Order plugin failed to create order(s)");
+                return new RenewResult($"Order plugin {orderPlugin.Meta.Name} failed to create order(s)");
             }
-            _log.Verbose("Source converted into {n} order(s)", orders.Count());
+            _log.Information($"Plugin {{order}} created {{n}} order{(orders.Count > 1?"s":"")}", orderPlugin.Meta.Name, orders.Count());
             foreach (var order in orders)
             {
                 if (!order.Target.IsValid(_log))
                 {
-                    return new RenewResult($"Source plugin generated invalid source");
+                    var blame = orders.Count > 1 ? "Order" : "Source";
+                    var blamePlugin = orders.Count > 1 ? orderPlugin.Meta : targetPlugin.Meta;
+                    return new RenewResult($"{blame} plugin {blamePlugin.Name} created invalid source");
                 }
             }
 
-            /// Start to check the renewal
-            var result = await HandleOrders(es, renewal, orders.ToList(), runLevel);
+            /// Handle the sub orders
+            var result = await HandleOrders(es, renewal, orders, runLevel);
 
             // Configure task scheduler
             var setupTaskScheduler = _args.SetupTaskScheduler;
@@ -114,7 +120,7 @@ namespace PKISharp.WACS
             {
                 setupTaskScheduler = await _input.PromptYesNo($"[--test] Do you want to automatically renew with these settings?", true);
                 if (!setupTaskScheduler)
-                {           
+                {
                     result.Abort = true;
                 }
             }
@@ -183,7 +189,7 @@ namespace PKISharp.WACS
         private async Task<RenewResult> HandleOrders(ILifetimeScope execute, Renewal renewal, List<Order> orders, RunLevel runLevel)
         {
             // Build context
-            var orderContexts = orders.Select(order => new OrderContext(_scopeBuilder.Order(execute), order, runLevel)).ToList();
+            var orderContexts = orders.Select(order => new OrderContext(_scopeBuilder.Order(execute, order), order, runLevel)).ToList();
 
             // Check if renewal is needed at the root level
             var mainDue = ShouldRunRenewal(renewal, runLevel);
@@ -203,7 +209,7 @@ namespace PKISharp.WACS
                 if (!orderContexts.Any(x => x.ShouldRun))
                 {
                     return Abort(renewal);
-                } 
+                }
             }
 
             // Only process orders that are due. In the normal
@@ -220,7 +226,7 @@ namespace PKISharp.WACS
             {
                 _log.Debug("None of the orders are currently due to run");
                 return Abort(renewal);
-            } 
+            }
             if (!renewal.New && !runLevel.HasFlag(RunLevel.Force))
             {
                 _log.Information(LogType.All, "Renewing {renewal}", renewal.LastFriendlyName);
@@ -256,7 +262,7 @@ namespace PKISharp.WACS
             await ProcessOrders(runnableContexts, result);
 
             // Run the post-execution script. Note that this is different
-            // from the script installation plugin, which is handled
+            // from the script installation pluginService, which is handled
             // in the previous step. This is only meant to undo any
             // (firewall?) changes made by the pre-execution script.
             var postScript = _settings.Execution?.DefaultPostExecutionScript;
@@ -414,24 +420,15 @@ namespace PKISharp.WACS
                 }
 
                 // Load the store plugins
-                var storePluginOptions = context.Renewal.StorePluginOptions.
-                    Where(x => x is not NullStoreOptions).
+                var storeContexts = context.Renewal.StorePluginOptions.
+                    Where(x => x is not Plugins.StorePlugins.NullOptions).
+                    Select(x => _scopeBuilder.PluginBackend<IStorePlugin, StorePluginOptions>(context.OrderScope, x)).
                     ToList();
-                var storePlugins = storePluginOptions.
-                    Select(x => context.ExecutionScope.Resolve(x.Instance, new TypedParameter(x.GetType(), x))).
-                    OfType<IStorePlugin>().
-                    Where(x => x is not INull).
-                    ToList();
-                if (storePluginOptions.Count != storePlugins.Count)
-                {
-                    throw new InvalidOperationException("Store plugin/option count mismatch");
-                }
-
-                if (!await HandleStoreAdd(context, context.NewCertificate, storePluginOptions, storePlugins)) 
+                if (!await HandleStoreAdd(context, context.NewCertificate, storeContexts))
                 {
                     return false;
                 }
-                if (!await HandleInstall(context, context.NewCertificate, context.PreviousCertificate, storePlugins))
+                if (!await HandleInstall(context, context.NewCertificate, context.PreviousCertificate, storeContexts))
                 {
                     return false;
                 }
@@ -441,7 +438,7 @@ namespace PKISharp.WACS
                 if (context.PreviousCertificate != null &&
                     context.NewCertificate.Certificate.Thumbprint != context.PreviousCertificate.Certificate.Thumbprint)
                 {
-                    await HandleStoreRemove(context, context.PreviousCertificate, storePluginOptions, storePlugins);
+                    await HandleStoreRemove(context, context.PreviousCertificate, storeContexts);
                 }
             }
             catch (Exception ex)
@@ -465,7 +462,7 @@ namespace PKISharp.WACS
             {
                 return null;
             }
-            if (cachedCertificate.CacheFile.LastWriteTime < 
+            if (cachedCertificate.CacheFile.LastWriteTime <
                 DateTime.Now.AddDays(_settings.Cache.ReuseDays * -1))
             {
                 return null;
@@ -483,7 +480,7 @@ namespace PKISharp.WACS
                 context.Order.FriendlyNameIntermediate,
                 _settings.Cache.ReuseDays,
                 nameof(MainArguments.NoCache).ToLower());
-                return cachedCertificate;
+            return cachedCertificate;
         }
 
         /// <summary>
@@ -496,7 +493,7 @@ namespace PKISharp.WACS
             _log.Verbose("Obtain order details for {order}", context.OrderName);
 
             // Place the order
-            var orderManager = context.ExecutionScope.Resolve<OrderManager>();
+            var orderManager = context.OrderScope.Resolve<OrderManager>();
             context.Order.KeyPath = context.Order.Renewal.CsrPluginOptions?.ReusePrivateKey == true
                 ? _cacheService.Key(context.Order).FullName : null;
             context.Order.Details = await orderManager.GetOrCreate(context.Order, context.RunLevel);
@@ -520,14 +517,14 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private async Task<CertificateInfo?> GetFromServer(OrderContext context)
         {
-            // Generate the CSR plugin
-            var csrPlugin = context.Target.UserCsrBytes == null ? context.ExecutionScope.Resolve<ICsrPlugin>() : null;
+            // Generate the CSR pluginService
+            var csrPlugin = context.Target.UserCsrBytes == null ? context.OrderScope.Resolve<PluginBackend<ICsrPlugin, IPluginCapability, CsrPluginOptions>>() : null;
             if (csrPlugin != null)
             {
-                var (disabled, disabledReason) = csrPlugin.Disabled;
-                if (disabled)
+                var state = csrPlugin.Capability.State;
+                if (state.Disabled)
                 {
-                    context.OrderResult.AddErrorMessage($"CSR plugin is not available. {disabledReason}");
+                    context.OrderResult.AddErrorMessage($"CSR plugin is not available. {state.Disabled}");
                     return null;
                 }
             }
@@ -535,8 +532,8 @@ namespace PKISharp.WACS
             // Request the certificate
             try
             {
-                return await _certificateService.RequestCertificate(csrPlugin, context.RunLevel, context.Order);
-            } 
+                return await _certificateService.RequestCertificate(csrPlugin?.Backend, context.RunLevel, context.Order);
+            }
             catch (Exception ex)
             {
                 _log.Error(ex, "Error requesting certificate {friendlyName}", context.Order.FriendlyNameIntermediate);
@@ -551,34 +548,32 @@ namespace PKISharp.WACS
         /// <param name="newCertificate"></param>
         /// <returns></returns>
         private async Task<bool> HandleStoreAdd(
-            OrderContext context, 
-            CertificateInfo newCertificate, 
-            List<StorePluginOptions> storePluginOptions, 
-            List<IStorePlugin> storePlugins)
+            OrderContext context,
+            CertificateInfo newCertificate,
+            List<ILifetimeScope> stores)
         {
-            // Run store plugin(s)
+            // Run store pluginService(s)
             try
             {
-                var steps = storePluginOptions.Count;
+                var steps = stores.Count;
                 for (var i = 0; i < steps; i++)
                 {
-                    var storeOptions = storePluginOptions[i];
-                    var storePlugin = storePlugins[i];
+                    var store = stores[i].Resolve<PluginBackend<IStorePlugin, IPluginCapability, StorePluginOptions>>();
                     if (steps > 1)
                     {
-                        _log.Information("Store step {n}/{m}: {name}...", i + 1, steps, storeOptions.Name);
+                        _log.Information("Store step {n}/{m}: {name}...", i + 1, steps, store.Meta.Name);
                     }
                     else
                     {
-                        _log.Information("Store with {name}...", storeOptions.Name);
+                        _log.Information("Store with {name}...", store.Meta.Name);
                     }
-                    var (disabled, disabledReason) = storePlugin.Disabled;
-                    if (disabled)
+                    var state = store.Capability.State;
+                    if (state.Disabled)
                     {
-                        context.OrderResult.AddErrorMessage($"Store plugin is not available. {disabledReason}");
+                        context.OrderResult.AddErrorMessage($"Store plugin is not available. {state.Reason}");
                         return false;
-                    } 
-                    await storePlugin.Save(newCertificate);
+                    }
+                    await store.Backend.Save(newCertificate);
                 }
             }
             catch (Exception ex)
@@ -601,16 +596,16 @@ namespace PKISharp.WACS
         private async Task HandleStoreRemove(
             OrderContext context,
             CertificateInfo previousCertificate,
-            List<StorePluginOptions> storePluginOptions,
-            List<IStorePlugin> storePlugins)
+            List<ILifetimeScope> stores)
         {
-            for (var i = 0; i < storePluginOptions.Count; i++)
+            for (var i = 0; i < stores.Count; i++)
             {
-                if (storePluginOptions[i].KeepExisting != true)
+                var store = stores[i].Resolve<PluginBackend<IStorePlugin, IPluginCapability, StorePluginOptions>>();
+                if (store.Options.KeepExisting != true)
                 {
                     try
                     {
-                        await storePlugins[i].Delete(previousCertificate);
+                        await store.Backend.Delete(previousCertificate);
                     }
                     catch (Exception ex)
                     {
@@ -631,44 +626,42 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private async Task<bool> HandleInstall(
             OrderContext context,
-            CertificateInfo newCertificate, 
-            CertificateInfo? previousCertificate, 
-            IEnumerable<IStorePlugin> storePlugins)
+            CertificateInfo newCertificate,
+            CertificateInfo? previousCertificate,
+            List<ILifetimeScope> stores)
         {
-            // Run installation plugin(s)
+            // Run installation pluginService(s)
             try
             {
-                var steps = context.Renewal.InstallationPluginOptions.Count;
+                var installContext = context.Renewal.InstallationPluginOptions.
+                    Where(x => x is not Plugins.InstallationPlugins.NullOptions).
+                    Select(x => _scopeBuilder.PluginBackend<IInstallationPlugin, IInstallationPluginCapability, InstallationPluginOptions>(context.OrderScope, x)).
+                    ToList();
+
+                var steps = installContext.Count;
                 for (var i = 0; i < steps; i++)
                 {
-                    var installOptions = context.Renewal.InstallationPluginOptions[i];
-                    var installPlugin = (IInstallationPlugin)context.ExecutionScope.Resolve(
-                        installOptions.Instance,
-                        new TypedParameter(installOptions.GetType(), installOptions));
-
-                    if (installPlugin is not NullInstallation)
+                    var installationPlugin = installContext[i].Resolve<PluginBackend<IInstallationPlugin, IInstallationPluginCapability, InstallationPluginOptions>>();
+                    if (steps > 1)
                     {
-                        if (steps > 1)
-                        {
-                            _log.Information("Installation step {n}/{m}: {name}...", i + 1, steps, installOptions.Name);
-                        }
-                        else
-                        {
-                            _log.Information("Installing with {name}...", installOptions.Name);
-                        }
-                        var (disabled, disabledReason) = installPlugin.Disabled;
-                        if (disabled)
-                        {
-                            context.OrderResult.AddErrorMessage($"Installation plugin is not available. {disabledReason}");
-                            return false;
-                        }
-                        if (!await installPlugin.Install(context.Target, storePlugins, newCertificate, previousCertificate))
-                        {
-                            // This is not truly fatal, other installation plugins might still be able to do
-                            // something useful, and also we don't want to break compatability for users depending
-                            // on scripts that return an error
-                            context.OrderResult.AddErrorMessage($"Installation plugin {installOptions.Name} encountered an error");
-                        }
+                        _log.Information("Installation step {n}/{m}: {name}...", i + 1, steps, installationPlugin.Meta.Name);
+                    }
+                    else
+                    {
+                        _log.Information("Installing with {name}...", installationPlugin.Meta.Name);
+                    }
+                    var state = installationPlugin.Capability.State;
+                    if (state.Disabled)
+                    {
+                        context.OrderResult.AddErrorMessage($"Installation plugin is not available. {state.Reason}");
+                        return false;
+                    }
+                    if (!await installationPlugin.Backend.Install(stores.Select(x => x.Resolve<IStorePlugin>().GetType()), newCertificate, previousCertificate))
+                    {
+                        // This is not truly fatal, other installation plugins might still be able to do
+                        // something useful, and also we don't want to break compatability for users depending
+                        // on scripts that return an error
+                        context.OrderResult.AddErrorMessage($"Installation plugin {installationPlugin.Meta.Name} encountered an error");
                     }
                 }
             }

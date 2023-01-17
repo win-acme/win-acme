@@ -11,7 +11,8 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    internal class IISOptionsFactory : TargetPluginOptionsFactory<IIS, IISOptions>
+    internal class IISOptionsFactory<TOptions> : PluginOptionsFactory<TOptions>
+        where TOptions : IISOptions, new()
     {
         private readonly IISHelper _iisHelper;
         private readonly ILogService _log;
@@ -22,31 +23,15 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             ILogService log,
             IISHelper iisHelper,
             MainArguments args,
-            ArgumentsInputService arguments,
-            IUserRoleService userRoleService)
+            ArgumentsInputService arguments)
         {
             _iisHelper = iisHelper;
             _log = log;
             _arguments = arguments;
             _args = args;
-            Disabled = IIS.Disabled(userRoleService);
         }
 
         public override int Order => 2;
-
-        /// <summary>
-        /// Match with the legacy target plugin names
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        public override bool Match(string name)
-        {
-            return name.ToLowerInvariant() switch
-            {
-                "iisbinding" or "iissite" or "iissites" => true,
-                _ => base.Match(name),
-            };
-        }
 
         /// <summary>
         /// Get settings in interactive mode
@@ -54,7 +39,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         /// <param name="input"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        public override async Task<IISOptions?> Aquire(IInputService input, RunLevel runLevel)
+        public override async Task<TOptions?> Aquire(IInputService input, RunLevel runLevel)
         {
             var allSites = _iisHelper.GetSites(true).Where(x => x.Hosts.Any()).ToList();
             if (!allSites.Any())
@@ -119,7 +104,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         /// <param name="visibleSites"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        private async Task<IISOptions?> TryAquireSettings(
+        private async Task<TOptions?> TryAquireSettings(
             IInputService input,
             List<IISHelper.IISBindingOption> allBindings,
             List<IISHelper.IISBindingOption> visibleBindings,
@@ -133,7 +118,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 "or alternatively leave the input empty to scan *all* websites.");
 
             // Include all types by default
-            var options = new IISOptions
+            var options = new TOptions
             {
                 IncludeTypes = new List<string>() {
                     IISHelper.FtpTypeFilter,
@@ -389,7 +374,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             try
             {
                 var actualRegex = new Regex(regex);
-                options.IncludeRegex = actualRegex;
+                options.IncludeRegex = regex;
                 return true;
             }
             catch (Exception ex)
@@ -444,9 +429,9 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
         }
 
-        public override async Task<IISOptions?> Default()
+        public override async Task<TOptions?> Default()
         {
-            var options = new IISOptions();
+            var options = new TOptions();
             var host = await _arguments.GetString<IISArguments>(x => x.Host).GetValue();
             var pattern = await _arguments.GetString<IISArguments>(x => x.Pattern).GetValue();
             var regex = await _arguments.GetString<IISArguments>(x => x.Regex).GetValue();
@@ -667,5 +652,25 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             options.IncludeSiteIds = ret;
             return true;
         }
+    }
+
+    internal class IISOptionsFactory : IISOptionsFactory<IISOptions> 
+    {
+        public IISOptionsFactory(ILogService log, IISHelper iisHelper, MainArguments args, ArgumentsInputService arguments) : base(log, iisHelper, args, arguments) { }
+    }
+
+    internal class IISBindingOptionsFactory : IISOptionsFactory<IISBindingOptions>
+    {
+        public IISBindingOptionsFactory(ILogService log, IISHelper iisHelper, MainArguments args, ArgumentsInputService arguments) : base(log, iisHelper, args, arguments) { }
+    }
+
+    internal class IISSiteOptionsFactory : IISOptionsFactory<IISSiteOptions>
+    {
+        public IISSiteOptionsFactory(ILogService log, IISHelper iisHelper, MainArguments args, ArgumentsInputService arguments) : base(log, iisHelper, args, arguments) { }
+    }
+
+    internal class IISSitesOptionsFactory : IISOptionsFactory<IISSitesOptions>
+    {
+        public IISSitesOptionsFactory(ILogService log, IISHelper iisHelper, MainArguments args, ArgumentsInputService arguments) : base(log, iisHelper, args, arguments) { }
     }
 }

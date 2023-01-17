@@ -1,8 +1,10 @@
 ﻿using Org.BouncyCastle.Pkcs;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.IO;
 using System.Linq;
@@ -11,8 +13,15 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
+    [IPlugin.Plugin<
+        PemFilesOptions, PemFilesOptionsFactory, 
+        DefaultCapability, WacsJsonPlugins>
+        ("e57c70e4-cd60-4ba6-80f6-a41703e21031",
+        Name, "PEM encoded files (Apache, nginx, etc.)")]
     internal class PemFiles : IStorePlugin
     {
+        internal const string Name = "PemFiles";
+
         private readonly ILogService _log;
         private readonly PemService _pemService;
         private readonly string _path;
@@ -82,7 +91,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     GetType(),
                     new StoreInfo()
                     {
-                        Name = PemFilesOptions.PluginName,
+                        Name = Name,
                         Path = _path
                     });
 
@@ -124,7 +133,5 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         }
 
         public Task Delete(CertificateInfo input) => Task.CompletedTask;
-
-        public CertificateInfo? FindByThumbprint() => null;
     }
 }

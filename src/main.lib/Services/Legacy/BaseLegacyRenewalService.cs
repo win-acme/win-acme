@@ -1,5 +1,6 @@
 ﻿using PKISharp.WACS.Host.Services.Legacy;
 using PKISharp.WACS.Plugins.TargetPlugins;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -62,7 +63,7 @@ namespace PKISharp.WACS.Services.Legacy
             LegacyScheduledRenewal? result;
             try
             {
-                result = JsonSerializer.Deserialize<LegacyScheduledRenewal>(renewal);
+                result = JsonSerializer.Deserialize(renewal, WacsJson.Default.LegacyScheduledRenewal);
                 if (result?.Binding == null)
                 {
                     throw new Exception();

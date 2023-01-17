@@ -5,6 +5,8 @@ using Google.Apis.Http;
 using Google.Apis.Services;
 using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Base.Capabilities;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.IO;
@@ -17,7 +19,12 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-
+    [IPlugin.Plugin<
+        CloudDnsOptions, CloudDnsOptionsFactory, 
+        DnsValidationCapability, CloudDnsJson>
+        ("B61505E9-1709-43FD-996F-C74C3686286C",
+        "GCPDns", 
+        "Create verification records in Google Cloud DNS")]
     internal class CloudDns: DnsValidation<CloudDns>
     {
         private readonly CloudDnsOptions _options;

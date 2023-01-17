@@ -2,21 +2,28 @@
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using static System.IO.FileSystemAclExtensions;
 using System.Linq;
 using System.Security.AccessControl;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
 using System.Threading.Tasks;
-using System.Collections;
+using static System.IO.FileSystemAclExtensions;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
+    [IPlugin.Plugin<
+        CertificateStoreOptions, CertificateStoreOptionsFactory, 
+        CertificateStoreCapability, WacsJsonPlugins>
+        ("e30adc8e-d756-4e16-a6f2-450f784b1a97", 
+        Name, "Windows Certificate Store")]
     internal class CertificateStore : IStorePlugin, IDisposable
     {
+        internal const string Name = "CertificateStore";
         private const string DefaultStoreName = nameof(StoreName.My);
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
@@ -130,7 +137,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 GetType(),
                 new StoreInfo()
                 {
-                    Name = CertificateStoreOptions.PluginName,
+                    Name = Name,
                     Path = _store.Name
                 });
             return Task.CompletedTask;
@@ -353,20 +360,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
             _store.Close();
             return possibles.OrderByDescending(x => x.NotBefore).FirstOrDefault();
-        }
-
-        (bool, string?) IPlugin.Disabled => Disabled(_userRoleService);
-
-        internal static (bool, string?) Disabled(IUserRoleService userRoleService)
-        {
-            if (userRoleService.AllowCertificateStore) 
-            {
-                return (false, null);
-            } 
-            else 
-            {
-                return (true, "Run as administrator to allow certificate store access.");
-            }
         }
 
         #region IDisposable
