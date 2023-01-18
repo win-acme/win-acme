@@ -35,7 +35,7 @@ namespace PKISharp.WACS.Clients.Acme
     /// <summary>
     /// Main class that talks to the ACME server
     /// </summary>
-    internal class AcmeClient : IDisposable
+    internal class AcmeClient
     {
         /// <summary>
         /// https://tools.ietf.org/html/rfc8555#section-7.1.6
@@ -261,7 +261,7 @@ namespace PKISharp.WACS.Clients.Acme
             {
                 var (_, filename, content) = await client.GetTermsOfServiceAsync();
                 _log.Verbose("Terms of service downloaded");
-                if (!string.IsNullOrEmpty(filename))
+                if (!string.IsNullOrEmpty(filename) && content != null)
                 {
                     if (!await AcceptTos(filename, content))
                     {
@@ -780,37 +780,5 @@ namespace PKISharp.WACS.Clients.Acme
         /// up the nonce tracking mechanism
         /// </summary>
         private readonly SemaphoreSlim _requestLock = new(1, 1);
-
-        #region IDisposable Support
-        private bool disposedValue = false; // To detect redundant calls
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposedValue)
-            {
-                if (disposing && _client != null)
-                {
-                    _client.Dispose();
-                }
-
-                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
-                // TODO: set large fields to null.
-
-                disposedValue = true;
-            }
-        }
-
-        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
-        // ~AcmeClient()
-        // {
-        //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-        //   Dispose(false);
-        // }
-
-        // This code added to correctly implement the disposable pattern.
-        public void Dispose() =>
-            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-            Dispose(true);// TODO: uncomment the following line if the finalizer is overridden above.// GC.SuppressFinalize(this);
-        #endregion
     }
 }

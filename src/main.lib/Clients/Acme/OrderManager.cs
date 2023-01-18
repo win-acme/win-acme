@@ -118,7 +118,7 @@ namespace PKISharp.WACS.Clients.Acme
             try
             {
                 _log.Debug("Refreshing cached order");
-                existingOrder = await RefreshOrder(existingOrder);
+                existingOrder = await RefreshOrder(existingOrder.Value);
             }
             catch (Exception ex)
             {
@@ -126,10 +126,10 @@ namespace PKISharp.WACS.Clients.Acme
                 return null;
             }
 
-            if (existingOrder.Payload.Status != AcmeClient.OrderValid &&
-                existingOrder.Payload.Status != AcmeClient.OrderReady)
+            if (existingOrder.Value.Payload.Status != AcmeClient.OrderValid &&
+                existingOrder.Value.Payload.Status != AcmeClient.OrderReady)
             {
-                _log.Warning("Cached order has status {status}, discarding", existingOrder.Payload.Status);
+                _log.Warning("Cached order has status {status}, discarding", existingOrder.Value.Payload.Status);
                 return null;
             }
             
@@ -175,7 +175,7 @@ namespace PKISharp.WACS.Clients.Acme
                 // Create the order
                 _log.Verbose("Creating order for hosts: {identifiers}", identifiers);
                 var order = await _client.CreateOrder(identifiers);
-                if (order.Payload.Error != null)
+                if (order.Payload.Error != default)
                 {
                     _log.Error("Failed to create order {url}: {detail}", order.OrderUrl, order.Payload.Error.Detail);
                     return null;

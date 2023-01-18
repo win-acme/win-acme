@@ -85,16 +85,16 @@ namespace PKISharp.WACS.Services
             await _cacheService.StoreCsr(order, _pemService.GetPem("CERTIFICATE REQUEST", order.Target.CsrBytes));
 
             // Check order status
-            if (order.Details.Payload.Status != AcmeClient.OrderValid)
+            if (order.Details.Value.Payload.Status != AcmeClient.OrderValid)
             {
                 // Finish the order by sending the CSR to 
                 // the server, which can then generate the
                 // certificate.
                 _log.Verbose("Submitting CSR");
-                order.Details = await _client.SubmitCsr(order.Details, order.Target.CsrBytes);
-                if (order.Details.Payload.Status != AcmeClient.OrderValid)
+                order.Details = await _client.SubmitCsr(order.Details.Value, order.Target.CsrBytes);
+                if (order.Details.Value.Payload.Status != AcmeClient.OrderValid)
                 {
-                    _log.Error("Unexpected order status {status}", order.Details.Payload.Status);
+                    _log.Error("Unexpected order status {status}", order.Details.Value.Payload.Status);
                     throw new Exception($"Unable to complete order");
                 }
             }
@@ -104,13 +104,13 @@ namespace PKISharp.WACS.Services
             var certInfo = default(AcmeCertificate);
             try
             {
-                certInfo = await _client.GetCertificate(order.Details);
+                certInfo = await _client.GetCertificate(order.Details.Value);
             } 
             catch (Exception ex)
             {
                 throw new Exception($"Unable to get certificate", ex);
             }
-            if (certInfo == null || certInfo.Certificate == null)
+            if (certInfo == default || certInfo.Certificate == null)
             {
                 throw new Exception($"Unable to get certificate");
             }

@@ -150,7 +150,7 @@ namespace PKISharp.WACS.Clients.Acme
                 if (value != null)
                 {
                     _log.Debug("Saving account to {AccountPath}", AccountPath);
-                    File.WriteAllText(AccountPath, JsonSerializer.Serialize(value, AcmeClientJson.Insensitive.AccountDetails));
+                    File.WriteAllText(AccountPath, JsonSerializer.Serialize(value.Value, AcmeClientJson.Insensitive.AccountDetails));
                 }
                 _currentAccount = value;
             }

@@ -59,7 +59,7 @@ namespace PKISharp.WACS.Context
         public string PluginName { get; }
         public OrderResult OrderResult { get; }
         public TargetPart? TargetPart { get; }
-        public Authorization Authorization { get; }
+        public Authorization Authorization { get; set; }
         public Challenge? Challenge { get; set; }
         public IChallengeValidationDetails? ChallengeDetails { get; set; }
         public IValidationPlugin ValidationPlugin { get; set; }

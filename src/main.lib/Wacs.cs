@@ -430,15 +430,15 @@ namespace PKISharp.WACS.Host
                 throw new InvalidOperationException("Unable to initialize acmeAccount");
             }
             _input.CreateSpace();
-            _input.Show("Account ID", acmeAccount.Payload.Id ?? "-");
-            _input.Show("Account KID", acmeAccount.Kid ?? "-");
-            _input.Show("Created", acmeAccount.Payload.CreatedAt);
-            _input.Show("Initial IP", acmeAccount.Payload.InitialIp);
-            _input.Show("Status", acmeAccount.Payload.Status);
-            if (acmeAccount.Payload.Contact != null &&
-                acmeAccount.Payload.Contact.Length > 0)
+            _input.Show("Account ID", acmeAccount.Value.Payload.Id ?? "-");
+            _input.Show("Account KID", acmeAccount.Value.Kid ?? "-");
+            _input.Show("Created", acmeAccount.Value.Payload.CreatedAt);
+            _input.Show("Initial IP", acmeAccount.Value.Payload.InitialIp);
+            _input.Show("Status", acmeAccount.Value.Payload.Status);
+            if (acmeAccount.Value.Payload.Contact != null &&
+                acmeAccount.Value.Payload.Contact.Length > 0)
             {
-                _input.Show("Contact(s)", string.Join(", ", acmeAccount.Payload.Contact));
+                _input.Show("Contact(s)", string.Join(", ", acmeAccount.Value.Payload.Contact));
             }
             else
             {

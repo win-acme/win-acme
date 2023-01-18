@@ -28,8 +28,8 @@ namespace PKISharp.WACS.DomainObjects
 
         public bool? Valid => Details == null ? 
             null : 
-            Details.Payload.Status == AcmeClient.OrderValid || 
-            Details.Payload.Status == AcmeClient.OrderReady;
+            Details.Value.Payload.Status == AcmeClient.OrderValid || 
+            Details.Value.Payload.Status == AcmeClient.OrderReady;
 
         public string FriendlyNameBase
         {

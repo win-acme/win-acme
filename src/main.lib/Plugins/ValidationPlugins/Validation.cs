@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     /// <summary>
     /// Base implementation for all validation plugins
     /// </summary>
-    public abstract class Validation<TChallenge> : IValidationPlugin where TChallenge : class, IChallengeValidationDetails
+    public abstract class Validation<TChallenge> : IValidationPlugin where TChallenge : IChallengeValidationDetails
     {
         /// <summary>
         /// Handle the challenge

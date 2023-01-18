@@ -80,13 +80,13 @@ namespace PKISharp.WACS
                 }
                 
                 // Get authorization details
-                var authorizationUris = orderContext.Order.Details.Payload.Authorizations.ToList();
+                var authorizationUris = orderContext.Order.Details.Value.Payload.Authorizations.ToList();
                 var authorizationTasks = authorizationUris.Select(async uri =>
                 {
                     var auth = await GetAuthorizationDetails(orderContext, uri);
                     if (auth != null)
                     {
-                        return new AuthorizationContext(orderContext, auth, uri);
+                        return new AuthorizationContext(orderContext, auth.Value, uri);
                     }
                     return null;
                 });
@@ -200,7 +200,7 @@ namespace PKISharp.WACS
             };
             foreach (var authorisationContext in authorisationContexts)
             {
-                if (authorisationContext.Authorization == null)
+                if (authorisationContext.Authorization == default)
                 {
                     throw new InvalidOperationException();
                 }
@@ -421,7 +421,7 @@ namespace PKISharp.WACS
                 _log.Verbose("[{identifier}] Initial authorization status: {status}", context.Label, context.Authorization.Status);
                 _log.Verbose("[{identifier}] Challenge types available: {challenges}", context.Label, context.Authorization.Challenges.Select(x => x.Type ?? "[Unknown]"));
                 var challenge = context.Authorization.Challenges.FirstOrDefault(c => string.Equals(c.Type, context.ChallengeType, StringComparison.InvariantCultureIgnoreCase));
-                if (challenge == null)
+                if (challenge == default)
                 {
                     if (context.OrderResult.Success == true)
                     {
@@ -431,7 +431,7 @@ namespace PKISharp.WACS
                         _log.Warning("[{identifier}] Expected challenge type {type} not available, already validated using {valided}.",
                             context.Label,
                             context.ChallengeType,
-                            usedType?.Type ?? "[unknown]");
+                            usedType.Type ?? "[unknown]");
                         return;
                     }
                     else
@@ -528,7 +528,7 @@ namespace PKISharp.WACS
             {
                 _log.Debug("[{identifier}] Submitting challenge answer", validationContext.Label);
                 var client = validationContext.Scope.Resolve<AcmeClient>();
-                var updatedChallenge = await client.AnswerChallenge(validationContext.Challenge);
+                var updatedChallenge = await client.AnswerChallenge(validationContext.Challenge.Value);
                 validationContext.Challenge = updatedChallenge;
                 if (updatedChallenge.Status != AcmeClient.ChallengeValid)
                 {
@@ -545,7 +545,7 @@ namespace PKISharp.WACS
                     // Propagate valid state up to the Authorization
                     // This assumption might prove wrong if future 
                     // server implementations require multiple challenges
-                    validationContext.Authorization.Status = AcmeClient.AuthorizationValid;
+                    validationContext.Authorization = new Protocol.Authorization();
                     _log.Information("[{identifier}] Authorization result: {Status}", validationContext.Label, updatedChallenge.Status);
                     return;
                 }

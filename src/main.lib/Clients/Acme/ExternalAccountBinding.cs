@@ -36,7 +36,7 @@ namespace PKISharp.WACS.Clients.Acme
 
         public byte[] Sign(byte[] input)
         {
-            var keyBytes = CryptoHelper.Base64.UrlDecode(Key);
+            var keyBytes = Base64Tool.UrlDecode(Key);
             switch (Algorithm)
             {
                 case "HS256":

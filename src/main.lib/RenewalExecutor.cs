@@ -85,6 +85,7 @@ namespace PKISharp.WACS
             var target = await targetPlugin.Backend.Generate();
             if (target == null)
             {
+                _log.Information("Plugin {targetPluginName} generated source", targetPlugin.Meta.Name);
                 return new RenewResult($"Plugin {targetPlugin.Meta.Name} did not generate a source");
             }
             _log.Information("Plugin {targetPluginName} generated source", targetPlugin.Meta.Name);
@@ -503,7 +504,7 @@ namespace PKISharp.WACS
             {
                 context.OrderResult.AddErrorMessage($"Unable to create order");
             }
-            else if (context.Order.Details.Payload.Status == AcmeClient.OrderInvalid)
+            else if (context.Order.Details.Value.Payload.Status == AcmeClient.OrderInvalid)
             {
                 context.OrderResult.AddErrorMessage($"Created order was invalid");
             }

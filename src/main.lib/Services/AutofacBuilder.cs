@@ -124,7 +124,7 @@ namespace PKISharp.WACS.Services
         public ILifetimeScope Order(ILifetimeScope execution, Order order)
         {
             _log.Verbose("Autofac: creating {name} scope with parent {tag}", nameof(Order), execution.Tag);
-            return execution.BeginLifetimeScope($"order-{order.CacheKeyPart}", builder => builder.RegisterInstance(order.Target));
+            return execution.BeginLifetimeScope($"order-{order.CacheKeyPart ?? "main"}", builder => builder.RegisterInstance(order.Target));
         }
 
         /// <summary>
@@ -188,7 +188,7 @@ namespace PKISharp.WACS.Services
                     builder.RegisterInstance(options).As<TOptions>().As(options.GetType());
                     builder.RegisterType(plugin.Backend).As<TBackend>().SingleInstance();
                     builder.RegisterType(plugin.Capability).As<TCapability>().SingleInstance().Named<TCapability>(key);
-                    builder.Register(c => new PluginBackend<TBackend, TCapability, TOptions>(plugin, c.Resolve<TBackend>(), c.Resolve<TCapability>(), options)).As<PluginBackend<TBackend, TCapability, TOptions>>();
+                    builder.Register(c => new PluginBackend<TBackend, TCapability, TOptions>(plugin, c.Resolve<TBackend>(), c.ResolveNamed<TCapability>(key), options)).As<PluginBackend<TBackend, TCapability, TOptions>>();
                 });
         }
 
