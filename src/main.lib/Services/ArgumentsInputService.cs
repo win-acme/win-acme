@@ -26,10 +26,24 @@ namespace PKISharp.WACS.Services
             _input = input;
             _secretService = secretService;
         }
+
+        /// <summary>
+        /// Slightly awkward construction here with the allowEmtpy parameter to 
+        /// prevent trim warning due to the compiler creating a displayclass for 
+        /// the closure if we use it directly within the input function call. We 
+        /// may be able to restore the original code in a future version of the
+        /// .NET tool chain.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="expression"></param>
+        /// <param name="allowEmtpy"></param>
+        /// <returns></returns>
         public ArgumentResult<ProtectedString?> GetProtectedString<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>
             (Expression<Func<T, string?>> expression, bool allowEmtpy = false) where T : class, IArguments,
             new() => new(GetArgument(expression).Protect(allowEmtpy), GetMetaData(expression),
-                async args => (await _secretService.GetSecret(args.Label, args.Default?.Value, allowEmtpy ? "" : null, args.Required, args.Multiline)).Protect(allowEmtpy),
+                allowEmtpy
+                    ? async args => (await _secretService.GetSecret(args.Label, args.Default?.Value, "", args.Required, args.Multiline)).Protect(true)
+                    : async args => (await _secretService.GetSecret(args.Label, args.Default?.Value, null, args.Required, args.Multiline)).Protect(false),
                 _log, allowEmtpy);
 
         public ArgumentResult<string?> GetString<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] T>
