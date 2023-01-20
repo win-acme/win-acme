@@ -34,7 +34,7 @@ namespace PKISharp.WACS.Services.Serialization
         public override PluginOptionsBase? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             var readerClone = reader;
-            var neutral = JsonSerializer.Deserialize(ref readerClone, WacsJson.Default.PluginOptionsBase);
+            var neutral = JsonSerializer.Deserialize(ref readerClone, WacsJson.Insensitive.PluginOptionsBase);
             if (!_pluginService.TryGetPlugin(neutral, out var plugin))
             {
                 _log.Error("Unable to find {typeToConvert} plugin {id}", 

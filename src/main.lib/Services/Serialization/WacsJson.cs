@@ -4,6 +4,7 @@ using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services.Legacy;
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using static PKISharp.WACS.Clients.Acme.ZeroSsl;
 using static PKISharp.WACS.Clients.UpdateClient;
@@ -26,7 +27,7 @@ namespace PKISharp.WACS.Services.Serialization
     internal partial class WacsJson : JsonSerializerContext 
     {
         public WacsJson(WacsJsonOptionsFactory optionsFactory) : base(optionsFactory.Options) {}
-    
+        public static WacsJson Insensitive => new WacsJson(new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
         public static void Configure(ContainerBuilder builder)
         {
             _ = builder.Register(x =>

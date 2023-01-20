@@ -63,7 +63,7 @@ namespace PKISharp.WACS.Services.Legacy
             LegacyScheduledRenewal? result;
             try
             {
-                result = JsonSerializer.Deserialize(renewal, WacsJson.Default.LegacyScheduledRenewal);
+                result = JsonSerializer.Deserialize(renewal, WacsJson.Insensitive.LegacyScheduledRenewal);
                 if (result?.Binding == null)
                 {
                     throw new Exception();

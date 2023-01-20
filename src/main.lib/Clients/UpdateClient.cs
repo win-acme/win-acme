@@ -29,7 +29,7 @@ namespace PKISharp.WACS.Clients
                 {
                     throw new Exception("Empty result");
                 }
-                var data = JsonSerializer.Deserialize(json, WacsJson.Default.VersionCheckData);
+                var data = JsonSerializer.Deserialize(json, WacsJson.Insensitive.VersionCheckData);
                 if (data == null || data.Latest == null || data.Latest.Build == null)
                 {
                     throw new Exception("Invalid result");
