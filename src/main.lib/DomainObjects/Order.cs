@@ -12,7 +12,7 @@ namespace PKISharp.WACS.DomainObjects
         public string? KeyPath { get; set; }
         public Target Target { get; set; }
         public Renewal Renewal { get; set; }
-        public Protocol.OrderDetails? Details { get; set; } = null;
+        public Protocol.AcmeOrderDetails? Details { get; set; } = null;
 
         public Order(
             Renewal renewal,
@@ -28,8 +28,8 @@ namespace PKISharp.WACS.DomainObjects
 
         public bool? Valid => Details == null ? 
             null : 
-            Details.Value.Payload.Status == AcmeClient.OrderValid || 
-            Details.Value.Payload.Status == AcmeClient.OrderReady;
+            Details.Payload.Status == AcmeClient.OrderValid || 
+            Details.Payload.Status == AcmeClient.OrderReady;
 
         public string FriendlyNameBase
         {

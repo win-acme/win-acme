@@ -48,7 +48,7 @@ namespace PKISharp.WACS.Services
                 new(typeof(Plugins.ValidationPlugins.Http.WebDav)),
                 new(typeof(Plugins.ValidationPlugins.Tls.SelfHosting)), new(typeof(Plugins.ValidationPlugins.Tls.SelfHostingArguments)),
 
-                // Order plugins
+                // AcmeOrder plugins
                 new(typeof(Plugins.OrderPlugins.Domain)),
                 new(typeof(Plugins.OrderPlugins.Host)),
                 new(typeof(Plugins.OrderPlugins.Single)),
@@ -101,7 +101,7 @@ namespace PKISharp.WACS.Services
             {
                 if (dllFiles.Any())
                 {
-                    _log.Error("This version of the program does not support external plugins, please download the pluggable version.");
+                    _log.Warning("This version of the program does not support external plugins, please download the pluggable version.");
                 }
                 return new List<TypeDescriptor>();
             } 

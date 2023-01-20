@@ -1,4 +1,5 @@
 ﻿using ACMESharp.Protocol;
+using Org.BouncyCastle.Crypto.Agreement;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
@@ -66,7 +67,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// <param name="renewal"></param>
         /// <param name="target"></param>
         /// <returns></returns>
-        public async Task<OrderDetails?> GetOrCreate(Order order, RunLevel runLevel)
+        public async Task<AcmeOrderDetails?> GetOrCreate(Order order, RunLevel runLevel)
         {
             var cacheKey = CacheKey(order);
             if (string.IsNullOrWhiteSpace(order.KeyPath))
@@ -99,7 +100,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// <param name="cacheKey"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        private async Task<OrderDetails?> GetFromCache(string cacheKey, RunLevel runLevel)
+        private async Task<AcmeOrderDetails?> GetFromCache(string cacheKey, RunLevel runLevel)
         {
             var existingOrder = FindRecentOrder(cacheKey);
             if (existingOrder == null)
@@ -118,7 +119,7 @@ namespace PKISharp.WACS.Clients.Acme
             try
             {
                 _log.Debug("Refreshing cached order");
-                existingOrder = await RefreshOrder(existingOrder.Value);
+                existingOrder = await RefreshOrder(existingOrder);
             }
             catch (Exception ex)
             {
@@ -126,10 +127,10 @@ namespace PKISharp.WACS.Clients.Acme
                 return null;
             }
 
-            if (existingOrder.Value.Payload.Status != AcmeClient.OrderValid &&
-                existingOrder.Value.Payload.Status != AcmeClient.OrderReady)
+            if (existingOrder.Payload.Status != AcmeClient.OrderValid &&
+                existingOrder.Payload.Status != AcmeClient.OrderReady)
             {
-                _log.Warning("Cached order has status {status}, discarding", existingOrder.Value.Payload.Status);
+                _log.Warning("Cached order has status {status}, discarding", existingOrder.Payload.Status);
                 return null;
             }
             
@@ -143,9 +144,13 @@ namespace PKISharp.WACS.Clients.Acme
         /// </summary>
         /// <param name="order"></param>
         /// <returns></returns>
-        private async Task<OrderDetails> RefreshOrder(OrderDetails order)
+        private async Task<AcmeOrderDetails> RefreshOrder(AcmeOrderDetails order)
         {
             _log.Debug("Refreshing order...");
+            if (order.OrderUrl == null) 
+            {
+                throw new InvalidOperationException("Missing order url");
+            }
             var update = await _client.GetOrderDetails(order.OrderUrl);
             order.Payload = update.Payload;
             return order;
@@ -159,7 +164,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// <param name="privateKeyFile"></param>
         /// <param name="target"></param>
         /// <returns></returns>
-        private async Task<OrderDetails?> CreateOrder(string cacheKey, Target target)
+        private async Task<AcmeOrderDetails?> CreateOrder(string cacheKey, Target target)
         {
             try
             {
@@ -202,7 +207,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// </summary>
         /// <param name="identifiers"></param>
         /// <returns></returns>
-        private OrderDetails? FindRecentOrder(string cacheKey)
+        private AcmeOrderDetails? FindRecentOrder(string cacheKey)
         {
             DeleteStaleFiles();
             var fi = new FileInfo(Path.Combine(_orderPath.FullName, $"{cacheKey}.{_orderFileExtension}"));
@@ -213,7 +218,7 @@ namespace PKISharp.WACS.Clients.Acme
             try
             {
                 var content = File.ReadAllText(fi.FullName);
-                var order = JsonSerializer.Deserialize(content, AcmeClientJson.Insensitive.OrderDetails);
+                var order = JsonSerializer.Deserialize(content, AcmeClientJson.Insensitive.AcmeOrderDetails);
                 return order;
             } 
             catch (Exception ex)
@@ -261,7 +266,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// Save order to disk
         /// </summary>
         /// <param name="order"></param>
-        private async Task SaveOrder(OrderDetails order, string cacheKey)
+        private async Task SaveOrder(AcmeOrderDetails order, string cacheKey)
         {
             try
             {
@@ -269,7 +274,7 @@ namespace PKISharp.WACS.Clients.Acme
                 {
                     _orderPath.Create();
                 }
-                var content = JsonSerializer.Serialize(order, AcmeClientJson.Default.OrderDetails);
+                var content = JsonSerializer.Serialize(order, AcmeClientJson.Default.AcmeOrderDetails);
                 var path = Path.Combine(_orderPath.FullName, $"{cacheKey}.{_orderFileExtension}");
                 await File.WriteAllTextAsync(path, content);
             }

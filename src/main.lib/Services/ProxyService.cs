@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Reflection.Metadata;
 using System.Security.Authentication;
 using System.Threading;
 using System.Threading.Tasks;
@@ -79,27 +82,43 @@ namespace PKISharp.WACS.Services
 
             protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             {
-                _log.Debug("Send {method} to {uri}", request.Method, request.RequestUri);
+                _log.Debug("[HTTP] Send {method} to {uri}", request.Method, request.RequestUri);
 #if DEBUG
                 if (request.Content != null)
                 {
                     var content = await request.Content.ReadAsStringAsync(cancellationToken);
                     if (!string.IsNullOrWhiteSpace(content))
                     {
-                        _log.Verbose("Request content: {content}", content);
+                        _log.Verbose("[HTTP] Request content: {content}", content);
                     }
                 }
 #endif
                 var response = await base.SendAsync(request, cancellationToken);
-                _log.Verbose("Request completed with status {s}", response.StatusCode);
+                _log.Verbose("[HTTP] Request completed with status {s}", response.StatusCode);
 #if DEBUG
-                if (response.Content != null)
+                if (response.Content != null && response.Content.Headers.ContentLength > 0)
                 {
-                    var content = await response.Content.ReadAsStringAsync(cancellationToken);
-                    if (!string.IsNullOrWhiteSpace(content))
+                    var printableTypes = new[] { 
+                        "text/json", 
+                        "application/json", 
+                        "application/problem+json" 
+                    };
+                    if (printableTypes.Contains(response.Content.Headers.ContentType?.MediaType))
                     {
-                        _log.Verbose("Response content: {content}", content);
+                        var content = await response.Content.ReadAsStringAsync(cancellationToken);
+                        if (!string.IsNullOrWhiteSpace(content))
+                        {
+                            _log.Verbose("[HTTP] Response content: {content}", content);
+                        }
                     }
+                    else
+                    {
+                        _log.Verbose("[HTTP] Response of type {type} ({bytes} bytes)", response.Content.Headers.ContentType?.MediaType, response.Content.Headers.ContentLength);
+                    }
+                }
+                else
+                {
+                    _log.Verbose("[HTTP] Empty response");
                 }
 #endif
                 return response;

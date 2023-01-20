@@ -7,9 +7,7 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
-using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
-using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
@@ -32,7 +30,6 @@ namespace PKISharp.WACS
         private readonly ICertificateService _certificateService;
         private readonly ICacheService _cacheService;
         private readonly IDueDateService _dueDate;
-        private readonly IPluginService _pluginService;
         private readonly ExceptionHandler _exceptionHandler;
         private readonly RenewalValidator _validator;
 
@@ -47,7 +44,6 @@ namespace PKISharp.WACS
             IDueDateService dueDate,
             RenewalValidator validator,
             ExceptionHandler exceptionHandler,
-            IPluginService pluginService,
             IContainer container)
         {
             _validator = validator;
@@ -60,7 +56,6 @@ namespace PKISharp.WACS
             _certificateService = certificateService;
             _cacheService = cacheService;
             _container = container;
-            _pluginService = pluginService;
             _dueDate = dueDate;
         }
 
@@ -97,7 +92,7 @@ namespace PKISharp.WACS
             {
                 return new RenewResult($"Order plugin {orderPlugin.Meta.Name} failed to create order(s)");
             }
-            _log.Information($"Plugin {{order}} created {{n}} order{(orders.Count > 1?"s":"")}", orderPlugin.Meta.Name, orders.Count());
+            _log.Information($"Plugin {{order}} created {{n}} order{(orders.Count > 1?"s":"")}", orderPlugin.Meta.Name, orders.Count);
             foreach (var order in orders)
             {
                 if (!order.Target.IsValid(_log))
@@ -504,7 +499,7 @@ namespace PKISharp.WACS
             {
                 context.OrderResult.AddErrorMessage($"Unable to create order");
             }
-            else if (context.Order.Details.Value.Payload.Status == AcmeClient.OrderInvalid)
+            else if (context.Order.Details.Payload.Status == AcmeClient.OrderInvalid)
             {
                 context.OrderResult.AddErrorMessage($"Created order was invalid");
             }

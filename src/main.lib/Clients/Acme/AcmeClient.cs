@@ -1,6 +1,7 @@
 ﻿using ACMESharp;
 using ACMESharp.Authorizations;
 using ACMESharp.Protocol;
+using ACMESharp.Protocol.Resources;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
@@ -26,7 +27,7 @@ namespace PKISharp.WACS.Clients.Acme
     [JsonSerializable(typeof(AccountSigner))]
     [JsonSerializable(typeof(AccountDetails))]
     [JsonSerializable(typeof(Protocol.ServiceDirectory))]
-    [JsonSerializable(typeof(OrderDetails))]
+    [JsonSerializable(typeof(AcmeOrderDetails))]
     internal partial class AcmeClientJson : JsonSerializerContext
     {
         public static AcmeClientJson Insensitive { get; } = new AcmeClientJson(new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
@@ -521,22 +522,34 @@ namespace PKISharp.WACS.Clients.Acme
             return newEmails.Select(x => $"{prefix}{x}").ToArray();
         }
 
-        internal async Task<IChallengeValidationDetails> DecodeChallengeValidation(Protocol.Authorization auth, Protocol.Challenge challenge)
+        internal async Task<IChallengeValidationDetails> DecodeChallengeValidation(AcmeAuthorization auth, AcmeChallenge challenge)
         {
             var client = await GetClient();
+            if (challenge.Type == null)
+            {
+                throw new NotSupportedException("Missing challenge type");
+            }
             return AuthorizationDecoder.DecodeChallengeValidation(auth, challenge.Type, client.Signer);
         }
 
-        internal async Task<Protocol.Challenge> AnswerChallenge(Protocol.Challenge challenge)
+        internal async Task<AcmeChallenge> AnswerChallenge(AcmeChallenge challenge)
         {
             // Have to loop to wait for server to stop being pending
             var client = await GetClient();
+            if (challenge.Url == null)
+            {
+                throw new NotSupportedException("Missing challenge url");
+            }
             challenge = await Retry(client, () => client.AnswerChallengeAsync(challenge.Url));
             var tries = 1;
             while (
                 challenge.Status == AuthorizationPending ||
                 challenge.Status == AuthorizationProcessing)
             {
+                if (challenge.Url == null)
+                {
+                    throw new NotSupportedException("Missing challenge url");
+                }
                 await Task.Delay(_settings.Acme.RetryInterval * 1000);
                 _log.Debug("Refreshing authorization ({tries}/{count})", tries, _settings.Acme.RetryCount);
                 challenge = await Retry(client, () => client.GetChallengeDetailsAsync(challenge.Url));
@@ -549,10 +562,10 @@ namespace PKISharp.WACS.Clients.Acme
             return challenge;
         }
 
-        internal async Task<OrderDetails> CreateOrder(IEnumerable<Identifier> identifiers)
+        internal async Task<AcmeOrderDetails> CreateOrder(IEnumerable<Identifier> identifiers)
         {
             var client = await GetClient();
-            var acmeIdentifiers = identifiers.Select(i => new Protocol.Identifier() {
+            var acmeIdentifiers = identifiers.Select(i => new Protocol.AcmeIdentifier() {
                 Type = i.Type switch
                 {
                     IdentifierType.DnsName => "dns", // rfc8555
@@ -564,13 +577,13 @@ namespace PKISharp.WACS.Clients.Acme
             return await Retry(client, () => client.CreateOrderAsync(acmeIdentifiers));
         }
 
-        internal async Task<Protocol.Challenge> GetChallengeDetails(string url)
+        internal async Task<Protocol.AcmeChallenge> GetChallengeDetails(string url)
         {
             var client = await GetClient();
             return await Retry(client, () => client.GetChallengeDetailsAsync(url));
         }
 
-        internal async Task<Protocol.Authorization> GetAuthorizationDetails(string url)
+        internal async Task<Protocol.AcmeAuthorization> GetAuthorizationDetails(string url)
         {
             var client = await GetClient();
             return await Retry(client, () => client.GetAuthorizationDetailsAsync(url));
@@ -588,7 +601,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// <param name="details"></param>
         /// <param name="csr"></param>
         /// <returns></returns>
-        internal async Task<OrderDetails> SubmitCsr(OrderDetails details, byte[] csr)
+        internal async Task<AcmeOrderDetails> SubmitCsr(AcmeOrderDetails details, byte[] csr)
         {
             // First wait for the order to get "ready", meaning that all validations
             // are complete. The program makes sure this is the case at the level of 
@@ -598,7 +611,11 @@ namespace PKISharp.WACS.Clients.Acme
             await WaitForOrderStatus(details, OrderReady);
             if (details.Payload.Status == OrderReady)
             {
-                details = await Retry(client, () => client.FinalizeOrderAsync(details.Payload.Finalize, csr));
+                if (string.IsNullOrEmpty(details.Payload.Finalize))
+                {
+                    throw new Exception("Missing Finalize url");
+                }
+                details = await Retry(client, () => client.FinalizeOrderAsync(details, csr));
                 await WaitForOrderStatus(details, OrderProcessing, true);
             }
             return details;
@@ -611,8 +628,13 @@ namespace PKISharp.WACS.Clients.Acme
         /// <param name="status"></param>
         /// <param name="negate"></param>
         /// <returns></returns>
-        private async Task WaitForOrderStatus(OrderDetails details, string status, bool negate = false)
+        private async Task WaitForOrderStatus(AcmeOrderDetails details, string status, bool negate = false)
         {
+            if (details.OrderUrl == null)
+            {
+                throw new InvalidOperationException();
+            }
+
             // Wait for processing
             _ = await GetClient();
             var tries = 0;
@@ -636,7 +658,7 @@ namespace PKISharp.WACS.Clients.Acme
             );
         }
 
-        internal async Task<OrderDetails> GetOrderDetails(string url)
+        internal async Task<AcmeOrderDetails> GetOrderDetails(string url)
         {
             var client = await GetClient();
             return await Retry(client, () => client.GetOrderDetailsAsync(url));
@@ -657,7 +679,7 @@ namespace PKISharp.WACS.Clients.Acme
             client.Account = account;
         }
 
-        internal async Task<AcmeCertificate> GetCertificate(OrderDetails order)
+        internal async Task<AcmeCertificate> GetCertificate(AcmeOrderDetails order)
         {
             var client = await GetClient();
             return await Retry(client, () => client.GetOrderCertificateExAsync(order));

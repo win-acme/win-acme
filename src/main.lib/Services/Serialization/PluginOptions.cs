@@ -8,7 +8,7 @@ namespace PKISharp.WACS.Services.Serialization
     public class PluginOptionsBase
     {
         /// <summary>
-        /// Identifier for the plugin
+        /// AcmeIdentifier for the plugin
         /// </summary>
         public string? Plugin { get; set; }
     }
