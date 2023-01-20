@@ -46,16 +46,14 @@ namespace PKISharp.WACS.Configuration
         /// <param name="parser"></param>
         private static void Configure(FluentCommandLineParser<T> parser)
         {
-            foreach (var (commandLineInfo, property) in typeof(T).CommandLineProperties())
+            foreach (var (commandLineInfo, property, propertyType) in typeof(T).CommandLineProperties())
             {
                 var setupMethod = typeof(FluentCommandLineParser<T>).GetMethod(nameof(parser.Setup), new[] { typeof(PropertyInfo) });
                 if (setupMethod == null)
                 {
                     throw new InvalidOperationException();
                 }
-#pragma warning disable IL2075 // We know that this type is preserved
-                var typedMethod = setupMethod.MakeGenericMethod(property.PropertyType);
-#pragma warning restore IL2075
+                var typedMethod = setupMethod.MakeGenericMethod(propertyType.Type);
                 var result = typedMethod.Invoke(parser, new[] { property });
 
                 var clob = typeof(ICommandLineOptionBuilderFluent<>).MakeGenericType(property.PropertyType);

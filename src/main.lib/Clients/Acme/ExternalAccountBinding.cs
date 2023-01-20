@@ -1,8 +1,10 @@
-﻿using ACMESharp.Crypto;
+﻿using ACMESharp;
+using ACMESharp.Crypto;
 using ACMESharp.Crypto.JOSE;
 using System;
-using System.Collections.Generic;
 using System.Security.Cryptography;
+using System.Text.Json;
+using static ACMESharp.Crypto.JOSE.JwsHelper;
 
 namespace PKISharp.WACS.Clients.Acme
 {
@@ -25,13 +27,14 @@ namespace PKISharp.WACS.Clients.Acme
 
         public JwsSignedPayload Payload()
         {
-            var protectedHeader = new Dictionary<string, object>
+            var ph = new ProtectedHeader
             {
-                ["alg"] = Algorithm,
-                ["kid"] = KeyIdentifier,
-                ["url"] = Url
+                Algorithm = Algorithm,
+                KeyIdentifier = KeyIdentifier,
+                Url = Url
             };
-            return JwsHelper.SignFlatJsonAsObject(Sign, AccountKey, protectedHeader, null);
+            var protectedHeader = JsonSerializer.Serialize(ph, AcmeJson.Insensitive.ProtectedHeader);
+            return SignFlatJsonAsObject(Sign, AccountKey, protectedHeader);
         }
 
         public byte[] Sign(byte[] input)

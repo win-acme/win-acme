@@ -11,65 +11,65 @@ namespace PKISharp.WACS.Services
 {
     public partial class AssemblyService
     {
-        private readonly List<Type> _allTypes;
+        private readonly List<TypeDescriptor> _allTypes;
         internal readonly ILogService _log;
 
         public AssemblyService(ILogService logger)
         {
             _log = logger;
-            _allTypes = new List<Type>();
+            _allTypes = new List<TypeDescriptor>();
             _allTypes.AddRange(BuiltInTypes());
             _allTypes.AddRange(LoadFromDisk());
         }
 
-        internal static List<Type> BuiltInTypes()
+        internal static List<TypeDescriptor> BuiltInTypes()
         {
             return new()
             {
                 // Arguments
-                typeof(Configuration.Arguments.MainArguments),
-                typeof(Configuration.Arguments.AccountArguments),
-                typeof(Configuration.Arguments.NetworkCredentialArguments),
+                new(typeof(Configuration.Arguments.MainArguments)),
+                new(typeof(Configuration.Arguments.AccountArguments)),
+                new(typeof(Configuration.Arguments.NetworkCredentialArguments)),
   
                 // Target plugins
-                typeof(Plugins.TargetPlugins.Csr),
-                typeof(Plugins.TargetPlugins.IIS), typeof(Plugins.TargetPlugins.IISArguments),
-                typeof(Plugins.TargetPlugins.Manual), typeof(Plugins.TargetPlugins.ManualArguments),
+                new(typeof(Plugins.TargetPlugins.Csr)),
+                new(typeof(Plugins.TargetPlugins.IIS)), new(typeof(Plugins.TargetPlugins.IISArguments)),
+                new(typeof(Plugins.TargetPlugins.Manual)), new(typeof(Plugins.TargetPlugins.ManualArguments)),
 
                 // Validation plugins
-                typeof(Plugins.ValidationPlugins.HttpValidationArguments),
-                typeof(Plugins.ValidationPlugins.Dns.Acme), typeof(Plugins.ValidationPlugins.Dns.AcmeArguments),
-                typeof(Plugins.ValidationPlugins.Dns.Manual),
-                typeof(Plugins.ValidationPlugins.Dns.Script), typeof(Plugins.ValidationPlugins.Dns.ScriptArguments),
-                typeof(Plugins.ValidationPlugins.Http.FileSystem), typeof(Plugins.ValidationPlugins.Http.FileSystemArguments),
-                typeof(Plugins.ValidationPlugins.Http.Ftp),
-                typeof(Plugins.ValidationPlugins.Http.SelfHosting), typeof(Plugins.ValidationPlugins.Http.SelfHostingArguments),
-                typeof(Plugins.ValidationPlugins.Http.Sftp),
-                typeof(Plugins.ValidationPlugins.Http.WebDav),
-                typeof(Plugins.ValidationPlugins.Tls.SelfHosting), typeof(Plugins.ValidationPlugins.Tls.SelfHostingArguments),
+                new(typeof(Plugins.ValidationPlugins.HttpValidationArguments)),
+                new(typeof(Plugins.ValidationPlugins.Dns.Acme)), new(typeof(Plugins.ValidationPlugins.Dns.AcmeArguments)),
+                new(typeof(Plugins.ValidationPlugins.Dns.Manual)),
+                new(typeof(Plugins.ValidationPlugins.Dns.Script)), new(typeof(Plugins.ValidationPlugins.Dns.ScriptArguments)),
+                new(typeof(Plugins.ValidationPlugins.Http.FileSystem)), new(typeof(Plugins.ValidationPlugins.Http.FileSystemArguments)),
+                new(typeof(Plugins.ValidationPlugins.Http.Ftp)),
+                new(typeof(Plugins.ValidationPlugins.Http.SelfHosting)), new(typeof(Plugins.ValidationPlugins.Http.SelfHostingArguments)),
+                new(typeof(Plugins.ValidationPlugins.Http.Sftp)),
+                new(typeof(Plugins.ValidationPlugins.Http.WebDav)),
+                new(typeof(Plugins.ValidationPlugins.Tls.SelfHosting)), new(typeof(Plugins.ValidationPlugins.Tls.SelfHostingArguments)),
 
                 // Order plugins
-                typeof(Plugins.OrderPlugins.Domain),
-                typeof(Plugins.OrderPlugins.Host),
-                typeof(Plugins.OrderPlugins.Single),
-                typeof(Plugins.OrderPlugins.Site),
+                new(typeof(Plugins.OrderPlugins.Domain)),
+                new(typeof(Plugins.OrderPlugins.Host)),
+                new(typeof(Plugins.OrderPlugins.Single)),
+                new(typeof(Plugins.OrderPlugins.Site)),
 
                 // CSR plugins
-                typeof(Plugins.CsrPlugins.CsrArguments),
-                typeof(Plugins.CsrPlugins.Ec),
-                typeof(Plugins.CsrPlugins.Rsa),
+                new(typeof(Plugins.CsrPlugins.CsrArguments)),
+                new(typeof(Plugins.CsrPlugins.Ec)),
+                new(typeof(Plugins.CsrPlugins.Rsa)),
 
                 // Store plugins
-                typeof(Plugins.StorePlugins.CertificateStore), typeof(Plugins.StorePlugins.CertificateStoreArguments),
-                typeof(Plugins.StorePlugins.CentralSsl), typeof(Plugins.StorePlugins.CentralSslArguments),
-                typeof(Plugins.StorePlugins.PemFiles), typeof(Plugins.StorePlugins.PemFilesArguments),
-                typeof(Plugins.StorePlugins.PfxFile), typeof(Plugins.StorePlugins.PfxFileArguments),
-                typeof(Plugins.StorePlugins.Null),
+                new(typeof(Plugins.StorePlugins.CertificateStore)), new(typeof(Plugins.StorePlugins.CertificateStoreArguments)),
+                new(typeof(Plugins.StorePlugins.CentralSsl)), new(typeof(Plugins.StorePlugins.CentralSslArguments)),
+                new(typeof(Plugins.StorePlugins.PemFiles)), new(typeof(Plugins.StorePlugins.PemFilesArguments)),
+                new(typeof(Plugins.StorePlugins.PfxFile)), new(typeof(Plugins.StorePlugins.PfxFileArguments)),
+                new(typeof(Plugins.StorePlugins.Null)),
 
                 // Installation plugins
-                typeof(Plugins.InstallationPlugins.IIS), typeof(Plugins.InstallationPlugins.IISArguments),
-                typeof(Plugins.InstallationPlugins.Script), typeof(Plugins.InstallationPlugins.ScriptArguments),
-                typeof(Plugins.InstallationPlugins.Null)
+                new(typeof(Plugins.InstallationPlugins.IIS)), new(typeof(Plugins.InstallationPlugins.IISArguments)),
+                new(typeof(Plugins.InstallationPlugins.Script)), new(typeof(Plugins.InstallationPlugins.ScriptArguments)),
+                new(typeof(Plugins.InstallationPlugins.Null))
             };
         }
 
@@ -83,16 +83,16 @@ namespace PKISharp.WACS.Services
             "mscordaccore.dll"
         };
 
-        protected List<Type> LoadFromDisk()
+        protected List<TypeDescriptor> LoadFromDisk()
         {
             if (string.IsNullOrEmpty(VersionService.PluginPath))
             {
-                return new List<Type>();
+                return new List<TypeDescriptor>();
             }
             var pluginDirectory = new DirectoryInfo(VersionService.PluginPath);
             if (!pluginDirectory.Exists)
             {
-                return new List<Type>();
+                return new List<TypeDescriptor>();
             }
             var dllFiles = pluginDirectory.
                 EnumerateFiles("*.dll", SearchOption.AllDirectories).
@@ -103,7 +103,7 @@ namespace PKISharp.WACS.Services
                 {
                     _log.Error("This version of the program does not support external plugins, please download the pluggable version.");
                 }
-                return new List<Type>();
+                return new List<TypeDescriptor>();
             } 
             else
             {
@@ -112,13 +112,13 @@ namespace PKISharp.WACS.Services
 
         }
 
-        protected List<Type> LoadFromDiskReal(IEnumerable<FileInfo> dllFiles)
-        {
 #if !PLUGGABLE
-#pragma warning disable IDE0022 // Use expression body for methods
-            return new List<Type>();
-#pragma warning restore IDE0022 // Use expression body for methods
-#else
+        protected static List<TypeDescriptor> LoadFromDiskReal(IEnumerable<FileInfo> _) => new();
+#endif
+
+#if PLUGGABLE 
+        protected List<TypeDescriptor> LoadFromDiskReal(IEnumerable<FileInfo> dllFiles)
+        {
             var allAssemblies = new List<Assembly>();
             foreach (var file in dllFiles)
             {
@@ -158,11 +158,10 @@ namespace PKISharp.WACS.Services
                 }
                 ret.AddRange(types);
             }
-            return ret;
-#endif
+            return ret.Select(t => new TypeDescriptor(t)).ToList();
+
         }
 
-#if PLUGGABLE
         internal IEnumerable<Type> GetTypesFromAssembly(Assembly assembly)
         {
             if (assembly.DefinedTypes == null)
@@ -172,20 +171,20 @@ namespace PKISharp.WACS.Services
             return assembly.DefinedTypes.
                 Where(x =>
                 {
-                    if (!string.IsNullOrEmpty(x.FullName) &&
-                        x.FullName.StartsWith("PKISharp"))
+                    if (x.IsAbstract)
+                    {
+                        return false;
+                    }
+                    if (!string.IsNullOrEmpty(x.FullName) && x.FullName.StartsWith("PKISharp"))
                     {
                         return true;
                     }
                     if (x.ImplementedInterfaces != null)
                     {
-                        if (x.ImplementedInterfaces.Any(x =>
-                            !string.IsNullOrEmpty(x.FullName) &&
-                            x.FullName.StartsWith("PKISharp")))
+                        if (x.ImplementedInterfaces.Any(x => !string.IsNullOrEmpty(x.FullName) && x.FullName.StartsWith("PKISharp")))
                         {
                             return true;
                         }
-
                     }
                     return false;
                 }
@@ -210,15 +209,19 @@ namespace PKISharp.WACS.Services
         {
             return _allTypes.
                 AsEnumerable().
-                Where(type => typeof(T) != type && typeof(T).IsAssignableFrom(type) && !type.IsAbstract).
-                Select(([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] type) => new TypeDescriptor() { Type = type }).
+                Where(type => typeof(T) != type.Type && typeof(T).IsAssignableFrom(type.Type)).
                 ToList();
         }
 
-        public struct TypeDescriptor
+        /// <summary>
+        /// Wrapper around type to convince and instruct the trimmer that the
+        /// properties are preserved during the build.
+        /// </summary>
+        public readonly struct TypeDescriptor
         {
+            public TypeDescriptor([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] Type type) => Type = type;
             [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)]
-            public Type Type;
+            public Type Type { get; init; }
         }
     }
 }

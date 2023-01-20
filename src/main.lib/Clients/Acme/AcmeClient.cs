@@ -646,7 +646,7 @@ namespace PKISharp.WACS.Clients.Acme
         {
             var client = await GetClient();
             var contacts = await GetContacts();
-            var account = await Retry(client, () => client.UpdateAccountAsync(contacts, client.Account));
+            var account = await Retry(client, () => client.UpdateAccountAsync(contacts));
             await UpdateAccount(client);
         }
 
@@ -672,10 +672,10 @@ namespace PKISharp.WACS.Clients.Acme
             });
         }
 
-        internal async Task RevokeCertificate(byte[] crt)
+        internal async Task<bool> RevokeCertificate(byte[] crt)
         {
             var client = await GetClient();
-            _ = await Retry(client, async () => client.RevokeCertificateAsync(crt, Protocol.RevokeReason.Unspecified));
+            return await Retry(client, () => client.RevokeCertificateAsync(crt, Protocol.RevokeReason.Unspecified));
         }
 
         /// <summary>

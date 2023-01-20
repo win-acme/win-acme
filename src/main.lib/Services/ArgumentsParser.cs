@@ -33,10 +33,24 @@ namespace PKISharp.WACS.Configuration
                     {
                         throw new Exception("IArgumentsProvider should have parameterless constructor");
                     }
-                    var ret = (IArgumentsProvider)constr.Invoke(Array.Empty<object>());
-                    ret.Log = _log;
-                    return ret;
-                }).ToList();
+                    try
+                    {
+                        var ret = (IArgumentsProvider)constr.Invoke(Array.Empty<object>());
+                        ret.Log = _log;
+                        return ret;
+                    }
+                    catch (Exception ex)
+                    {
+                        if (ex.InnerException != null)
+                        {
+                            ex = ex.InnerException;
+                        }
+                        _log.Error(ex, ex.Message);
+                        return null;
+                    }
+                }).
+                OfType<IArgumentsProvider>().
+                ToList();
         }
 
         public T? GetArguments<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>() where T : class, new()
