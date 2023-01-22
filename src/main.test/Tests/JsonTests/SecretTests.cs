@@ -1,10 +1,7 @@
-﻿using Amazon.Runtime.Internal.Util;
-using Autofac;
+﻿using Autofac;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.TargetPlugins;
-using PKISharp.WACS.Plugins.ValidationPlugins.Dns;
 using PKISharp.WACS.Plugins.ValidationPlugins.Http;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
@@ -20,7 +17,6 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
     {
         private static ILifetimeScope? _container;
         private static IPluginService? _plugin;
-        private static ILogService? _log;
 
         [ClassInitialize]
         public static void ClassInitialize(TestContext context)
@@ -37,16 +33,15 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
             WacsJson.Configure(builder);
             _container = builder.Build();
             _plugin = _container.Resolve<IPluginService>();
-            _log = _container.Resolve<ILogService>();
         }
 
-        private string Serialize(Renewal renewal)
+        private static string Serialize(Renewal renewal)
         {
             var wacsJson = _container!.Resolve<WacsJson>();
             return JsonSerializer.Serialize(renewal, wacsJson.Renewal);
         }
 
-        private Renewal Deserialize(string json)
+        private static Renewal Deserialize(string json)
         {
             var wacsJson = _container!.Resolve<WacsJson>();
             var renewal = JsonSerializer.Deserialize(json, wacsJson.Renewal);
@@ -82,24 +77,28 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
         [TestMethod]
         public void SerializeSecretExternal()
         {
-            Assert.AreEqual(45, _plugin!.GetPlugins().Count());
+            Assert.AreEqual(31, _plugin!.GetPlugins().Count());
             var renewal = new Renewal
             {
                 TargetPluginOptions = new ManualOptions(),
-                ValidationPluginOptions = new AzureOptions()
+                ValidationPluginOptions = new FtpOptions()
                 {
-                    Secret = new ProtectedString("safe")
+                    Credential = new NetworkCredentialOptions()
+                    {
+                        Password = new ProtectedString("safe")
+                    }
                 }
             };
             var serialize = Serialize(renewal);
             var newRenewal = Deserialize(serialize);
             Assert.IsFalse(serialize.Contains("null"));
             Assert.IsNotNull(newRenewal);
-            Assert.IsInstanceOfType(newRenewal.ValidationPluginOptions, typeof(AzureOptions));
-            var azureOptions = newRenewal.ValidationPluginOptions as AzureOptions;
+            Assert.IsInstanceOfType(newRenewal.ValidationPluginOptions, typeof(FtpOptions));
+            var azureOptions = newRenewal.ValidationPluginOptions as FtpOptions;
             Assert.IsNotNull(azureOptions);
-            Assert.IsNotNull(azureOptions.Secret);
-            Assert.AreEqual(azureOptions.Secret.Value, "safe");
+            Assert.IsNotNull(azureOptions.Credential);
+            Assert.IsNotNull(azureOptions.Credential.Password);
+            Assert.AreEqual(azureOptions.Credential.Password.Value, "safe");
         }
 
     }

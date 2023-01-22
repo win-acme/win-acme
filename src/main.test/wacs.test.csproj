@@ -37,20 +37,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\main.lib\wacs.lib.csproj" />
-    <ProjectReference Include="..\plugin.store.keyvault\wacs.store.keyvault.csproj" />
-    <ProjectReference Include="..\plugin.validation.dns.azure\wacs.validation.dns.azure.csproj" />
-    <ProjectReference Include="..\plugin.validation.dns.cloudflare\wacs.validation.dns.cloudflare.csproj" />
-    <ProjectReference Include="..\plugin.validation.dns.digitalocean\wacs.validation.dns.digitalocean.csproj" />
-    <ProjectReference Include="..\plugin.validation.dns.domeneshop\wacs.validation.dns.domeneshop.csproj" />
-    <ProjectReference Include="..\plugin.validation.dns.dreamhost\wacs.validation.dns.dreamhost.csproj" />
-    <ProjectReference Include="..\plugin.validation.dns.godaddy\wacs.validation.dns.godaddy.csproj" />
-    <ProjectReference Include="..\plugin.validation.dns.googledns\wacs.validation.dns.googledns.csproj" />
-    <ProjectReference Include="..\plugin.validation.dns.luadns\wacs.validation.dns.luadns.csproj" />
-    <ProjectReference Include="..\plugin.validation.dns.ns1\wacs.validation.dns.ns1.csproj" />
-    <ProjectReference Include="..\plugin.validation.dns.route53\wacs.validation.dns.route53.csproj" />
-    <ProjectReference Include="..\plugin.validation.dns.simply\wacs.validation.dns.simply.csproj" />
-    <ProjectReference Include="..\plugin.validation.dns.transip\wacs.validation.dns.transip.csproj" />
-    <ProjectReference Include="..\plugin.validation.http.rest\wacs.validation.http.rest.csproj" />
   </ItemGroup>
 
   <ItemGroup>
