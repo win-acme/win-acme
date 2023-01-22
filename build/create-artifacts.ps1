@@ -105,38 +105,43 @@ PlatformRelease "ReleaseTrimmed" win-arm64
 PluginRelease plugin.store.keyvault @(
 	"Azure.Core.dll",
 	"Azure.Identity.dll",
+	"Azure.ResourceManager.dll",
+	"Azure.ResourceManager.KeyVault.dll",
 	"Azure.Security.KeyVault.Certificates.dll",
+	"Microsoft.Bcl.AsyncInterfaces.dll",
 	"Microsoft.Identity.Client.dll",
 	"Microsoft.Identity.Client.Extensions.Msal.dll",
+	"Microsoft.IdentityModel.Abstractions.dll",
 	"PKISharp.WACS.Plugins.Azure.Common.dll",
 	"PKISharp.WACS.Plugins.StorePlugins.KeyVault.dll",
-	"Microsoft.Bcl.AsyncInterfaces.dll",
-	"Microsoft.Rest.ClientRuntime.dll",
 	"System.Memory.Data.dll"
 )
 PluginRelease plugin.validation.dns.azure @(
+	"Azure.Core.dll",
+	"Azure.Identity.dll",
+	"Azure.ResourceManager.dll",
+	"Azure.ResourceManager.Dns.dll"	
+	"Microsoft.Bcl.AsyncInterfaces.dll",
+	"Microsoft.Identity.Client.dll",
+	"Microsoft.Identity.Client.Extensions.Msal.dll"
+	"Microsoft.IdentityModel.Abstractions.dll"
 	"PKISharp.WACS.Plugins.Azure.Common.dll",
-	"Microsoft.Azure.Management.Dns.dll", 
-	"Microsoft.Azure.Services.AppAuthentication.dll",
-	"Microsoft.IdentityModel.Clients.ActiveDirectory.dll",
-	"Microsoft.IdentityModel.Logging.dll",
-	"Microsoft.IdentityModel.Tokens.dll",
-	"Microsoft.Rest.ClientRuntime.Azure.Authentication.dll",
-	"Microsoft.Rest.ClientRuntime.Azure.dll",
-	"Microsoft.Rest.ClientRuntime.dll",
-	"PKISharp.WACS.Plugins.ValidationPlugins.Azure.dll"
+	"PKISharp.WACS.Plugins.ValidationPlugins.Azure.dll",
+	"System.Memory.Data.dll"
 )
 PluginRelease plugin.validation.dns.cloudflare @(
 	"FluentCloudflare.dll", 
+	"Newtonsoft.Json.dll",
 	"PKISharp.WACS.Plugins.ValidationPlugins.Cloudflare.dll"
 )
 PluginRelease plugin.validation.dns.digitalocean @(
 	"DigitalOcean.API.dll", 
 	"RestSharp.dll", 
+	"Newtonsoft.Json.dll",
 	"PKISharp.WACS.Plugins.ValidationPlugins.DigitalOcean.dll"
 )
 PluginRelease plugin.validation.dns.dnsmadeeasy @(
-	"PKISharp.WACS.Plugins.ValidationPlugins.DnsMadeEasy.dll"
+	"PKISharp.WACS.Plugins.ValidationPlugins.DnsMadeEasy.dll",
 	"Newtonsoft.Json.dll"
 )
 PluginRelease plugin.validation.dns.domeneshop @(

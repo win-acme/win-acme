@@ -7,6 +7,7 @@ using PKISharp.WACS.Plugins;
 using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
+using System;
 
 namespace PKISharp.WACS.Context
 {
@@ -39,6 +40,10 @@ namespace PKISharp.WACS.Context
             ILifetimeScope scope,
             ValidationContextParameters parameters)
         {
+            if (parameters.Authorization.Identifier == null)
+            {
+                throw new Exception();
+            }
             Identifier = parameters.Authorization.Identifier.Value;
             Label = parameters.Label;
             TargetPart = parameters.TargetPart;
