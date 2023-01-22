@@ -326,8 +326,8 @@ namespace PKISharp.WACS.Clients.Acme
                 if (!string.IsNullOrWhiteSpace(_accountArguments.EmailAddress))
                 {
                     await emailRegistration();
-                }
-                else
+                } 
+                else if (!eabFlow)
                 {
                     var instruction = "ZeroSsl can be used either by setting up a new " +
                         "account using your email address or by connecting it to your existing " +
@@ -378,8 +378,7 @@ namespace PKISharp.WACS.Clients.Acme
             {
                 // Some non-ACME compliant server may not support ES256 or other
                 // algorithms, so attempt fallback to RS256
-                if (apex.ProblemType == Protocol.ProblemType.BadSignatureAlgorithm &&
-                    signer.KeyType != "RS256")
+                if (apex.ProblemType == ProblemType.BadSignatureAlgorithm && signer.KeyType != "RS256")
                 {
                     signer = _accountManager.NewSigner("RS256");
                     await CreateAccount(client, signer, contacts, eabAlg, eabKid, eabKey);
