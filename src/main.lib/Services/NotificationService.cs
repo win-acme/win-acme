@@ -62,19 +62,20 @@ namespace PKISharp.WACS.Services
         /// <param name="renewal"></param>
         internal async Task NotifySuccess(Renewal renewal, IEnumerable<MemoryEntry> log)
         {
-            // Do not send emails when running interactively
+            var withErrors = log.Any(l => l.Level == LogEventLevel.Error);
             _log.Information(
                 LogType.All, 
-                "Renewal for {friendlyName} succeeded",
+                "Renewal for {friendlyName} succeeded" + (withErrors ? " with errors" : ""),
                 renewal.LastFriendlyName);
-            if (_settings.Notification.EmailOnSuccess)
+
+            if (withErrors || _settings.Notification.EmailOnSuccess)
             {
                 await _email.Send(
-                    $"Certificate renewal {renewal.LastFriendlyName} completed",
-                    @$"<p>Certificate <b>{HttpUtility.HtmlEncode(renewal.LastFriendlyName)}</b> successfully renewed.</p> 
+                    $"Certificate renewal {renewal.LastFriendlyName} completed" + (withErrors ? " with errors" : ""),
+                    @$"<p>Certificate <b>{HttpUtility.HtmlEncode(renewal.LastFriendlyName)}</b> {(withErrors ? "renewed with errors" : "succesfully renewed")}.</p> 
                     {NotificationInformation(renewal)}
                     {RenderLog(log)}",
-                    MessagePriority.NonUrgent);
+                    withErrors ? MessagePriority.Urgent : MessagePriority.NonUrgent);
             }
         }
 
