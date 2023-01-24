@@ -463,6 +463,12 @@ namespace PKISharp.WACS
             {
                 return null;
             }
+            if (!cachedCertificate.Certificate.HasPrivateKey)
+            {
+                // Cached certificates without private keys cannot be used for 
+                // new execution runs, they need to be re-ordered then
+                return null;
+            }
             if (runLevel.HasFlag(RunLevel.NoCache))
             {
                 _log.Warning(
