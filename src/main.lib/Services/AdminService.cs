@@ -6,8 +6,10 @@ namespace PKISharp.WACS.Services
     public class AdminService
     {
         public bool IsAdmin => IsAdminLazy.Value;
+        public bool IsSystem => IsSystemLazy.Value;
 
         private Lazy<bool> IsAdminLazy => new(DetermineAdmin);
+        private Lazy<bool> IsSystemLazy => new(DetermineSystem);
 
         private bool DetermineAdmin()
         {
@@ -36,6 +38,18 @@ namespace PKISharp.WACS.Services
                 }
             }
             return isAdmin;
+        }
+
+        private bool DetermineSystem()
+        {
+            try
+            {
+                return WindowsIdentity.GetCurrent().IsSystem;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
     }
 }

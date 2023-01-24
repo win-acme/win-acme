@@ -116,6 +116,9 @@ PluginRelease plugin.store.keyvault @(
 	"PKISharp.WACS.Plugins.StorePlugins.KeyVault.dll",
 	"System.Memory.Data.dll"
 )
+PluginRelease plugin.store.userstore @(
+	"PKISharp.WACS.Plugins.StorePlugins.UserStore.dll"
+)
 PluginRelease plugin.validation.dns.azure @(
 	"Azure.Core.dll",
 	"Azure.Identity.dll",
