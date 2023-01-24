@@ -1,11 +1,6 @@
 ﻿using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
@@ -17,7 +12,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         public override State State =>
             _adminService.IsSystem ?
-            State.DisabledState("The .") :
+            State.DisabledState("It doesn't make sense to use the user store plugin while running as SYSTEM.") :
             State.EnabledState();
     }
 }

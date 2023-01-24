@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         CertificateStoreOptions, CertificateStoreOptionsFactory, 
         CertificateStoreCapability, WacsJsonPlugins>
         ("e30adc8e-d756-4e16-a6f2-450f784b1a97", 
-        Name, "Windows Certificate Store (Local Machine)")]
+        Name, "Windows Certificate Store (Local Computer)")]
     internal class CertificateStore : IStorePlugin, IDisposable
     {
         internal const string Name = "CertificateStore";

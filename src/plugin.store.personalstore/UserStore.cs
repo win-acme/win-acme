@@ -12,8 +12,8 @@ using System.Threading.Tasks;
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
     [IPlugin.Plugin<
-        UserStoreOptions, UserStoreOptionsFactory, 
-        DefaultCapability, UserStoreJson>
+        UserStoreOptions, UserStoreOptionsFactory,
+        UserStoreCapability, UserStoreJson>
         ("95ee94e7-c8e2-40e6-a26f-c9fc3afa9fa5",
         Name, "Windows Certificate Store (Current User)")]
     internal class UserStore : IStorePlugin, IDisposable
