@@ -134,7 +134,8 @@ namespace PKISharp.WACS.Services
             Path.Combine(_cache.FullName, $"{prefix}{renewal.Id}{postfix}");
 
         /// <summary>
-        /// Read from the disk cache
+        /// Read from the disk cache, only returns exact match
+        /// (i.e. the certificate could be used right away).
         /// </summary>
         /// <param name="renewal"></param>
         /// <returns></returns>
