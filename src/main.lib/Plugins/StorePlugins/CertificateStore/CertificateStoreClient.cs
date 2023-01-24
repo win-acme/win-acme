@@ -23,26 +23,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             _store = new X509Store(storeName, storeLocation);
         }
 
-        public CertificateInfo? FindByThumbprint(string thumbprint) => ToInfo(GetCertificate(x => string.Equals(x.Thumbprint, thumbprint)));
-
-        private CertificateInfo? ToInfo(X509Certificate2? cert)
-        {
-            if (cert != null)
-            {
-                var ret = new CertificateInfo(cert);
-                ret.StoreInfo.Add(
-                    GetType(),
-                    new StoreInfo()
-                    {
-                        Path = _store.Name
-                    });
-                return ret;
-            }
-            else
-            {
-                return null;
-            }
-        }
+        public X509Certificate2? FindByThumbprint(string thumbprint) => GetCertificate(x => string.Equals(x.Thumbprint, thumbprint));
 
         public void InstallCertificate(X509Certificate2 certificate)
         {
