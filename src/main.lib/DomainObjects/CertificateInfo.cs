@@ -1,4 +1,5 @@
-﻿using System;
+﻿using PKISharp.WACS.Extensions;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -26,35 +27,12 @@ namespace PKISharp.WACS.DomainObjects
         public Identifier CommonName {
             get
             {
-                var str = Split(Certificate.Subject);
+                var str = Certificate.SubjectClean();
                 if (string.IsNullOrWhiteSpace(str))
                 {
                     return SanNames.First();
                 }
                 return new DnsIdentifier(str);
-            }
-        }
-        public string Issuer => Split(Certificate.Issuer) ?? "??";
-
-        /// <summary>
-        /// Parse first part of distinguished name
-        /// Format examples
-        /// DNS Name=www.example.com
-        /// DNS-имя=www.example.com
-        /// CN=example.com, OU=Dept, O=Org 
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
-        private static string? Split(string input)
-        {
-            var match = Regex.Match(input, "=([^,]+)");
-            if (match.Success)
-            {
-                return match.Groups[1].Value.Trim();
-            } 
-            else
-            {
-                return null;
             }
         }
 

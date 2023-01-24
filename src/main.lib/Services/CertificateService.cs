@@ -2,6 +2,7 @@
 using Org.BouncyCastle.Crypto;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -184,7 +185,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="option"></param>
         /// <returns></returns>
-        private static string Root(X509Certificate2Collection option) {
+        private static string? Root(X509Certificate2Collection option) {
             var cert = option[0];
             while (true)
             {
@@ -204,7 +205,7 @@ namespace PKISharp.WACS.Services
                     break;
                 }
             }
-            return new CertificateInfo(cert).Issuer;
+            return cert.IssuerClean();
         }
 
         /// <summary>
