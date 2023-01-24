@@ -88,25 +88,18 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
             else
             {
-                if (input.CacheFile == null)
-                {
-                    throw new InvalidOperationException();
-                }
                 var flags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet;
                 if (_settings.Security.PrivateKeyExportable)
                 {
                     flags |= X509KeyStorageFlags.Exportable;
                 }
-
-                var certificate = new X509Certificate2(
-                    input.CacheFile.FullName,
-                    input.CacheFilePassword,
-                    flags);
+                var cert = input.Certificate.Export(X509ContentType.Pkcs12, input.CacheFilePassword);
+                var import = new X509Certificate2(cert, input.CacheFilePassword, flags);
                 _log.Information("Installing certificate in the certificate store");
-                _storeClient.InstallCertificate(certificate);
+                _storeClient.InstallCertificate(import);
                 if (_options.AclFullControl != null)
                 {
-                    SetAcl(certificate, _options.AclFullControl);
+                    SetAcl(import, _options.AclFullControl);
                 }
                 _storeClient.InstallCertificateChain(input.Chain);
 
