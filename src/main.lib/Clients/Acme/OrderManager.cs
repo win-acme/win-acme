@@ -1,5 +1,4 @@
 ﻿using ACMESharp.Protocol;
-using Org.BouncyCastle.Crypto.Agreement;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
@@ -270,6 +269,10 @@ namespace PKISharp.WACS.Clients.Acme
         {
             try
             {
+                if (_settings.Cache.ReuseDays <= 0)
+                {
+                    return;
+                }
                 if (!_orderPath.Exists)
                 {
                     _orderPath.Create();
