@@ -57,7 +57,7 @@ namespace PKISharp.WACS.UnitTests.Tests.SecretServiceTests
             var output = scriptInstaller.ReplaceParameters(
                 placeholder, 
                 null, 
-                new DomainObjects.CertificateInfo(cert), 
+                new DomainObjects.CertificateInfo(new X509Certificate2Collection(cert)), 
                 null, 
                 false);
             Assert.AreEqual(theSecret, output);
@@ -65,7 +65,7 @@ namespace PKISharp.WACS.UnitTests.Tests.SecretServiceTests
             var outputCensor = scriptInstaller.ReplaceParameters(
                 placeholder,
                 null,
-                new DomainObjects.CertificateInfo(cert),
+                new DomainObjects.CertificateInfo(new X509Certificate2Collection(cert)),
                 null,
                 true);
             Assert.AreEqual(placeholder, outputCensor);

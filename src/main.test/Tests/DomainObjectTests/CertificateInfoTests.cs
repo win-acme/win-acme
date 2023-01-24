@@ -2,6 +2,7 @@
 using PKISharp.WACS.DomainObjects;
 using System;
 using System.Linq;
+using System.Runtime.ConstrainedExecution;
 using System.Security.Cryptography.X509Certificates;
 
 namespace PKISharp.WACS.UnitTests.Tests.CertificateInfoTests
@@ -19,7 +20,7 @@ namespace PKISharp.WACS.UnitTests.Tests.CertificateInfoTests
                 null,
                 X509KeyStorageFlags.EphemeralKeySet |
                 X509KeyStorageFlags.Exportable);
-            var certinfo = new CertificateInfo(tempPfx[0]);
+            var certinfo = new CertificateInfo(new X509Certificate2Collection(tempPfx[0]));
             Assert.IsNotNull(certinfo);
             Assert.IsTrue(certinfo.SanNames.Any(x => x.Value == "1.1.1.1"));
         }

@@ -6,7 +6,6 @@ using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace PKISharp.WACS.DomainObjects
 {
@@ -18,12 +17,50 @@ namespace PKISharp.WACS.DomainObjects
     {
         private const string SAN_OID = "2.5.29.17";
 
-        public CertificateInfo(X509Certificate2 certificate) => Certificate = certificate;
+        public CertificateInfo(X509Certificate2Collection rawCollection)
+        {
+            Collection = rawCollection;
 
+            var list = rawCollection.OfType<X509Certificate2>().ToList();
+            // Get first certificate that has not been used to issue 
+            // another one in the collection. That is the outermost leaf.
+            var main = list.FirstOrDefault(x => !list.Any(y => x.Subject == y.Issuer));
+            if (main == null)
+            {
+                // Self-signed (unit test)
+                main = list.FirstOrDefault();
+                if (main == null)
+                {
+                    throw new InvalidDataException("Empty X509Certificate2Collection");
+                }
+            }
+            Certificate = main;
+
+            list.Remove(main);
+            var lastChainElement = main;
+            var orderedCollection = new List<X509Certificate2>();
+            while (list.Count > 0)
+            {
+                var signedBy = list.FirstOrDefault(x => lastChainElement.Issuer == x.Subject);
+                if (signedBy == null)
+                {
+                    // Chain cannot be resolved any further
+                    break;
+                }
+                orderedCollection.Add(signedBy);
+                lastChainElement = signedBy;
+                list.Remove(signedBy);
+            }
+            Chain = orderedCollection;
+        }
+
+        public X509Certificate2Collection Collection { get; set; }
         public X509Certificate2 Certificate { get; set; }
-        public List<X509Certificate2> Chain { get; set; } = new List<X509Certificate2>();
+        public List<X509Certificate2> Chain { get; set; }
+
         public FileInfo? CacheFile { get; set; }
         public string? CacheFilePassword { get; set; }
+
         public Identifier CommonName {
             get
             {
@@ -111,7 +148,7 @@ namespace PKISharp.WACS.DomainObjects
                     var idnIndex = domainString.IndexOf('(');
                     if (idnIndex > -1)
                     {
-                        domainString = domainString.Substring(0, idnIndex).Trim();
+                        domainString = domainString[..idnIndex].Trim();
                     }
                     result.Add(new DnsIdentifier(domainString));
                 }

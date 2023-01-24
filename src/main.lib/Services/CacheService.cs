@@ -327,32 +327,8 @@ namespace PKISharp.WACS.Services
         internal static CertificateInfo GetInfo(FileInfo pfxFileInfo, string? password)
         {
             var rawCollection = ReadAsCollection(pfxFileInfo, password);
-            var list = rawCollection.OfType<X509Certificate2>().ToList();
-            // Get first certificate that has not been used to issue 
-            // another one in the collection. That is the outermost leaf.
-            var main = list.FirstOrDefault(x => !list.Any(y => x.Subject == y.Issuer));
-            if (main == null)
+            return new CertificateInfo(rawCollection)
             {
-                throw new Exception("No certificates found in pfx archive");
-            }
-            list.Remove(main);
-            var lastChainElement = main;
-            var orderedCollection = new List<X509Certificate2>();
-            while (list.Count > 0)
-            {
-                var signedBy = list.FirstOrDefault(x => lastChainElement.Issuer == x.Subject);
-                if (signedBy == null)
-                {
-                    // Chain cannot be resolved any further
-                    break;
-                }
-                orderedCollection.Add(signedBy);
-                lastChainElement = signedBy;
-                list.Remove(signedBy);
-            }
-            return new CertificateInfo(main)
-            {
-                Chain = orderedCollection,
                 CacheFile = pfxFileInfo,
                 CacheFilePassword = password
             };
