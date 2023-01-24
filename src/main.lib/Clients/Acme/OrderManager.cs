@@ -69,25 +69,32 @@ namespace PKISharp.WACS.Clients.Acme
         public async Task<AcmeOrderDetails?> GetOrCreate(Order order, RunLevel runLevel)
         {
             var cacheKey = CacheKey(order);
-            if (string.IsNullOrWhiteSpace(order.KeyPath))
+            if (_settings.Cache.ReuseDays > 0)
             {
-                order.KeyPath = Path.Combine(_orderPath.FullName, $"{cacheKey}.{_orderKeyExtension}");
-            }
-            var orderDetails = await GetFromCache(cacheKey, runLevel);
-            if (orderDetails != null)
-            {
-                var keyFile = new FileInfo(order.KeyPath);
-                if (keyFile.Exists)
+                // Above conditional not only prevents us from reading a cached
+                // order from disk, but also prevent the "KeyPath" property from
+                // being set in the first place, which in turn prevents the
+                // CsrPlugin from caching the private key on disk.
+                if (string.IsNullOrWhiteSpace(order.KeyPath))
                 {
-                    _log.Warning("Using cache. To force a new order within {days} days, " +
-                          "run with --{switch}. Beware that you might run into rate limits.",
-                          _settings.Cache.ReuseDays,
-                          nameof(MainArguments.NoCache).ToLower());
-                    return orderDetails;
+                    order.KeyPath = Path.Combine(_orderPath.FullName, $"{cacheKey}.{_orderKeyExtension}");
                 }
-                else
+                var orderDetails = await GetFromCache(cacheKey, runLevel);
+                if (orderDetails != null)
                 {
-                    _log.Debug("Cached order available but not used.");
+                    var keyFile = new FileInfo(order.KeyPath);
+                    if (keyFile.Exists)
+                    {
+                        _log.Warning("Using cache. To force a new order within {days} days, " +
+                              "run with --{switch}. Beware that you might run into rate limits.",
+                              _settings.Cache.ReuseDays,
+                              nameof(MainArguments.NoCache).ToLower());
+                        return orderDetails;
+                    }
+                    else
+                    {
+                        _log.Debug("Cached order available but not used.");
+                    }
                 }
             }
             return await CreateOrder(cacheKey, order.Target);
