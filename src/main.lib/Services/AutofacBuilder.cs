@@ -111,12 +111,12 @@ namespace PKISharp.WACS.Services
             });
             ret = PluginBackend<ITargetPlugin, TargetPluginOptions>(ret, renewal.TargetPluginOptions, "target");
             ret = PluginBackend<IOrderPlugin, OrderPluginOptions>(ret, renewal.OrderPluginOptions ?? new SingleOptions(), "order");
-            ret = PluginBackend<ICsrPlugin, CsrPluginOptions>(ret, renewal.CsrPluginOptions ?? new RsaOptions(), "csr");
             return ret;
         }
 
         /// <summary>
-        /// For a single sub target within the execution
+        /// For a single sub target within the execution, each order has its own instance of the CSR plugins
+        /// so that differrent certificates can/will use different private keys 
         /// </summary>
         /// <param name="main"></param>
         /// <param name="target"></param>
@@ -124,7 +124,10 @@ namespace PKISharp.WACS.Services
         public ILifetimeScope Order(ILifetimeScope execution, Order order)
         {
             _log.Verbose("Autofac: creating {name} scope with parent {tag}", nameof(Order), execution.Tag);
-            return execution.BeginLifetimeScope($"order-{order.CacheKeyPart ?? "main"}", builder => builder.RegisterInstance(order.Target));
+            var ret = execution.BeginLifetimeScope($"order-{order.CacheKeyPart ?? "main"}", builder => 
+                builder.RegisterInstance(order.Target));
+            ret = PluginBackend<ICsrPlugin, CsrPluginOptions>(ret, order.Renewal.CsrPluginOptions ?? new RsaOptions(), "csr");
+            return ret;
         }
 
         /// <summary>

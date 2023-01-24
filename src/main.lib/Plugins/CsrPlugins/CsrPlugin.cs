@@ -47,13 +47,16 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
 
         public virtual Task<X509Certificate2> PostProcess(X509Certificate2 original) => Task.FromResult(original);
 
-        async Task<Pkcs10CertificationRequest> ICsrPlugin.GenerateCsr(string cachePath, Target target)
+        async Task<Pkcs10CertificationRequest> ICsrPlugin.GenerateCsr(Target target, string? keyPath)
         {
             var identifiers = target.GetIdentifiers(false);
             var commonName = target.CommonName;
             var extensions = new Dictionary<DerObjectIdentifier, X509Extension>();
 
-            LoadFromCache(cachePath);
+            if (!string.IsNullOrEmpty(keyPath))
+            {
+                LoadFromCache(keyPath);
+            }
 
             var dn = CommonName(commonName, identifiers);
             var keys = await GetKeys();
@@ -69,7 +72,11 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
                     PkcsObjectIdentifiers.Pkcs9AtExtensionRequest,
                     new DerSet(new X509Extensions(extensions)))));
 
-            SaveToCache(cachePath);
+            if (!string.IsNullOrEmpty(keyPath))
+            {
+                SaveToCache(keyPath);
+            }
+
             return csr;
         }
 

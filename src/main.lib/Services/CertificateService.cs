@@ -68,11 +68,7 @@ namespace PKISharp.WACS.Services
                 {
                     throw new InvalidOperationException("Missing CsrPlugin");
                 }
-                if (order.KeyPath == null)
-                {
-                    throw new InvalidOperationException("Missing ReusedKeyPath");
-                }
-                var csr = await csrPlugin.GenerateCsr(order.KeyPath, order.Target);
+                var csr = await csrPlugin.GenerateCsr(order.Target, order.KeyPath);
                 var keySet = await csrPlugin.GetKeys();
                 order.Target.CsrBytes = csr.GetDerEncoded();
                 order.Target.PrivateKey = keySet.Private;
