@@ -1,4 +1,5 @@
-﻿using Org.BouncyCastle.Pkcs;
+﻿using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Pkcs;
 using PKISharp.WACS.Extensions;
 using System;
 using System.Collections.Generic;
@@ -49,7 +50,22 @@ namespace PKISharp.WACS.DomainObjects
             // Check if we have the private key
             if (main.HasPrivateKey)
             {
-
+                var bytes = rawCollection.Export(X509ContentType.Pfx);
+                if (bytes == null)
+                {
+                    throw new InvalidOperationException();
+                }
+                var store = new Pkcs12Store(new MemoryStream(bytes), "".ToCharArray());
+                var alias = store.Aliases.OfType<string>().FirstOrDefault(store.IsKeyEntry);
+                if (alias != null)
+                {
+                    var entry = store.GetKey(alias);
+                    var key = entry.Key;
+                    if (key.IsPrivate)
+                    {
+                        PrivateKey = key;
+                    }
+                }
             }
 
             // Now order the remaining certificates in the correct order of 
@@ -85,7 +101,7 @@ namespace PKISharp.WACS.DomainObjects
         /// <summary>
         /// Private key in Bouncy Castle format
         /// </summary>
-        public AsymmetricKeyEntry? PrivateKey { get; private set; }
+        public AsymmetricKeyParameter? PrivateKey { get; private set; }
 
         /// <summary>
         /// The certificate chain, in the correct order

@@ -96,29 +96,12 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     });
 
                 // Private key
-                if (input.CacheFile != null)
+                if (input.PrivateKey != null)
                 {
-                    var pkPem = "";
-                    var store = new Pkcs12Store(input.CacheFile.OpenRead(), input.CacheFilePassword?.ToCharArray());
-                    var alias = store.Aliases.OfType<string>().FirstOrDefault(p => store.IsKeyEntry(p));
-                    if (alias == null)
-                    {
-                        _log.Warning("No key entries found");
-                        return;
-                    }
-                    var entry = store.GetKey(alias);
-                    var key = entry.Key;
-                    if (key.IsPrivate)
-                    {
-                        pkPem = _pemService.GetPem(entry.Key, _password);
-                    }
+                    var pkPem = _pemService.GetPem(input.PrivateKey, _password);
                     if (!string.IsNullOrEmpty(pkPem))
                     {
                         await File.WriteAllTextAsync(Path.Combine(_path, $"{name}-key.pem"), pkPem);
-                    }
-                    else
-                    {
-                        _log.Warning("No private key found in Pkcs12Store");
                     }
                 } 
                 else
