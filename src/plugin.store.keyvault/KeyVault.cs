@@ -5,7 +5,6 @@ using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
-using System.IO;
 using System.Runtime.Versioning;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
