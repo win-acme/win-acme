@@ -186,7 +186,7 @@ namespace PKISharp.WACS.Host
                     }
                     else
                     {
-                        await MainMenu();
+                        await MainMenu(_args.Test ? RunLevel.Test : RunLevel.None);
                     }
                 }
                 catch (Exception ex)
@@ -266,7 +266,7 @@ namespace PKISharp.WACS.Host
         /// <summary>
         /// Main user experience
         /// </summary>
-        private async Task MainMenu()
+        private async Task MainMenu(RunLevel runLevel)
         {
             var total = _renewalStore.Renewals.Count();
             var due = _renewalStore.Renewals.Count(x => _dueDateService.IsDue(x));
@@ -275,14 +275,14 @@ namespace PKISharp.WACS.Host
             var options = new List<Choice<Func<Task>>>
             {
                 Choice.Create<Func<Task>>(
-                    () => _renewalCreator.SetupRenewal(RunLevel.Interactive | RunLevel.Simple), 
+                    () => _renewalCreator.SetupRenewal(runLevel | RunLevel.Interactive | RunLevel.Simple), 
                     "Create certificate (default settings)", "N", 
                     @default: true),
                 Choice.Create<Func<Task>>(
-                    () => _renewalCreator.SetupRenewal(RunLevel.Interactive | RunLevel.Advanced),
+                    () => _renewalCreator.SetupRenewal(runLevel | RunLevel.Interactive | RunLevel.Advanced),
                     "Create certificate (full options)", "M"),
                 Choice.Create<Func<Task>>(
-                    () => _renewalManager.CheckRenewals(RunLevel.Interactive),
+                    () => _renewalManager.CheckRenewals(runLevel | RunLevel.Interactive),
                     $"Run renewals ({due} currently due)", "R",
                     color: due == 0 ? null : ConsoleColor.Yellow,
                     state: total == 0 ? State.DisabledState("No renewals have been created yet.") : State.EnabledState()),
@@ -409,6 +409,9 @@ namespace PKISharp.WACS.Host
 
                 var secretService = _container.Resolve<SecretServiceManager>();
                 secretService.Encrypt(); //re-writes the secrets file
+
+                var orderManager = _container.Resolve<OrderManager>();
+                orderManager.Encrypt(); //re-writes the cached order files
 
                 var validationOptionsService = _container.Resolve<IValidationOptionsService>();
                 await validationOptionsService.Encrypt(); //re-saves all global validation options

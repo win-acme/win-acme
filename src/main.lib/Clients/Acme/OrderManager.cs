@@ -293,5 +293,18 @@ namespace PKISharp.WACS.Clients.Acme
                 _log.Warning("Unable to write to order cache: {ex}", ex.Message);
             }
         }
+
+        /// <summary>
+        /// Encrypt or decrypt the cached private keys
+        /// </summary>
+        public void Encrypt()
+        {
+            foreach (var f in _orderPath.EnumerateFiles($"*.{_orderKeyExtension}"))
+            {
+                var x = new ProtectedString(File.ReadAllText(f.FullName), _log);
+                _log.Information("Rewriting {x}", f.Name);
+                File.WriteAllText(f.FullName, x.DiskValue(_settings.Security.EncryptConfig));
+            }
+        }
     }
 }
