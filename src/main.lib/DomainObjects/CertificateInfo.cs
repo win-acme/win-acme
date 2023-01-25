@@ -1,11 +1,10 @@
-﻿using PKISharp.WACS.Extensions;
+﻿using Org.BouncyCastle.Pkcs;
+using PKISharp.WACS.Extensions;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 
 namespace PKISharp.WACS.DomainObjects
 {
@@ -15,15 +14,26 @@ namespace PKISharp.WACS.DomainObjects
     /// </summary>
     public class CertificateInfo
     {
-        private const string SAN_OID = "2.5.29.17";
+        /// <summary>
+        /// Shorthand constructor
+        /// </summary>
+        /// <param name="cert"></param>
+        public CertificateInfo(X509Certificate2 cert) : this(new X509Certificate2Collection(cert)) { }
 
+        /// <summary>
+        /// Default constructor
+        /// </summary>
+        /// <param name="rawCollection"></param>
+        /// <exception cref="InvalidDataException"></exception>
         public CertificateInfo(X509Certificate2Collection rawCollection)
         {
+            // Store original collection
             Collection = rawCollection;
 
-            var list = rawCollection.OfType<X509Certificate2>().ToList();
             // Get first certificate that has not been used to issue 
-            // another one in the collection. That is the outermost leaf.
+            // another one in the collection. That is the outermost leaf
+            // and thus will be our main certificate
+            var list = rawCollection.OfType<X509Certificate2>().ToList();
             var main = list.FirstOrDefault(x => !list.Any(y => x.Subject == y.Issuer));
             if (main == null)
             {
@@ -36,6 +46,14 @@ namespace PKISharp.WACS.DomainObjects
             }
             Certificate = main;
 
+            // Check if we have the private key
+            if (main.HasPrivateKey)
+            {
+
+            }
+
+            // Now order the remaining certificates in the correct order of 
+            // who signed whom.
             list.Remove(main);
             var lastChainElement = main;
             var orderedCollection = new List<X509Certificate2>();
@@ -54,13 +72,32 @@ namespace PKISharp.WACS.DomainObjects
             Chain = orderedCollection;
         }
 
-        public X509Certificate2Collection Collection { get; set; }
-        public X509Certificate2 Certificate { get; set; }
-        public List<X509Certificate2> Chain { get; set; }
+        /// <summary>
+        /// Entire collection, equivalent to the full PFX archive
+        /// </summary>
+        public X509Certificate2Collection Collection { get; private set; }
+
+        /// <summary>
+        /// The main certificate
+        /// </summary>
+        public X509Certificate2 Certificate { get; private set; }
+
+        /// <summary>
+        /// Private key in Bouncy Castle format
+        /// </summary>
+        public AsymmetricKeyEntry? PrivateKey { get; private set; }
+
+        /// <summary>
+        /// The certificate chain, in the correct order
+        /// </summary>
+        public IEnumerable<X509Certificate2> Chain { get; private set; }
 
         public FileInfo? CacheFile { get; set; }
         public string? CacheFilePassword { get; set; }
 
+        /// <summary>
+        /// The common name / subject name
+        /// </summary>
         public Identifier CommonName {
             get
             {
@@ -73,94 +110,19 @@ namespace PKISharp.WACS.DomainObjects
             }
         }
 
-        public Dictionary<Type, StoreInfo> StoreInfo { get; set; } = new Dictionary<Type, StoreInfo>();
+        /// <summary>
+        /// The Subject Alternative Names (up to 100 for Let's Encrypt)
+        /// that are also validate identifiers to be used with this
+        /// certificate.
+        /// </summary>
+        public IEnumerable<Identifier> SanNames => Certificate.SanNames();
 
-        public List<Identifier> SanNames
-        {
-            get
-            {
-                foreach (var x in Certificate.Extensions)
-                {
-                    if ((x.Oid?.Value ?? "").Equals(SAN_OID))
-                    {
-                        var result = ParseSubjectAlternativeNames(x.RawData);
-                        return result.ToList();
-                    }
-                }
-                return new List<Identifier>();
-            }
-        }
-
-        private static int ReadLength(ref Span<byte> span)
-        {
-            var length = (int)span[0];
-            span = span[1..];
-            if ((length & 0x80) > 0)
-            {
-                var lengthBytes = length & 0x7F;
-                length = 0;
-                for (var i = 0; i < lengthBytes; i++)
-                {
-                    length = (length * 0x100) + span[0];
-                    span = span[1..];
-                }
-            }
-            return length;
-        }
-
-        public static IList<Identifier> ParseSubjectAlternativeNames(byte[] rawData)
-        {
-            var result = new List<Identifier>(); // cannot yield results when using Span yet
-            if (rawData.Length < 1 || rawData[0] != '0')
-            {
-                throw new InvalidDataException("They told me it will start with zero :(");
-            }
-
-            var data = rawData.AsSpan(1);
-            var length = ReadLength(ref data);
-            if (length != data.Length)
-            {
-                throw new InvalidDataException("I don't know who I am anymore");
-            }
-
-            while (!data.IsEmpty)
-            {
-                var type = data[0];
-                data = data[1..];
-
-                var partLength = ReadLength(ref data);
-                if (type == 135) // ip
-                {
-                    result.Add(new IpIdentifier(new IPAddress(data[0..partLength]).ToString()));
-                }
-                else if (type == 160) // upn
-                {
-                    // not sure how to parse the part before \f
-                    var index = data.IndexOf((byte)'\f') + 1;
-                    var upnData = data[index..];
-                    var upnLength = ReadLength(ref upnData);
-                    result.Add(new UpnIdentifier(Encoding.UTF8.GetString(upnData[0..upnLength])));
-                }
-                else if (type == 130) // dns
-                {
-                    // IDN handling
-                    var domainString = Encoding.UTF8.GetString(data[0..partLength]);
-                    var idnIndex = domainString.IndexOf('(');
-                    if (idnIndex > -1)
-                    {
-                        domainString = domainString[..idnIndex].Trim();
-                    }
-                    result.Add(new DnsIdentifier(domainString));
-                }
-                else // all other
-                {
-                    result.Add(new UnknownIdentifier(Encoding.UTF8.GetString(data[0..partLength])));
-                }
-                data = data[partLength..];
-            }
-            return result;
-        }
-
+        /// <summary>
+        /// This is used by the store plugins to communicate to the 
+        /// installation plugins. Should be refactored at some point
+        /// to be less spaghetti-like.
+        /// </summary>
+        public Dictionary<Type, StoreInfo> StoreInfo { get; private set; } = new Dictionary<Type, StoreInfo>();
     }
 
 

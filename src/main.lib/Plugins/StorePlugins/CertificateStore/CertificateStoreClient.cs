@@ -53,7 +53,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             _store.Close();
         }
 
-        public void InstallCertificateChain(List<X509Certificate2> chain)
+        public void InstallCertificateChain(IEnumerable<X509Certificate2> chain)
         {
             X509Store? imStore;
             try

@@ -131,7 +131,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         /// </summary>
         /// <param name="info"></param>
         /// <returns></returns>
-        private Identifier ParseCn(CertificationRequestInfo info)
+        private static Identifier ParseCn(CertificationRequestInfo info)
         {
             var subject = info.Subject;
             var cnValue = subject.GetValueList(new DerObjectIdentifier("2.5.4.3"));

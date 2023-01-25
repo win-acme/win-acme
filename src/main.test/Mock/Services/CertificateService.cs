@@ -24,10 +24,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
             var ecdsa = ECDsa.Create(); // generate asymmetric key pair
             var req = new CertificateRequest($"CN={order.Target.CommonName}", ecdsa, HashAlgorithmName.SHA256);
             var cert = req.CreateSelfSigned(DateTimeOffset.Now, DateTimeOffset.Now.AddYears(5));
-            return Task.FromResult(new CertificateInfo(new X509Certificate2Collection(cert))
-            {
-                Certificate = cert,
-            });
+            return Task.FromResult(new CertificateInfo(cert));
         }
 
         public string ReuseKeyPath(Order order) => "";

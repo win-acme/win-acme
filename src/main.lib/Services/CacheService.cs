@@ -236,7 +236,7 @@ namespace PKISharp.WACS.Services
         {
             var identifiers = target.GetIdentifiers(false);
             return info.CommonName == target.CommonName.Unicode(false) &&
-                info.SanNames.Count == identifiers.Count &&
+                info.SanNames.Count() == identifiers.Count &&
                 info.SanNames.All(h => identifiers.Contains(h.Unicode(false)));
         }
 

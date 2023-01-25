@@ -6,6 +6,7 @@ using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
@@ -64,12 +65,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 _log.Information("Saving certificate to CentralSsl location {dest}", dest);
                 try
                 {
-                    var collection = new X509Certificate2Collection
-                    {
-                        input.Certificate
-                    };
-                    collection.AddRange(input.Chain.ToArray());
-                    await File.WriteAllBytesAsync(dest, collection.Export(X509ContentType.Pfx, _password)!);
+                    await File.WriteAllBytesAsync(dest, input.Collection.Export(X509ContentType.Pfx, _password)!);
                 }
                 catch (Exception ex)
                 {
