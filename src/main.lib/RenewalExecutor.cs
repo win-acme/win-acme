@@ -295,13 +295,13 @@ namespace PKISharp.WACS
                 // order name part
                 order.PreviousCertificate ??= _cacheService.
                        CachedInfos(order.Renewal).
-                       Where(c => !allContexts.Any(o => c.CacheFile!.Name.Contains($"-{o.Order.CacheKeyPart ?? "main"}-"))).
+                       Where(c => !allContexts.Any(o => c.CacheFile.Name.Contains($"-{o.Order.CacheKeyPart ?? "main"}-"))).
                        OrderByDescending(x => x.Certificate.NotBefore).
                        FirstOrDefault();
 
                 if (order.PreviousCertificate != null)
                 {
-                    _log.Debug("Previous certificate found at {fi}", order.PreviousCertificate.CacheFile!.FullName);
+                    _log.Debug("Previous certificate found at {fi}", order.PreviousCertificate.CacheFile.FullName);
                 }
 
                 // Get the existing certificate matching the order description
@@ -451,10 +451,10 @@ namespace PKISharp.WACS
         /// <param name="context"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        private CertificateInfo? GetFromCache(OrderContext context, RunLevel runLevel)
+        private CertificateInfoCache? GetFromCache(OrderContext context, RunLevel runLevel)
         {
             var cachedCertificate = _cacheService.CachedInfo(context.Order);
-            if (cachedCertificate == null || cachedCertificate.CacheFile == null)
+            if (cachedCertificate == null)
             {
                 return null;
             }
@@ -517,7 +517,7 @@ namespace PKISharp.WACS
         /// <param name="context"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        private async Task<CertificateInfo?> GetFromServer(OrderContext context)
+        private async Task<ICertificateInfo?> GetFromServer(OrderContext context)
         {
             // Generate the CSR pluginService
             var csrPlugin = context.Target.UserCsrBytes == null ? context.OrderScope.Resolve<PluginBackend<ICsrPlugin, IPluginCapability, CsrPluginOptions>>() : null;
@@ -534,7 +534,7 @@ namespace PKISharp.WACS
             // Request the certificate
             try
             {
-                return await _certificateService.RequestCertificate(csrPlugin?.Backend, context.RunLevel, context.Order);
+                return await _certificateService.RequestCertificate(csrPlugin?.Backend, context.Order);
             }
             catch (Exception ex)
             {
@@ -551,7 +551,7 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private async Task<bool> HandleStoreAdd(
             OrderContext context,
-            CertificateInfo newCertificate,
+            ICertificateInfo newCertificate,
             List<ILifetimeScope> stores)
         {
             // Run store pluginService(s)
@@ -597,7 +597,7 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private async Task HandleStoreRemove(
             OrderContext context,
-            CertificateInfo previousCertificate,
+            ICertificateInfo previousCertificate,
             List<ILifetimeScope> stores)
         {
             for (var i = 0; i < stores.Count; i++)
@@ -628,8 +628,8 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private async Task<bool> HandleInstall(
             OrderContext context,
-            CertificateInfo newCertificate,
-            CertificateInfo? previousCertificate,
+            ICertificateInfo newCertificate,
+            CertificateInfoCache? previousCertificate,
             List<ILifetimeScope> stores)
         {
             // Run installation pluginService(s)

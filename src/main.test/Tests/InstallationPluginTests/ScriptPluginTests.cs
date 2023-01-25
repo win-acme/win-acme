@@ -19,7 +19,6 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
     public class ScriptPluginTests
     {
         private readonly Mock.Services.LogService log;
-        private readonly IIISClient iis;
         private readonly ICertificateService cs;
         private readonly FileInfo batchPath;
         private readonly FileInfo batchPsPath;
@@ -31,7 +30,6 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         {
            
             log = new Mock.Services.LogService(false);
-            iis = new Mock.Clients.MockIISClient(log);
             cs = new Mock.Services.CertificateService();
             
             var tempPath = Infrastructure.Directory.Temp();
@@ -76,8 +74,8 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             var settings = new MockSettingsService();
             var target = new Target("", "test.local", new List<TargetPart>());
             var targetOrder = new Order(renewal, target);
-            var oldCert = cs.RequestCertificate(null, RunLevel.Unattended, targetOrder).Result;
-            var newCert = cs.RequestCertificate(null, RunLevel.Unattended, targetOrder).Result;
+            var oldCert = cs.RequestCertificate(null, targetOrder).Result;
+            var newCert = cs.RequestCertificate(null, targetOrder).Result;
             newCert.StoreInfo.Add(typeof(CertificateStore), new StoreInfo() { });
             var options = new ScriptOptions
             {
@@ -93,86 +91,86 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         public void BatRegular()
         {
             TestScript(batchPath.FullName, null);
-            Assert.IsTrue(log.WarningMessages.Count == 0);
-            Assert.IsTrue(log.ErrorMessages.Count == 0);
+            Assert.IsTrue(log.WarningMessages.IsEmpty);
+            Assert.IsTrue(log.ErrorMessages.IsEmpty);
         }
 
         [TestMethod]
         public void BatWithParams()
         {
             TestScript(batchPath.FullName, "-world");
-            Assert.IsTrue(log.WarningMessages.Count == 0);
-            Assert.IsTrue(log.ErrorMessages.Count == 0);
+            Assert.IsTrue(log.WarningMessages.IsEmpty);
+            Assert.IsTrue(log.ErrorMessages.IsEmpty);
         }
 
         [TestMethod]
         public void BatWithSingleQuoteParams()
         {
             TestScript(batchPath.FullName, "'-world 2'");
-            Assert.IsTrue(log.WarningMessages.Count == 0);
-            Assert.IsTrue(log.ErrorMessages.Count == 0);
+            Assert.IsTrue(log.WarningMessages.IsEmpty);
+            Assert.IsTrue(log.ErrorMessages.IsEmpty);
         }
 
         [TestMethod]
         public void BatWithDoubleQuoteParams()
         {
             TestScript(batchPath.FullName, "\"-world 2\"");
-            Assert.IsTrue(log.WarningMessages.Count == 0);
-            Assert.IsTrue(log.ErrorMessages.Count == 0);
+            Assert.IsTrue(log.WarningMessages.IsEmpty);
+            Assert.IsTrue(log.ErrorMessages.IsEmpty);
         }
 
         [TestMethod]
         public void BatWithPs()
         {
             TestScript(batchPsPath.FullName, psPath.FullName);
-            Assert.IsTrue(log.WarningMessages.Count == 0);
-            Assert.IsTrue(log.ErrorMessages.Count == 0);
+            Assert.IsTrue(log.WarningMessages.IsEmpty);
+            Assert.IsTrue(log.ErrorMessages.IsEmpty);
         }
 
         [TestMethod]
         public void Ps1Regular()
         {
             TestScript(psPath.FullName, null);
-            Assert.IsTrue(log.WarningMessages.Count == 0);
-            Assert.IsTrue(log.ErrorMessages.Count == 0);
+            Assert.IsTrue(log.WarningMessages.IsEmpty);
+            Assert.IsTrue(log.ErrorMessages.IsEmpty);
         }
 
         [TestMethod]
         public void Ps1Tricky()
         {
             TestScript(psTrickyPath.FullName, null);
-            Assert.IsTrue(log.WarningMessages.Count == 0);
-            Assert.IsTrue(log.ErrorMessages.Count == 0);
+            Assert.IsTrue(log.WarningMessages.IsEmpty);
+            Assert.IsTrue(log.ErrorMessages.IsEmpty);
         }
 
         [TestMethod]
         public void Ps1WithParams()
         {
             TestScript(psPath.FullName, "world");
-            Assert.IsTrue(log.WarningMessages.Count == 0);
-            Assert.IsTrue(log.ErrorMessages.Count == 0);
+            Assert.IsTrue(log.WarningMessages.IsEmpty);
+            Assert.IsTrue(log.ErrorMessages.IsEmpty);
         }
 
         [TestMethod]
         public void Ps1WithSingleQuoteParams()
         {
             TestScript(psPath.FullName, "'world'");
-            Assert.IsTrue(log.WarningMessages.Count == 0);
-            Assert.IsTrue(log.ErrorMessages.Count == 0);
+            Assert.IsTrue(log.WarningMessages.IsEmpty);
+            Assert.IsTrue(log.ErrorMessages.IsEmpty);
         }
 
         [TestMethod]
         public void Ps1WithDoubleQuoteParams()
         {
             TestScript(psPath.FullName, "\"world\"");
-            Assert.IsTrue(log.WarningMessages.Count == 0);
-            Assert.IsTrue(log.ErrorMessages.Count == 0);
+            Assert.IsTrue(log.WarningMessages.IsEmpty);
+            Assert.IsTrue(log.ErrorMessages.IsEmpty);
         }
         [TestMethod]
         public void Ps1WithError()
         {
             TestScript(psPath.FullName, "world2");
-            Assert.IsTrue(log.WarningMessages.Count == 0);
+            Assert.IsTrue(log.WarningMessages.IsEmpty);
             Assert.IsTrue(log.ErrorMessages.Count > 0);
         }
 
@@ -187,8 +185,8 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         public void Ps1NamedCorrect()
         {
             TestScript(psNamedPath.FullName, "-what 'world'");
-            Assert.IsTrue(log.WarningMessages.Count == 0);
-            Assert.IsTrue(log.ErrorMessages.Count == 0);
+            Assert.IsTrue(log.WarningMessages.IsEmpty);
+            Assert.IsTrue(log.ErrorMessages.IsEmpty);
         }
 
 

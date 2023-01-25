@@ -49,7 +49,7 @@ namespace PKISharp.WACS.Services
         /// <param name="target"></param>
         /// <param name="order"></param>
         /// <returns></returns>
-        public async Task<CertificateInfo> RequestCertificate(ICsrPlugin? csrPlugin, RunLevel runLevel, Order order)
+        public async Task<ICertificateInfo> RequestCertificate(ICsrPlugin? csrPlugin, Order order)
         {
             if (order.Details == null)
             {
@@ -335,7 +335,7 @@ namespace PKISharp.WACS.Services
                     var certificateDer = info.Certificate.Export(X509ContentType.Cert);
                     await _client.RevokeCertificate(certificateDer);
                     _log.Warning($"Revoked certificate {info.Certificate.FriendlyName}");
-                    info.CacheFile!.Delete();
+                    info.CacheFile.Delete();
                 }
                 catch (Exception ex)
                 {

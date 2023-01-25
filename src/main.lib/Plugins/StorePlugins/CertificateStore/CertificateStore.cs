@@ -79,7 +79,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             return storeName;
         }
 
-        public Task Save(CertificateInfo input)
+        public Task Save(ICertificateInfo input)
         {
             var existing = _storeClient.FindByThumbprint(input.Certificate.Thumbprint);
             if (existing != null)
@@ -93,8 +93,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 {
                     flags |= X509KeyStorageFlags.Exportable;
                 }
-                var cert = input.Certificate.Export(X509ContentType.Pkcs12, input.CacheFilePassword);
-                var import = new X509Certificate2(cert, input.CacheFilePassword, flags);
+                var cert = input.Certificate.Export(X509ContentType.Pkcs12, string.Empty);
+                var import = new X509Certificate2(cert, string.Empty, flags);
                 _log.Information("Installing certificate in the certificate store");
                 _storeClient.InstallCertificate(import);
                 if (_options.AclFullControl != null)
@@ -146,7 +146,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
         }
 
-        public Task Delete(CertificateInfo input)
+        public Task Delete(ICertificateInfo input)
         {
             // Test if the user manually added the certificate to IIS
             if (_iisClient.HasWebSites)

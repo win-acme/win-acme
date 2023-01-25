@@ -17,6 +17,6 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// <param name="renewal"></param>
         /// <param name="newCertificateInfo"></param>
         /// <param name="oldCertificateInfo"></param>
-        Task<bool> Install(IEnumerable<Type> stores, CertificateInfo newCertificateInfo, CertificateInfo? oldCertificateInfo);
+        Task<bool> Install(IEnumerable<Type> stores, ICertificateInfo newCertificateInfo, ICertificateInfo? oldCertificateInfo);
     }
 }

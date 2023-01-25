@@ -34,7 +34,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             _ssm = secretManager;
         }
 
-        public async Task<bool> Install(IEnumerable<Type> stores, CertificateInfo newCertificate, CertificateInfo? oldCertificate)
+        public async Task<bool> Install(IEnumerable<Type> stores, ICertificateInfo newCertificate, ICertificateInfo? oldCertificate)
         {
             if (_options.Script != null)
             {
@@ -50,20 +50,21 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             return false;
         }
 
-        internal string ReplaceParameters(string input, StoreInfo? defaultStoreInfo, CertificateInfo newCertificate, CertificateInfo? oldCertificate, bool censor)
+        internal string ReplaceParameters(string input, StoreInfo? defaultStoreInfo, ICertificateInfo newCertificate, ICertificateInfo? oldCertificate, bool censor)
         {
             // Numbered parameters for backwards compatibility only,
             // do not extend for future updates
+            var cachedCertificate = newCertificate as CertificateInfoCache;
             return Regex.Replace(input, "{.+?}", (m) => {
                 return m.Value switch
                 {
                     "{0}" or "{CertCommonName}" => newCertificate.CommonName.Value,
                     "{1}" or "{CachePassword}" => (censor ? _renewal.PfxPassword?.DisplayValue : _renewal.PfxPassword?.Value) ?? "",
-                    "{2}" or "{CacheFile}" => newCertificate.CacheFile?.FullName ?? "",
+                    "{2}" or "{CacheFile}" => cachedCertificate?.CacheFile.FullName ?? "",
                     "{3}" or "{StorePath}" => defaultStoreInfo?.Path ?? "",
                     "{4}" or "{CertFriendlyName}" => newCertificate.Certificate.FriendlyName,
                     "{5}" or "{CertThumbprint}" => newCertificate.Certificate.Thumbprint,
-                    "{6}" or "{CacheFolder}" => newCertificate.CacheFile?.Directory?.FullName ?? "",
+                    "{6}" or "{CacheFolder}" => cachedCertificate?.CacheFile.Directory?.FullName ?? "",
                     "{7}" or "{RenewalId}" => _renewal.Id,
                     "{StoreType}" => defaultStoreInfo?.Name ?? "",
                     "{OldCertCommonName}" => oldCertificate?.CommonName?.Value ?? "",

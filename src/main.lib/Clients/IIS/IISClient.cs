@@ -235,7 +235,7 @@ namespace PKISharp.WACS.Clients.IIS
         /// <param name="id"></param>
         /// <param name="newCertificate"></param>
         /// <param name="oldCertificate"></param>
-        public void UpdateFtpSite(long? id, CertificateInfo newCertificate, CertificateInfo? oldCertificate)
+        public void UpdateFtpSite(long? id, ICertificateInfo newCertificate, ICertificateInfo? oldCertificate)
         {
             var ftpSites = Sites.Where(x => x.Type == IISSiteType.Ftp).ToList();
             var oldThumbprint = oldCertificate?.Certificate?.Thumbprint;
@@ -300,7 +300,7 @@ namespace PKISharp.WACS.Clients.IIS
         /// <param name="newThumbprint"></param>
         /// <param name="newStore"></param>
         /// <returns></returns>
-        private bool RequireUpdate(ConfigurationElement element, 
+        private static bool RequireUpdate(ConfigurationElement element, 
             bool installSite, 
             string? oldThumbprint, string? newThumbprint,
             string? newStore)

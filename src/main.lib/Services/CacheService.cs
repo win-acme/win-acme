@@ -139,7 +139,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="renewal"></param>
         /// <returns></returns>
-        public CertificateInfo? CachedInfo(Order order)
+        public CertificateInfoCache? CachedInfo(Order order)
         {
             _log.Debug("Reading certificate cache");
             var cachedInfos = CachedInfos(order.Renewal);
@@ -150,11 +150,11 @@ namespace PKISharp.WACS.Services
             }
 
             var cacheVersion = MaxCacheKeyVersion;
-            var fileCache = default(CertificateInfo);
+            var fileCache = default(CertificateInfoCache);
             while (fileCache == null && cacheVersion > 0)
             {
                 var fileName = GetPath(order.Renewal, $"-{CacheKey(order, cacheVersion)}{PfxPostFix}");
-                fileCache = cachedInfos.Where(x => x.CacheFile?.FullName == fileName).FirstOrDefault();
+                fileCache = cachedInfos.Where(x => x.CacheFile.FullName == fileName).FirstOrDefault();
                 if (fileCache == null)
                 {
                     _log.Verbose("v{current} cache key not found, fall back to v{next}", cacheVersion, cacheVersion - 1);
@@ -164,7 +164,7 @@ namespace PKISharp.WACS.Services
             if (fileCache == null)
             {
                 var legacyFile = GetPath(order.Renewal, PfxPostFixLegacy);
-                var candidate = cachedInfos.Where(x => x.CacheFile?.FullName == legacyFile).FirstOrDefault();
+                var candidate = cachedInfos.Where(x => x.CacheFile.FullName == legacyFile).FirstOrDefault();
                 if (candidate != null)
                 {
                     if (Match(candidate, order.Target))
@@ -190,9 +190,9 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="renewal"></param>
         /// <returns></returns>
-        public IEnumerable<CertificateInfo> CachedInfos(Renewal renewal)
+        public IEnumerable<CertificateInfoCache> CachedInfos(Renewal renewal)
         {
-            var ret = new List<CertificateInfo>();
+            var ret = new List<CertificateInfoCache>();
             var nameAll = GetPath(renewal, "*.pfx");
             var directory = new DirectoryInfo(Path.GetDirectoryName(nameAll)!);
             var allPattern = Path.GetFileName(nameAll);
@@ -219,10 +219,10 @@ namespace PKISharp.WACS.Services
         /// <param name="renewal"></param>
         /// <param name="order"></param>
         /// <returns></returns>
-        public IEnumerable<CertificateInfo> CachedInfos(Renewal renewal, Order order)
+        public IEnumerable<CertificateInfoCache> CachedInfos(Renewal renewal, Order order)
         {
             var ret = CachedInfos(renewal);
-            return ret.Where(r => r.CacheFile!.Name.Contains($"-{order.CacheKeyPart ?? "main"}-")).ToList();
+            return ret.Where(r => r.CacheFile.Name.Contains($"-{order.CacheKeyPart ?? "main"}-")).ToList();
         }
 
         /// <summary>
@@ -232,7 +232,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        private static bool Match(CertificateInfo info, Target target)
+        private static bool Match(ICertificateInfo info, Target target)
         {
             var identifiers = target.GetIdentifiers(false);
             return info.CommonName == target.CommonName.Unicode(false) &&
@@ -296,60 +296,27 @@ namespace PKISharp.WACS.Services
         /// <param name="pfxFileInfo"></param>
         /// <param name="password"></param>
         /// <returns></returns>
-        private CertificateInfo FromCache(FileInfo pfxFileInfo, string? password)
+        private CertificateInfoCache FromCache(FileInfo pfxFileInfo, string? password)
         {
             var key = pfxFileInfo.FullName;
             if (_infoCache.ContainsKey(key))
             {
-                if (_infoCache[key].CacheFile?.LastWriteTime == pfxFileInfo.LastWriteTime)
+                if (_infoCache[key].CacheFile.LastWriteTime == pfxFileInfo.LastWriteTime)
                 {
                     return _infoCache[key];
                 }
                 else
                 {
-                    _infoCache[key] = GetInfo(pfxFileInfo, password);
+                    _infoCache[key] = new CertificateInfoCache(pfxFileInfo, password);
                 }
             }
             else
             {
-                _infoCache.Add(key, GetInfo(pfxFileInfo, password));
+                _infoCache.Add(key, new CertificateInfoCache(pfxFileInfo, password));
             }
             return _infoCache[key];
         }
-        private readonly Dictionary<string, CertificateInfo> _infoCache = new();
-
-        /// <summary>
-        /// Load certificate information from cache
-        /// </summary>
-        /// <param name="pfxFileInfo"></param>
-        /// <param name="password"></param>
-        /// <returns></returns>
-        internal static CertificateInfo GetInfo(FileInfo pfxFileInfo, string? password)
-        {
-            var rawCollection = ReadAsCollection(pfxFileInfo, password);
-            return new CertificateInfo(rawCollection)
-            {
-                CacheFile = pfxFileInfo,
-                CacheFilePassword = password
-            };
-        }
-
-        /// <summary>
-        /// Read certificate for it to be exposed to the StorePlugin and InstallationPlugins
-        /// </summary>
-        /// <param name="source"></param>
-        /// <param name="password"></param>
-        /// <returns></returns>
-        private static X509Certificate2Collection ReadAsCollection(FileInfo source, string? password)
-        {
-            // Flags used for the X509Certificate2 as 
-            var externalFlags =
-                X509KeyStorageFlags.EphemeralKeySet |
-                X509KeyStorageFlags.Exportable;
-            var ret = new X509Certificate2Collection();
-            ret.Import(source.FullName, password, externalFlags);
-            return ret;
-        }
+        private readonly Dictionary<string, CertificateInfoCache> _infoCache = new();
 
         /// <summary>
         /// Path where the private key may be stored
@@ -393,7 +360,7 @@ namespace PKISharp.WACS.Services
         /// <param name="order"></param>
         /// <param name="pfx"></param>
         /// <returns></returns>
-        public async Task<CertificateInfo> StorePfx(Order order, byte[] pfx)
+        public async Task<ICertificateInfo> StorePfx(Order order, byte[] pfx)
         {
             ClearCache(order, postfix: $"*{PfxPostFix}");
             ClearCache($"{order.Renewal.Id}*{PfxPostFixLegacy}");

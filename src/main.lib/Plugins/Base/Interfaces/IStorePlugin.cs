@@ -9,12 +9,12 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// Perist certificate and update CertificateInfo
         /// </summary>
         /// <param name="certificateInfo"></param>
-        Task Save(CertificateInfo certificateInfo);
+        Task Save(ICertificateInfo certificateInfo);
 
         /// <summary>
         /// Remove certificate from persisted storage
         /// </summary>
         /// <param name="certificateInfo"></param>
-        Task Delete(CertificateInfo certificateInfo);
+        Task Delete(ICertificateInfo certificateInfo);
     }
 }

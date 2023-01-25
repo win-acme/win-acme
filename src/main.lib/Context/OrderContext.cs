@@ -18,8 +18,8 @@ namespace PKISharp.WACS.Context
         public OrderResult OrderResult { get; private set; }
         public Target Target => Order.Target;
         public Renewal Renewal => Order.Renewal;
-        public CertificateInfo? PreviousCertificate { get; set; }
-        public CertificateInfo? NewCertificate { get; set; }
+        public CertificateInfoCache? PreviousCertificate { get; set; }
+        public ICertificateInfo? NewCertificate { get; set; }
         public string OrderName => Order.FriendlyNamePart ?? DefaultOrderName;
         public bool ShouldRun { get; set; }
         public OrderContext(ILifetimeScope orderScope, Order order, RunLevel runLevel)

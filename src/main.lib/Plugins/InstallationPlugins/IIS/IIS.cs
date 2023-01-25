@@ -40,8 +40,8 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 
         Task<bool> IInstallationPlugin.Install(
             IEnumerable<Type> stores,
-            CertificateInfo newCertificate,
-            CertificateInfo? oldCertificate)
+            ICertificateInfo newCertificate,
+            ICertificateInfo? oldCertificate)
         {
             // Store validation
             var centralSslForHttp = false;

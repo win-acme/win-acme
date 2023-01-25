@@ -57,7 +57,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
         }
 
-        public async Task Save(CertificateInfo input)
+        public async Task Save(ICertificateInfo input)
         {
             
             _log.Information("Exporting .pem files to {folder}", _path);
@@ -115,6 +115,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
         }
 
-        public Task Delete(CertificateInfo input) => Task.CompletedTask;
+        public Task Delete(ICertificateInfo input) => Task.CompletedTask;
     }
 }

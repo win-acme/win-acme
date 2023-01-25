@@ -13,7 +13,7 @@ namespace PKISharp.WACS.DomainObjects
     /// Provides information about a certificate, which may or may not already
     /// be stored on the disk somewhere in a .pfx file
     /// </summary>
-    public class CertificateInfo
+    public class CertificateInfo : ICertificateInfo
     {
         /// <summary>
         /// Shorthand constructor
@@ -88,33 +88,17 @@ namespace PKISharp.WACS.DomainObjects
             Chain = orderedCollection;
         }
 
-        /// <summary>
-        /// Entire collection, equivalent to the full PFX archive
-        /// </summary>
+
         public X509Certificate2Collection Collection { get; private set; }
 
-        /// <summary>
-        /// The main certificate
-        /// </summary>
         public X509Certificate2 Certificate { get; private set; }
 
-        /// <summary>
-        /// Private key in Bouncy Castle format
-        /// </summary>
         public AsymmetricKeyParameter? PrivateKey { get; private set; }
 
-        /// <summary>
-        /// The certificate chain, in the correct order
-        /// </summary>
         public IEnumerable<X509Certificate2> Chain { get; private set; }
 
-        public FileInfo? CacheFile { get; set; }
-        public string? CacheFilePassword { get; set; }
-
-        /// <summary>
-        /// The common name / subject name
-        /// </summary>
-        public Identifier CommonName {
+        public Identifier CommonName
+        {
             get
             {
                 var str = Certificate.SubjectClean();
@@ -126,22 +110,11 @@ namespace PKISharp.WACS.DomainObjects
             }
         }
 
-        /// <summary>
-        /// The Subject Alternative Names (up to 100 for Let's Encrypt)
-        /// that are also validate identifiers to be used with this
-        /// certificate.
-        /// </summary>
+
         public IEnumerable<Identifier> SanNames => Certificate.SanNames();
 
-        /// <summary>
-        /// This is used by the store plugins to communicate to the 
-        /// installation plugins. Should be refactored at some point
-        /// to be less spaghetti-like.
-        /// </summary>
         public Dictionary<Type, StoreInfo> StoreInfo { get; private set; } = new Dictionary<Type, StoreInfo>();
     }
-
-
 
     /// <summary>
     /// Information about where the certificate is stored

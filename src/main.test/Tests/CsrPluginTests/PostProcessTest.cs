@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.CsrPlugins;
 using System;
 using System.Collections.Generic;
@@ -33,7 +34,7 @@ namespace PKISharp.WACS.UnitTests.Tests.CsrPluginTests
             var tempFile = Path.GetTempFileName();
             File.WriteAllBytes(tempFile, bytes);
             var fi = new FileInfo(tempFile);
-            var certInfo = Real.CacheService.GetInfo(fi, "A8<TEpyPweWMO1m(");
+            var certInfo = new CertificateInfoCache(fi, "A8<TEpyPweWMO1m(");
             _ = x.PostProcess(certInfo.Certificate).Result;
             Assert.IsTrue(true);
         }

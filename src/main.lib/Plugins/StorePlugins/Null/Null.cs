@@ -14,8 +14,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
     internal class Null : IStorePlugin
     {
         internal const string Name = "None";
-        public Task Delete(CertificateInfo certificateInfo) => Task.CompletedTask;
-        public Task Save(CertificateInfo certificateInfo) {
+        public Task Delete(ICertificateInfo certificateInfo) => Task.CompletedTask;
+        public Task Save(ICertificateInfo certificateInfo) {
             certificateInfo.StoreInfo.Add(GetType(),
                     new StoreInfo()
                     {

@@ -35,8 +35,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _helpers = new AzureHelpers(options, proxyService, ssm);
         }
 
-        public Task Delete(CertificateInfo certificateInfo) => Task.CompletedTask;
-        public async Task Save(CertificateInfo certificateInfo)
+        public Task Delete(ICertificateInfo certificateInfo) => Task.CompletedTask;
+
+        public async Task Save(ICertificateInfo certificateInfo)
         {
             var client = new CertificateClient(
                 new Uri($"https://{_options.VaultName}.vault.azure.net/"),

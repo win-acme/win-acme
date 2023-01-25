@@ -10,17 +10,17 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
 {
     internal class CacheService : ICacheService
     {
-        public CertificateInfo? CachedInfo(Order order)
+        public CertificateInfoCache? CachedInfo(Order order)
         {
             throw new NotImplementedException();
         }
 
-        public IEnumerable<CertificateInfo> CachedInfos(Renewal renewal)
+        public IEnumerable<CertificateInfoCache> CachedInfos(Renewal renewal)
         {
             throw new NotImplementedException();
         }
 
-        public IEnumerable<CertificateInfo> CachedInfos(Renewal renewal, Order order)
+        public IEnumerable<CertificateInfoCache> CachedInfos(Renewal renewal, Order order)
         {
             throw new NotImplementedException();
         }
@@ -44,7 +44,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
             throw new NotImplementedException();
         }
 
-        public Task<CertificateInfo> StorePfx(Order order, byte[] pfx)
+        public Task<ICertificateInfo> StorePfx(Order order, byte[] pfx)
         {
             throw new NotImplementedException();
         }

@@ -64,7 +64,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         private string PathForIdentifier(string identifier) => Path.Combine(_path, $"{identifier.Replace("*", "_")}.pfx");
 
-        public async Task Save(CertificateInfo input)
+        public async Task Save(ICertificateInfo input)
         {
             var dest = PathForIdentifier(_name ?? input.CommonName.Value);
             _log.Information("Copying certificate to the pfx folder {dest}", dest);
@@ -110,6 +110,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 });
         }
 
-        public Task Delete(CertificateInfo input) => Task.CompletedTask;
+        public Task Delete(ICertificateInfo input) => Task.CompletedTask;
     }
 }
