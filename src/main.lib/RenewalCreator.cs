@@ -414,6 +414,10 @@ namespace PKISharp.WACS
                     _exceptionHandler.HandleException(message: $"{step} plugin {plugin.Meta.Name} was unable to generate options");
                     return null;
                 }
+                // Ensure that cache keys calculated based on 
+                // plugin options are stable. If the ID is only
+                // added during serialisation it might be too late.
+                options.Plugin = plugin.Meta.Id.ToString();
                 return options;
             }
             catch (Exception ex)
