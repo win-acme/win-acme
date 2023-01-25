@@ -32,10 +32,12 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private readonly CertificateStoreOptions _options;
         private readonly FindPrivateKey _keyFinder;
         private readonly CertificateStoreClient _storeClient;
+        private readonly RunLevel _runLevel;
+
         public CertificateStore(
             ILogService log, IIISClient iisClient,
             ISettingsService settings, FindPrivateKey keyFinder, 
-            CertificateStoreOptions options)
+            CertificateStoreOptions options, RunLevel runLevel)
         {
             _log = log;
             _iisClient = iisClient;
@@ -51,6 +53,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 _storeName = nameof(StoreName.My);
             }
             _storeClient = new CertificateStoreClient(_storeName, StoreLocation.LocalMachine, _log);
+            _runLevel = runLevel;
         }
 
         /// <summary>
@@ -101,8 +104,10 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 {
                     SetAcl(import, _options.AclFullControl);
                 }
-                _storeClient.InstallCertificateChain(input.Chain);
-
+                if (!_runLevel.HasFlag(RunLevel.Test))
+                {
+                    _storeClient.InstallCertificateChain(input.Chain);
+                }
             }
             input.StoreInfo.TryAdd(
                 GetType(),
