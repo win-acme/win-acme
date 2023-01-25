@@ -7,6 +7,7 @@ using PKISharp.WACS.Services;
 using System;
 using System.IO;
 using System.Runtime.Versioning;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 
 [assembly: SupportedOSPlatform("windows")]
@@ -46,8 +47,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 });
             var importOptions = new ImportCertificateOptions(
                 _options.CertificateName,
-                await File.ReadAllBytesAsync(certificateInfo.CacheFile!.FullName));
-            importOptions.Password = certificateInfo.CacheFilePassword;
+                certificateInfo.Collection.Export(X509ContentType.Pfx));
             try
             {
                 _ = await client.ImportCertificateAsync(importOptions);
