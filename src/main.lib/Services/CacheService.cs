@@ -360,12 +360,32 @@ namespace PKISharp.WACS.Services
         /// <param name="order"></param>
         /// <param name="pfx"></param>
         /// <returns></returns>
-        public async Task<ICertificateInfo> StorePfx(Order order, byte[] pfx)
+        public async Task<ICertificateInfo> StorePfx(Order order, CertificateOption option)
         {
             ClearCache(order, postfix: $"*{PfxPostFix}");
             ClearCache($"{order.Renewal.Id}*{PfxPostFixLegacy}");
+
+            var save = option.WithPrivateKey;
+            if (_settings.Cache.ReuseDays <= 0)
+            {
+                save = option.WithoutPrivateKey;
+            }
             var pfxPath = new FileInfo(GetPath(order.Renewal, $"-{CacheKey(order)}{PfxPostFix}"));
-            await File.WriteAllBytesAsync(pfxPath.FullName, pfx);
+            var export = save.Collection.Export(X509ContentType.Pfx, order.Renewal.PfxPassword?.Value);
+            if (export == null)
+            {
+                return option.WithPrivateKey;
+            }
+            await File.WriteAllBytesAsync(pfxPath.FullName, export);
+            if (_settings.Cache.ReuseDays <= 0)
+            {
+                return option.WithPrivateKey;
+            }
+
+            // Read back from cache, since we know it contains the private key
+            // but now will also be an instance of CertificateInfoCache instead
+            // of another implementation of ICertificateInfo. This helps it gain
+            // some properties that can be used by the script installation plugin
             pfxPath.Refresh();
             _log.Debug("Certificate written to cache file {path} in certificate cache folder {folder}. It will be " +
                 "reused when renewing within {x} day(s) as long as the --source and --csr parameters remain the same and " +

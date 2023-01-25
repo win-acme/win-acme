@@ -1,4 +1,5 @@
 ﻿using ACMESharp;
+using ACMESharp.Protocol;
 using Org.BouncyCastle.Crypto;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.DomainObjects;
@@ -19,10 +20,10 @@ namespace PKISharp.WACS.Services
     {
         private readonly IInputService _inputService;
         private readonly ILogService _log;
-        private readonly ISettingsService _settings;
         private readonly ICacheService _cacheService;
         private readonly AcmeClient _client;
         private readonly PemService _pemService;
+        private readonly CertificatePicker _picker;
 
         public CertificateService(
             ILogService log,
@@ -30,14 +31,14 @@ namespace PKISharp.WACS.Services
             PemService pemService,
             IInputService inputService,
             ICacheService cacheService,
-            ISettingsService settingsService)
+            CertificatePicker picker)
         {
             _log = log;
             _client = client;
             _pemService = pemService;
             _cacheService = cacheService;
-            _settings = settingsService;
             _inputService = inputService;
+            _picker = picker;
         }
 
         /// <summary>
@@ -98,69 +99,26 @@ namespace PKISharp.WACS.Services
 
             // Download the certificate from the server
             _log.Information("Downloading certificate {friendlyName}", order.FriendlyNameIntermediate);
-            var certInfo = default(AcmeCertificate);
-            try
-            {
-                certInfo = await _client.GetCertificate(order.Details);
-            } 
-            catch (Exception ex)
-            {
-                throw new Exception($"Unable to get certificate", ex);
-            }
-            if (certInfo == default || certInfo.Certificate == null)
-            {
-                throw new Exception($"Unable to get certificate");
-            }
-            var alternatives = new List<X509Certificate2Collection>
-            {
-                ParseCertificate(certInfo.Certificate, friendlyName, order.Target.PrivateKey)
-            };
-            if (certInfo.Links != null)
-            {
-                foreach (var alt in certInfo.Links["alternate"])
-                {
-                    try
-                    {
-                        var altCertRaw = await _client.GetCertificate(alt);
-                        var altCert = ParseCertificate(altCertRaw, friendlyName, order.Target.PrivateKey);
-                        alternatives.Add(altCert);
-                    }
-                    catch (Exception ex)
-                    {
-                        _log.Warning("Unable to get alternate certificate: {ex}", ex.Message);
-                    }
-                }
-            }
-            var selected = Select(alternatives);
-            var pfx = selected.Export(X509ContentType.Pfx, order.Renewal.PfxPassword?.Value);
-            if (pfx == null)
-            {
-                throw new InvalidOperationException();
-            }
+            var selected = await DownloadCertificate(order.Details, friendlyName, order.Target.PrivateKey);
 
             if (csrPlugin != null)
             {
                 try
                 {
-                    var cert = selected.
+                    var collection = selected.WithPrivateKey.Collection;
+                    var cert = collection.
                         OfType<X509Certificate2>().
                         Where(x => x.HasPrivateKey).
                         FirstOrDefault();
                     if (cert != null)
                     {
-                        var certIndex = selected.IndexOf(cert);
+                        var certIndex = collection.IndexOf(cert);
                         var newVersion = await csrPlugin.PostProcess(cert);
                         if (newVersion != cert)
                         {
                             newVersion.FriendlyName = friendlyName;
-                            selected[certIndex] = newVersion;
-                            var newPfx = selected.Export(X509ContentType.Pfx, order.Renewal.PfxPassword?.Value);
-                            if (newPfx == null)
-                            {
-                                throw new InvalidOperationException();
-                            }
-                            pfx = newPfx;
-                            newVersion.Dispose();
+                            collection[certIndex] = newVersion;
+                            selected.WithPrivateKey = new CertificateInfo(collection);
                         }
                     }
                 }
@@ -176,71 +134,62 @@ namespace PKISharp.WACS.Services
             order.Renewal.LastFriendlyName = order.FriendlyNameBase;
 
             // Recreate X509Certificate2 with correct flags for Store/Install
-            var info = await _cacheService.StorePfx(order, pfx);
+            var info = await _cacheService.StorePfx(order, selected);
             return info;
         }
 
         /// <summary>
-        /// Get the name for the root issuer
+        /// Download all potential certificates and pick the right one
         /// </summary>
-        /// <param name="option"></param>
+        /// <param name="order"></param>
+        /// <param name="friendlyName"></param>
+        /// <param name="pk"></param>
         /// <returns></returns>
-        private static string? Root(X509Certificate2Collection option) {
-            var cert = option[0];
-            while (true)
-            {
-                X509Certificate2? stepup = null;
-                for (var i = 0; i < option.Count; i++)
-                {
-                    if (option[i] != cert && // Prevent infinite loop on self-signed
-                        option[i].Subject == cert.Issuer)
-                    {
-                        stepup = option[i];
-                        cert = stepup;
-                        break;
-                    }
-                }
-                if (stepup == null)
-                {
-                    break;
-                }
-            }
-            return cert.IssuerClean();
-        }
-
-        /// <summary>
-        /// Choose between different versions of the certificate
-        /// </summary>
-        /// <param name="options"></param>
-        /// <returns></returns>
-        private X509Certificate2Collection Select(List<X509Certificate2Collection> options)
+        /// <exception cref="Exception"></exception>
+        private async Task<CertificateOption> DownloadCertificate(AcmeOrderDetails order, string friendlyName, AsymmetricKeyParameter? pk)
         {
-            var selected = options[0];
-            if (options.Count > 1)
+            AcmeCertificate? certInfo;
+            try
             {
-                _log.Debug("Found {n} version(s) of the certificate", options.Count);
-                foreach (var option in options)
+                certInfo = await _client.GetCertificate(order);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Unable to get certificate", ex);
+            }
+            if (certInfo == default || certInfo.Certificate == null)
+            {
+                throw new Exception($"Unable to get certificate");
+            }
+            var alternatives = new List<CertificateOption>
+            {
+                new CertificateOption(
+                    withPrivateKey: ParseCertificate(certInfo.Certificate, friendlyName, pk),
+                    withoutPrivateKey: ParseCertificate(certInfo.Certificate, friendlyName)
+                )
+            };
+            if (certInfo.Links != null)
+            {
+                foreach (var alt in certInfo.Links["alternate"])
                 {
-                    _log.Debug("Option {n} issued by {issuer} (thumb: {thumb})", options.IndexOf(option) + 1, Root(option), option[0].Thumbprint);
-                }
-                if (!string.IsNullOrEmpty(_settings.Acme.PreferredIssuer))
-                {
-                    var match = options.FirstOrDefault(x => string.Equals(Root(x), _settings.Acme.PreferredIssuer, StringComparison.InvariantCultureIgnoreCase));
-                    if (match != null)
+                    try
                     {
-                        selected = match;
+                        var altCertRaw = await _client.GetCertificate(alt);
+                        var altCert = new CertificateOption(
+                            withPrivateKey: ParseCertificate(altCertRaw, friendlyName, pk),
+                            withoutPrivateKey: ParseCertificate(altCertRaw, friendlyName)
+                        );
+                        alternatives.Add(altCert);
                     }
-                } 
-                _log.Debug("Selected option {n}", options.IndexOf(selected) + 1);
+                    catch (Exception ex)
+                    {
+                        _log.Warning("Unable to get alternate certificate: {ex}", ex.Message);
+                    }
+                }
             }
-            if (!string.IsNullOrEmpty(_settings.Acme.PreferredIssuer) && 
-                !string.Equals(Root(selected), _settings.Acme.PreferredIssuer, StringComparison.InvariantCultureIgnoreCase))
-            {
-                _log.Warning("Unable to find certificate issued by preferred issuer {issuer}", _settings.Acme.PreferredIssuer);
-            }
-            return selected;
+            return _picker.Select(alternatives);
         }
-
+      
         /// <summary>
         /// Parse bytes to a usable certificate
         /// </summary>
@@ -248,7 +197,7 @@ namespace PKISharp.WACS.Services
         /// <param name="friendlyName"></param>
         /// <param name="pk"></param>
         /// <returns></returns>
-        private X509Certificate2Collection ParseCertificate(byte[] bytes, string friendlyName, AsymmetricKeyParameter? pk)
+        private CertificateInfo ParseCertificate(byte[] bytes, string friendlyName, AsymmetricKeyParameter? pk = null)
         {
             // Build pfx archive including any intermediates provided
             _log.Verbose("Parsing certificate from {bytes} bytes received", bytes.Length);
@@ -316,7 +265,7 @@ namespace PKISharp.WACS.Services
                 null,
                 X509KeyStorageFlags.EphemeralKeySet |
                 X509KeyStorageFlags.Exportable);
-            return tempPfx;
+            return new CertificateInfo(tempPfx);
         }
 
         /// <summary>

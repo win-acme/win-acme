@@ -88,7 +88,6 @@ namespace PKISharp.WACS.DomainObjects
             Chain = orderedCollection;
         }
 
-
         public X509Certificate2Collection Collection { get; private set; }
 
         public X509Certificate2 Certificate { get; private set; }

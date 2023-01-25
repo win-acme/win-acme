@@ -12,7 +12,7 @@ namespace PKISharp.WACS.Services
         void Delete(Renewal renewal);
         
         Task StoreCsr(Order order, string csr);
-        Task<ICertificateInfo> StorePfx(Order order, byte[] pfx);
+        Task<ICertificateInfo> StorePfx(Order order, CertificateOption option);
 
         CertificateInfoCache? CachedInfo(Order order);
         IEnumerable<CertificateInfoCache> CachedInfos(Renewal renewal);

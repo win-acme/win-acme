@@ -44,7 +44,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
             throw new NotImplementedException();
         }
 
-        public Task<ICertificateInfo> StorePfx(Order order, byte[] pfx)
+        public Task<ICertificateInfo> StorePfx(Order order, CertificateOption option)
         {
             throw new NotImplementedException();
         }
