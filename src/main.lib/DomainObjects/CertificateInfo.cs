@@ -109,18 +109,6 @@ namespace PKISharp.WACS.DomainObjects
             }
         }
 
-
         public IEnumerable<Identifier> SanNames => Certificate.SanNames();
-
-        public Dictionary<Type, StoreInfo> StoreInfo { get; private set; } = new Dictionary<Type, StoreInfo>();
-    }
-
-    /// <summary>
-    /// Information about where the certificate is stored
-    /// </summary>
-    public class StoreInfo
-    {
-        public string? Name { get; set; }
-        public string? Path { get; set; }
     }
 }

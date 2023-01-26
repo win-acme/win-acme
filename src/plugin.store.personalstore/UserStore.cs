@@ -31,7 +31,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             _storeClient = new CertificateStoreClient(DefaultStoreName, StoreLocation.CurrentUser, _log);
         }
 
-        public Task Save(ICertificateInfo input)
+        public Task<StoreInfo?> Save(ICertificateInfo input)
         {
             var existing = _storeClient.FindByThumbprint(input.Certificate.Thumbprint);
             if (existing != null)
@@ -50,14 +50,10 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 _log.Information("Installing certificate in the certificate store");
                 _storeClient.InstallCertificate(import);
             }
-            _ = input.StoreInfo.TryAdd(
-                GetType(),
-                new StoreInfo()
-                {
-                    Name = Name,
-                    Path = DefaultStoreName
-                });
-            return Task.CompletedTask;
+            return Task.FromResult<StoreInfo?>(new StoreInfo() {
+                Name = Name,
+                Path = DefaultStoreName
+            });
         }
 
         public Task Delete(ICertificateInfo input)

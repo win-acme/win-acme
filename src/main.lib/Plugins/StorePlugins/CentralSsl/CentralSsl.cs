@@ -56,7 +56,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         private string PathForIdentifier(Identifier identifier) => Path.Combine(_path, $"{identifier.Value.Replace("*", "_")}.pfx");
 
-        public async Task Save(ICertificateInfo input)
+        public async Task<StoreInfo?> Save(ICertificateInfo input)
         {
             _log.Information("Copying certificate to the CentralSsl store");
             foreach (var identifier in input.SanNames)
@@ -72,13 +72,10 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     _log.Error(ex, "Error copying certificate to CentralSsl store");
                 }
             }
-            input.StoreInfo.TryAdd(
-                GetType(),
-                new StoreInfo()
-                {
-                    Name = Name,
-                    Path = _path
-                });
+            return new StoreInfo() {
+                Name = Name,
+                Path = _path
+            };
         }
 
         public Task Delete(ICertificateInfo input)

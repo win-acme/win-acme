@@ -1,5 +1,4 @@
-﻿using Org.BouncyCastle.Pkcs;
-using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
@@ -7,7 +6,6 @@ using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 
@@ -57,7 +55,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
         }
 
-        public async Task Save(ICertificateInfo input)
+        public async Task<StoreInfo?> Save(ICertificateInfo input)
         {
             
             _log.Information("Exporting .pem files to {folder}", _path);
@@ -87,13 +85,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 // Save complete chain
                 await File.WriteAllTextAsync(Path.Combine(_path, $"{name}-chain.pem"), certString + chainString);
                 await File.WriteAllTextAsync(Path.Combine(_path, $"{name}-chain-only.pem"), chainString);
-                input.StoreInfo.TryAdd(
-                    GetType(),
-                    new StoreInfo()
-                    {
-                        Name = Name,
-                        Path = _path
-                    });
 
                 // Private key
                 if (input.PrivateKey != null)
@@ -108,10 +99,15 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 {
                     _log.Warning("No private key found in cache");
                 }
+                return new StoreInfo() {
+                    Name = Name,
+                    Path = _path
+                };
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "Error exporting .pem files to folder");
+                return null;
             }
         }
 

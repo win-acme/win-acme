@@ -106,9 +106,7 @@ namespace PKISharp.WACS.Clients.IIS
                 {
                     return new List<IISSiteWrapper>();
                 }
-                if (_sites == null)
-                {
-                   _sites = ServerManager.Sites.AsEnumerable().
+                _sites ??= ServerManager.Sites.AsEnumerable().
                        Select(x => new IISSiteWrapper(x)).
                        Where(s =>
                        {
@@ -134,7 +132,6 @@ namespace PKISharp.WACS.Clients.IIS
                        }).
                        OrderBy(s => s.Name).
                        ToList();
-                }
                 return _sites;
             }
         }
@@ -235,12 +232,11 @@ namespace PKISharp.WACS.Clients.IIS
         /// <param name="id"></param>
         /// <param name="newCertificate"></param>
         /// <param name="oldCertificate"></param>
-        public void UpdateFtpSite(long? id, ICertificateInfo newCertificate, ICertificateInfo? oldCertificate)
+        public void UpdateFtpSite(long? id, string? newStore, ICertificateInfo newCertificate, ICertificateInfo? oldCertificate)
         {
             var ftpSites = Sites.Where(x => x.Type == IISSiteType.Ftp).ToList();
             var oldThumbprint = oldCertificate?.Certificate?.Thumbprint;
             var newThumbprint = newCertificate?.Certificate?.Thumbprint;
-            var newStore = newCertificate?.StoreInfo[typeof(CertificateStore)].Path;
             var updated = 0;
 
             if (ServerManager == null)
@@ -314,12 +310,19 @@ namespace PKISharp.WACS.Clients.IIS
             bool update;
             if (installSite)
             {
+                // For the main installation target we want to replace
+                // any binding that doesn't match the exact thumbprint 
+                // and store of the new certificate
                 update =
                     !string.Equals(currentThumbprint, newThumbprint, StringComparison.CurrentCultureIgnoreCase) ||
                     !string.Equals(currentStore, newStore, StringComparison.CurrentCultureIgnoreCase);
             }
             else
             {
+                // For all other sites, we only want to update bindings
+                // that contain the old thumbprint, e.g. which were 
+                // at some point manually linked to the certificate by the 
+                // admin.
                 update = string.Equals(currentThumbprint, oldThumbprint, StringComparison.CurrentCultureIgnoreCase);
             }
             return update;
@@ -424,10 +427,7 @@ namespace PKISharp.WACS.Clients.IIS
             {
                 if (disposing)
                 {
-                    if (_serverManager != null)
-                    {
-                        _serverManager.Dispose();
-                    }
+                    _serverManager?.Dispose();
                 }
                 disposedValue = true;
             }

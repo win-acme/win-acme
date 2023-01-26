@@ -39,14 +39,19 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         }
 
         Task<bool> IInstallationPlugin.Install(
-            IEnumerable<Type> stores,
+            Dictionary<Type, StoreInfo> storeInfo,
             ICertificateInfo newCertificate,
             ICertificateInfo? oldCertificate)
         {
             // Store validation
             var centralSslForHttp = false;
-            var centralSsl = stores.Contains(typeof(CentralSsl));
-            var certificateStore = stores.Contains(typeof(CertificateStore));
+            var centralSsl = storeInfo.ContainsKey(typeof(CentralSsl));
+            var certificateStore = storeInfo.ContainsKey(typeof(CertificateStore));
+            var certificateStoreName = (string?)null;
+            if (certificateStore)
+            {
+                certificateStoreName = storeInfo[typeof(CertificateStore)].Path;
+            }
             if (!centralSsl && !certificateStore)
             {
                 // No supported store
@@ -102,7 +107,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                         WithFlags(SSLFlags.CentralSsl)
                     : bindingOptions.
                         WithThumbprint(newCertificate.Certificate.GetCertHash()).
-                        WithStore(newCertificate.StoreInfo[typeof(CertificateStore)].Path);
+                        WithStore(certificateStoreName);
 
                 switch (part.SiteType)
                 {
@@ -123,12 +128,12 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                         _iisClient.UpdateHttpSite(httpIdentifiers, bindingOptions, oldCertificate?.Certificate.GetCertHash(), newCertificate.SanNames);
                         if (certificateStore) 
                         {
-                            _iisClient.UpdateFtpSite(0, newCertificate, oldCertificate);
+                            _iisClient.UpdateFtpSite(0, certificateStoreName, newCertificate, oldCertificate);
                         }
                         break;
                     case IISSiteType.Ftp:
                         // Update FTP site
-                        _iisClient.UpdateFtpSite(part.SiteId!.Value, newCertificate, oldCertificate);
+                        _iisClient.UpdateFtpSite(part.SiteId!.Value, certificateStoreName, newCertificate, oldCertificate);
                         _iisClient.UpdateHttpSite(httpIdentifiers, bindingOptions, oldCertificate?.Certificate.GetCertHash(), newCertificate.SanNames);
                         break;
                     default:

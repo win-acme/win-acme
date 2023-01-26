@@ -16,6 +16,6 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
     internal class Null : IInstallationPlugin
     {
         internal const string Name = "None";
-        Task<bool> IInstallationPlugin.Install(IEnumerable<Type> stores, ICertificateInfo newCertificateInfo, ICertificateInfo? oldCertificateInfo) => Task.FromResult(true);
+        Task<bool> IInstallationPlugin.Install(Dictionary<Type, StoreInfo> storeInfo, ICertificateInfo newCertificateInfo, ICertificateInfo? oldCertificateInfo) => Task.FromResult(true);
     }
 }

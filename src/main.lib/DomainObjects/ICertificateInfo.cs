@@ -38,12 +38,5 @@ namespace PKISharp.WACS.DomainObjects
         /// certificate.
         /// </summary>
         IEnumerable<Identifier> SanNames { get; }
-
-        /// <summary>
-        /// This is used by the store plugins to communicate to the 
-        /// installation plugins. Should be refactored at some point
-        /// to be less spaghetti-like.
-        /// </summary>
-        Dictionary<Type, StoreInfo> StoreInfo { get; }
     }
 }

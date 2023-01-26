@@ -64,7 +64,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         private string PathForIdentifier(string identifier) => Path.Combine(_path, $"{identifier.Replace("*", "_")}.pfx");
 
-        public async Task Save(ICertificateInfo input)
+        public Task<StoreInfo?> Save(ICertificateInfo input)
         {
             var dest = PathForIdentifier(_name ?? input.CommonName.Value);
             _log.Information("Copying certificate to the pfx folder {dest}", dest);
@@ -101,13 +101,10 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             {
                 _log.Error(ex, "Error copying certificate to pfx path");
             }
-            input.StoreInfo.TryAdd(
-                GetType(),
-                new StoreInfo()
-                {
-                    Name = Name,
-                    Path = _path
-                });
+            return Task.FromResult<StoreInfo?>(new StoreInfo() {
+                Name = Name,
+                Path = _path
+            });
         }
 
         public Task Delete(ICertificateInfo input) => Task.CompletedTask;

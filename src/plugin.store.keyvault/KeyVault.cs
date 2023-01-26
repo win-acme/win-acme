@@ -37,7 +37,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public Task Delete(ICertificateInfo certificateInfo) => Task.CompletedTask;
 
-        public async Task Save(ICertificateInfo certificateInfo)
+        public async Task<StoreInfo?> Save(ICertificateInfo certificateInfo)
         {
             var client = new CertificateClient(
                 new Uri($"https://{_options.VaultName}.vault.azure.net/"),
@@ -51,19 +51,16 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             try
             {
                 _ = await client.ImportCertificateAsync(importOptions);
-                certificateInfo.StoreInfo.Add(
-                    GetType(),
-                    new StoreInfo()
-                    {
-                        Path = _options.VaultName,
-                        Name = _options.CertificateName
-                    });
+                return new StoreInfo() {
+                    Path = _options.VaultName,
+                    Name = _options.CertificateName
+                };
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "Error importing certificate to KeyVault");
             }
-
+            return null;
         }
     }
 }

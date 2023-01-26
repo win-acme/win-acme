@@ -82,7 +82,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             return storeName;
         }
 
-        public Task Save(ICertificateInfo input)
+        public Task<StoreInfo?> Save(ICertificateInfo input)
         {
             var existing = _storeClient.FindByThumbprint(input.Certificate.Thumbprint);
             if (existing != null)
@@ -109,14 +109,10 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     _storeClient.InstallCertificateChain(input.Chain);
                 }
             }
-            input.StoreInfo.TryAdd(
-                GetType(),
-                new StoreInfo()
-                {
-                    Name = Name,
-                    Path = _storeName
-                });
-            return Task.CompletedTask;
+            return Task.FromResult<StoreInfo?>(new StoreInfo() {
+                Name = Name,
+                Path = _storeName
+            });
         }
 
         private void SetAcl(X509Certificate2 cert, List<string> fullControl)

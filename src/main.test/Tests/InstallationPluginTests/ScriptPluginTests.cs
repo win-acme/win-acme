@@ -76,7 +76,10 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             var targetOrder = new Order(renewal, target);
             var oldCert = cs.RequestCertificate(null, targetOrder).Result;
             var newCert = cs.RequestCertificate(null, targetOrder).Result;
-            newCert.StoreInfo.Add(typeof(CertificateStore), new StoreInfo() { });
+            var storeInfo = new Dictionary<Type, StoreInfo>
+            {
+                { typeof(CertificateStore), new StoreInfo() { } }
+            };
             var options = new ScriptOptions
             {
                 Script = script,
@@ -84,7 +87,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             };
             var container = new MockContainer().TestScope();
             var installer = new Script(renewal, options, new Clients.ScriptClient(log, settings), container.Resolve<SecretServiceManager>());
-            installer.Install(new List<Type>(), newCert, oldCert).Wait();
+            installer.Install(storeInfo, newCert, oldCert).Wait();
         }
 
         [TestMethod]
@@ -171,14 +174,14 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         {
             TestScript(psPath.FullName, "world2");
             Assert.IsTrue(log.WarningMessages.IsEmpty);
-            Assert.IsTrue(log.ErrorMessages.Count > 0);
+            Assert.IsTrue(!log.ErrorMessages.IsEmpty);
         }
 
         [TestMethod]
         public void Ps1NamedWrong()
         {
             TestScript(psNamedPath.FullName, "-wrong 'world'");
-            Assert.IsTrue(log.ErrorMessages.Count > 0);
+            Assert.IsTrue(!log.ErrorMessages.IsEmpty);
         }
 
         [TestMethod]

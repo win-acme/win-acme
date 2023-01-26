@@ -34,14 +34,14 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             _ssm = secretManager;
         }
 
-        public async Task<bool> Install(IEnumerable<Type> stores, ICertificateInfo newCertificate, ICertificateInfo? oldCertificate)
+        public async Task<bool> Install(Dictionary<Type, StoreInfo> storeInfo, ICertificateInfo newCertificate, ICertificateInfo? oldCertificate)
         {
             if (_options.Script != null)
             {
                 var defaultStoreInfo = default(StoreInfo?);
-                if (stores.Any())
+                if (storeInfo.Any())
                 {
-                    defaultStoreInfo = newCertificate.StoreInfo[stores.First()];
+                    defaultStoreInfo = storeInfo.First().Value;
                 }
                 var parameters = ReplaceParameters(_options.ScriptParameters ?? "", defaultStoreInfo, newCertificate, oldCertificate, false);
                 var censoredParameters = ReplaceParameters(_options.ScriptParameters ?? "", defaultStoreInfo, newCertificate, oldCertificate, true);

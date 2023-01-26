@@ -44,6 +44,5 @@ namespace PKISharp.WACS.DomainObjects
         public Identifier CommonName => _inner.CommonName;
         public AsymmetricKeyParameter? PrivateKey => _inner.PrivateKey;
         public IEnumerable<Identifier> SanNames => _inner.SanNames;
-        public Dictionary<Type, StoreInfo> StoreInfo => _inner.StoreInfo;
     }
 }

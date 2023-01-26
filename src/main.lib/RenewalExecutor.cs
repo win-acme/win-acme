@@ -11,6 +11,7 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -305,7 +306,13 @@ namespace PKISharp.WACS
                 }
 
                 // Get the existing certificate matching the order description
-                // this may not be the same as the previous certificate
+                // this may turn out to be null even if we have found a previous
+                // certificate.
+                // Reason 1: the shape of the certificate changed and the cached
+                // certificate no longer matches the current order.
+                // Reason 2: the cache has expired and/or does not contain the
+                // private key, rendering the certificate useless for installation
+                // purposes.
                 order.NewCertificate = GetFromCache(order, runLevel);
             }
 
@@ -420,11 +427,12 @@ namespace PKISharp.WACS
                     Where(x => x is not Plugins.StorePlugins.NullOptions).
                     Select(x => _scopeBuilder.PluginBackend<IStorePlugin, StorePluginOptions>(context.OrderScope, x)).
                     ToList();
-                if (!await HandleStoreAdd(context, context.NewCertificate, storeContexts))
+                var storeInfo = new Dictionary<Type, StoreInfo>();
+                if (!await HandleStoreAdd(context, context.NewCertificate, storeContexts, storeInfo))
                 {
                     return false;
                 }
-                if (!await HandleInstall(context, context.NewCertificate, context.PreviousCertificate, storeContexts))
+                if (!await HandleInstall(context, context.NewCertificate, context.PreviousCertificate, storeInfo))
                 {
                     return false;
                 }
@@ -552,7 +560,8 @@ namespace PKISharp.WACS
         private async Task<bool> HandleStoreAdd(
             OrderContext context,
             ICertificateInfo newCertificate,
-            List<ILifetimeScope> stores)
+            List<ILifetimeScope> stores,
+            Dictionary<Type, StoreInfo> storeInfo)
         {
             // Run store pluginService(s)
             try
@@ -575,7 +584,15 @@ namespace PKISharp.WACS
                         context.OrderResult.AddErrorMessage($"Store plugin is not available. {state.Reason}");
                         return false;
                     }
-                    await store.Backend.Save(newCertificate);
+                    var info = await store.Backend.Save(newCertificate);
+                    if (info != null)
+                    {
+                        storeInfo.TryAdd(store.GetType(), info);
+                    } 
+                    else
+                    {
+                        _log.Warning("Store {name} didn't provide feedback, this may affect installation steps", store.Meta.Name);
+                    }
                 }
             }
             catch (Exception ex)
@@ -630,7 +647,7 @@ namespace PKISharp.WACS
             OrderContext context,
             ICertificateInfo newCertificate,
             CertificateInfoCache? previousCertificate,
-            List<ILifetimeScope> stores)
+            Dictionary<Type, StoreInfo> storeInfo)
         {
             // Run installation pluginService(s)
             try
@@ -658,7 +675,7 @@ namespace PKISharp.WACS
                         context.OrderResult.AddErrorMessage($"Installation plugin is not available. {state.Reason}");
                         return false;
                     }
-                    if (!await installationPlugin.Backend.Install(stores.Select(x => x.Resolve<IStorePlugin>().GetType()), newCertificate, previousCertificate))
+                    if (!await installationPlugin.Backend.Install(storeInfo, newCertificate, previousCertificate))
                     {
                         // This is not truly fatal, other installation plugins might still be able to do
                         // something useful, and also we don't want to break compatability for users depending
