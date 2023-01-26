@@ -3,7 +3,6 @@ using ACMESharp.Protocol;
 using Org.BouncyCastle.Crypto;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -101,6 +100,9 @@ namespace PKISharp.WACS.Services
             _log.Information("Downloading certificate {friendlyName}", order.FriendlyNameIntermediate);
             var selected = await DownloadCertificate(order.Details, friendlyName, order.Target.PrivateKey);
 
+            // Do post-processing on the private key. This is a legacy feature
+            // to support Microsoft Exchange 2013 and can/should probably be
+            // abandoned in a future release.
             if (csrPlugin != null)
             {
                 try
@@ -133,7 +135,11 @@ namespace PKISharp.WACS.Services
             // the WACS GUI
             order.Renewal.LastFriendlyName = order.FriendlyNameBase;
 
-            // Recreate X509Certificate2 with correct flags for Store/Install
+            // Optionally store the certificate in cache
+            // for future reuse. Will either return the original
+            // in-memory certificate or a new cached instance with
+            // pointer to a disk file (which may be used by some
+            // installation scripts)
             var info = await _cacheService.StorePfx(order, selected);
             return info;
         }
