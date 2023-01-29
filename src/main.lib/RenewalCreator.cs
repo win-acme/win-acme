@@ -182,7 +182,7 @@ namespace PKISharp.WACS
             {
                 // We only need to pick validation for those identifiers that
                 // do not have global options configured. 
-                var allIdentifiers = initialTarget.Parts.SelectMany(x => x.Identifiers).Distinct().ToList();
+                var allIdentifiers = initialTarget.Parts.SelectMany(x => x.Identifiers).Distinct().Order().ToList();
                 var mapping = allIdentifiers.ToDictionary(x => x, x => (PluginFrontend<IValidationPluginCapability, ValidationPluginOptions>?)null);
                 foreach (var identifier in allIdentifiers)
                 {
@@ -207,6 +207,7 @@ namespace PKISharp.WACS
                     }
                 }
                 var withGlobalOptions = mapping.Where(x => x.Value != null).Select(x => x.Key).ToList(); ;
+                var withoutGlobalOptions = allIdentifiers.Except(withGlobalOptions).ToList();
                 var validationResolver = resolver;
 
                 // If everything is covered by global options, we don't want
@@ -220,14 +221,17 @@ namespace PKISharp.WACS
                 {
                     _input.CreateSpace();
                     _input.Show(null, $"Note: {withGlobalOptions.Count} of {allIdentifiers.Count} " +
-                        $"identifiers found in the source are covered by global validation options. " +
+                        $"identifiers found in the source are covered by usable global validation options. " +
                         $"Any validation settings configured for the renewal will only apply to the " +
                         $"remainder.");
+                    await _input.WritePagedList(allIdentifiers.Select(identifier => 
+                        Choice.Create(
+                            identifier, 
+                            $"{identifier.Value}: {mapping[identifier]?.Meta.Name ?? "-"}{(mapping[identifier]?.Capability.State.Disabled ?? false ? " (disabled)" : "")}")));
                     _input.CreateSpace();
                 }
 
-                if (withGlobalOptions.Count > 0 && 
-                    withGlobalOptions.Count < allIdentifiers.Count)
+                if (withGlobalOptions.Count > 0 && withoutGlobalOptions.Count > 0)
                 {
                     // While picking the validation plugin for the remaining identifiers
                     // not covered by the global validation options, we should not be 
@@ -239,7 +243,7 @@ namespace PKISharp.WACS
                     var filteredScope = _scopeBuilder.Target(targetPluginScope, filteredTarget);
                     validationResolver = CreateResolver(filteredScope, runLevel);
                 } 
-                else if (withGlobalOptions.Count == allIdentifiers.Count)
+                else if (withoutGlobalOptions.Count == 0)
                 {
                     // If all source identifiers are already covered by the global
                     // options, we want to create a universal target that could
@@ -248,6 +252,7 @@ namespace PKISharp.WACS
                     var filteredScope = _scopeBuilder.Target(targetPluginScope, filteredTarget);
                     validationResolver = CreateResolver(filteredScope, runLevel);
                 }
+
                 var validationOptions = await SetupValidation(validationResolver, runLevel);
                 if (validationOptions == null)
                 {
