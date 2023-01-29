@@ -228,5 +228,14 @@ namespace PKISharp.WACS.Services
                 });
         }
 
+        public PluginFrontend<IValidationPluginCapability, ValidationPluginOptions> 
+            ValidationFrontend(ILifetimeScope execution, ValidationPluginOptions options, Identifier identifier)
+        {
+            var dummyTarget = new Target(identifier);
+            var dummyScope = Target(execution, dummyTarget);
+            var plugin = _plugins.GetPlugin(options);
+            var pluginHelper = PluginFrontend<IValidationPluginCapability, ValidationPluginOptions>(dummyScope, plugin);
+            return pluginHelper.Resolve<PluginFrontend<IValidationPluginCapability, ValidationPluginOptions>>();
+        }
     }
 }

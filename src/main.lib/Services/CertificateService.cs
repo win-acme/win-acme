@@ -79,7 +79,7 @@ namespace PKISharp.WACS.Services
             {
                 throw new InvalidOperationException("No CsrBytes found");
             }
-            await _cacheService.StoreCsr(order, _pemService.GetPem("CERTIFICATE REQUEST", order.Target.CsrBytes));
+            await _cacheService.StoreCsr(order, _pemService.GetPem("CERTIFICATE REQUEST", order.Target.CsrBytes.ToArray()));
 
             // Check order status
             if (order.Details.Payload.Status != AcmeClient.OrderValid)
@@ -88,7 +88,7 @@ namespace PKISharp.WACS.Services
                 // the server, which can then generate the
                 // certificate.
                 _log.Verbose("Submitting CSR");
-                order.Details = await _client.SubmitCsr(order.Details, order.Target.CsrBytes);
+                order.Details = await _client.SubmitCsr(order.Details, order.Target.CsrBytes.ToArray());
                 if (order.Details.Payload.Status != AcmeClient.OrderValid)
                 {
                     _log.Error("Unexpected order status {status}", order.Details.Payload.Status);
