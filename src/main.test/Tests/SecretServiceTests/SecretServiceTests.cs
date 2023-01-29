@@ -4,11 +4,10 @@ using PKISharp.WACS.Clients;
 using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.UnitTests.Mock;
-using PKISharp.WACS.UnitTests.Mock.Services;
-using System.Security.Cryptography;
 using System;
-using real = PKISharp.WACS.Services;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using Real = PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.UnitTests.Tests.SecretServiceTests
 {
@@ -23,14 +22,14 @@ namespace PKISharp.WACS.UnitTests.Tests.SecretServiceTests
         public void Init()
         {
             _container = new MockContainer().TestScope();
-            var secretService = _container.Resolve<real.ISecretService>();
+            var secretService = _container.Resolve<Real.ISecretService>();
             secretService.PutSecret(theKey, theSecret);
         }
 
         [TestMethod]
         public void Direct()
         {
-            var secondSecret = _container!.Resolve<real.ISecretService>();
+            var secondSecret = _container!.Resolve<Real.ISecretService>();
             var restoredSecret = secondSecret.GetSecret(theKey);
             Assert.AreEqual(theSecret, restoredSecret);
         }
@@ -38,8 +37,8 @@ namespace PKISharp.WACS.UnitTests.Tests.SecretServiceTests
         [TestMethod]
         public void ThroughManager()
         {
-            var secretService = _container!.Resolve<real.ISecretService>();
-            var manager = _container!.Resolve<real.SecretServiceManager>();
+            var secretService = _container!.Resolve<Real.ISecretService>();
+            var manager = _container!.Resolve<Real.SecretServiceManager>();
             var restoredSecret = manager.EvaluateSecret($"{SecretServiceManager.VaultPrefix}{secretService.Prefix}/{theKey}");
             Assert.AreEqual(theSecret, restoredSecret);
         }
@@ -47,7 +46,7 @@ namespace PKISharp.WACS.UnitTests.Tests.SecretServiceTests
         [TestMethod]
         public void AsScriptParameter()
         {
-            var secretService = _container!.Resolve<real.ISecretService>();
+            var secretService = _container!.Resolve<Real.ISecretService>();
             var secretServiceManager = _container!.Resolve<SecretServiceManager>();
             var scriptClient = _container!.Resolve<ScriptClient>();
             var scriptInstaller = new Script(new DomainObjects.Renewal(), new ScriptOptions(), scriptClient, secretServiceManager);
@@ -58,7 +57,7 @@ namespace PKISharp.WACS.UnitTests.Tests.SecretServiceTests
             var output = scriptInstaller.ReplaceParameters(
                 placeholder, 
                 null, 
-                new DomainObjects.CertificateInfo(cert), 
+                new DomainObjects.CertificateInfo(new X509Certificate2Collection(cert)), 
                 null, 
                 false);
             Assert.AreEqual(theSecret, output);
@@ -66,7 +65,7 @@ namespace PKISharp.WACS.UnitTests.Tests.SecretServiceTests
             var outputCensor = scriptInstaller.ReplaceParameters(
                 placeholder,
                 null,
-                new DomainObjects.CertificateInfo(cert),
+                new DomainObjects.CertificateInfo(new X509Certificate2Collection(cert)),
                 null,
                 true);
             Assert.AreEqual(placeholder, outputCensor);

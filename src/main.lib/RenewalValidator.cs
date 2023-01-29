@@ -1,16 +1,17 @@
-﻿using acme = ACMESharp.Protocol.Resources;
-using Autofac;
+﻿using Autofac;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Context;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.Base.Factories;
+using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Plugins.Base.Options;
+using Protocol = ACMESharp.Protocol.Resources;
 
 namespace PKISharp.WACS
 {
@@ -35,6 +36,7 @@ namespace PKISharp.WACS
     {
         private readonly IAutofacBuilder _scopeBuilder;
         private readonly ILogService _log;
+        private readonly IPluginService _plugin;
         private readonly ISettingsService _settings;
         private readonly IValidationOptionsService _validationOptions;
         private readonly ExceptionHandler _exceptionHandler;
@@ -44,6 +46,7 @@ namespace PKISharp.WACS
             IAutofacBuilder scopeBuilder,
             ISettingsService settings,
             ILogService log,
+            IPluginService plugin,
             AcmeClient acmeClient,
             IValidationOptionsService validationOptions,
             ExceptionHandler exceptionHandler)
@@ -54,6 +57,7 @@ namespace PKISharp.WACS
             _exceptionHandler = exceptionHandler;
             _settings = settings;
             _acmeClient = acmeClient; 
+            _plugin = plugin;
         }
 
         /// <summary>
@@ -74,9 +78,9 @@ namespace PKISharp.WACS
                 {
                     throw new InvalidOperationException();
                 }
-                
+
                 // Get authorization details
-                var authorizationUris = orderContext.Order.Details.Payload.Authorizations.ToList();
+                var authorizationUris = orderContext.Order.Details.Payload.Authorizations?.ToList() ?? new List<string>();
                 var authorizationTasks = authorizationUris.Select(async uri =>
                 {
                     var auth = await GetAuthorizationDetails(orderContext, uri);
@@ -100,7 +104,7 @@ namespace PKISharp.WACS
 
             // Map contexts to plugins
             var runnable = authorizations.OfType<AuthorizationContext>();
-            var mapping = CreateMapping(runnable);
+            var mapping = await CreateMapping(runnable);
             if (mapping == null)
             {
                 return;
@@ -130,7 +134,7 @@ namespace PKISharp.WACS
         {
             // Execute them per group, where one group means one validation plugin
             var multipleOrders = authorizations.Any(x => x.Order != authorizations.First().Order);
-            var validationScope = _scopeBuilder.Validation(authorizations.First().Order.ExecutionScope, pluginOptions);
+            var validationScope = _scopeBuilder.PluginBackend<IValidationPlugin, ValidationPluginOptions>(authorizations.First().Order.OrderScope, pluginOptions);
             var plugin = validationScope.Resolve<IValidationPlugin>();
             var contexts = authorizations.Select(context =>
             {
@@ -139,7 +143,8 @@ namespace PKISharp.WACS
                 {
                     throw new InvalidOperationException("Authorisation found that doesn't match target");
                 }
-                return new ValidationContextParameters(context, targetPart, pluginOptions);
+                var pluginMeta = _plugin.GetPlugin(pluginOptions);
+                return new ValidationContextParameters(context, targetPart, pluginOptions, pluginMeta);
             }).ToList();
 
             // Choose between parallel and serial execution
@@ -180,13 +185,13 @@ namespace PKISharp.WACS
         /// <param name="authorisationContexts"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        private Dictionary<ValidationPluginOptions, List<AuthorizationContext>>? CreateMapping(IEnumerable<AuthorizationContext> authorisationContexts)
+        private async Task<Dictionary<ValidationPluginOptions, List<AuthorizationContext>>?> CreateMapping(IEnumerable<AuthorizationContext> authorisationContexts)
         {
             var ret = new Dictionary<ValidationPluginOptions, List<AuthorizationContext>>();
             var add = (ValidationPluginOptions o, AuthorizationContext a) => {
-                if (ret.ContainsKey(o))
+                if (ret.TryGetValue(o, out var value))
                 {
-                    ret[o].Add(a);
+                    value.Add(a);
                 }
                 else
                 {
@@ -195,7 +200,7 @@ namespace PKISharp.WACS
             };
             foreach (var authorisationContext in authorisationContexts)
             {
-                if (authorisationContext.Authorization == null)
+                if (authorisationContext.Authorization == default)
                 {
                     throw new InvalidOperationException();
                 }
@@ -204,7 +209,7 @@ namespace PKISharp.WACS
                 // are specified at the level of the renewal
                 var localOptions = authorisationContext.Order.Renewal.ValidationPluginOptions;
                 var identifier = Identifier.Parse(authorisationContext.Authorization);
-                var globalOptions = _validationOptions.GetValidationOptions(identifier);
+                var globalOptions = await _validationOptions.GetValidationOptions(identifier);
                 if (globalOptions != null &&
                     CanValidate(authorisationContext, globalOptions))
                 {
@@ -221,39 +226,12 @@ namespace PKISharp.WACS
                     // Sanity check, but can happen when a plugin is disabled
                     // for example due to requiring admin rights and the program
                     // not running as admin.
-                    _log.Error("No plugin found that can challenge for {authorisation}", authorisationContext.Authorization.Identifier.Value);
-                    authorisationContext.Order.OrderResult.AddErrorMessage($"No plugin found that can challenge for {authorisationContext.Authorization.Identifier.Value}", authorisationContext.Order.Order.Valid != true);
+                    _log.Error("No plugin found that can challenge for {authorisation}", authorisationContext.Authorization.Identifier?.Value);
+                    authorisationContext.Order.OrderResult.AddErrorMessage($"No plugin found that can challenge for {authorisationContext.Authorization.Identifier?.Value}", authorisationContext.Order.Order.Valid != true);
                     return null;
                 }
             }
             return ret;
-        }
-
-        /// <summary>
-        /// Get instances of IValidationPlugin and IValidationPluginOptionsFactory
-        /// based on an instance of ValidationPluginOptions.
-        /// TODO: more cache here
-        /// </summary>
-        /// <param name="scope"></param>
-        /// <param name="options"></param>
-        /// <returns></returns>
-        private (IValidationPlugin?, IValidationPluginOptionsFactory?) GetInstances(ILifetimeScope scope, ValidationPluginOptions options)
-        {
-            var validationScope = _scopeBuilder.Validation(scope, options);
-            try
-            {
-                var validationPlugin = validationScope.Resolve<IValidationPlugin>();
-                var pluginService = scope.Resolve<IPluginService>();
-                var match = pluginService.
-                    GetFactories<IValidationPluginOptionsFactory>(scope).
-                    FirstOrDefault(vp => vp.OptionsType.PluginId() == options.Plugin);
-                return (validationPlugin, match);
-            } 
-            catch (Exception ex)
-            {
-                _log.Error(ex, $"Unable to resolve plugin {options.Name}");
-                return (null, null);
-            }
         }
 
         /// <summary>
@@ -264,29 +242,25 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private bool CanValidate(AuthorizationContext context, ValidationPluginOptions options)
         {
-            var (plugin, match) = GetInstances(context.Order.ExecutionScope, options);
-            if (plugin == null || match == null)
+            if (context.Authorization.Identifier == null)
             {
-                _log.Warning("Validation plugin {name} not found or not created", options.Name);
-                return false;
+                throw new Exception("Missing identifier");
             }
-            var (disabled, disabledReason) = plugin.Disabled;
-            if (disabled)
-            {
-                _log.Warning("Validation plugin {name} is not available. {disabledReason}", options.Name, disabledReason);
-                return false;
-            }
-
             var identifier = Identifier.Parse(context.Authorization.Identifier);
             var dummyTarget = new Target(identifier);
-            if (!match.CanValidate(dummyTarget))
+            var targetScope = _scopeBuilder.Target(context.Order.OrderScope, dummyTarget);
+            var plugin = _plugin.GetPlugin(options);
+            var pluginHelper = _scopeBuilder.PluginFrontend<IValidationPluginCapability, ValidationPluginOptions>(targetScope, plugin);
+            var pluginFrontend = pluginHelper.Resolve<PluginFrontend<IValidationPluginCapability, ValidationPluginOptions>>();
+            var state = pluginFrontend.Capability.State;
+            if (state.Disabled)
             {
-                _log.Warning("Validation plugin {name} cannot validate identifier {identifier}", options.Name, identifier.Value);
+                _log.Warning("Validation plugin {name} is not available. {disabledReason}", plugin.Name, state.Reason);
                 return false;
             }
-            if (!context.Authorization.Challenges.Any(x => x.Type == options.ChallengeType))
+            if (!context.Authorization.Challenges?.Any(x => x.Type == pluginFrontend.Capability.ChallengeType) ?? false)
             {
-                _log.Warning("No challenge of type {challengeType} available", options.ChallengeType);
+                _log.Warning("No challenge of type {challengeType} available", pluginFrontend.Capability.ChallengeType);
                 return context.Authorization.Status == AcmeClient.AuthorizationValid;
             }
             return true;
@@ -345,7 +319,7 @@ namespace PKISharp.WACS
                     {
                         // Parallel
                         _log.Verbose("Handle {n} answers(s)", contextsWithChallenges.Count);
-                        var submitTasks = contextsWithChallenges.Select(vc => Submit(vc));
+                        var submitTasks = contextsWithChallenges.Select(Submit);
                         await Task.WhenAll(submitTasks);
                     }
                     else
@@ -385,7 +359,7 @@ namespace PKISharp.WACS
                     _log.Verbose("Skip authorization because the order has already failed");
                     continue;
                 }
-                using var validationScope = _scopeBuilder.Validation(parameter.OrderContext.ExecutionScope, parameter.Options);
+                using var validationScope = _scopeBuilder.PluginBackend<IValidationPlugin, IValidationPluginCapability, ValidationPluginOptions>(parameter.OrderContext.OrderScope, parameter.Options);
                 await ParallelValidation(
                     ParallelOperations.None, 
                     validationScope, 
@@ -405,11 +379,11 @@ namespace PKISharp.WACS
         /// <param name="authorizationUri"></param>
         /// <param name="options"></param>
         /// <returns></returns>
-        private static async Task<acme.Authorization?> GetAuthorizationDetails(OrderContext context, string authorizationUri)
+        private static async Task<Protocol.AcmeAuthorization?> GetAuthorizationDetails(OrderContext context, string authorizationUri)
         {
             // Get authorization challenge details from server
-            var client = context.ExecutionScope.Resolve<AcmeClient>();
-            acme.Authorization? authorization;
+            var client = context.OrderScope.Resolve<AcmeClient>();
+            Protocol.AcmeAuthorization? authorization;
             try
             {
                 authorization = await client.GetAuthorizationDetails(authorizationUri);
@@ -440,7 +414,7 @@ namespace PKISharp.WACS
                 if (context.Valid)
                 {
                     _log.Information("[{identifier}] Cached authorization result: {Status}", context.Label, context.Authorization.Status);
-                    if (!runLevel.HasFlag(RunLevel.Test) && !runLevel.HasFlag(RunLevel.IgnoreCache))
+                    if (!runLevel.HasFlag(RunLevel.Test) && !runLevel.HasFlag(RunLevel.NoCache))
                     {
                         return;
                     }
@@ -449,13 +423,13 @@ namespace PKISharp.WACS
 
                 _log.Information("[{identifier}] Authorizing...", context.Label);
                 _log.Verbose("[{identifier}] Initial authorization status: {status}", context.Label, context.Authorization.Status);
-                _log.Verbose("[{identifier}] Challenge types available: {challenges}", context.Label, context.Authorization.Challenges.Select(x => x.Type ?? "[Unknown]"));
-                var challenge = context.Authorization.Challenges.FirstOrDefault(c => string.Equals(c.Type, context.ChallengeType, StringComparison.InvariantCultureIgnoreCase));
-                if (challenge == null)
+                _log.Verbose("[{identifier}] Challenge types available: {challenges}", context.Label, context.Authorization.Challenges?.Select(x => x.Type ?? "[Unknown]"));
+                var challenge = context.Authorization.Challenges?.FirstOrDefault(c => string.Equals(c.Type, context.ChallengeType, StringComparison.InvariantCultureIgnoreCase));
+                if (challenge == default)
                 {
                     if (context.OrderResult.Success == true)
                     {
-                        var usedType = context.Authorization.Challenges.
+                        var usedType = context.Authorization.Challenges?.
                             Where(x => x.Status == AcmeClient.ChallengeValid).
                             FirstOrDefault();
                         _log.Warning("[{identifier}] Expected challenge type {type} not available, already validated using {valided}.",
@@ -481,7 +455,7 @@ namespace PKISharp.WACS
                         // We actually should not get here because if one of the
                         // challenges is valid, the authorization itself should also 
                         // be valid.
-                        if (!runLevel.HasFlag(RunLevel.Test) && !runLevel.HasFlag(RunLevel.IgnoreCache))
+                        if (!runLevel.HasFlag(RunLevel.Test) && !runLevel.HasFlag(RunLevel.NoCache))
                         {
                             _log.Information("[{identifier}] Cached challenge result: {Status}", !context.Valid);
                             return;
@@ -496,7 +470,7 @@ namespace PKISharp.WACS
                 {
                     // Now that we're going to call into PrepareChallenge, we will assume 
                     // responsibility to also call CleanUp later, which is signalled by
-                    // the Challenge propery being not null
+                    // the AcmeChallenge propery being not null
                     context.ChallengeDetails = await client.DecodeChallengeValidation(context.Authorization, challenge);
                     context.Challenge = challenge;
                     await context.ValidationPlugin.PrepareChallenge(context);
@@ -572,7 +546,7 @@ namespace PKISharp.WACS
                 }
                 else
                 {
-                    // Propagate valid state up to the Authorization
+                    // Propagate valid state up to the AcmeAuthorization
                     // This assumption might prove wrong if future 
                     // server implementations require multiple challenges
                     validationContext.Authorization.Status = AcmeClient.AuthorizationValid;

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    internal class ManualOptionsFactory : TargetPluginOptionsFactory<Manual, ManualOptions>
+    internal class ManualOptionsFactory : PluginOptionsFactory<ManualOptions>
     {
         private readonly ArgumentsInputService _arguments;
         public ManualOptionsFactory(ArgumentsInputService arguments) => _arguments = arguments;

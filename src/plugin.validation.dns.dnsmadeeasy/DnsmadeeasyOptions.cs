@@ -1,15 +1,17 @@
-﻿using PKISharp.WACS.Plugins.Base;
-using PKISharp.WACS.Plugins.Base.Options;
+﻿using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services.Serialization;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    [Plugin("13993334-2d74-4ff6-801b-833b99bf231d")]
-    internal class DnsMadeEasyOptions : ValidationPluginOptions<DnsMadeEasyDnsValidation>
+    [JsonSerializable(typeof(DnsMadeEasyOptions))]
+    internal partial class DnsMadeEasyJson : JsonSerializerContext
     {
-        public override string Name => "DnsMadeEasy";
-        public override string Description => "Create verification records in DnsMadeEasy DNS";
-        public override string ChallengeType => Constants.Dns01ChallengeType;
+        public DnsMadeEasyJson(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
+    }
+
+    internal class DnsMadeEasyOptions : ValidationPluginOptions
+    {
         public ProtectedString? ApiKey { get; set; }
         public ProtectedString? ApiSecret { get; set; }
     }

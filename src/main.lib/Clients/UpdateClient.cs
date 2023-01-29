@@ -1,6 +1,7 @@
-﻿using Newtonsoft.Json;
-using PKISharp.WACS.Services;
+﻿using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Clients
@@ -9,14 +10,16 @@ namespace PKISharp.WACS.Clients
     {
         private readonly ILogService _log;
         private readonly IProxyService _proxy;
+        private readonly WacsJson _wacsJson;
 
-        public UpdateClient(ILogService log, IProxyService proxy)
+        public UpdateClient(ILogService log, IProxyService proxy, WacsJson wacsJson)
         {
             _log = log;
             _proxy = proxy;
+            _wacsJson = wacsJson;   
         }
 
-        public async Task CheckNewVersion(RunLevel runLevel)
+        public async Task CheckNewVersion()
         {
             try
             {
@@ -26,7 +29,7 @@ namespace PKISharp.WACS.Clients
                 {
                     throw new Exception("Empty result");
                 }
-                var data = JsonConvert.DeserializeObject<VersionCheckData>(json);
+                var data = JsonSerializer.Deserialize(json, WacsJson.Insensitive.VersionCheckData);
                 if (data == null || data.Latest == null || data.Latest.Build == null)
                 {
                     throw new Exception("Invalid result");
@@ -50,12 +53,12 @@ namespace PKISharp.WACS.Clients
             }
         }
 
-        private class VersionCheckData 
+        internal class VersionCheckData 
         {
             public VersionData? Latest { get; set; }
         }
 
-        private class VersionData
+        internal class VersionData
         {
             public string? Name { get; set; }
             public string? Tag { get; set; }

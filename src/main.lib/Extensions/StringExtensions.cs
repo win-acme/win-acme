@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -13,6 +12,11 @@ namespace PKISharp.WACS.Extensions
 {
     public static class StringExtensions
     {
+        /// <summary>
+        /// Convert URI to a string which can be used as a directory name
+        /// </summary>
+        /// <param name="uri"></param>
+        /// <returns></returns>
         public static string? CleanUri(this Uri? uri)
         {
             if (uri == null)
@@ -28,6 +32,11 @@ namespace PKISharp.WACS.Extensions
             return str.CleanPath();
         }
 
+        /// <summary>
+        /// Remove Path.GetInvalidFileNameChars from a string
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
         public static string? CleanPath(this string? fileName)
         {
             if (fileName == null)
@@ -37,8 +46,18 @@ namespace PKISharp.WACS.Extensions
             return Path.GetInvalidFileNameChars().Aggregate(fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
         }
 
+        /// <summary>
+        /// Convert newlines to spaces
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
         public static string ReplaceNewLines(this string input) => Regex.Replace(input, @"\r\n?|\n", " ");
 
+        /// <summary>
+        /// Convert punycode (https://en.wikipedia.org/wiki/Punycode) to regular string
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
         public static string ConvertPunycode(this string input)
         {
             if (!string.IsNullOrEmpty(input) && (input.StartsWith("xn--") || input.Contains(".xn--")))
@@ -51,6 +70,11 @@ namespace PKISharp.WACS.Extensions
             }
         }
 
+        /// <summary>
+        /// Convert CSV to a list of distinct, non-empty, lowercase parts
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
         public static List<string>? ParseCsv(this string? input)
         {
             if (string.IsNullOrWhiteSpace(input))
@@ -65,6 +89,12 @@ namespace PKISharp.WACS.Extensions
                 ToList();
         }
 
+        /// <summary>
+        /// Test if string represents a valid file path
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="logService"></param>
+        /// <returns></returns>
         public static bool ValidFile(this string? input, ILogService logService)
         {
             if (string.IsNullOrWhiteSpace(input))
@@ -89,6 +119,12 @@ namespace PKISharp.WACS.Extensions
             }
         }
 
+        /// <summary>
+        /// Test if string represents a valid directory path
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="logService"></param>
+        /// <returns></returns>
         public static bool ValidPath(this string? input, ILogService logService)
         {
             if (string.IsNullOrWhiteSpace(input))
@@ -114,7 +150,7 @@ namespace PKISharp.WACS.Extensions
         }
 
         /// <summary>
-        /// 
+        /// Convert input pattern to regular expression
         /// </summary>
         /// <param name="pattern"></param>
         /// <returns></returns>
@@ -153,13 +189,23 @@ namespace PKISharp.WACS.Extensions
                 Replace(QuestionEscape, "\\?");
         }
 
+        /// <summary>
+        /// Compute SHA1 hash over string
+        /// </summary>
+        /// <param name="original"></param>
+        /// <returns></returns>
         public static string SHA1(this string original)
         {
-            using var sha1 = System.Security.Cryptography.SHA1.Create();
-            var hash = sha1.ComputeHash(Encoding.UTF8.GetBytes(original));
+            var hash = System.Security.Cryptography.SHA1.HashData(Encoding.UTF8.GetBytes(original));
             return string.Concat(hash.Select(b => b.ToString("x2")));
         }
 
+        /// <summary>
+        /// Convert regular string to a ProtectedString
+        /// </summary>
+        /// <param name="original"></param>
+        /// <param name="allowEmtpy"></param>
+        /// <returns></returns>
         public static ProtectedString? Protect(this string? original, bool allowEmtpy = false) {
             if (string.IsNullOrWhiteSpace(original) && !allowEmtpy)
             {

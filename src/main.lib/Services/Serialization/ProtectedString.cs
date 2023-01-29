@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -167,7 +166,7 @@ namespace PKISharp.WACS.Services.Serialization
         /// </summary>
         /// <param name="clearText"></param>
         /// <returns></returns>
-        private string Encode(string clearText)
+        private static string Encode(string clearText)
         {
             var clearBytes = Encoding.UTF8.GetBytes(clearText);
             return Convert.ToBase64String(clearBytes);

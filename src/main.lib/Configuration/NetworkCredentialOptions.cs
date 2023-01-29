@@ -1,9 +1,9 @@
-﻿using Newtonsoft.Json;
-using PKISharp.WACS.Configuration.Arguments;
+﻿using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System.Net;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Configuration
@@ -12,7 +12,7 @@ namespace PKISharp.WACS.Configuration
     {
         public string? UserName { get; set; }
 
-        [JsonProperty(propertyName: "PasswordSafe")]
+        [JsonPropertyName("PasswordSafe")]
         public ProtectedString? Password { get; set; }
 
         public NetworkCredential GetCredential(

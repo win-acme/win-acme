@@ -1,13 +1,11 @@
-﻿using Newtonsoft.Json;
-using PKISharp.WACS.Plugins.Base;
-using PKISharp.WACS.Plugins.Base.Options;
+﻿using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    [Plugin("af1f77b6-4e7b-4f96-bba5-c2eeb4d0dd42")]
-    internal class CentralSslOptions : StorePluginOptions<CentralSsl>
+    internal class CentralSslOptions : StorePluginOptions
     {
         /// <summary>
         /// Path to the Central Ssl store
@@ -17,13 +15,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// <summary>
         /// PfxFile password
         /// </summary>
-        [JsonProperty(propertyName: "PfxPasswordProtected")]
+        [JsonPropertyName("PfxPasswordProtected")]
         public ProtectedString? PfxPassword { get; set; }
-
-        internal const string PluginName = "CentralSsl";
-        public override string Name => PluginName;
-        public override string Description => "IIS Central Certificate Store (.pfx per host)";
-
+        
         /// <summary>
         /// Show details to the user
         /// </summary>

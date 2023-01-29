@@ -1,8 +1,10 @@
 ﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,33 +12,47 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
+    [IPlugin.Plugin<
+        IISOptions, IISOptionsFactory, 
+        IISCapability, WacsJsonPlugins>
+        ("ea6a5be3-f8de-4d27-a6bd-750b619b2ee2", 
+        "IIS", "Create or update bindings in IIS")]
+    [IPlugin.Plugin<
+        IISFtpOptions, IISFTPOptionsFactory,
+        IISCapability, WacsJsonPlugins>
+        ("13058a79-5084-48af-b047-634e0ee222f4",
+        "IISFTP", "Create or update FTP bindings in IIS", Hidden = true)]
     internal class IIS : IInstallationPlugin
     {
         private readonly ILogService _log;
         private readonly IIISClient _iisClient;
         private readonly IISOptions _options;
-        private readonly IUserRoleService _userRoleService;
+        private readonly Target _target;
 
-        public IIS(IISFtpOptions options, IIISClient iisClient, ILogService log, IUserRoleService userRoleService) : this((IISOptions)options, iisClient, log, userRoleService) { }
-        public IIS(IISOptions options, IIISClient iisClient, ILogService log, IUserRoleService userRoleService)
+        public IIS(IISFtpOptions options, IIISClient iisClient, ILogService log, Target target) : this((IISOptions)options, iisClient, log, target) { }
+        public IIS(IISOptions options, IIISClient iisClient, ILogService log, Target target)
         {
+            _target = target;
             _iisClient = iisClient;
             _log = log;
             _options = options;
-            _userRoleService = userRoleService;
         }
 
         Task<bool> IInstallationPlugin.Install(
-            Target source, 
-            IEnumerable<IStorePlugin> stores,
-            CertificateInfo newCertificate,
-            CertificateInfo? oldCertificate)
+            Dictionary<Type, StoreInfo> storeInfo,
+            ICertificateInfo newCertificate,
+            ICertificateInfo? oldCertificate)
         {
             // Store validation
             var centralSslForHttp = false;
-            var centralSsl = stores.FirstOrDefault(x => x is CentralSsl);
-            var certificateStore = stores.FirstOrDefault(x => x is CertificateStore);
-            if (centralSsl == null && certificateStore == null)
+            var centralSsl = storeInfo.ContainsKey(typeof(CentralSsl));
+            var certificateStore = storeInfo.ContainsKey(typeof(CertificateStore));
+            var certificateStoreName = (string?)null;
+            if (certificateStore)
+            {
+                certificateStoreName = storeInfo[typeof(CertificateStore)].Path;
+            }
+            if (!centralSsl && !certificateStore)
             {
                 // No supported store
                 var errorMessage = "The IIS installation plugin requires the CertificateStore and/or CentralSsl store plugin";
@@ -45,13 +61,17 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             }
  
             // Determine site types
-            foreach (var part in source.Parts)
+            if (_options.SiteId != null)
             {
-                part.SiteId ??= _options.SiteId;
-                part.SiteType ??= _iisClient.GetSite(part.SiteId!.Value).Type;
+                var siteType = _iisClient.GetSite(_options.SiteId.Value).Type; 
+                foreach (var part in _target.Parts)
+                {
+                    part.SiteId = _options.SiteId;
+                    part.SiteType = siteType;
+                }
             }
 
-            if (centralSsl != null)
+            if (centralSsl)
             {
                 centralSslForHttp = true;
                 var supported = true;
@@ -62,12 +82,12 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                     supported = false;
                     centralSslForHttp = false;
                 }
-                if (source.Parts.Any(p => p.SiteType == IISSiteType.Ftp)) 
+                if (_target.Parts.Any(p => p.SiteType == IISSiteType.Ftp)) 
                 {
                     reason = "CentralSsl store is not supported for FTP sites";
                     supported = false;
                 }
-                if (!supported && certificateStore == null)
+                if (!supported && !certificateStore)
                 {
                     // Only throw error if there is no fallback 
                     // available to the CertificateStore plugin.
@@ -76,7 +96,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 } 
             }
 
-            foreach (var part in source.Parts)
+            foreach (var part in _target.Parts)
             {
                 var httpIdentifiers = part.Identifiers.OfType<DnsIdentifier>();
                 var bindingOptions = new BindingOptions();
@@ -87,7 +107,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                         WithFlags(SSLFlags.CentralSsl)
                     : bindingOptions.
                         WithThumbprint(newCertificate.Certificate.GetCertHash()).
-                        WithStore(newCertificate.StoreInfo[typeof(CertificateStore)].Path);
+                        WithStore(certificateStoreName);
 
                 switch (part.SiteType)
                 {
@@ -106,14 +126,14 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                         }
                         bindingOptions = bindingOptions.WithSiteId(part.SiteId!.Value);
                         _iisClient.UpdateHttpSite(httpIdentifiers, bindingOptions, oldCertificate?.Certificate.GetCertHash(), newCertificate.SanNames);
-                        if (certificateStore != null) 
+                        if (certificateStore) 
                         {
-                            _iisClient.UpdateFtpSite(0, newCertificate, oldCertificate);
+                            _iisClient.UpdateFtpSite(0, certificateStoreName, newCertificate, oldCertificate);
                         }
                         break;
                     case IISSiteType.Ftp:
                         // Update FTP site
-                        _iisClient.UpdateFtpSite(part.SiteId!.Value, newCertificate, oldCertificate);
+                        _iisClient.UpdateFtpSite(part.SiteId!.Value, certificateStoreName, newCertificate, oldCertificate);
                         _iisClient.UpdateHttpSite(httpIdentifiers, bindingOptions, oldCertificate?.Certificate.GetCertHash(), newCertificate.SanNames);
                         break;
                     default:
@@ -123,22 +143,6 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             }
 
             return Task.FromResult(true);
-        }
-
-        (bool, string?) IPlugin.Disabled => Disabled(_userRoleService, _iisClient);
-
-        internal static (bool, string?) Disabled(IUserRoleService userRoleService, IIISClient iisClient)
-        {
-            var (allow, reason) = userRoleService.AllowIIS;
-            if (!allow)
-            {
-                return (true, reason);
-            }
-            if (!iisClient.Sites.Any())
-            {
-                return (true, "No IIS sites available.");
-            }
-            return (false, null);
         }
     }
 }

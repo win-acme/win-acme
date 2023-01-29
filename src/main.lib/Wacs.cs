@@ -4,7 +4,9 @@ using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Legacy;
 using System;
@@ -32,6 +34,7 @@ namespace PKISharp.WACS.Host
         private readonly RenewalManager _renewalManager;
         private readonly RenewalCreator _renewalCreator;
         private readonly SecretServiceManager _secretServiceManager;
+        private readonly ValidationOptionsService _validationOptionsService;
         private readonly TaskSchedulerService _taskScheduler;
 
         public Wacs(
@@ -44,7 +47,8 @@ namespace PKISharp.WACS.Host
             IDueDateService dueDateService,
             AdminService adminService,
             TaskSchedulerService taskSchedulerService,
-            SecretServiceManager secretServiceManager)
+            SecretServiceManager secretServiceManager,
+            ValidationOptionsService validationOptionsService)
         {
             // Basic services
             _container = container;
@@ -75,6 +79,7 @@ namespace PKISharp.WACS.Host
             _args = _arguments.GetArguments<MainArguments>()!;
             _input = _container.Resolve<IInputService>();
             _renewalStore = _container.Resolve<IRenewalStore>();
+            _validationOptionsService = validationOptionsService;
 
             var renewalExecutor = container.Resolve<RenewalExecutor>(
                 new TypedParameter(typeof(IContainer), _container));
@@ -146,7 +151,11 @@ namespace PKISharp.WACS.Host
                         var runLevel = RunLevel.Unattended;
                         if (_args.Force)
                         {
-                            runLevel |= RunLevel.ForceRenew | RunLevel.IgnoreCache;
+                            runLevel |= RunLevel.Force;
+                        }
+                        if (_args.NoCache)
+                        {
+                            runLevel |= RunLevel.NoCache;
                         }
                         await _renewalManager.CheckRenewals(runLevel);
                         await CloseDefault();
@@ -156,7 +165,11 @@ namespace PKISharp.WACS.Host
                         var runLevel = RunLevel.Unattended;
                         if (_args.Force)
                         {
-                            runLevel |= RunLevel.ForceRenew | RunLevel.IgnoreCache;
+                            runLevel |= RunLevel.Force | RunLevel.NoCache;
+                        }
+                        if (_args.NoCache)
+                        {
+                            runLevel |= RunLevel.NoCache;
                         }
                         await _renewalCreator.SetupRenewal(runLevel);
                         await CloseDefault();
@@ -173,7 +186,7 @@ namespace PKISharp.WACS.Host
                     }
                     else
                     {
-                        await MainMenu();
+                        await MainMenu(_args.Test ? RunLevel.Test : RunLevel.None);
                     }
                 }
                 catch (Exception ex)
@@ -207,7 +220,7 @@ namespace PKISharp.WACS.Host
             if (_settings.Client.VersionCheck)
             {
                 var client = _container.Resolve<UpdateClient>();
-                await client.CheckNewVersion(RunLevel.Unattended);
+                await client.CheckNewVersion();
             }
             if (_args != null)
             {
@@ -253,31 +266,31 @@ namespace PKISharp.WACS.Host
         /// <summary>
         /// Main user experience
         /// </summary>
-        private async Task MainMenu()
+        private async Task MainMenu(RunLevel runLevel)
         {
             var total = _renewalStore.Renewals.Count();
             var due = _renewalStore.Renewals.Count(x => _dueDateService.IsDue(x));
             var error = _renewalStore.Renewals.Count(x => !x.History.LastOrDefault()?.Success ?? false);
-            var (allowIIS, allowIISReason) = _userRoleService.AllowIIS;
+            var iisState = _userRoleService.IISState;
             var options = new List<Choice<Func<Task>>>
             {
                 Choice.Create<Func<Task>>(
-                    () => _renewalCreator.SetupRenewal(RunLevel.Interactive | RunLevel.Simple), 
+                    () => _renewalCreator.SetupRenewal(runLevel | RunLevel.Interactive | RunLevel.Simple), 
                     "Create certificate (default settings)", "N", 
                     @default: true),
                 Choice.Create<Func<Task>>(
-                    () => _renewalCreator.SetupRenewal(RunLevel.Interactive | RunLevel.Advanced),
+                    () => _renewalCreator.SetupRenewal(runLevel | RunLevel.Interactive | RunLevel.Advanced),
                     "Create certificate (full options)", "M"),
                 Choice.Create<Func<Task>>(
-                    () => _renewalManager.CheckRenewals(RunLevel.Interactive),
+                    () => _renewalManager.CheckRenewals(runLevel | RunLevel.Interactive),
                     $"Run renewals ({due} currently due)", "R",
                     color: due == 0 ? null : ConsoleColor.Yellow,
-                    disabled: (total == 0, "No renewals have been created yet.")),
+                    state: total == 0 ? State.DisabledState("No renewals have been created yet.") : State.EnabledState()),
                 Choice.Create<Func<Task>>(
                     () => _renewalManager.ManageRenewals(),
                     $"Manage renewals ({total} total{(error == 0 ? "" : $", {error} in error")})", "A",
                     color: error == 0 ? null : ConsoleColor.Red,
-                    disabled: (total == 0, "No renewals have been created yet.")),
+                    state: total == 0 ? State.DisabledState("No renewals have been created yet.") : State.EnabledState()),
                 Choice.Create<Func<Task>>(
                     () => ExtraMenu(), 
                     "More options...", "O"),
@@ -300,10 +313,12 @@ namespace PKISharp.WACS.Host
                     () => _secretServiceManager.ManageSecrets(),
                     $"Manage secrets", "S"),
                 Choice.Create<Func<Task>>(
+                    () => _validationOptionsService.Manage(_container),
+                    $"Manage global validation options", "V"),
+                Choice.Create<Func<Task>>(
                     () => _taskScheduler.CreateTaskScheduler(RunLevel.Interactive | RunLevel.Advanced), 
-                    "(Re)create scheduled task", "T", 
-                    disabled: (!_userRoleService.AllowTaskScheduler, 
-                    "Run as an administrator to allow access to the task scheduler.")),
+                    "(Re)create scheduled task", "T",
+                    state: !_userRoleService.AllowTaskScheduler ? State.DisabledState("Run as an administrator to allow access to the task scheduler.") : State.EnabledState()),
                 Choice.Create<Func<Task>>(
                     () => _container.Resolve<EmailClient>().Test(), 
                     "Test email notification", "E"),
@@ -312,14 +327,13 @@ namespace PKISharp.WACS.Host
                     "ACME account details", "A"),
                 Choice.Create<Func<Task>>(
                     () => Import(RunLevel.Interactive | RunLevel.Advanced), 
-                    "Import scheduled renewals from WACS/LEWS 1.9.x", "I", 
-                    disabled: (!_adminService.IsAdmin,
-                    "Run as an administrator to allow search for legacy renewals.")),
+                    "Import scheduled renewals from WACS/LEWS 1.9.x", "I",
+                    state: !_adminService.IsAdmin ? State.DisabledState("Run as an administrator to allow search for legacy renewals.") : State.EnabledState()),
                 Choice.Create<Func<Task>>(
                     () => Encrypt(RunLevel.Interactive), 
                     "Encrypt/decrypt configuration", "M"),
                 Choice.Create<Func<Task>>(
-                    () => _container.Resolve<UpdateClient>().CheckNewVersion(RunLevel.Interactive),
+                    () => _container.Resolve<UpdateClient>().CheckNewVersion(),
                     "Check for updates", "U"),
                 Choice.Create<Func<Task>>(
                     () => Task.CompletedTask, 
@@ -385,16 +399,22 @@ namespace PKISharp.WACS.Host
             }
             if (userApproved)
             {
-                _renewalStore.Encrypt(); //re-saves all renewals, forcing re-write of all protected strings decorated with [jsonConverter(typeOf(protectedStringConverter())]
+                _renewalStore.Encrypt(); //re-saves all renewals, forcing re-write of all protected strings 
 
                 var accountManager = _container.Resolve<AccountManager>();
-                accountManager.EncryptSigner(); //re-writes the signer file
+                accountManager.Encrypt(); //re-writes the signer file
 
-                var certificateService = _container.Resolve<ICertificateService>();
-                certificateService.Encrypt(); //re-saves all cached private keys
+                var cacheService = _container.Resolve<ICacheService>();
+                cacheService.Encrypt(); //re-saves all cached private keys
 
                 var secretService = _container.Resolve<SecretServiceManager>();
                 secretService.Encrypt(); //re-writes the secrets file
+
+                var orderManager = _container.Resolve<OrderManager>();
+                orderManager.Encrypt(); //re-writes the cached order files
+
+                var validationOptionsService = _container.Resolve<IValidationOptionsService>();
+                await validationOptionsService.Encrypt(); //re-saves all global validation options
 
                 _log.Information("Your files are re-saved with encryption turned {onoff}", encryptConfig ? "on" : "off");
             }
@@ -413,15 +433,15 @@ namespace PKISharp.WACS.Host
                 throw new InvalidOperationException("Unable to initialize acmeAccount");
             }
             _input.CreateSpace();
-            _input.Show("Account ID", acmeAccount.Payload.Id ?? "-");
-            _input.Show("Account KID", acmeAccount.Kid ?? "-");
-            _input.Show("Created", acmeAccount.Payload.CreatedAt);
-            _input.Show("Initial IP", acmeAccount.Payload.InitialIp);
-            _input.Show("Status", acmeAccount.Payload.Status);
-            if (acmeAccount.Payload.Contact != null &&
-                acmeAccount.Payload.Contact.Length > 0)
+            _input.Show("Account ID", acmeAccount.Value.Payload.Id ?? "-");
+            _input.Show("Account KID", acmeAccount.Value.Kid ?? "-");
+            _input.Show("Created", acmeAccount.Value.Payload.CreatedAt);
+            _input.Show("Initial IP", acmeAccount.Value.Payload.InitialIp);
+            _input.Show("Status", acmeAccount.Value.Payload.Status);
+            if (acmeAccount.Value.Payload.Contact != null &&
+                acmeAccount.Value.Payload.Contact.Length > 0)
             {
-                _input.Show("Contact(s)", string.Join(", ", acmeAccount.Payload.Contact));
+                _input.Show("Contact(s)", string.Join(", ", acmeAccount.Value.Payload.Contact));
             }
             else
             {

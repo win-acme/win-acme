@@ -6,6 +6,7 @@ using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -16,12 +17,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     /// <summary>
     /// Base implementation for HTTP-01 validation plugins
     /// </summary>
-    internal abstract class HttpValidation<TOptions, TPlugin> :
+    internal abstract class HttpValidation<TOptions> :
         Validation<Http01ChallengeValidationDetails>
-        where TOptions : HttpValidationOptions<TPlugin>
-        where TPlugin : IValidationPlugin
+        where TOptions : HttpValidationOptions
     {
-        private readonly List<string> _filesWritten = new List<string>();
+        private readonly List<string> _filesWritten = new();
 
         protected TOptions _options;
         protected ILogService _log;
@@ -190,7 +190,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                     var destination = CombinePath(_path, challenge.HttpResourcePath.Replace(partialPath, "web.config"));
                     if (!_filesWritten.Contains(destination))
                     {
-                        var content = HttpValidation<TOptions, TPlugin>.GetWebConfig().Value;
+                        var content = HttpValidation<TOptions>.GetWebConfig().Value;
                         if (content != null)
                         {
                             _log.Debug("Writing web.config");
@@ -211,10 +211,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// Get the template for the web.config
         /// </summary>
         /// <returns></returns>
-        private static Lazy<string?> GetWebConfig() => new Lazy<string?>(() => {
+        private static Lazy<string?> GetWebConfig() => new(() => {
             try
             {
-                return File.ReadAllText(HttpValidation<TOptions, TPlugin>.TemplateWebConfig);
+                return File.ReadAllText(HttpValidation<TOptions>.TemplateWebConfig);
             } 
             catch 
             {

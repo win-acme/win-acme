@@ -1,10 +1,10 @@
 ﻿using ACMESharp.Protocol;
-using Newtonsoft.Json;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System;
 using System.IO;
 using System.Security.Cryptography;
+using System.Text.Json;
 
 namespace PKISharp.WACS.Clients.Acme
 {
@@ -86,7 +86,7 @@ namespace PKISharp.WACS.Clients.Acme
                             var signerString = new ProtectedString(File.ReadAllText(SignerPath), _log);
                             if (signerString.Value != null)
                             {
-                                _currentSigner = JsonConvert.DeserializeObject<AccountSigner>(signerString.Value);
+                               _currentSigner = JsonSerializer.Deserialize(signerString.Value, AcmeClientJson.Insensitive.AccountSigner);
                             }
                         }
                         catch (Exception ex)
@@ -106,7 +106,7 @@ namespace PKISharp.WACS.Clients.Acme
                 if (value != null)
                 {
                     _log.Debug("Saving signer to {SignerPath}", SignerPath);
-                    var x = new ProtectedString(JsonConvert.SerializeObject(value));
+                    var x = new ProtectedString(JsonSerializer.Serialize(value, AcmeClientJson.Default.AccountSigner));
                     File.WriteAllText(SignerPath, x.DiskValue(_settings.Security.EncryptConfig));
                 } 
                 _currentSigner = value;
@@ -127,7 +127,7 @@ namespace PKISharp.WACS.Clients.Acme
                         if (CurrentSigner != null)
                         {
                             _log.Debug("Loading account from {accountPath}", AccountPath);
-                            _currentAccount = JsonConvert.DeserializeObject<AccountDetails>(File.ReadAllText(AccountPath));
+                            _currentAccount = JsonSerializer.Deserialize(File.ReadAllText(AccountPath), AcmeClientJson.Insensitive.AccountDetails);
                             // Maybe we should update the account details 
                             // on every start of the program to figure out
                             // if it hasn't been suspended or cancelled?
@@ -150,7 +150,7 @@ namespace PKISharp.WACS.Clients.Acme
                 if (value != null)
                 {
                     _log.Debug("Saving account to {AccountPath}", AccountPath);
-                    File.WriteAllText(AccountPath, JsonConvert.SerializeObject(value));
+                    File.WriteAllText(AccountPath, JsonSerializer.Serialize(value.Value, AcmeClientJson.Insensitive.AccountDetails));
                 }
                 _currentAccount = value;
             }
@@ -159,7 +159,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// <summary>
         /// Encrypt/decrypt signer information
         /// </summary>
-        internal void EncryptSigner()
+        internal void Encrypt()
         {
             try
             {

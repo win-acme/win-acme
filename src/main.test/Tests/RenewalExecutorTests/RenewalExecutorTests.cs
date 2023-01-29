@@ -98,7 +98,7 @@ namespace PKISharp.WACS.UnitTests.Tests.RenewalTests
                         }
                     }
                 },
-                RunLevel.ForceRenew,
+                RunLevel.Force,
                 true);
         }
 

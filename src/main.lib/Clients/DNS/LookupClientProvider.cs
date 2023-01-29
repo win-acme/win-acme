@@ -105,7 +105,7 @@ namespace PKISharp.WACS.Clients.DNS
         /// </summary>
         public LookupClientWrapper GetDefaultClient(int round)
         {
-            var index = round % GetDefaultClients().Count();
+            var index = round % GetDefaultClients().Count;
             var ret = GetDefaultClients().ElementAt(index);
             return ret;
         }

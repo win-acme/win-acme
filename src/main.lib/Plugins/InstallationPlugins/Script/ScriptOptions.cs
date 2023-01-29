@@ -4,12 +4,8 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    [Plugin("3bb22c70-358d-4251-86bd-11858363d913")]
-    internal class ScriptOptions : InstallationPluginOptions<Script>
+    internal class ScriptOptions : InstallationPluginOptions
     {
-        public override string Name => "Script";
-        public override string Description => "Start external script or program";
-
         public string? Script { get; set; }
         public string? ScriptParameters { get; set; }
 

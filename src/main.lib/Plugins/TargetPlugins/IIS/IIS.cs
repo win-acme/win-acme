@@ -1,38 +1,56 @@
 ﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
+    [IPlugin.Plugin<
+        IISSitesOptions, IISSitesOptionsFactory, 
+        IISCapability, WacsJsonPlugins>
+        ("cdd79a68-4a87-4039-bee8-5a0ebdca41cb", 
+        "IISSites", "Read sites from IIS (legacy)", Hidden = true)]
+    [IPlugin.Plugin<
+        IISSiteOptions, IISSiteOptionsFactory,
+        IISCapability, WacsJsonPlugins>
+        ("d7940b23-f570-460e-ab15-2c822a79009b", 
+        "IISSite", "Read site from IIS (legacy)", Hidden = true)]
+    [IPlugin.Plugin<
+        IISBindingOptions, IISBindingOptionsFactory, 
+        IISCapability, WacsJsonPlugins>
+        ("2f5dd428-0f5d-4c8a-8fd0-56fc1b5985ce", 
+        "IISBinding", "Read bindings from IIS (legacy)", Hidden = true)]
+    [IPlugin.Plugin<
+        IISOptions, IISOptionsFactory, 
+        IISCapability, WacsJsonPlugins>
+        ("54deb3ee-b5df-4381-8485-fe386054055b", 
+        "IIS", "Read bindings from IIS")]
     internal class IIS : ITargetPlugin
     {
         private readonly ILogService _log;
         private readonly IISOptions _options;
         private readonly IISHelper _helper;
-        private readonly IUserRoleService _userRoleService;
 
-        public IIS(
-            ILogService logService, IUserRoleService roleService,
-            IISHelper helper, IISOptions options)
+        public IIS(ILogService logService, IISHelper helper, IISOptions options)
         {
             _log = logService;
             _options = options;
             _helper = helper;
-            _userRoleService = roleService;
         }
 
-        public async Task<Target> Generate()
+        public async Task<Target?> Generate()
         {
             // Check if we have any bindings
             var allBindings = _helper.GetBindings();
             var filteredBindings = _helper.FilterBindings(allBindings, _options);
-            if (filteredBindings.Count() == 0)
+            if (filteredBindings.Count == 0)
             {
                 _log.Error("No bindings matched, unable to proceed");
-                return new NullTarget();
+                return null;
             }
 
             // Handle common name
@@ -95,7 +113,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                     host = _options.IncludeHosts.First();
                 }
                 friendlyNameSuggestion += $", {host}";
-                var count = _options.IncludeHosts.Count();
+                var count = _options.IncludeHosts.Count;
                 if (count > 1)
                 {
                     friendlyNameSuggestion += $" (+{count - 1} other{(count == 2 ? "" : "s")})";
@@ -119,22 +137,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                     SiteId = group.Key,
                     SiteType = group.First().SiteType
                 });
-            return new Target(friendlyNameSuggestion, commonName, parts);
-        }
-
-        (bool, string?) IPlugin.Disabled => Disabled(_userRoleService);
-
-        internal static (bool, string?) Disabled(IUserRoleService userRoleService) 
-        {
-            var (allow, reason) = userRoleService.AllowIIS;
-            if (!allow)
-            {
-                return (true, reason);
-            } 
-            else
-            {
-                return (false, null);
-            }
+            return new Target(friendlyNameSuggestion, commonName, parts.ToList());
         }
     }
 }

@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     /// <summary>
     /// HTTP validation through REST endpoints on the server
     /// </summary>
-    internal sealed class RestOptionsFactory : ValidationPluginOptionsFactory<Rest, RestOptions>
+    internal sealed class RestOptionsFactory : PluginOptionsFactory<RestOptions>
     {
         private readonly ArgumentsInputService _arguments;
 
@@ -23,7 +23,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             .WithDefault(false)
             .Required();
 
-        public override async Task<RestOptions?> Aquire(Target target, IInputService inputService, RunLevel runLevel)
+        public override async Task<RestOptions?> Aquire(IInputService inputService, RunLevel runLevel)
         {
             return new RestOptions()
             {
@@ -32,7 +32,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             };
         }
 
-        public override async Task<RestOptions?> Default(Target target)
+        public override async Task<RestOptions?> Default()
         {
             return new RestOptions()
             {

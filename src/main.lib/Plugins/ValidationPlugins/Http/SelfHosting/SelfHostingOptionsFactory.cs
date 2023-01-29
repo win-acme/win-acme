@@ -5,22 +5,14 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    internal class SelfHostingOptionsFactory : ValidationPluginOptionsFactory<SelfHosting, SelfHostingOptions>
+    internal class SelfHostingOptionsFactory : PluginOptionsFactory<SelfHostingOptions>
     {
         private readonly ArgumentsInputService _arguments;
-        private readonly IUserRoleService _userRoleService;
 
-        public SelfHostingOptionsFactory(ArgumentsInputService arguments, IUserRoleService userRoleService)
-        {
+        public SelfHostingOptionsFactory(ArgumentsInputService arguments) => 
             _arguments = arguments;
-            _userRoleService = userRoleService;
-        }
 
-        public override (bool, string?) Disabled => SelfHosting.IsDisabled(_userRoleService);
-
-        public override Task<SelfHostingOptions?> Aquire(Target target, IInputService inputService, RunLevel runLevel) => Default(target);
-
-        public override async Task<SelfHostingOptions?> Default(Target target)
+        public override async Task<SelfHostingOptions?> Default()
         {
             return new SelfHostingOptions()
             {

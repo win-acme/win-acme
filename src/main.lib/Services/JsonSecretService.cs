@@ -1,9 +1,10 @@
-﻿using Newtonsoft.Json;
-using PKISharp.WACS.Services.Serialization;
+﻿using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Services
 {
@@ -16,6 +17,7 @@ namespace PKISharp.WACS.Services
         private readonly List<CredentialEntry> _secrets;
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
+        private readonly WacsJson _wacsJson;
 
         /// <summary>
         /// Make references to this provider unique from 
@@ -28,9 +30,10 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="settings"></param>
         /// <param name="log"></param>
-        public JsonSecretService(ISettingsService settings, ILogService log)
+        public JsonSecretService(ISettingsService settings, ILogService log, WacsJson wacsJson)
         {
             _log = log;
+            _wacsJson = wacsJson;
             _settings = settings;
             var path = _settings.Secrets?.Json?.FilePath;
             if (string.IsNullOrWhiteSpace(path))
@@ -41,13 +44,10 @@ namespace PKISharp.WACS.Services
             _secrets = new List<CredentialEntry>();
             if (_file.Exists)
             {
-                var parsed = JsonConvert.DeserializeObject<List<CredentialEntry>>(
-                File.ReadAllText(_file.FullName),
-                    new JsonSerializerSettings()
-                    {
-                        ObjectCreationHandling = ObjectCreationHandling.Replace,
-                        Converters = { new ProtectedStringConverter(_log, _settings) }
-                    });
+                var options = new JsonSerializerOptions();
+                options.PropertyNameCaseInsensitive = true;
+                options.Converters.Add(new ProtectedStringConverter(_log, _settings));
+                var parsed = JsonSerializer.Deserialize(File.ReadAllText(_file.FullName), _wacsJson.ListCredentialEntry);
                 if (parsed == null)
                 {
                     _log.Error("Unable to parse {filename}", _file.Name);
@@ -106,12 +106,11 @@ namespace PKISharp.WACS.Services
         /// </summary>
         public void Save()
         {
-            var newData = JsonConvert.SerializeObject(_secrets, new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore,
-                Formatting = Formatting.Indented,
-                Converters = { new ProtectedStringConverter(_log, _settings) }
-            });
+            var options = new JsonSerializerOptions();
+            options.Converters.Add(new ProtectedStringConverter(_log, _settings));
+            options.WriteIndented = true;
+            options.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+            var newData = JsonSerializer.Serialize(_secrets, _wacsJson.ListCredentialEntry);
             if (newData != null)
             {
                 if (_file.Exists)
@@ -145,7 +144,7 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// Interal data storage format
         /// </summary>
-        class CredentialEntry
+        internal class CredentialEntry
         {
             public string? Key { get; set; }
             public ProtectedString? Secret { get; set; }

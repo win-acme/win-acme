@@ -10,29 +10,31 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     /// <summary>
     /// Classic FileSystem validation
     /// </summary>
-    internal class FileSystemOptionsFactory : HttpValidationOptionsFactory<FileSystem, FileSystemOptions>
+    internal class FileSystemOptionsFactory : HttpValidationOptionsFactory<FileSystemOptions>
     {
         private readonly IIISClient _iisClient;
         private readonly ILogService _log;
 
         public FileSystemOptionsFactory(
-            IIISClient iisClient, ILogService log,
-            ArgumentsInputService arguments) : base(arguments)
+            Target target,
+            IIISClient iisClient, 
+            ILogService log,
+            ArgumentsInputService arguments) : base(arguments, target)
         {
             _log = log;
             _iisClient = iisClient;
         }
 
         public override bool PathIsValid(string path) => path.ValidPath(_log);
-        public override bool AllowEmtpy(Target target) => target.IIS;
+        public override bool AllowEmtpy() => _target.IIS;
         private ArgumentResult<long?> ValidationSite() => _arguments.GetLong<FileSystemArguments>(x => x.ValidationSiteId);
 
-        public override async Task<FileSystemOptions?> Default(Target target)
+        public override async Task<FileSystemOptions?> Default()
         {
-            var ret = new FileSystemOptions(await BaseDefault(target));
+            var ret = new FileSystemOptions(await BaseDefault());
             if (string.IsNullOrEmpty(ret.Path))
             {
-                if (target.IIS && _iisClient.HasWebSites)
+                if (_target.IIS && _iisClient.HasWebSites)
                 {
                     ret.SiteId = await ValidationSite().
                         Validate(s => Task.FromResult(_iisClient.GetSite(s!.Value, IISSiteType.Web) != null), "site doesn't exist").
@@ -42,11 +44,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             return ret;
         }
 
-        public override async Task<FileSystemOptions?> Aquire(Target target, IInputService inputService, RunLevel runLevel)
+        public override async Task<FileSystemOptions?> Aquire(IInputService inputService, RunLevel runLevel)
         {
             // Choose alternative site for validation
-            var ret = new FileSystemOptions(await BaseAquire(target, inputService));
-            if (target.IIS && 
+            var ret = new FileSystemOptions(await BaseAquire(inputService));
+            if (_target.IIS && 
                 _iisClient.HasWebSites &&
                 string.IsNullOrEmpty(ret.Path) && 
                 runLevel.HasFlag(RunLevel.Advanced))

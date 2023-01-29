@@ -49,7 +49,7 @@ namespace PKISharp.WACS.Services
         public static string ResourcePath { get; private set; } = AppContext.BaseDirectory;
         public static string Bitness => Environment.Is64BitProcess ? "64-bit" : "32-bit";
         public static bool Pluggable =>
-#if DEBUG || PLUGGABLE
+#if PLUGGABLE
                 true;
 #else
                 false;

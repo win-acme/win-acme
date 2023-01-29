@@ -1,15 +1,18 @@
 ﻿using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services.Serialization;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    [Plugin("c49a7a9a-f8c9-494a-a6a4-c6b9daae7d9d")]
-    internal sealed class TransIpOptions : ValidationPluginOptions<TransIp>
+    [JsonSerializable(typeof(TransIpOptions))]
+    internal partial class TransIpJson : JsonSerializerContext
     {
-        public override string Name { get; } = "TransIp";
-        public override string Description { get; } = "Create verification records at TransIp";
-        public override string ChallengeType { get; } = Constants.Dns01ChallengeType;
+        public TransIpJson(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
+    }
+
+    internal sealed class TransIpOptions : ValidationPluginOptions
+    {
         public string? Login { get; set; }
         public ProtectedString? PrivateKey { get; set; }
     }

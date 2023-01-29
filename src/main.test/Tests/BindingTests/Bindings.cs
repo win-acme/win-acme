@@ -4,6 +4,7 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.UnitTests.Mock.Clients;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -103,7 +104,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
             Assert.AreEqual(storeName, newBinding.CertificateStoreName);
             if (!expectedFlags.HasFlag(SSLFlags.CentralSsl) && iisVersion > 7)
             {
-                Assert.AreEqual(newCert, newBinding.CertificateHash);
+                Assert.IsTrue(StructuralComparisons.StructuralEqualityComparer.Equals(newCert, newBinding.CertificateHash));
             }
             Assert.AreEqual(bindingPort, newBinding.Port);
             Assert.AreEqual(bindingIp, newBinding.IP);
@@ -176,7 +177,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
        
             iis.UpdateHttpSite(new[] { new DnsIdentifier(newHost) }, bindingOptions, oldCert1);
         
-            Assert.AreEqual(existingBindings.Count() + expectedNew, httpOnlySite.Bindings.Count);
+            Assert.AreEqual(existingBindings.Count + expectedNew, httpOnlySite.Bindings.Count);
 
             var newBindings = httpOnlySite.Bindings.Except(existingBindings);
             _ = newBindings.All(newBinding =>
@@ -184,7 +185,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                   Assert.AreEqual(existingHost, newBinding.Host);
                   Assert.AreEqual("https", newBinding.Protocol);
                   Assert.AreEqual(storeName, newBinding.CertificateStoreName);
-                  Assert.AreEqual(newCert, newBinding.CertificateHash);
+                  Assert.IsTrue(StructuralComparisons.StructuralEqualityComparer.Equals(newCert, newBinding.CertificateHash));
                   Assert.AreEqual(bindingPort, newBinding.Port);
                   Assert.AreEqual(expectedFlags, newBinding.SSLFlags);
                   return true;
@@ -257,7 +258,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
             {
                 Assert.AreEqual("https", newBinding.Protocol);
                 Assert.AreEqual(storeName, newBinding.CertificateStoreName);
-                Assert.AreEqual(newCert, newBinding.CertificateHash);
+                Assert.IsTrue(StructuralComparisons.StructuralEqualityComparer.Equals(newCert, newBinding.CertificateHash));
                 Assert.AreEqual(bindingPort, newBinding.Port);
                 Assert.AreEqual(bindingIp, newBinding.IP);
                 Assert.AreEqual(expectedFlags, newBinding.SSLFlags);
@@ -313,7 +314,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
             {
                 Assert.AreEqual("https", newBinding.Protocol);
                 Assert.AreEqual(storeName, newBinding.CertificateStoreName);
-                Assert.AreEqual(newCert, newBinding.CertificateHash);
+                Assert.IsTrue(StructuralComparisons.StructuralEqualityComparer.Equals(newCert, newBinding.CertificateHash));
                 Assert.AreEqual(bindingPort, newBinding.Port);
                 Assert.AreEqual(bindingIp, newBinding.IP);
                 Assert.AreEqual(expectedFlags, newBinding.SSLFlags);
@@ -367,7 +368,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
             {
                 Assert.AreEqual("https", newBinding.Protocol);
                 Assert.AreEqual(storeName, newBinding.CertificateStoreName);
-                Assert.AreEqual(newCert, newBinding.CertificateHash);
+                Assert.IsTrue(StructuralComparisons.StructuralEqualityComparer.Equals(newCert, newBinding.CertificateHash));
                 Assert.AreEqual(DefaultPort, newBinding.Port);
                 Assert.AreEqual(DefaultIP, newBinding.IP);
                 Assert.AreEqual(expectedFlags, newBinding.SSLFlags);
@@ -420,7 +421,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
             {
                 Assert.AreEqual("https", newBinding.Protocol);
                 Assert.AreEqual(storeName, newBinding.CertificateStoreName);
-                Assert.AreEqual(newCert, newBinding.CertificateHash);
+                Assert.IsTrue(StructuralComparisons.StructuralEqualityComparer.Equals(newCert, newBinding.CertificateHash));
                 Assert.AreEqual(bindingPort, newBinding.Port);
                 Assert.AreEqual(bindingIp, newBinding.IP);
                 Assert.AreEqual(expectedFlags, newBinding.SSLFlags);
@@ -482,7 +483,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
             Assert.AreEqual(regularHost, updatedBinding.Host);
             Assert.AreEqual("https", updatedBinding.Protocol);
             Assert.AreEqual(storeName, updatedBinding.CertificateStoreName);
-            Assert.AreEqual(newCert, updatedBinding.CertificateHash);
+            Assert.IsTrue(StructuralComparisons.StructuralEqualityComparer.Equals(newCert, updatedBinding.CertificateHash));
             Assert.AreEqual(AltPort, updatedBinding.Port);
             Assert.AreEqual(AltIP, updatedBinding.IP);
             Assert.AreEqual(expectedFlags, updatedBinding.SSLFlags);
@@ -550,7 +551,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
             var updatedBinding = regularSite.Bindings.FirstOrDefault();
             Assert.IsNotNull(updatedBinding);
             Assert.AreEqual("https", updatedBinding?.Protocol);
-            Assert.AreEqual(newCert, updatedBinding?.CertificateHash);
+            Assert.IsTrue(StructuralComparisons.StructuralEqualityComparer.Equals(newCert, updatedBinding?.CertificateHash));
             Assert.AreEqual(expectedFlags, updatedBinding?.SSLFlags);
         }
 
@@ -604,7 +605,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
 
             var updatedBinding = outofScopeSite.Bindings[0];
             Assert.AreEqual(DefaultStore, updatedBinding.CertificateStoreName);
-            Assert.AreEqual(newCert, updatedBinding.CertificateHash);
+            Assert.IsTrue(StructuralComparisons.StructuralEqualityComparer.Equals(newCert, updatedBinding.CertificateHash));
         }
 
         [TestMethod]
@@ -780,7 +781,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
 
             iis.UpdateHttpSite(new[] { new DnsIdentifier("*.b.c.com") }, bindingOptions, scopeCert);
 
-            Assert.AreEqual(expectedBindings, site.Bindings.Count());
+            Assert.AreEqual(expectedBindings, site.Bindings.Count);
         }
 
         /// <summary>
@@ -837,7 +838,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
 
             var updatedBinding = sniTrap1Site.Bindings[0];
             Assert.AreEqual(SSLFlags.SNI, updatedBinding.SSLFlags);
-            Assert.AreEqual(newCert, updatedBinding.CertificateHash);
+            Assert.IsTrue(StructuralComparisons.StructuralEqualityComparer.Equals(newCert, updatedBinding.CertificateHash));
         }
 
         /// <summary>
@@ -954,7 +955,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
             Assert.AreEqual(2, sniTrap2Site.Bindings.Count);
             var newBinding = sniTrap2Site.Bindings[1];
             Assert.AreEqual(SSLFlags.SNI, newBinding.SSLFlags);
-            Assert.AreEqual(newCert, newBinding.CertificateHash);
+            Assert.IsTrue(StructuralComparisons.StructuralEqualityComparer.Equals(newCert, newBinding.CertificateHash));
         }
 
 
@@ -1281,8 +1282,8 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 WithThumbprint(newCert);
 
             iis.UpdateHttpSite(new[] { new DnsIdentifier("exists.example.com") }, bindingOptions, oldCert1);
-            Assert.AreEqual(iis.Sites.First().Bindings.First().CertificateHash , newCert);
-            Assert.AreEqual(iis.Sites.First().Bindings.Last().CertificateHash, newCert);
+            Assert.IsTrue(StructuralComparisons.StructuralEqualityComparer.Equals(newCert, iis.Sites.First().Bindings.First().CertificateHash));
+            Assert.IsTrue(StructuralComparisons.StructuralEqualityComparer.Equals(newCert, iis.Sites.First().Bindings.Last().CertificateHash));
         }
 
         [TestMethod]
@@ -1333,7 +1334,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 WithThumbprint(newCert);
 
             iis.UpdateHttpSite(new[] { new DnsIdentifier(host), new DnsIdentifier(newHost) }, bindingOptions, null);
-            Assert.AreEqual(2, iis.Sites.First().Bindings.Count());
+            Assert.AreEqual(2, iis.Sites.First().Bindings.Count);
         }
     }
 }

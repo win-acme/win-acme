@@ -1,20 +1,21 @@
-﻿using Newtonsoft.Json;
-using PKISharp.WACS.Plugins.Base;
-using PKISharp.WACS.Plugins.Base.Options;
+﻿using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services.Serialization;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    [Plugin("4e5dc595-45c7-4461-929a-8f96a0c96b3d")]
-    internal sealed class Route53Options : ValidationPluginOptions<Route53>
+    [JsonSerializable(typeof(Route53Options))]
+    internal partial class Route53Json : JsonSerializerContext
     {
-        public override string Name { get; } = "Route53";
-        public override string Description { get; } = "Create verification records in AWS Route 53";
-        public override string ChallengeType { get; } = Constants.Dns01ChallengeType;
+        public Route53Json(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
+    }
+
+    internal sealed class Route53Options : ValidationPluginOptions
+    {
         public string? IAMRole { get; set; }
         public string? AccessKeyId { get; set; }
 
-        [JsonProperty(propertyName: "SecretAccessKeySafe")]
+        [JsonPropertyName("SecretAccessKeySafe")]
         public ProtectedString? SecretAccessKey { get; set; }
     }
 }

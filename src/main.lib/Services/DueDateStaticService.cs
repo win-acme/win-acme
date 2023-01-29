@@ -9,16 +9,16 @@ namespace PKISharp.WACS.Services
     {
         protected const int DefaultMinValidDays = 7;
         protected readonly ISettingsService _settings;
-        protected readonly ICertificateService _certificateService;
+        protected readonly ICacheService _cacheService;
         protected readonly ILogService _logService;
 
         public DueDateStaticService(
             ISettingsService settings,
-            ICertificateService certificateService,
+            ICacheService cacheService,
             ILogService logService)
         {
             _settings = settings;
-            _certificateService = certificateService;
+            _cacheService = cacheService;
             _logService = logService;
         }
 
@@ -68,7 +68,7 @@ namespace PKISharp.WACS.Services
             {
                 return true;
             }
-            if (_certificateService.CachedInfo(order.Order) == null)
+            if (_cacheService.CachedInfo(order.Order) == null)
             {
                 _logService.Information(LogType.All, "Renewal {renewal} running prematurely due to source change in order {order}", order.Renewal.LastFriendlyName, order.OrderName);
                 return true;

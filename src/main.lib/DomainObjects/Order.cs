@@ -1,6 +1,6 @@
 ﻿using PKISharp.WACS.Clients.Acme;
 using System.Diagnostics;
-using acme = ACMESharp.Protocol;
+using Protocol = ACMESharp.Protocol;
 
 namespace PKISharp.WACS.DomainObjects
 {
@@ -12,7 +12,7 @@ namespace PKISharp.WACS.DomainObjects
         public string? KeyPath { get; set; }
         public Target Target { get; set; }
         public Renewal Renewal { get; set; }
-        public acme.OrderDetails? Details { get; set; } = null;
+        public Protocol.AcmeOrderDetails? Details { get; set; } = null;
 
         public Order(
             Renewal renewal,

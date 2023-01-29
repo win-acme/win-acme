@@ -1,6 +1,6 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.DomainObjects
 {
@@ -19,10 +19,7 @@ namespace PKISharp.WACS.DomainObjects
 
             if (value != null)
             {
-                if (ErrorMessages == null)
-                {
-                    ErrorMessages = new List<string>();
-                }
+                ErrorMessages ??= new List<string>();
                 if (!ErrorMessages.Contains(value))
                 {
                     ErrorMessages.Add(value);

@@ -1,11 +1,19 @@
 ﻿using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Plugins.Base.Capabilities;
+using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
+    [IPlugin.Plugin<
+        ManualOptions, PluginOptionsFactory<ManualOptions>, 
+        DnsValidationCapability, WacsJsonPlugins>
+        ("e45d62b9-f9a8-441e-b95f-c5ee0dcd8040", 
+        "Manual", "Create verification records manually (auto-renew not possible)")]
     internal class Manual : DnsValidation<Manual>
     {
         private readonly IInputService _input;

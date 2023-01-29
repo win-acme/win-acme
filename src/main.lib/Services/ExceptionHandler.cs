@@ -38,7 +38,7 @@ namespace PKISharp.WACS.Services
                     original = original.InnerException;
                     exceptionStack.Add(original);
                 }
-                var innerMost = exceptionStack.Count() - 1;
+                var innerMost = exceptionStack.Count - 1;
                 for (var i = innerMost; i >= 0; i--)
                 {
                     var currentException = exceptionStack[i];

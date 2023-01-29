@@ -2,6 +2,7 @@
 using PKISharp.WACS.Context;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Concurrent;
 using System.IO;
@@ -10,12 +11,17 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
+    [IPlugin.Plugin<
+        SelfHostingOptions, SelfHostingOptionsFactory, 
+        SelfHostingCapability, WacsJsonPlugins>
+        ("c7d5e050-9363-4ba1-b3a8-931b31c618b7", 
+        "SelfHosting", "Serve verification files from memory")]
     internal class SelfHosting : Validation<Http01ChallengeValidationDetails>
     {
         internal const int DefaultHttpValidationPort = 80;
         internal const int DefaultHttpsValidationPort = 443;
 
-        private readonly object _listenerLock = new object();
+        private readonly object _listenerLock = new();
         private HttpListener? _listener;
         private readonly ConcurrentDictionary<string, string> _files;
         private readonly SelfHostingOptions _options;
@@ -127,7 +133,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             return Task.CompletedTask;
         }
 
-        public override (bool, string?) Disabled => IsDisabled(_userRoleService);
+        public (bool, string?) Disabled => IsDisabled(_userRoleService);
 
         internal static (bool, string?) IsDisabled(IUserRoleService userRoleService)
         {

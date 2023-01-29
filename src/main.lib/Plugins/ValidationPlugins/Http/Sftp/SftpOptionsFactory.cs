@@ -8,9 +8,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     /// <summary>
     /// Sftp validation
     /// </summary>
-    internal class SftpOptionsFactory : HttpValidationOptionsFactory<Sftp, SftpOptions>
+    internal class SftpOptionsFactory : HttpValidationOptionsFactory<SftpOptions>
     {
-        public SftpOptionsFactory(ArgumentsInputService arguments) : base(arguments) { }
+        public SftpOptionsFactory(Target target, ArgumentsInputService arguments) : base(arguments, target) { }
 
         public override bool PathIsValid(string path) => path.StartsWith("sftp://");
 
@@ -22,17 +22,17 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             };
         }
 
-        public override async Task<SftpOptions?> Default(Target target)
+        public override async Task<SftpOptions?> Default()
         {
-            return new SftpOptions(await BaseDefault(target))
+            return new SftpOptions(await BaseDefault())
             {
                 Credential = await NetworkCredentialOptions.Create(_arguments)
             };
         }
 
-        public override async Task<SftpOptions?> Aquire(Target target, IInputService inputService, RunLevel runLevel)
+        public override async Task<SftpOptions?> Aquire(IInputService inputService, RunLevel runLevel)
         {
-            return new SftpOptions(await BaseAquire(target, inputService))
+            return new SftpOptions(await BaseAquire(inputService))
             {
                 Credential = await NetworkCredentialOptions.Create(_arguments, inputService, "SFTP server")
             };

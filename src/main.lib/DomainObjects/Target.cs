@@ -10,7 +10,7 @@ namespace PKISharp.WACS.DomainObjects
     [DebuggerDisplay("Target: {CommonName.Value}")]
     public class Target
     {
-        public Target(string friendlyName, string commonName, IEnumerable<TargetPart> parts) : 
+        public Target(string friendlyName, string commonName, IList<TargetPart> parts) : 
             this(friendlyName, new DnsIdentifier(commonName), parts) { }
 
         public Target(Identifier identifier)
@@ -20,7 +20,7 @@ namespace PKISharp.WACS.DomainObjects
             Parts = new[] { new TargetPart(identifier) };
         }
 
-        public Target(string friendlyName, Identifier commonName, IEnumerable<TargetPart> parts)
+        public Target(string friendlyName, Identifier commonName, IList<TargetPart> parts)
         {
             FriendlyName = friendlyName;
             CommonName = commonName;
@@ -41,7 +41,7 @@ namespace PKISharp.WACS.DomainObjects
         /// <summary>
         /// Different parts that make up this target
         /// </summary>
-        public IEnumerable<TargetPart> Parts { get; private set; }
+        public IList<TargetPart> Parts { get; private set; }
 
         /// <summary>
         /// Check if all parts are IIS
@@ -74,15 +74,9 @@ namespace PKISharp.WACS.DomainObjects
             var alternativeNames = Parts.SelectMany(p => p.Identifiers).Distinct();
             if (alternativeNames.Count() > 1)
             {
-                x.Append($" and {alternativeNames.Count() - 1} alternatives");
+                _ = x.Append($" and {alternativeNames.Count() - 1} alternative{(alternativeNames.Count() > 1 ? "s" : "")}");
             }
             return x.ToString();
         }
-    }
-
-    [DebuggerDisplay("Target: null")]
-    public class NullTarget : Target, INull
-    {
-        public NullTarget() : base("", "", new List<TargetPart>()) { }
     }
 }

@@ -71,7 +71,7 @@ namespace PKISharp.WACS.Client
                     }
                 }
                 // Upload file
-                currentPath += $"/{directories[directories.Count() - 1]}";
+                currentPath += $"/{directories[directories.Length - 1]}";
                 var fileUploaded = _client.PutFile(currentPath, stream).Result;
                 if (!fileUploaded.IsSuccessful)
                 {
