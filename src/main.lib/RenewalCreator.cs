@@ -4,10 +4,10 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins;
 using PKISharp.WACS.Plugins.Base;
-using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.Resolvers;
+using PKISharp.WACS.Plugins.ValidationPlugins.Http;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System;
@@ -30,6 +30,7 @@ namespace PKISharp.WACS
         private readonly IDueDateService _dueDate;
         private readonly ExceptionHandler _exceptionHandler;
         private readonly RenewalExecutor _renewalExecution;
+        private readonly IValidationOptionsService _validation;
         private readonly NotificationService _notification;
 
         public RenewalCreator(
@@ -37,6 +38,7 @@ namespace PKISharp.WACS
             IRenewalStore renewalStore, IContainer container,
             IInputService input, ILogService log,
             IPluginService plugin, IAutofacBuilder autofacBuilder,
+            IValidationOptionsService validationOptions,
             NotificationService notification, IDueDateService dueDateService,
             ExceptionHandler exceptionHandler, RenewalExecutor renewalExecutor)
         {
@@ -45,6 +47,7 @@ namespace PKISharp.WACS
             _args = args;
             _input = input;
             _log = log;
+            _validation = validationOptions;
             _container = container;
             _scopeBuilder = autofacBuilder;
             _exceptionHandler = exceptionHandler;
@@ -177,7 +180,75 @@ namespace PKISharp.WACS
             // Choose the validation plugin
             if (steps.HasFlag(Steps.Validation))
             {
-                var validationOptions = await SetupValidation(resolver, runLevel);
+                // We only need to pick validation for those identifiers that
+                // do not have global options configured. 
+                var allIdentifiers = initialTarget.Parts.SelectMany(x => x.Identifiers).Distinct().ToList();
+                var mapping = allIdentifiers.ToDictionary(x => x, x => (PluginFrontend<IValidationPluginCapability, ValidationPluginOptions>?)null);
+                foreach (var identifier in allIdentifiers)
+                {
+                    var options = await _validation.GetValidationOptions(identifier);
+                    if (options != null)
+                    {
+                        var pluginFrontend = _scopeBuilder.ValidationFrontend(targetPluginScope, options, identifier);
+                        _log.Debug("Global validation option {name} found for {identifier}", pluginFrontend.Meta.Name, identifier.Value);
+                        var state = pluginFrontend.Capability.State;
+                        if (!state.Disabled)
+                        {
+                            mapping[identifier] = pluginFrontend;
+                        }
+                        else
+                        {
+                            _log.Warning("Global validation {name} disabled: {state}", pluginFrontend.Meta.Name, state.Reason);
+                        }
+                    } 
+                    else
+                    {
+                        _log.Verbose("Global validation option not found for {identifier}", identifier.Value);
+                    }
+                }
+                var withGlobalOptions = mapping.Where(x => x.Value != null).Select(x => x.Key).ToList(); ;
+                var validationResolver = resolver;
+
+                // If everything is covered by global options, we don't want
+                // to bother the user with for their preference anymore in
+                // simple/interactive mode. But in unatteded or advanced mode
+                // we do still want to configure the renewal-local settings,
+                // so that those will be used as a fallback when needed, 
+                // either due to a change in the source or a change in the 
+                // global options.
+                if (withGlobalOptions.Any())
+                {
+                    _input.CreateSpace();
+                    _input.Show(null, $"Note: {withGlobalOptions.Count} of {allIdentifiers.Count} " +
+                        $"identifiers found in the source are covered by global validation options. " +
+                        $"Any validation settings configured for the renewal will only apply to the " +
+                        $"remainder.");
+                    _input.CreateSpace();
+                }
+
+                if (withGlobalOptions.Count > 0 && 
+                    withGlobalOptions.Count < allIdentifiers.Count)
+                {
+                    // While picking the validation plugin for the remaining identifiers
+                    // not covered by the global validation options, we should not be 
+                    // restricted by rules that apply to the covered identifiers. 
+                    // E.g. when a wildcard domain like *.example.com is covered by a
+                    // global DNS validation setting, we should be able to pick a 
+                    // HTTP validation plugin for www.example.com
+                    var filteredTarget = new Target(allIdentifiers.Except(withGlobalOptions));
+                    var filteredScope = _scopeBuilder.Target(targetPluginScope, filteredTarget);
+                    validationResolver = CreateResolver(filteredScope, runLevel);
+                } 
+                else if (withGlobalOptions.Count == allIdentifiers.Count)
+                {
+                    // If all source identifiers are already covered by the global
+                    // options, we want to create a universal target that could
+                    // potentially fit validation plugin.
+                    var filteredTarget = new Target(new DnsIdentifier("www.example.com"));
+                    var filteredScope = _scopeBuilder.Target(targetPluginScope, filteredTarget);
+                    validationResolver = CreateResolver(filteredScope, runLevel);
+                }
+                var validationOptions = await SetupValidation(validationResolver, runLevel);
                 if (validationOptions == null)
                 {
                     return;

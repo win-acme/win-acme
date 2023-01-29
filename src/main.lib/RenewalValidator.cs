@@ -247,15 +247,11 @@ namespace PKISharp.WACS
                 throw new Exception("Missing identifier");
             }
             var identifier = Identifier.Parse(context.Authorization.Identifier);
-            var dummyTarget = new Target(identifier);
-            var targetScope = _scopeBuilder.Target(context.Order.OrderScope, dummyTarget);
-            var plugin = _plugin.GetPlugin(options);
-            var pluginHelper = _scopeBuilder.PluginFrontend<IValidationPluginCapability, ValidationPluginOptions>(targetScope, plugin);
-            var pluginFrontend = pluginHelper.Resolve<PluginFrontend<IValidationPluginCapability, ValidationPluginOptions>>();
+            var pluginFrontend = _scopeBuilder.ValidationFrontend(context.Order.OrderScope, options, identifier);
             var state = pluginFrontend.Capability.State;
             if (state.Disabled)
             {
-                _log.Warning("Validation plugin {name} is not available. {disabledReason}", plugin.Name, state.Reason);
+                _log.Warning("Validation plugin {name} is not available. {disabledReason}", pluginFrontend.Meta.Name, state.Reason);
                 return false;
             }
             if (!context.Authorization.Challenges?.Any(x => x.Type == pluginFrontend.Capability.ChallengeType) ?? false)

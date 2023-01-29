@@ -2,10 +2,11 @@
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins;
 using PKISharp.WACS.Plugins.Base.Options;
+using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.CsrPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services.Serialization;
 using System;
-using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Services
 {
@@ -79,5 +80,15 @@ namespace PKISharp.WACS.Services
         ILifetimeScope PluginFrontend<TCapability, TOptions>(ILifetimeScope execution, Plugin plugin)
             where TCapability : IPluginCapability
             where TOptions : PluginOptions, new();
+
+        /// <summary>
+        /// Return validation frontend for a given target and options
+        /// required during both Creation and Validation stage
+        /// </summary>
+        /// <param name="execution"></param>
+        /// <param name="identifier"></param>
+        /// <returns></returns>
+        PluginFrontend<IValidationPluginCapability, ValidationPluginOptions>
+            ValidationFrontend(ILifetimeScope execution, ValidationPluginOptions options, Identifier identifier);
     }
 }

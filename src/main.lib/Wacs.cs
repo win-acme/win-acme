@@ -138,7 +138,7 @@ namespace PKISharp.WACS.Host
                     }
                     else if (_args.Cancel)
                     {
-                        await _renewalManager.CancelRenewalsUnattended();
+                        _renewalManager.CancelRenewalsUnattended();
                         await CloseDefault();
                     }
                     else if (_args.Revoke)
@@ -257,10 +257,10 @@ namespace PKISharp.WACS.Host
         /// </summary>
         private async Task CloseDefault()
         {
-            _args.CloseOnFinish = 
-                _args.Test &&  !_args.CloseOnFinish ? 
-                await _input.PromptYesNo("[--test] Quit?", true) : 
-                true;
+            _args.CloseOnFinish =
+                !_args.Test ||
+                _args.CloseOnFinish || 
+                await _input.PromptYesNo("[--test] Quit?", true);
         }
 
         /// <summary>
