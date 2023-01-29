@@ -239,7 +239,7 @@ namespace PKISharp.WACS
                     // E.g. when a wildcard domain like *.example.com is covered by a
                     // global DNS validation setting, we should be able to pick a 
                     // HTTP validation plugin for www.example.com
-                    var filteredTarget = new Target(allIdentifiers.Except(withGlobalOptions));
+                    var filteredTarget = new Target(withoutGlobalOptions);
                     var filteredScope = _scopeBuilder.Target(targetPluginScope, filteredTarget);
                     validationResolver = CreateResolver(filteredScope, runLevel);
                 } 
