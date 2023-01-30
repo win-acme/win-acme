@@ -53,7 +53,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var visibleSites = allSites.Where(x => !_args.HideHttps || x.Secure == false).ToList();
             if (!visibleSites.Any())
             {
-                _log.Error("No websites with host bindings remain after applying the --{hidehttps} filter. " +
+                _log.Error("No websites with host name bindings remain after applying the --{hidehttps} filter. " +
                     "It looks like all your websites are already configured for https!", "hidehttps");
                 return null;
             }
@@ -64,7 +64,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 visibleSites = visibleSites.Where(x => x.Hosts.Any(h => !h.StartsWith("*"))).ToList();
                 if (!visibleSites.Any())
                 {
-                    _log.Error("No websites with host bindings remain after discarding wildcard domains. To " +
+                    _log.Error("No websites with host names remain after discarding wildcard identifiers. To " +
                         "create certificates including wildcards, please use the 'full options' mode, as " +
                         "this requires DNS validation.");
                     return null;

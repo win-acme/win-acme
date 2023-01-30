@@ -32,6 +32,7 @@ namespace PKISharp.WACS
         private readonly IDueDateService _dueDate;
         private readonly ExceptionHandler _exceptionHandler;
         private readonly RenewalValidator _validator;
+        private readonly TaskSchedulerService _taskScheduler;
 
         public RenewalExecutor(
             MainArguments args,
@@ -43,6 +44,7 @@ namespace PKISharp.WACS
             ICacheService cacheService,
             IDueDateService dueDate,
             RenewalValidator validator,
+            TaskSchedulerService taskScheduler,
             ExceptionHandler exceptionHandler,
             IContainer container)
         {
@@ -57,6 +59,7 @@ namespace PKISharp.WACS
             _cacheService = cacheService;
             _container = container;
             _dueDate = dueDate;
+            _taskScheduler = taskScheduler;
         }
 
         /// <summary>
@@ -80,14 +83,17 @@ namespace PKISharp.WACS
             var target = await targetPlugin.Backend.Generate();
             if (target == null)
             {
-                _log.Information("Plugin {targetPluginName} generated source", targetPlugin.Meta.Name);
+                _log.Information("Plugin {targetPluginName} did not generate a source", targetPlugin.Meta.Name);
                 return new RenewResult($"Plugin {targetPlugin.Meta.Name} did not generate a source");
             }
-            _log.Information("Plugin {targetPluginName} generated source", targetPlugin.Meta.Name);
+            _log.Information("Plugin {targetPluginName} generated source {common} with {n} identifiers",
+                targetPlugin.Meta.Name, 
+                target.CommonName.Value,
+                target.Parts.SelectMany(p => p.Identifiers).Distinct().Count());
 
             // Create one or more orders from the target
-            var splitScope = _scopeBuilder.Split(es, target);
-            var orderPlugin = splitScope.Resolve<PluginBackend<IOrderPlugin, IPluginCapability, OrderPluginOptions>>();
+            var targetScope = _scopeBuilder.Split(es, target);
+            var orderPlugin = targetScope.Resolve<PluginBackend<IOrderPlugin, IPluginCapability, OrderPluginOptions>>();
             var orders = orderPlugin.Backend.Split(renewal, target).ToList();
             if (orders == null || !orders.Any())
             {
@@ -104,9 +110,25 @@ namespace PKISharp.WACS
                 }
             }
 
-            /// Handle the sub orders
+            // Handle the orders
             var result = await HandleOrders(es, renewal, orders, runLevel);
 
+            // Manage the task scheduler
+            await ManageTaskScheduler(renewal, result, runLevel);
+
+            return result;
+        }
+
+        /// <summary>
+        /// Optionally ensure the task scheduler, depending on renewal result and 
+        /// various other switches and settings.
+        /// </summary>
+        /// <param name="renewal"></param>
+        /// <param name="result"></param>
+        /// <param name="runLevel"></param>
+        /// <returns></returns>
+        internal async Task ManageTaskScheduler(Renewal renewal, RenewResult result, RunLevel runLevel)
+        {
             // Configure task scheduler
             var setupTaskScheduler = _args.SetupTaskScheduler;
             if (!setupTaskScheduler && !_args.NoTaskScheduler)
@@ -128,9 +150,8 @@ namespace PKISharp.WACS
                 {
                     taskLevel |= RunLevel.Force;
                 }
-                await es.Resolve<TaskSchedulerService>().EnsureTaskScheduler(runLevel);
+                await _taskScheduler.EnsureTaskScheduler(taskLevel);
             }
-            return result;
         }
 
         /// <summary>

@@ -66,7 +66,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 inputService.CreateSpace();
                 inputService.Show(null,
                     "During initial setup, it will try to make as few changes as possible to IIS to cover " +
-                    "the source hosts. If new bindings are needed, by default it will create those at " +
+                    "the source identifiers. If new bindings are needed, by default it will create those at " +
                     "the same site where the HTTP binding for that host was found.");
                 explained = true;
             };

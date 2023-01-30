@@ -82,7 +82,7 @@ namespace PKISharp.WACS.Clients.IIS
         private List<IISBindingOption> GetBindings(IEnumerable<IIISSite> sites)
         {
             // Get all bindings matched together with their respective sites
-            _log.Debug("Scanning IIS bindings for hosts");
+            _log.Debug("Scanning IIS bindings for host names");
             var siteBindings = sites.
                 SelectMany(site => site.Bindings, (site, binding) => new { site, binding }).
                 Where(sb => !string.IsNullOrWhiteSpace(sb.binding.Host)).
