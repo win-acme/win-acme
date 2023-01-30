@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using Autofac.Core;
 using Autofac.Features.AttributeFilters;
 using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.Acme;
@@ -63,13 +64,15 @@ namespace PKISharp.WACS.UnitTests.Mock
             _ = builder.RegisterType<EmailClient>().SingleInstance();
             _ = builder.RegisterType<ScriptClient>().SingleInstance();
             _ = builder.RegisterType<LookupClientProvider>().SingleInstance();
-            _ = builder.RegisterType<Services.CacheService>().As<Real.ICacheService>().SingleInstance();
-            _ = builder.RegisterType<Services.CertificateService>().As<Real.ICertificateService>().SingleInstance();
+            _ = builder.RegisterType<CacheService>().As<Real.ICacheService>().SingleInstance();
+            _ = builder.RegisterType<CertificateService>().As<Real.ICertificateService>().SingleInstance();
             _ = builder.RegisterType<Real.TaskSchedulerService>().SingleInstance();
             _ = builder.RegisterType<Real.NotificationService>().SingleInstance();
             _ = builder.RegisterType<RenewalValidator>().SingleInstance();
             _ = builder.RegisterType<RenewalExecutor>().SingleInstance();
+            _ = builder.RegisterType<OrderProcessor>().SingleInstance();
             _ = builder.RegisterType<RenewalManager>().SingleInstance();
+            _ = builder.Register(c => (ISharingLifetimeScope)c.Resolve<ILifetimeScope>()).As<ISharingLifetimeScope>().ExternallyOwned();
 
             return builder.Build();
         }

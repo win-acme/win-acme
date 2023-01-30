@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using Autofac.Core;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
@@ -7,7 +8,6 @@ using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.Resolvers;
-using PKISharp.WACS.Plugins.ValidationPlugins.Http;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System;
@@ -25,7 +25,7 @@ namespace PKISharp.WACS
         private readonly MainArguments _args;
         private readonly PasswordGenerator _passwordGenerator;
         private readonly IPluginService _plugin;
-        private readonly IContainer _container;
+        private readonly ISharingLifetimeScope _container;
         private readonly IAutofacBuilder _scopeBuilder;
         private readonly IDueDateService _dueDate;
         private readonly ExceptionHandler _exceptionHandler;
@@ -35,7 +35,7 @@ namespace PKISharp.WACS
 
         public RenewalCreator(
             PasswordGenerator passwordGenerator, MainArguments args,
-            IRenewalStore renewalStore, IContainer container,
+            IRenewalStore renewalStore, ISharingLifetimeScope container,
             IInputService input, ILogService log,
             IPluginService plugin, IAutofacBuilder autofacBuilder,
             IValidationOptionsService validationOptions,

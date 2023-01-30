@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using Autofac.Core;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
@@ -25,7 +26,7 @@ namespace PKISharp.WACS
         private readonly ICacheService _cacheService;
         private readonly ArgumentsParser _arguments;
         private readonly MainArguments _args;
-        private readonly IContainer _container;
+        private readonly ISharingLifetimeScope _container;
         private readonly IAutofacBuilder _scopeBuilder;
         private readonly ExceptionHandler _exceptionHandler;
         private readonly RenewalExecutor _renewalExecutor;
@@ -35,7 +36,7 @@ namespace PKISharp.WACS
 
         public RenewalManager(
             ArgumentsParser arguments, MainArguments args,
-            IRenewalStore renewalStore, IContainer container,
+            IRenewalStore renewalStore, ISharingLifetimeScope container,
             ICacheService cacheService, IPluginService plugin,
             IInputService input, ILogService log,
             ISettingsService settings, IDueDateService dueDate,

@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using Autofac.Core;
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -13,9 +14,9 @@ namespace PKISharp.WACS.Services.Serialization
     {
         private readonly IPluginService _pluginService;
         private readonly ILogService _log;
-        private readonly ILifetimeScope _scope;
+        private readonly ISharingLifetimeScope _scope;
 
-        public PluginOptionsConverter(ILifetimeScope context) 
+        public PluginOptionsConverter(ISharingLifetimeScope context) 
         {
             _pluginService = context.Resolve<IPluginService>();
             _log = context.Resolve<ILogService>();

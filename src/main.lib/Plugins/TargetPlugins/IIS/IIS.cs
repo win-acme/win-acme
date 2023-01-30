@@ -76,10 +76,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 {
                     site = sites.FirstOrDefault(s => s.Id == cnBinding.SiteId);
                 } 
-                if (site == null)
-                {
-                    site = sites.FirstOrDefault(x => _options.IncludeSiteIds.Contains(x.Id));
-                }
+                site ??= sites.FirstOrDefault(x => _options.IncludeSiteIds.Contains(x.Id));
                 var count = _options.IncludeSiteIds.Count;
                 if (site != null)
                 {
@@ -107,10 +104,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 {
                     host = cnBinding.HostUnicode;
                 }
-                if (host == null)
-                {
-                    host = _options.IncludeHosts.First();
-                }
+                host ??= _options.IncludeHosts.First();
                 friendlyNameSuggestion += $", {host}";
                 var count = _options.IncludeHosts.Count;
                 if (count > 1)

@@ -15,11 +15,7 @@ namespace PKISharp.WACS.UnitTests.Tests.RenewalTests
         {
             renewal.LastFriendlyName = "UnitTest";
             var container = new MockContainer().TestScope();
-            var renewalValidator = container.Resolve<RenewalValidator>(
-                new TypedParameter(typeof(IContainer), container));
-            var renewalExecutor = container.Resolve<RenewalExecutor>(
-               new TypedParameter(typeof(RenewalValidator), renewalValidator),
-               new TypedParameter(typeof(IContainer), container));
+            var renewalExecutor = container.Resolve<RenewalExecutor>();
             var actual = renewalExecutor.ShouldRunRenewal(renewal, runLevel);
             Assert.AreEqual(outcome, actual);
         }

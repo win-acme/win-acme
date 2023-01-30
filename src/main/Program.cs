@@ -1,5 +1,5 @@
 ﻿using Autofac;
-using Autofac.Features.AttributeFilters;
+using Autofac.Core;
 using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Clients.DNS;
@@ -9,10 +9,8 @@ using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
-using Serilog;
 using System;
 using System.Linq;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -56,7 +54,7 @@ namespace PKISharp.WACS.Host
             {
                 // Load instance of the main class and start the program
                 AllowInstanceToRun(container);
-                var wacs = container.Resolve<Wacs>(new TypedParameter(typeof(IContainer), container));
+                var wacs = container.Resolve<Wacs>();
                 Environment.ExitCode = await wacs.Start().ConfigureAwait(false);
             } 
             catch (Exception ex)
@@ -209,12 +207,12 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterType<NotificationService>().SingleInstance();
             _ = builder.RegisterType<RenewalExecutor>().SingleInstance();
             _ = builder.RegisterType<RenewalValidator>().SingleInstance();
+            _ = builder.RegisterType<OrderProcessor>().SingleInstance();
             _ = builder.RegisterType<RenewalManager>().SingleInstance();
             _ = builder.RegisterType<RenewalCreator>().SingleInstance();
             _ = builder.RegisterType<ArgumentsInputService>().SingleInstance();
-            
-
             _ = builder.RegisterType<Wacs>();
+            _ = builder.Register(c => (ISharingLifetimeScope)c.Resolve<ILifetimeScope>()).As<ISharingLifetimeScope>().ExternallyOwned();
 
             return builder.Build();
         }

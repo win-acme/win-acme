@@ -172,12 +172,12 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 return Choice.Create<Func<Task>>(() =>
                 {
                     askExclude = false;
-                    return ProcessInputHosts(
+                    return Task.FromResult(ProcessInputHosts(
                         unknown, 
                         allBindings, 
                         filtered, 
                         options,
-                        () => options.IncludeHosts, x => options.IncludeHosts = x);
+                        () => options.IncludeHosts, x => options.IncludeHosts = x));
                 });
             }
 
@@ -252,7 +252,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 raw = await input.RequestString(label);
             }
-            while (!await ProcessInputHosts(raw, allBindings, filtered, options, get, set));
+            while (!ProcessInputHosts(raw, allBindings, filtered, options, get, set));
         }
 
         /// <summary>
@@ -267,7 +267,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         /// <param name="get"></param>
         /// <param name="set"></param>
         /// <returns></returns>
-        async Task<bool> ProcessInputHosts(
+        bool ProcessInputHosts(
             string raw,
             List<IISHelper.IISBindingOption> allBindings,
             List<IISHelper.IISBindingOption> filtered,

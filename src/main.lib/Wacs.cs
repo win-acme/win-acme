@@ -1,10 +1,10 @@
 ﻿using Autofac;
+using Autofac.Core;
 using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
-using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
@@ -22,7 +22,7 @@ namespace PKISharp.WACS.Host
         private readonly IAutofacBuilder _scopeBuilder;
         private readonly IDueDateService _dueDateService;
         private readonly IInputService _input;
-        private readonly ILifetimeScope _container;
+        private readonly ISharingLifetimeScope _container;
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
         private readonly IRenewalStore _renewalStore;
@@ -38,7 +38,7 @@ namespace PKISharp.WACS.Host
         private readonly TaskSchedulerService _taskScheduler;
 
         public Wacs(
-            IContainer container, 
+            ISharingLifetimeScope container, 
             IAutofacBuilder scopeBuilder,
             ExceptionHandler exceptionHandler,
             ILogService logService,
@@ -46,6 +46,8 @@ namespace PKISharp.WACS.Host
             IUserRoleService userRoleService,
             IDueDateService dueDateService,
             AdminService adminService,
+            RenewalCreator renewalCreator,
+            RenewalManager renewalManager,
             TaskSchedulerService taskSchedulerService,
             SecretServiceManager secretServiceManager,
             ValidationOptionsService validationOptionsService)
@@ -61,6 +63,8 @@ namespace PKISharp.WACS.Host
             _taskScheduler = taskSchedulerService;
             _secretServiceManager = secretServiceManager;
             _dueDateService = dueDateService;
+            _renewalCreator = renewalCreator; 
+            _renewalManager = renewalManager;
 
             if (!string.IsNullOrWhiteSpace(_settings.UI.TextEncoding))
             {
@@ -80,16 +84,6 @@ namespace PKISharp.WACS.Host
             _input = _container.Resolve<IInputService>();
             _renewalStore = _container.Resolve<IRenewalStore>();
             _validationOptionsService = validationOptionsService;
-
-            var renewalExecutor = container.Resolve<RenewalExecutor>(
-                new TypedParameter(typeof(IContainer), _container));
-            _renewalCreator = container.Resolve<RenewalCreator>(
-                new TypedParameter(typeof(IContainer), _container),
-                new TypedParameter(typeof(RenewalExecutor), renewalExecutor));
-            _renewalManager = container.Resolve<RenewalManager>(
-                new TypedParameter(typeof(IContainer), _container),
-                new TypedParameter(typeof(RenewalExecutor), renewalExecutor),
-                new TypedParameter(typeof(RenewalCreator), _renewalCreator));
         }
 
         /// <summary>
