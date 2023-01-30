@@ -6,18 +6,20 @@
 		<Configurations>Debug;DebugTrimmed;Release;ReleaseTrimmed</Configurations>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)'=='Debug'">
+	<PropertyGroup Condition="'$(Configuration)'=='Debug' OR '$(Configuration)'=='DebugTrimmed'">
 		<WarningLevel>4</WarningLevel>
+	</PropertyGroup>
+	
+	<PropertyGroup Condition="'$(Configuration)'=='Debug'">
 		<DefineConstants>DEBUG;PLUGGABLE</DefineConstants>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)'=='DebugTrimmed'">
-		<WarningLevel>4</WarningLevel>
 		<DefineConstants>DEBUG</DefineConstants>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)'=='Release'">
 		<DefineConstants>RELEASE;PLUGGABLE</DefineConstants>
 	</PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)'=='Release' OR '$(Configuration)'=='ReleaseTrimmed'">
+	<PropertyGroup Condition="'$(Configuration)'=='ReleaseTrimmed'">
 		<DefineConstants>RELEASE</DefineConstants>
 	</PropertyGroup>
 	

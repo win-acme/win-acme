@@ -188,7 +188,7 @@ namespace PKISharp.WACS.Services
             return execution.BeginLifetimeScope($"{nameof(PluginBackend)}<{typeof(TBackend).Name}>",
                 builder => {
                     builder.RegisterInstance(plugin).As<Plugin>().Named<Plugin>(key);
-                    builder.RegisterInstance(options).As<TOptions>().As(options.GetType());
+                    builder.RegisterInstance(options).As<TOptions>().As(options.GetType()).As(options.GetType().BaseType ?? options.GetType()); 
                     builder.RegisterType(plugin.Backend).As<TBackend>().SingleInstance();
                     builder.RegisterType(plugin.Capability).As<TCapability>().SingleInstance().Named<TCapability>(key);
                     builder.Register(c => new PluginBackend<TBackend, TCapability, TOptions>(plugin, c.Resolve<TBackend>(), c.ResolveNamed<TCapability>(key), options)).As<PluginBackend<TBackend, TCapability, TOptions>>();

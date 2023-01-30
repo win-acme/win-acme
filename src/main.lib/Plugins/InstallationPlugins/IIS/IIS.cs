@@ -29,7 +29,6 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         private readonly IISOptions _options;
         private readonly Target _target;
 
-        public IIS(IISFtpOptions options, IIISClient iisClient, ILogService log, Target target) : this((IISOptions)options, iisClient, log, target) { }
         public IIS(IISOptions options, IIISClient iisClient, ILogService log, Target target)
         {
             _target = target;

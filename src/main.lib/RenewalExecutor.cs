@@ -11,7 +11,6 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -87,7 +86,8 @@ namespace PKISharp.WACS
             _log.Information("Plugin {targetPluginName} generated source", targetPlugin.Meta.Name);
 
             // Create one or more orders from the target
-            var orderPlugin = es.Resolve<PluginBackend<IOrderPlugin, IPluginCapability, OrderPluginOptions>>();
+            var targetScope = _scopeBuilder.Target(es, target);
+            var orderPlugin = targetScope.Resolve<PluginBackend<IOrderPlugin, IPluginCapability, OrderPluginOptions>>();
             var orders = orderPlugin.Backend.Split(renewal, target).ToList();
             if (orders == null || !orders.Any())
             {
@@ -587,7 +587,7 @@ namespace PKISharp.WACS
                     var info = await store.Backend.Save(newCertificate);
                     if (info != null)
                     {
-                        storeInfo.TryAdd(store.GetType(), info);
+                        storeInfo.TryAdd(store.Backend.GetType(), info);
                     } 
                     else
                     {
