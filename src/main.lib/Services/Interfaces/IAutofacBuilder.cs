@@ -24,11 +24,17 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// For renewal and creating scheduled task 
         /// </summary>
-        /// <param name="target"></param>
         /// <param name="renewal"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        ILifetimeScope Execution(ILifetimeScope target, Renewal renewal, RunLevel runLevel);
+        ILifetimeScope Execution(ILifetimeScope execution, Renewal renewal, RunLevel runLevel);
+        
+        /// <summary>
+        /// To split the target 
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        ILifetimeScope Split(ILifetimeScope execution, Target target);
 
         /// <summary>
         /// For different targets split up by the order plugin

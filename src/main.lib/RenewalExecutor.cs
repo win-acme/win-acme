@@ -86,8 +86,8 @@ namespace PKISharp.WACS
             _log.Information("Plugin {targetPluginName} generated source", targetPlugin.Meta.Name);
 
             // Create one or more orders from the target
-            var targetScope = _scopeBuilder.Target(es, target);
-            var orderPlugin = targetScope.Resolve<PluginBackend<IOrderPlugin, IPluginCapability, OrderPluginOptions>>();
+            var splitScope = _scopeBuilder.Split(es, target);
+            var orderPlugin = splitScope.Resolve<PluginBackend<IOrderPlugin, IPluginCapability, OrderPluginOptions>>();
             var orders = orderPlugin.Backend.Split(renewal, target).ToList();
             if (orders == null || !orders.Any())
             {

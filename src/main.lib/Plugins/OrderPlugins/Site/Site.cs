@@ -3,6 +3,7 @@ using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services.Serialization;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace PKISharp.WACS.Plugins.OrderPlugins
 {
@@ -18,9 +19,14 @@ namespace PKISharp.WACS.Plugins.OrderPlugins
             var ret = new List<Order>();
             foreach (var part in target.Parts)
             {
-               var newTarget = new Target(
+                var commonName = target.CommonName;
+                if (!part.Identifiers.Contains(commonName))
+                {
+                    commonName = part.Identifiers.First();
+                }
+                var newTarget = new Target(
                     target.FriendlyName ?? "",
-                    target.CommonName,
+                    commonName,
                     new List<TargetPart> { part });
                 var newOrder = new Order(
                     renewal, 
