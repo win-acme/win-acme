@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using PKISharp.WACS.DomainObjects;
+using System;
 using System.Diagnostics;
 
 namespace PKISharp.WACS.Context
@@ -11,22 +12,22 @@ namespace PKISharp.WACS.Context
     public class OrderContext
     {
         public const string DefaultOrderName = "Main";
-        public ILifetimeScope ExecutionScope { get; private set; }
+        public ILifetimeScope OrderScope { get; private set; }
         public Order Order { get; private set; }
         public RunLevel RunLevel { get; private set; }
-        public RenewResult Result { get; private set; }
+        public OrderResult OrderResult { get; private set; }
         public Target Target => Order.Target;
         public Renewal Renewal => Order.Renewal;
-        public CertificateInfo? PreviousCertificate { get; set; }
-        public CertificateInfo? NewCertificate { get; set; }
+        public CertificateInfoCache? PreviousCertificate { get; set; }
+        public ICertificateInfo? NewCertificate { get; set; }
         public string OrderName => Order.FriendlyNamePart ?? DefaultOrderName;
         public bool ShouldRun { get; set; }
-        public OrderContext(ILifetimeScope executionScope, Order order, RunLevel runLevel, RenewResult result)
+        public OrderContext(ILifetimeScope orderScope, Order order, RunLevel runLevel)
         {
-            ExecutionScope = executionScope;
+            OrderScope = orderScope;
             Order = order;
             RunLevel = runLevel;
-            Result = result;
+            OrderResult = new OrderResult(OrderName);
         }
     }
 }

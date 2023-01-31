@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DnsClient.Protocol;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -23,8 +24,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Simply
 
         public async Task<List<Product>> GetAllProducts()
         {
-            var products = await GetProductsAsync();
-            return products;
+            return await GetProductsAsync();
         }
 
         public async Task CreateRecordAsync(string objectId, string domain, string value)
@@ -47,12 +47,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Simply
                 throw new Exception($"Unable to find product with object id {objectId}.");
             }
             var records = await GetRecordsAsync(objectId);
-            var record = records.SingleOrDefault(x => x.Type == "TXT" && $"{x.Name}.{product.Domain.NameIdn}" == domain && x.Data == value);
+            var record = records.SingleOrDefault(x => x.Type == "TXT" && $"{x.Name}.{product.Domain?.NameIdn ?? "unknown"}" == domain && x.Data == value);
             if (record is null)
             {
                 throw new Exception($"The TXT record {domain} that should be deleted does not exist at Simply.");
             }
-
             await DeleteRecordAsync(objectId, record.RecordId);
         }
 
@@ -61,7 +60,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Simply
             using var response = await _httpClient.GetAsync(_baseUrl + "/my/products");
             await using var stream = await response.Content.ReadAsStreamAsync();
             var products = await JsonSerializer.DeserializeAsync<ProductList>(stream);
-            return products!.Products;
+            if (products == null || products.Products == null)
+            {
+                throw new Exception("Unable to retrieve products");
+            }
+            return products.Products;
         }
 
         private async Task CreateRecordAsync(string objectId, DnsRecord record)
@@ -69,23 +72,27 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Simply
             using var content = new StringContent(JsonSerializer.Serialize(record), Encoding.UTF8, "application/json");
             using var response = await _httpClient.PostAsync(_baseUrl + $"/my/products/{WebUtility.UrlEncode(objectId)}/dns/records", content);
             var responseBody = await response.Content.ReadAsStringAsync();
-            response.EnsureSuccessStatusCode();
+            _ = response.EnsureSuccessStatusCode();
         }
 
         private async Task DeleteRecordAsync(string objectId, int recordId)
         {
             using var response = await _httpClient.DeleteAsync(_baseUrl + $"/my/products/{WebUtility.UrlEncode(objectId)}/dns/records/{recordId}");
             var responseBody = await response.Content.ReadAsStringAsync();
-            response.EnsureSuccessStatusCode();
+            _ = response.EnsureSuccessStatusCode();
         }
 
         private async Task<List<DnsRecord>> GetRecordsAsync(string objectId)
         {
             using var response = await _httpClient.GetAsync(_baseUrl + $"/my/products/{WebUtility.UrlEncode(objectId)}/dns/records");
-            response.EnsureSuccessStatusCode();
+            _ = response.EnsureSuccessStatusCode();
             await using var stream = await response.Content.ReadAsStreamAsync();
             var records = await JsonSerializer.DeserializeAsync<DnsRecordList>(stream);
-            return records!.Records;
+            if (records == null || records.Records == null)
+            {
+                throw new InvalidOperationException();
+            }
+            return records.Records;
         }
 
         private static string EncodeBasicAuth(string account, string apiKey)

@@ -3,7 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PKISharp.WACS.UnitTests.Mock;
 using System.Collections.Generic;
 using System.Linq;
-using real = PKISharp.WACS.Services;
+using Real = PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.UnitTests.Tests.RenewalTests
 {
@@ -19,7 +19,7 @@ namespace PKISharp.WACS.UnitTests.Tests.RenewalTests
                 "y", // Confirm cancel all
                 "Q" // Quit
             });
-            var renewalStore = container.Resolve<real.IRenewalStore>();
+            var renewalStore = container.Resolve<Real.IRenewalStore>();
             var renewalValidator = container.Resolve<RenewalValidator>(
                 new TypedParameter(typeof(IContainer), container));
             var renewalExecutor = container.Resolve<RenewalExecutor>(

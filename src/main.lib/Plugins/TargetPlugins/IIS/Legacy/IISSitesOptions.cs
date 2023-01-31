@@ -1,9 +1,7 @@
-﻿using PKISharp.WACS.Plugins.Base;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    [Plugin("cdd79a68-4a87-4039-bee8-5a0ebdca41cb")]
     internal class IISSitesOptions : IISOptions
     { 
         /// <summary>

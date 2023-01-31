@@ -48,8 +48,7 @@ ZkoLUgEWU5OcCkq5AIpmloeaCTC/vKrlS5M3BvjEmQ==
                 var csrPlugin = new Csr(log, pem, csrOptions);
                 var target = csrPlugin.Generate().Result;
                 Assert.IsNotNull(target);
-                Assert.IsFalse(target is INull);
-                Assert.IsTrue(target.Parts.Count() == 1);
+                Assert.IsTrue(target.Parts.Count == 1);
                 Assert.IsTrue(target.Parts.First().Identifiers.OfType<IpIdentifier>().Count() == 3);
                 Assert.IsTrue(target.Parts.First().Identifiers.OfType<DnsIdentifier>().Count() == 2);
                 Assert.IsTrue(target.Parts.First().Identifiers.OfType<EmailIdentifier>().Count() == 1);

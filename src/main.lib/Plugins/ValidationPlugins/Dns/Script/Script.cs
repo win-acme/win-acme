@@ -1,16 +1,32 @@
 ﻿using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
+    [IPlugin.Plugin<
+        ScriptOptions, ScriptOptionsFactory, 
+        DnsValidationCapability, WacsJsonPlugins>
+        ("8f1da72e-f727-49f0-8546-ef69e5ecec32", 
+        "DnsScript", "Create verification records with your own script", 
+        Hidden = true)]
+    [IPlugin.Plugin<
+        ScriptOptions, ScriptOptionsFactory,
+        DnsValidationCapability, WacsJsonPlugins>
+        ("8f1da72e-f727-49f0-8546-ef69e5ecec32", 
+        "Script", "Create verification records with your own script")]
     internal class Script : DnsValidation<Script>
     {
         private readonly ScriptClient _scriptClient;
         private readonly ScriptOptions _options;
         private readonly DomainParseService _domainParseService;
+        private readonly SecretServiceManager _ssm;
+
         internal const string DefaultCreateArguments = "create {Identifier} {RecordName} {Token}";
         internal const string DefaultDeleteArguments = "delete {Identifier} {RecordName} {Token}";
 
@@ -20,12 +36,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             ScriptClient client,
             ILogService log,
             DomainParseService domainParseService,
+            SecretServiceManager secretServiceManager,
             ISettingsService settings) :
             base(dnsClient, log, settings)
         {
             _options = options;
             _scriptClient = client;
             _domainParseService = domainParseService;
+            _ssm = secretServiceManager;
         }
 
         public override ParallelOperations Parallelism => (ParallelOperations)(_options.Parallelism ?? 0);
@@ -47,7 +65,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                         record.Authority.Domain, 
                         record.Value,
                         args, 
-                        script.EndsWith(".ps1")));
+                        script.EndsWith(".ps1"), 
+                        false));
             }
             else
             {
@@ -66,14 +85,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 {
                     args = _options.DeleteScriptArguments;
                 }
-                await _scriptClient.RunScript(
-                    script, 
-                    ProcessArguments(
-                        record.Context.Identifier,
-                        record.Authority.Domain,
-                        record.Value,
-                        args, 
-                        script.EndsWith(".ps1")));
+                var escapeToken = script.EndsWith(".ps1");
+                var actualArguments = ProcessArguments(record.Context.Identifier, record.Authority.Domain, record.Value, args, escapeToken, false);
+                var censoredArguments = ProcessArguments(record.Context.Identifier, record.Authority.Domain, record.Value, args, escapeToken, true);
+                await _scriptClient.RunScript(script, actualArguments, censoredArguments);
             }
             else
             {
@@ -81,7 +96,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
         }
 
-        private string ProcessArguments(string identifier, string recordName, string token, string args, bool escapeToken)
+        private string ProcessArguments(string identifier, string recordName, string token, string args, bool escapeToken, bool censor)
         {
             var ret = args;
             // recordName: _acme-challenge.sub.domain.com
@@ -100,14 +115,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 var idx = recordName.Length - zoneName.Length - 1;
                 if (idx != 0)
                 {
-                    nodeName = recordName.Substring(0, idx);
+                    nodeName = recordName[..idx];
                 }
             }
-            ret = ret.Replace("{ZoneName}", zoneName);
-            ret = ret.Replace("{NodeName}", nodeName);
-            ret = ret.Replace("{Identifier}", identifier);
-            ret = ret.Replace("{RecordName}", recordName);
-          
+
             // Some tokens start with - which confuses Powershell. We did not want to 
             // make a breaking change for .bat or .exe files, so instead escape the 
             // token with double quotes, as Powershell discards the quotes anyway and 
@@ -116,8 +127,22 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             {
                 ret = ret.Replace("{Token}", "\"{Token}\"");
             }
-            ret = ret.Replace("{Token}", token);
-            return ret;
+
+            // Numbered parameters for backwards compatibility only,
+            // do not extend for future updates
+            return Regex.Replace(ret, "{.+?}", (m) => {
+                return m.Value switch
+                {
+                    "{ZoneName}" => zoneName,
+                    "{NodeName}" => nodeName,
+                    "{Identifier}" => identifier,
+                    "{RecordName}" => recordName,
+                    "{Token}" => token,
+                    var s when s.StartsWith($"{{{SecretServiceManager.VaultPrefix}") =>
+                        censor ? s : _ssm.EvaluateSecret(s.Trim('{', '}')) ?? s,
+                    _ => m.Value
+                };
+            });
         }
     }
 }

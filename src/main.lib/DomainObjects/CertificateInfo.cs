@@ -1,11 +1,11 @@
-﻿using System;
+﻿using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Pkcs;
+using PKISharp.WACS.Extensions;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Text.RegularExpressions;
 
 namespace PKISharp.WACS.DomainObjects
 {
@@ -13,20 +13,94 @@ namespace PKISharp.WACS.DomainObjects
     /// Provides information about a certificate, which may or may not already
     /// be stored on the disk somewhere in a .pfx file
     /// </summary>
-    public class CertificateInfo
+    public class CertificateInfo : ICertificateInfo
     {
-        private const string SAN_OID = "2.5.29.17";
+        /// <summary>
+        /// Shorthand constructor
+        /// </summary>
+        /// <param name="cert"></param>
+        public CertificateInfo(X509Certificate2 cert) : this(new X509Certificate2Collection(cert)) { }
 
-        public CertificateInfo(X509Certificate2 certificate) => Certificate = certificate;
+        /// <summary>
+        /// Default constructor
+        /// </summary>
+        /// <param name="rawCollection"></param>
+        /// <exception cref="InvalidDataException"></exception>
+        public CertificateInfo(X509Certificate2Collection rawCollection)
+        {
+            // Store original collection
+            Collection = rawCollection;
 
-        public X509Certificate2 Certificate { get; set; }
-        public List<X509Certificate2> Chain { get; set; } = new List<X509Certificate2>();
-        public FileInfo? CacheFile { get; set; }
-        public string? CacheFilePassword { get; set; }
-        public Identifier CommonName {
+            // Get first certificate that has not been used to issue 
+            // another one in the collection. That is the outermost leaf
+            // and thus will be our main certificate
+            var list = rawCollection.OfType<X509Certificate2>().ToList();
+            var main = list.FirstOrDefault(x => !list.Any(y => x.Subject == y.Issuer));
+            if (main == null)
+            {
+                // Self-signed (unit test)
+                main = list.FirstOrDefault();
+                if (main == null)
+                {
+                    throw new InvalidDataException("Empty X509Certificate2Collection");
+                }
+            }
+            Certificate = main;
+
+            // Check if we have the private key
+            if (main.HasPrivateKey)
+            {
+                var bytes = rawCollection.Export(X509ContentType.Pfx);
+                if (bytes == null)
+                {
+                    throw new InvalidOperationException();
+                }
+                var store = new Pkcs12Store(new MemoryStream(bytes), "".ToCharArray());
+                var alias = store.Aliases.OfType<string>().FirstOrDefault(store.IsKeyEntry);
+                if (alias != null)
+                {
+                    var entry = store.GetKey(alias);
+                    var key = entry.Key;
+                    if (key.IsPrivate)
+                    {
+                        PrivateKey = key;
+                    }
+                }
+            }
+
+            // Now order the remaining certificates in the correct order of 
+            // who signed whom.
+            list.Remove(main);
+            var lastChainElement = main;
+            var orderedCollection = new List<X509Certificate2>();
+            while (list.Count > 0)
+            {
+                var signedBy = list.FirstOrDefault(x => lastChainElement.Issuer == x.Subject);
+                if (signedBy == null)
+                {
+                    // Chain cannot be resolved any further
+                    break;
+                }
+                orderedCollection.Add(signedBy);
+                lastChainElement = signedBy;
+                list.Remove(signedBy);
+            }
+            Chain = orderedCollection;
+        }
+
+        public X509Certificate2Collection Collection { get; private set; }
+
+        public X509Certificate2 Certificate { get; private set; }
+
+        public AsymmetricKeyParameter? PrivateKey { get; private set; }
+
+        public IEnumerable<X509Certificate2> Chain { get; private set; }
+
+        public Identifier CommonName
+        {
             get
             {
-                var str = Split(Certificate.Subject);
+                var str = Certificate.SubjectClean();
                 if (string.IsNullOrWhiteSpace(str))
                 {
                     return SanNames.First();
@@ -34,128 +108,7 @@ namespace PKISharp.WACS.DomainObjects
                 return new DnsIdentifier(str);
             }
         }
-        public string Issuer => Split(Certificate.Issuer) ?? "??";
 
-        /// <summary>
-        /// Parse first part of distinguished name
-        /// Format examples
-        /// DNS Name=www.example.com
-        /// DNS-имя=www.example.com
-        /// CN=example.com, OU=Dept, O=Org 
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
-        private static string? Split(string input)
-        {
-            var match = Regex.Match(input, "=([^,]+)");
-            if (match.Success)
-            {
-                return match.Groups[1].Value.Trim();
-            } 
-            else
-            {
-                return null;
-            }
-        }
-
-        public Dictionary<Type, StoreInfo> StoreInfo { get; set; } = new Dictionary<Type, StoreInfo>();
-
-        public List<Identifier> SanNames
-        {
-            get
-            {
-                foreach (var x in Certificate.Extensions)
-                {
-                    if ((x.Oid?.Value ?? "").Equals(SAN_OID))
-                    {
-                        var result = ParseSubjectAlternativeNames(x.RawData);
-                        return result.ToList();
-                    }
-                }
-                return new List<Identifier>();
-            }
-        }
-
-        private static int ReadLength(ref Span<byte> span)
-        {
-            var length = (int)span[0];
-            span = span[1..];
-            if ((length & 0x80) > 0)
-            {
-                var lengthBytes = length & 0x7F;
-                length = 0;
-                for (var i = 0; i < lengthBytes; i++)
-                {
-                    length = (length * 0x100) + span[0];
-                    span = span[1..];
-                }
-            }
-            return length;
-        }
-
-        public static IList<Identifier> ParseSubjectAlternativeNames(byte[] rawData)
-        {
-            var result = new List<Identifier>(); // cannot yield results when using Span yet
-            if (rawData.Length < 1 || rawData[0] != '0')
-            {
-                throw new InvalidDataException("They told me it will start with zero :(");
-            }
-
-            var data = rawData.AsSpan(1);
-            var length = ReadLength(ref data);
-            if (length != data.Length)
-            {
-                throw new InvalidDataException("I don't know who I am anymore");
-            }
-
-            while (!data.IsEmpty)
-            {
-                var type = data[0];
-                data = data[1..];
-
-                var partLength = ReadLength(ref data);
-                if (type == 135) // ip
-                {
-                    result.Add(new IpIdentifier(new IPAddress(data[0..partLength]).ToString()));
-                }
-                else if (type == 160) // upn
-                {
-                    // not sure how to parse the part before \f
-                    var index = data.IndexOf((byte)'\f') + 1;
-                    var upnData = data[index..];
-                    var upnLength = ReadLength(ref upnData);
-                    result.Add(new UpnIdentifier(Encoding.UTF8.GetString(upnData[0..upnLength])));
-                }
-                else if (type == 130) // dns
-                {
-                    // IDN handling
-                    var domainString = Encoding.UTF8.GetString(data[0..partLength]);
-                    var idnIndex = domainString.IndexOf('(');
-                    if (idnIndex > -1)
-                    {
-                        domainString = domainString.Substring(0, idnIndex).Trim();
-                    }
-                    result.Add(new DnsIdentifier(domainString));
-                }
-                else // all other
-                {
-                    result.Add(new UnknownIdentifier(Encoding.UTF8.GetString(data[0..partLength])));
-                }
-                data = data[partLength..];
-            }
-            return result;
-        }
-
-    }
-
-
-
-    /// <summary>
-    /// Information about where the certificate is stored
-    /// </summary>
-    public class StoreInfo
-    {
-        public string? Name { get; set; }
-        public string? Path { get; set; }
+        public IEnumerable<Identifier> SanNames => Certificate.SanNames();
     }
 }

@@ -1,9 +1,6 @@
-﻿using ACMESharp.Authorizations;
-using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.Base.Factories;
+﻿using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
@@ -11,11 +8,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     /// <summary>
     /// Domeneshop DNS validation
     /// </summary>
-    internal class DomeneshopOptionsFactory : ValidationPluginOptionsFactory<DomeneshopDnsValidation, DomeneshopOptions>
+    internal class DomeneshopOptionsFactory : PluginOptionsFactory<DomeneshopOptions>
     {
         private readonly ArgumentsInputService _arguments;
 
-        public DomeneshopOptionsFactory(ArgumentsInputService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
+        public DomeneshopOptionsFactory(ArgumentsInputService arguments) => _arguments = arguments;
 
         private ArgumentResult<ProtectedString?> ClientId => _arguments.
             GetProtectedString<DomeneshopArguments>(a => a.ClientId).
@@ -24,7 +21,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         private ArgumentResult<ProtectedString?> ClientSecret => _arguments.
             GetProtectedString<DomeneshopArguments>(a => a.ClientSecret);
 
-        public override async Task<DomeneshopOptions?> Aquire(Target target, IInputService input, RunLevel runLevel)
+        public override async Task<DomeneshopOptions?> Aquire(IInputService input, RunLevel runLevel)
         {
             return new DomeneshopOptions()
             {
@@ -33,7 +30,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             };
         }
 
-        public override async Task<DomeneshopOptions?> Default(Target target)
+        public override async Task<DomeneshopOptions?> Default()
         {
             return new DomeneshopOptions()
             {
@@ -42,6 +39,5 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             };
         }
 
-        public override bool CanValidate(Target target) => target.Parts.SelectMany(x => x.Identifiers).All(x => x.Type == IdentifierType.DnsName);
     }
 }

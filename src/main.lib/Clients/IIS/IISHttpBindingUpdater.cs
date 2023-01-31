@@ -483,8 +483,8 @@ namespace PKISharp.WACS.Clients.IIS
                     // If there is a binding for *.a.b.c.com (5) and one for *.c.com (3)
                     // then the hostname test.a.b.c.com (5) is a better (more specific)
                     // for the former than for the latter, so we prefer to use that.
-                    var hostLevel = certificate.Value.Split('.').Count();
-                    var bindingLevel = iis.Host.Split('.').Count();
+                    var hostLevel = certificate.Value.Split('.').Length;
+                    var bindingLevel = iis.Host.Split('.').Length;
                     return 50 - (hostLevel - bindingLevel);
                 }
                 else
@@ -499,8 +499,8 @@ namespace PKISharp.WACS.Clients.IIS
                 if (iis.Host.ToLower().EndsWith(certificate.Value.ToLower().Replace("*.", ".")))
                 {
                     // But it should not match with another.sub.example.com.
-                    var hostLevel = certificate.Value.Split('.').Count();
-                    var bindingLevel = iis.Host.Split('.').Count();
+                    var hostLevel = certificate.Value.Split('.').Length;
+                    var bindingLevel = iis.Host.Split('.').Length;
                     if (hostLevel == bindingLevel)
                     {
                         return 90;

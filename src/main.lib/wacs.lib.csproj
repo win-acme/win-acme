@@ -1,63 +1,69 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <RootNamespace>PKISharp.WACS</RootNamespace>
-    <Configurations>Debug;Release;ReleasePluggable</Configurations>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net7.0</TargetFramework>
+		<RootNamespace>PKISharp.WACS</RootNamespace>
+		<Configurations>Debug;DebugTrimmed;Release;ReleaseTrimmed</Configurations>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)'=='Debug'">
+		<WarningLevel>4</WarningLevel>
+		<DefineConstants>DEBUG;PLUGGABLE</DefineConstants>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)'=='DebugTrimmed'">
+		<WarningLevel>4</WarningLevel>
+		<DefineConstants>DEBUG</DefineConstants>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<DefineConstants>RELEASE;PLUGGABLE</DefineConstants>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)'=='Release' OR '$(Configuration)'=='ReleaseTrimmed'">
+		<DefineConstants>RELEASE</DefineConstants>
+	</PropertyGroup>
 	
-  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-    <WarningLevel>1</WarningLevel>
-  </PropertyGroup>
-  
-  <PropertyGroup>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)'=='DebugTrimmed' OR '$(Configuration)'=='ReleaseTrimmed'">
+		<EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+	</PropertyGroup>
+	
+	<PropertyGroup>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)'=='ReleasePluggable'">
-    <DefineConstants>PLUGGABLE</DefineConstants>
-  </PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="Autofac" Version="6.5.0" />
+		<PackageReference Include="DnsClient" Version="1.7.0" />
+		<PackageReference Include="FluentFTP" Version="44.0.1" />
+		<PackageReference Include="MailKit" Version="3.4.3" />
+		<PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="7.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
+		<PackageReference Include="Microsoft.Web.Administration" Version="11.1.0" />
+		<PackageReference Include="Microsoft.Win32.Primitives" Version="4.3.0" />
+		<PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
+		<PackageReference Include="MorseCode.ITask" Version="2.0.3" />
+		<PackageReference Include="Nager.PublicSuffix" Version="2.4.0" />
+		<PackageReference Include="Serilog" Version="2.12.0" />
+		<PackageReference Include="Serilog.Settings.AppSettings" Version="2.2.2" />
+		<PackageReference Include="Serilog.Settings.Configuration" Version="3.4.0" />
+		<PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
+		<PackageReference Include="Serilog.Sinks.EventLog" Version="3.1.0" />
+		<PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
+		<PackageReference Include="SSH.NET" Version="2020.0.2" />
+		<PackageReference Include="System.Configuration.ConfigurationManager" Version="7.0.0" />
+		<PackageReference Include="System.IO.FileSystem.AccessControl" Version="5.0.0" />
+		<PackageReference Include="System.Net.Http.WinHttpHandler" Version="7.0.0" />
+		<PackageReference Include="System.Net.Primitives" Version="4.3.1" />
+		<PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
+		<PackageReference Include="System.Security.Cryptography.Cng" Version="5.0.0" />
+		<PackageReference Include="System.Security.Cryptography.ProtectedData" Version="7.0.0" />
+		<PackageReference Include="System.Security.Cryptography.X509Certificates" Version="4.3.2" />
+		<PackageReference Include="TaskScheduler" Version="2.10.1" />
+		<PackageReference Include="WebDav.Client" Version="2.8.0" />
+	</ItemGroup>
 
-  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-    <DefineConstants>TRACE;PLUGGABLE</DefineConstants>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Autofac" Version="6.3.0" />
-    <PackageReference Include="DnsClient" Version="1.6.0" />
-    <PackageReference Include="FluentFTP" Version="37.0.2" />
-    <PackageReference Include="MailKit" Version="3.2.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Web.Administration" Version="11.1.0" />
-    <PackageReference Include="Microsoft.Win32.Primitives" Version="4.3.0" />
-    <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
-    <PackageReference Include="Nager.PublicSuffix" Version="2.3.0" />
-    <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
-    <PackageReference Include="Serilog" Version="2.10.0" />
-    <PackageReference Include="Serilog.Settings.AppSettings" Version="2.2.2" />
-    <PackageReference Include="Serilog.Settings.Configuration" Version="3.3.0" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="4.0.1" />
-    <PackageReference Include="Serilog.Sinks.EventLog" Version="3.1.0" />
-    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
-    <PackageReference Include="SSH.NET" Version="2020.0.1" />
-    <PackageReference Include="System.Configuration.ConfigurationManager" Version="6.0.0" />
-    <PackageReference Include="System.IO.FileSystem.AccessControl" Version="5.0.0" />
-    <PackageReference Include="System.Net.Http.WinHttpHandler" Version="6.0.1" />
-    <PackageReference Include="System.Net.Primitives" Version="4.3.1" />
-    <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
-    <PackageReference Include="System.Security.Cryptography.Cng" Version="5.0.0" />
-    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="6.0.0" />
-    <PackageReference Include="System.Security.Cryptography.X509Certificates" Version="4.3.2" />
-    <PackageReference Include="TaskScheduler" Version="2.10.1" />
-    <PackageReference Include="WebDav.Client" Version="2.8.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\ACMESharpCore\src\ACMESharp\ACMESharp.csproj" />
-    <ProjectReference Include="..\fluent-command-line-parser\FluentCommandLineParser\FluentCommandLineParser.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\ACMESharpCore\src\ACMESharp\ACMESharp.csproj" />
+		<ProjectReference Include="..\fluent-command-line-parser\FluentCommandLineParser\FluentCommandLineParser.csproj" />
+	</ItemGroup>
 
 </Project>

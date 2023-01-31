@@ -1,9 +1,11 @@
-﻿using Microsoft.Extensions.Configuration;
-using PKISharp.WACS.Configuration.Arguments;
+﻿using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Configuration.Settings;
 using PKISharp.WACS.Extensions;
 using System;
 using System.IO;
+using System.Security.AccessControl;
+using System.Security.Principal;
+using System.Text.Json;
 
 namespace PKISharp.WACS.Services
 {
@@ -11,32 +13,14 @@ namespace PKISharp.WACS.Services
     {
         private readonly ILogService _log;
         private readonly MainArguments _arguments;
-
+        private readonly Settings _settings;
         public bool Valid { get; private set; } = false;
-        public ClientSettings Client { get; private set; } = new ClientSettings();
-        public UiSettings UI { get; private set; } = new UiSettings();
-        public AcmeSettings Acme { get; private set; } = new AcmeSettings();
-        public ExecutionSettings Execution { get; private set; } = new ExecutionSettings();
-        public ProxySettings Proxy { get; private set; } = new ProxySettings();
-        public CacheSettings Cache { get; private set; } = new CacheSettings();
-        public ScheduledTaskSettings ScheduledTask { get; private set; } = new ScheduledTaskSettings();
-        public NotificationSettings Notification { get; private set; } = new NotificationSettings();
-        public SecuritySettings Security { get; private set; } = new SecuritySettings();
-        public ScriptSettings Script { get; private set; } = new ScriptSettings();
-        [Obsolete]
-        public SourceSettings Target { get; private set; } = new SourceSettings();
-        public SourceSettings Source { get; private set; } = new SourceSettings();
-        public ValidationSettings Validation { get; private set; } = new ValidationSettings();
-        public OrderSettings Order { get; private set; } = new OrderSettings();
-        public CsrSettings Csr { get; private set; } = new CsrSettings();
-        public StoreSettings Store { get; private set; } = new StoreSettings();
-        public InstallationSettings Installation { get; private set; } = new InstallationSettings();
-        public SecretsSettings Secrets { get; private set; } = new SecretsSettings();
 
         public SettingsService(ILogService log, MainArguments arguments)
         {
             _log = log;
             _arguments = arguments;
+            _settings = new Settings();
             var settingsFileName = "settings.json";
             var settingsFileTemplateName = "settings_default.json";
             _log.Verbose("Looking for {settingsFileName} in {path}", settingsFileName, VersionService.SettingsPath);
@@ -75,14 +59,17 @@ namespace PKISharp.WACS.Services
 
             try
             {
-                new ConfigurationBuilder()
-                    .AddJsonFile(useFile.FullName, true, true)
-                    .Build()
-                    .Bind(this);
+                using var fs = useFile.OpenRead();
+                var newSettings = JsonSerializer.Deserialize(fs, SettingsJson.Default.Settings);
+                if (newSettings != null)
+                {
+                    _settings = newSettings;
+                }
 
                 // This code specifically deals with backwards compatibility 
                 // so it is allowed to use obsolete properties
 #pragma warning disable CS0612
+#pragma warning disable CS0618
                 static string? Fallback(string? x, string? y) => string.IsNullOrWhiteSpace(x) ? y : x;
                 Source.DefaultSource = Fallback(Source.DefaultSource, Target.DefaultTarget);
                 Store.PemFiles.DefaultPath = Fallback(Store.PemFiles.DefaultPath, Store.DefaultPemFilesPath);
@@ -90,6 +77,7 @@ namespace PKISharp.WACS.Services
                 Store.CentralSsl.DefaultPassword = Fallback(Store.CentralSsl.DefaultPassword, Store.DefaultCentralSslPfxPassword);
                 Store.CertificateStore.DefaultStore = Fallback(Store.CertificateStore.DefaultStore, Store.DefaultCertificateStore);
 #pragma warning restore CS0612 
+#pragma warning restore CS0618
             }
             catch (Exception ex)
             {
@@ -102,9 +90,16 @@ namespace PKISharp.WACS.Services
                 return;
             }
 
-            CreateConfigPath();
-            CreateLogPath();
-            CreateCachePath();
+            var configRoot = ChooseConfigPath();
+            Client.ConfigurationPath = Path.Combine(configRoot, BaseUri.CleanUri()!);
+            Client.LogPath = ChooseLogPath();
+            Cache.Path = ChooseCachePath();
+
+            EnsureFolderExists(configRoot, "configuration", true);
+            EnsureFolderExists(Client.ConfigurationPath, "configuration", false);
+            EnsureFolderExists(Client.LogPath, "log", !Client.LogPath.StartsWith(Client.ConfigurationPath));
+            EnsureFolderExists(Cache.Path, "cache", !Client.LogPath.StartsWith(Client.ConfigurationPath));
+
             Valid = true;
         }
 
@@ -134,10 +129,9 @@ namespace PKISharp.WACS.Services
         }
 
         /// <summary>
-        /// Find and/or create path of the configuration files
+        /// Determine which folder to use for configuration data
         /// </summary>
-        /// <param name="arguments"></param>
-        private void CreateConfigPath()
+        private string ChooseConfigPath()
         {
             var userRoot = Client.ConfigurationPath;
             string? configRoot;
@@ -160,79 +154,171 @@ namespace PKISharp.WACS.Services
                 var appData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
                 configRoot = Path.Combine(appData, Client.ClientName);
             }
-
-            // This only happens when invalid options are provided 
-            Client.ConfigurationPath = Path.Combine(configRoot, BaseUri.CleanUri()!);
-
-            // Create folder if it doesn't exist yet
-            var di = new DirectoryInfo(Client.ConfigurationPath);
-            if (!di.Exists)
-            {
-                try
-                {
-                    Directory.CreateDirectory(Client.ConfigurationPath);
-                } 
-                catch (Exception ex)
-                {
-                    throw new Exception($"Unable to create configuration path {Client.ConfigurationPath}", ex);
-                }
-            }
-
-            _log.Debug("Config folder: {_configPath}", Client.ConfigurationPath);
+            return configRoot;
         }
 
         /// <summary>
-        /// Find and/or created path for logging
+        /// Determine which folder to use for logging
         /// </summary>
-        private void CreateLogPath()
+        private string ChooseLogPath()
         {
             if (string.IsNullOrWhiteSpace(Client.LogPath))
             {
-                Client.LogPath = Path.Combine(Client.ConfigurationPath, "Log");
+                return Path.Combine(Client.ConfigurationPath, "Log");
             }
             else
             {
                 // Create seperate logs for each endpoint
-                Client.LogPath = Path.Combine(Client.LogPath, BaseUri.CleanUri()!);
+                return Path.Combine(Client.LogPath, BaseUri.CleanUri()!);
             }
-            if (!Directory.Exists(Client.LogPath))
-            {
-                try
-                {
-                    Directory.CreateDirectory(Client.LogPath);
-                }
-                catch (Exception ex)
-                {
-                    _log.Error(ex, "Unable to create log directory {_logPath}", Client.LogPath);
-                    throw;
-                }
-            }
-            _log.Debug("Log path: {_logPath}", Client.LogPath);
         }
 
         /// <summary>
-        /// Find and/or created path of the certificate cache
+        /// Determine which folder to use for cache certificates
         /// </summary>
-        private void CreateCachePath()
+        private string ChooseCachePath()
         {
             if (string.IsNullOrWhiteSpace(Cache.Path))
             {
-                Cache.Path = Path.Combine(Client.ConfigurationPath, "Certificates");
+                return Path.Combine(Client.ConfigurationPath, "Certificates");
             }
-            if (!Directory.Exists(Cache.Path))
+            return Cache.Path;
+        }
+
+        /// <summary>
+        /// Create folder if needed
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="label"></param>
+        /// <exception cref="Exception"></exception>
+        private void EnsureFolderExists(string path, string label, bool checkAcl)
+        {
+            var created = false;
+            var di = new DirectoryInfo(path);
+            if (!di.Exists)
             {
                 try
                 {
-                    Directory.CreateDirectory(Cache.Path);
+                    di = Directory.CreateDirectory(path);
+                    _log.Debug($"Created {label} folder {{path}}", path);
+                    created = true;
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(ex, "Unable to create cache path {_certificatePath}", Cache.Path);
-                    throw;
+                    throw new Exception($"Unable to create {label} {path}", ex);
                 }
             }
-            _log.Debug("Cache path: {_certificatePath}", Cache.Path);
+            else
+            {
+                _log.Debug($"Use existing {label} folder {{path}}", path);
+            }
+            if (checkAcl)
+            {
+                EnsureFolderAcl(di, label, created);
+            }
         }
 
+        /// <summary>
+        /// Ensure proper access rights to a folder
+        /// </summary>
+        private void EnsureFolderAcl(DirectoryInfo di, string label, bool created)
+        {
+            // Test access control rules
+            var (access, inherited) = UsersHaveAccess(di);
+            if (!access)
+            {
+                return;
+            }
+
+            if (!created)
+            {
+                _log.Warning("All users currently have access to {path}.", di.FullName);
+                _log.Warning("That access will now be limited to improve security.", label, di.FullName);
+                _log.Warning("You may manually add specific trusted accounts to the ACL.", label, di.FullName);
+            }
+
+            var acl = di.GetAccessControl();
+            if (inherited)
+            {
+                // Disable access rule inheritance
+                acl.SetAccessRuleProtection(true, true);
+                di.SetAccessControl(acl);
+                acl = di.GetAccessControl();
+            }
+
+            var sid = new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null);
+            var rules = acl.GetAccessRules(true, true, typeof(SecurityIdentifier));
+            foreach (FileSystemAccessRule rule in rules)
+            {
+                if (rule.IdentityReference == sid && 
+                    rule.AccessControlType == AccessControlType.Allow)
+                {
+                    acl.RemoveAccessRule(rule);
+                }
+            }
+            var user = WindowsIdentity.GetCurrent().User;
+            if (user != null)
+            {
+                // Allow user access from non-privilegdes perspective 
+                // as well.
+                acl.AddAccessRule(
+                    new FileSystemAccessRule(
+                        user,
+                        FileSystemRights.Read | FileSystemRights.Delete | FileSystemRights.Modify,
+                        InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
+                        PropagationFlags.None,
+                        AccessControlType.Allow));
+            }
+
+            di.SetAccessControl(acl);
+        }
+
+        /// <summary>
+        /// Test if users have access through inherited or direct rules
+        /// </summary>
+        /// <param name="di"></param>
+        /// <returns></returns>
+        private static (bool, bool) UsersHaveAccess(DirectoryInfo di)
+        {
+            var acl = di.GetAccessControl();
+            var sid = new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null);
+            var rules = acl.GetAccessRules(true, true, typeof(SecurityIdentifier));
+            var hit = false;
+            var inherited = false;
+            foreach (FileSystemAccessRule rule in rules)
+            {
+                if (rule.IdentityReference == sid &&
+                    rule.AccessControlType == AccessControlType.Allow)
+                {
+                    hit = true;
+                    inherited = inherited || rule.IsInherited;
+                }
+            }
+            return (hit, inherited);
+        }
+
+        /// <summary>
+        /// Interface implementation
+        /// </summary>
+
+        public UiSettings UI => _settings.UI;
+        public AcmeSettings Acme => _settings.Acme;
+        public ExecutionSettings Execution => _settings.Execution;
+        public ProxySettings Proxy => _settings.Proxy;
+        public CacheSettings Cache => _settings.Cache;
+        public SecretsSettings Secrets => _settings.Secrets;
+        public ScheduledTaskSettings ScheduledTask => _settings.ScheduledTask;
+        public NotificationSettings Notification => _settings.Notification;
+        public SecuritySettings Security => _settings.Security;
+        public ScriptSettings Script => _settings.Script;
+        public ClientSettings Client => _settings.Client;
+        public SourceSettings Source => _settings.Source;
+        [Obsolete("Use Source instead")]
+        public SourceSettings Target => _settings.Target;
+        public ValidationSettings Validation => _settings.Validation;
+        public OrderSettings Order => _settings.Order;
+        public CsrSettings Csr => _settings.Csr;
+        public StoreSettings Store => _settings.Store;
+        public InstallationSettings Installation => _settings.Installation;
     }
 }

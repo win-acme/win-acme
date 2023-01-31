@@ -9,7 +9,7 @@ using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.UnitTests.Mock.Services;
 using System.Linq;
-using mock = PKISharp.WACS.UnitTests.Mock.Services;
+using Mock = PKISharp.WACS.UnitTests.Mock.Services;
 
 namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
 {
@@ -25,30 +25,30 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
 
         public IISSiteTests()
         {
-            log = new mock.LogService(false);
+            log = new Mock.Services.LogService(false);
             iis = new Mock.Clients.MockIISClient(log);
             var settings = new MockSettingsService();
-            var proxy = new mock.ProxyService();
+            var proxy = new Mock.Services.ProxyService();
             domainParse = new DomainParseService(log, proxy, settings);
             helper = new IISHelper(log, iis, domainParse);
-            plugins = new MockPluginService(log);
-            userRoleService = new mock.UserRoleService();
+            plugins = new PluginService(log, new MockAssemblyService(log));
+            userRoleService = new Mock.Services.UserRoleService();
         }
 
         private IISOptions? Options(string commandLine)
         {
-            var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
-            var input = new mock.InputService(new());
+            var optionsParser = new ArgumentsParser(log, new MockAssemblyService(log), commandLine.Split(' '));
+            var input = new Mock.Services.InputService(new());
             var secretService = new SecretServiceManager(new SecretService(), input, log);
             var argsInput = new ArgumentsInputService(log, optionsParser, input, secretService);
             var args = new MainArguments();
-            var x = new IISOptionsFactory(log, helper, args, argsInput, userRoleService);
+            var x = new IISOptionsFactory(log, helper, args, argsInput);
             return x.Default().Result;
         }
 
-        private Target Target(IISOptions options)
+        private Target? Target(IISOptions options)
         {
-            var plugin = new IIS(log, userRoleService, helper, options);
+            var plugin = new IIS(log, helper, options);
             return plugin.Generate().Result;
         }
 
@@ -64,17 +64,18 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                 Assert.IsNotNull(options.IncludeSiteIds);
                 if (options.IncludeSiteIds != null)
                 {
-                    Assert.AreEqual(options.IncludeSiteIds.Count(), 1);
+                    Assert.AreEqual(options.IncludeSiteIds.Count, 1);
                     Assert.IsTrue(options.IncludeSiteIds.Contains(1));
                     Assert.IsNull(options.CommonName);
                     Assert.IsNull(options.ExcludeHosts);
                     var target = Target(options);
+                    Assert.IsNotNull(target);
                     Assert.AreEqual(target.IsValid(log), true);
                     Assert.AreEqual(target.CommonName.Value, site.Bindings.First().Host); // First binding
                     Assert.AreEqual(target.IIS, true);
-                    Assert.AreEqual(target.Parts.Count(), 1);
+                    Assert.AreEqual(target.Parts.Count, 1);
                     Assert.AreEqual(target.Parts.First().SiteId, siteId);
-                    Assert.AreEqual(target.Parts.First().Identifiers.Count(), site.Bindings.Count());
+                    Assert.AreEqual(target.Parts.First().Identifiers.Count, site.Bindings.Count());
                     Assert.AreEqual(target.Parts.First().Identifiers.All(x => site.Bindings.Any(b => b.Host == x.Value)), true);
                 }
             }
@@ -94,6 +95,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                 Assert.AreEqual(options.CommonName, commonName);
                 Assert.IsNull(options.ExcludeHosts);
                 var target = Target(options);
+                Assert.IsNotNull(target);
                 Assert.AreEqual(target.IsValid(log), true);
                 Assert.AreEqual(target.CommonName.Value, commonName); // First binding
             }
@@ -114,6 +116,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                 Assert.AreEqual(options.CommonName, uniHost);
                 Assert.IsNull(options.ExcludeHosts);
                 var target = Target(options);
+                Assert.IsNotNull(target);
                 Assert.AreEqual(target.IsValid(log), true);
                 Assert.AreEqual(target.CommonName.Value, uniHost); // First binding
             }
@@ -132,6 +135,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                 Assert.IsNotNull(options.ExcludeHosts);
                 Assert.AreEqual(options.ExcludeHosts?.Count, site.Bindings.Count() - 2);
                 var target = Target(options);
+                Assert.IsNotNull(target);
                 Assert.AreEqual(target.IsValid(log), true);
                 Assert.IsFalse(target.Parts.First().Identifiers.Any(x => x.Value == "test.example.com"));
                 Assert.IsFalse(target.Parts.First().Identifiers.Any(x => x.Value == "four.example.com"));
@@ -151,7 +155,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                 Assert.IsNotNull(options.ExcludeHosts);
                 if (options.ExcludeHosts != null)
                 {
-                    Assert.AreEqual(options.ExcludeHosts.Count(), 1);
+                    Assert.AreEqual(options.ExcludeHosts.Count, 1);
                     Assert.AreEqual(options.ExcludeHosts.First(), "经/已經.example.com");
                 }
             }
@@ -172,6 +176,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             var site = iis.GetSite(siteId);
             var options = new IISSiteOptions() { SiteId = siteId, CommonName = "missing.example.com" };
             var target = Target(options);
+            Assert.IsNotNull(target);
             Assert.AreEqual(target.IsValid(log), true);
             Assert.AreEqual(target.CommonName.Value, site.Bindings.First().Host);
         }
@@ -191,7 +196,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                 SiteId = 999
             };
             var target = Target(options);
-            Assert.IsTrue(target is INull);
+            Assert.IsNull(target);
         }
 
         [TestMethod]

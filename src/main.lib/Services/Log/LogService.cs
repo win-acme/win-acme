@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Services
         private Logger? _diskLogger;
         private readonly Logger? _notificationLogger;
         private readonly LoggingLevelSwitch _levelSwitch;
-        private readonly List<MemoryEntry> _lines = new List<MemoryEntry>();
+        private readonly List<MemoryEntry> _lines = new();
 
         public bool Dirty { get; set; }
         private string ConfigurationPath { get; }

@@ -20,12 +20,12 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         public ManualTests()
         {
             log = new Mock.Services.LogService(false);
-            plugins = new MockPluginService(log);
+            plugins = new PluginService(log, new MockAssemblyService(log));
         }
 
         private ManualOptions? Options(string commandLine)
         {
-            var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
+            var optionsParser = new ArgumentsParser(log, new MockAssemblyService(log), commandLine.Split(' '));
             var input = new Mock.Services.InputService(new());
             var secretService = new SecretServiceManager(new SecretService(), input, log);
             var argsInput = new ArgumentsInputService(log, optionsParser, input, secretService);
@@ -33,7 +33,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             return x.Default().Result;
         }
 
-        private Target Target(ManualOptions options)
+        private Target? Target(ManualOptions options)
         {
             var plugin = new Manual(options);
             return plugin.Generate().Result;
@@ -47,8 +47,9 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             if (options != null)
             {
                 Assert.AreEqual(options.CommonName, "a.example.com");
-                Assert.AreEqual(options.AlternativeNames.Count(), 3);
+                Assert.AreEqual(options.AlternativeNames.Count, 3);
                 var tar = Target(options);
+                Assert.IsNotNull(tar);
                 Assert.AreEqual(tar.IsValid(log), true);
             }
         }
@@ -63,6 +64,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                 Assert.AreEqual(options.CommonName, "经/已經.example.com");
                 Assert.AreEqual(options.AlternativeNames.First(), "经/已經.example.com");
                 var tar = Target(options);
+                Assert.IsNotNull(tar);
                 Assert.AreEqual(tar.IsValid(log), true);
             }
         }
@@ -77,6 +79,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                 Assert.AreEqual(options.CommonName, "*.经/已經.example.com");
                 Assert.AreEqual(options.AlternativeNames.First(), "*.经/已經.example.com");
                 var tar = Target(options);
+                Assert.IsNotNull(tar);
                 Assert.AreEqual(tar.IsValid(log), true);
             }
         }
@@ -91,6 +94,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                 Assert.AreEqual(options.CommonName, "经/已經.经/已經.example.com");
                 Assert.AreEqual(options.AlternativeNames.First(), "经/已經.经/已經.example.com");
                 var tar = Target(options);
+                Assert.IsNotNull(tar);
                 Assert.AreEqual(tar.IsValid(log), true);
             }
         }
@@ -105,6 +109,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                 Assert.AreEqual(options.CommonName, "*.经/已經.example.com");
                 Assert.AreEqual(options.AlternativeNames.First(), "*.经/已經.example.com");
                 var tar = Target(options);
+                Assert.IsNotNull(tar);
                 Assert.AreEqual(tar.IsValid(log), true);
             }
         }
@@ -119,6 +124,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                 Assert.AreEqual(options.CommonName, "经/已經.经/已經.example.com");
                 Assert.AreEqual(options.AlternativeNames.First(), "经/已經.经/已經.example.com");
                 var tar = Target(options);
+                Assert.IsNotNull(tar);
                 Assert.AreEqual(tar.IsValid(log), true);
             }
         }
@@ -131,6 +137,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             if (options != null)
             {
                 var tar = Target(options);
+                Assert.IsNotNull(tar);
                 Assert.AreEqual(tar.IsValid(log), true);
                 Assert.IsTrue(tar.Parts.First().Identifiers.OfType<IpIdentifier>().First().Value == "1.2.3.4");
             }
@@ -144,6 +151,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             if (options != null)
             {
                 var tar = Target(options);
+                Assert.IsNotNull(tar);
                 Assert.AreEqual(tar.IsValid(log), true);
                 Assert.IsTrue(tar.CommonName.Value == "abc.com");
             }
@@ -157,8 +165,9 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             if (options != null)
             {
                 Assert.AreEqual(options.CommonName, "common.example.com");
-                Assert.AreEqual(options.AlternativeNames.Count(), 4);
+                Assert.AreEqual(options.AlternativeNames.Count, 4);
                 var tar = Target(options);
+                Assert.IsNotNull(tar);
                 Assert.AreEqual(tar.IsValid(log), true);
             }
         }
@@ -171,8 +180,9 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             if (options != null)
             {
                 Assert.AreEqual(options.CommonName, "经/已經.example.com");
-                Assert.AreEqual(options.AlternativeNames.Count(), 3);
+                Assert.AreEqual(options.AlternativeNames.Count, 3);
                 var tar = Target(options);
+                Assert.IsNotNull(tar);
                 Assert.AreEqual(tar.IsValid(log), true);
             }
         }

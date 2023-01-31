@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <RootNamespace>PKISharp.WACS.Plugins.ValidationPlugins</RootNamespace>
     <AssemblyName>PKISharp.WACS.Plugins.ValidationPlugins.Azure</AssemblyName>
     <Version>2.1.0.0</Version>
@@ -14,9 +14,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Azure.Management.Dns" Version="3.0.1" />
-    <PackageReference Include="Microsoft.Azure.Services.AppAuthentication" Version="1.6.2" />
-    <PackageReference Include="Microsoft.Rest.ClientRuntime.Azure.Authentication" Version="2.4.1" />
+    <PackageReference Include="Azure.Identity" Version="1.8.1" />
+    <PackageReference Include="Azure.ResourceManager.Dns" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup>

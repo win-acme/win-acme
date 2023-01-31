@@ -1,20 +1,30 @@
 ﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
-using bc = Org.BouncyCastle;
+using Bc = Org.BouncyCastle;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
+    [IPlugin.Plugin<
+        PfxFileOptions, PfxFileOptionsFactory, 
+        DefaultCapability, WacsJsonPlugins>
+        ("2a2c576f-7637-4ade-b8db-e8613b0bb33e",
+        Name, "PFX archive")]
     internal class PfxFile : IStorePlugin
     {
+        internal const string Name = "PfxFile";
+
         private readonly ILogService _log;
         private readonly string _path;
+        private readonly string? _name;
         private readonly string? _password;
 
         public static string? DefaultPath(ISettingsService settings) => 
@@ -35,6 +45,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 options.PfxPassword.Value :
                 settings.Store.PfxFile?.DefaultPassword;
             _password = secretServiceManager.EvaluateSecret(passwordRaw);
+            _name = options.FileName;
 
             var path = !string.IsNullOrWhiteSpace(options.Path) ? 
                 options.Path :
@@ -53,9 +64,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         private string PathForIdentifier(string identifier) => Path.Combine(_path, $"{identifier.Replace("*", "_")}.pfx");
 
-        public async Task Save(CertificateInfo input)
+        public Task<StoreInfo?> Save(ICertificateInfo input)
         {
-            var dest = PathForIdentifier(input.CommonName.Value);
+            var dest = PathForIdentifier(_name ?? input.CommonName.Value);
             _log.Information("Copying certificate to the pfx folder {dest}", dest);
             try
             {
@@ -65,39 +76,37 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 };
                 collection.AddRange(input.Chain.ToArray());
                 var ms = new MemoryStream(collection.Export(X509ContentType.Pfx)!);
-                var bcPfx = new bc.Pkcs.Pkcs12Store(ms, Array.Empty<char>());
-                var aliases = bcPfx.Aliases.OfType<string>().ToList();
-                var key = default(bc.Pkcs.AsymmetricKeyEntry);
-                var chain = default(bc.Pkcs.X509CertificateEntry[]);
-                foreach (var alias in aliases)
+                var bcPfxIn = new Bc.Pkcs.Pkcs12Store(ms, Array.Empty<char>());
+                var bcPfxOut = new Bc.Pkcs.Pkcs12Store();
+                var aliases = bcPfxIn.Aliases.OfType<string>().ToList();
+                var keyAlias = aliases.FirstOrDefault(a => bcPfxIn.IsKeyEntry(a));
+                if (keyAlias != null)
                 {
-                    if (bcPfx.IsKeyEntry(alias))
+                    bcPfxOut.SetKeyEntry(
+                        input.CommonName.Value,
+                        bcPfxIn.GetKey(keyAlias), 
+                        bcPfxIn.GetCertificateChain(keyAlias));
+                }
+                else
+                {
+                    foreach (var alias in aliases)
                     {
-                        key = bcPfx.GetKey(alias);
-                        chain = bcPfx.GetCertificateChain(alias);
-                        break;
+                        bcPfxOut.SetCertificateEntry(alias, bcPfxIn.GetCertificate(alias));
                     }
                 }
                 using var fs = new FileInfo(dest).OpenWrite();
-                bcPfx = new bc.Pkcs.Pkcs12Store();
-                bcPfx.SetKeyEntry(input.CommonName.Value, key, chain);
-                bcPfx.Save(fs, _password?.ToCharArray(), new bc.Security.SecureRandom());
+                bcPfxOut.Save(fs, _password?.ToCharArray(), new Bc.Security.SecureRandom());
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "Error copying certificate to pfx path");
             }
-            input.StoreInfo.TryAdd(
-                GetType(),
-                new StoreInfo()
-                {
-                    Name = PfxFileOptions.PluginName,
-                    Path = _path
-                });
+            return Task.FromResult<StoreInfo?>(new StoreInfo() {
+                Name = Name,
+                Path = _path
+            });
         }
 
-        public Task Delete(CertificateInfo input) => Task.CompletedTask;
-
-        (bool, string?) IPlugin.Disabled => (false, null);
+        public Task Delete(ICertificateInfo input) => Task.CompletedTask;
     }
 }

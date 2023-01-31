@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    internal class CsrOptionsFactory : TargetPluginOptionsFactory<Csr, CsrOptions>
+    internal class CsrOptionsFactory : PluginOptionsFactory<CsrOptions>
     {
         private readonly ILogService _log;
         private readonly ArgumentsInputService _arguments;

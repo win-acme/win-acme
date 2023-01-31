@@ -25,9 +25,9 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
     /// <summary>
     /// Common implementation between RSA and EC certificates
     /// </summary>
-    public abstract class CsrPlugin<TPlugin, TOptions> : ICsrPlugin
-        where TOptions : CsrPluginOptions<TPlugin>
-        where TPlugin : ICsrPlugin
+    public abstract class CsrPlugin<TOptions> : 
+        ICsrPlugin
+        where TOptions : CsrPluginOptions
     {
         protected readonly ILogService _log;
         protected readonly ISettingsService _settings;
@@ -47,19 +47,22 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
 
         public virtual Task<X509Certificate2> PostProcess(X509Certificate2 original) => Task.FromResult(original);
 
-        async Task<Pkcs10CertificationRequest> ICsrPlugin.GenerateCsr(string cachePath, Target target)
+        async Task<Pkcs10CertificationRequest> ICsrPlugin.GenerateCsr(Target target, string? keyPath)
         {
             var identifiers = target.GetIdentifiers(false);
             var commonName = target.CommonName;
             var extensions = new Dictionary<DerObjectIdentifier, X509Extension>();
 
-            LoadFromCache(cachePath);
+            if (!string.IsNullOrEmpty(keyPath))
+            {
+                LoadFromCache(keyPath);
+            }
 
             var dn = CommonName(commonName, identifiers);
             var keys = await GetKeys();
 
             ProcessMustStaple(extensions);
-            CsrPlugin<TPlugin, TOptions>.ProcessSan(identifiers, extensions);
+            CsrPlugin<TOptions>.ProcessSan(identifiers, extensions);
 
             var csr = new Pkcs10CertificationRequest(
                 new Asn1SignatureFactory(GetSignatureAlgorithm(), keys.Private),
@@ -69,7 +72,11 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
                     PkcsObjectIdentifiers.Pkcs9AtExtensionRequest,
                     new DerSet(new X509Extensions(extensions)))));
 
-            SaveToCache(cachePath);
+            if (!string.IsNullOrEmpty(keyPath))
+            {
+                SaveToCache(keyPath);
+            }
+
             return csr;
         }
 
@@ -230,7 +237,5 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             var issuerDN = new X509Name(ord, attrs);
             return issuerDN;
         }
-
-        (bool, string?) IPlugin.Disabled => (false, null);
     }
 }

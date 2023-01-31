@@ -2,41 +2,47 @@
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using static System.IO.FileSystemAclExtensions;
 using System.Linq;
 using System.Security.AccessControl;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
 using System.Threading.Tasks;
-using System.Collections;
+using static System.IO.FileSystemAclExtensions;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
+    [IPlugin.Plugin<
+        CertificateStoreOptions, CertificateStoreOptionsFactory, 
+        CertificateStoreCapability, WacsJsonPlugins>
+        ("e30adc8e-d756-4e16-a6f2-450f784b1a97", 
+        Name, "Windows Certificate Store (Local Computer)")]
     internal class CertificateStore : IStorePlugin, IDisposable
     {
+        internal const string Name = "CertificateStore";
         private const string DefaultStoreName = nameof(StoreName.My);
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
         private readonly string _storeName;
-        private readonly X509Store _store;
         private readonly IIISClient _iisClient;
         private readonly CertificateStoreOptions _options;
-        private readonly IUserRoleService _userRoleService;
         private readonly FindPrivateKey _keyFinder;
+        private readonly CertificateStoreClient _storeClient;
+        private readonly RunLevel _runLevel;
 
         public CertificateStore(
             ILogService log, IIISClient iisClient,
-            ISettingsService settings, IUserRoleService userRoleService,
-            FindPrivateKey keyFinder, CertificateStoreOptions options)
+            ISettingsService settings, FindPrivateKey keyFinder, 
+            CertificateStoreOptions options, RunLevel runLevel)
         {
             _log = log;
             _iisClient = iisClient;
             _options = options;
             _settings = settings;
-            _userRoleService = userRoleService;
             _keyFinder = keyFinder;
             _storeName = options.StoreName ?? DefaultStore(settings, iisClient);
             if (string.Equals(_storeName, "Personal", StringComparison.InvariantCultureIgnoreCase) ||
@@ -46,8 +52,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 // config files, because that's what the store is called in mmc
                 _storeName = nameof(StoreName.My);
             }
-            _log.Debug("Certificate store: {_certificateStore}", _storeName);
-            _store = new X509Store(_storeName!, StoreLocation.LocalMachine);
+            _storeClient = new CertificateStoreClient(_storeName, StoreLocation.LocalMachine, _log);
+            _runLevel = runLevel;
         }
 
         /// <summary>
@@ -66,7 +72,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 // Second priority: defaults
                 if (string.IsNullOrWhiteSpace(storeName))
                 {
-                    // Default store should be WebHosting on IIS8+, and My (Personal) for IIS7.x
                     storeName = client.Version.Major < 8 ? nameof(StoreName.My) : "WebHosting";
                 }
             } 
@@ -77,46 +82,37 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             return storeName;
         }
 
-        public Task Save(CertificateInfo input)
+        public Task<StoreInfo?> Save(ICertificateInfo input)
         {
-            var existing = FindByThumbprint(input.Certificate.Thumbprint);
+            var existing = _storeClient.FindByThumbprint(input.Certificate.Thumbprint);
             if (existing != null)
             {
                 _log.Warning("Certificate with thumbprint {thumbprint} is already in the store", input.Certificate.Thumbprint);
             }
             else
             {
-                if (input.CacheFile == null)
-                {
-                    throw new InvalidOperationException();
-                }
                 var flags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet;
                 if (_settings.Security.PrivateKeyExportable)
                 {
                     flags |= X509KeyStorageFlags.Exportable;
                 }
-
-                var certificate = new X509Certificate2(
-                    input.CacheFile.FullName,
-                    input.CacheFilePassword,
-                    flags);
+                var cert = input.Certificate.Export(X509ContentType.Pkcs12, string.Empty);
+                var import = new X509Certificate2(cert, string.Empty, flags);
                 _log.Information("Installing certificate in the certificate store");
-                InstallCertificate(certificate);
+                _storeClient.InstallCertificate(import);
                 if (_options.AclFullControl != null)
                 {
-                    SetAcl(certificate, _options.AclFullControl);
+                    SetAcl(import, _options.AclFullControl);
                 }
-                InstallCertificateChain(input.Chain);
-
-            }
-            input.StoreInfo.TryAdd(
-                GetType(),
-                new StoreInfo()
+                if (!_runLevel.HasFlag(RunLevel.Test))
                 {
-                    Name = CertificateStoreOptions.PluginName,
-                    Path = _store.Name
-                });
-            return Task.CompletedTask;
+                    _storeClient.InstallCertificateChain(input.Chain);
+                }
+            }
+            return Task.FromResult<StoreInfo?>(new StoreInfo() {
+                Name = Name,
+                Path = _storeName
+            });
         }
 
         private void SetAcl(X509Certificate2 cert, List<string> fullControl)
@@ -151,205 +147,23 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
         }
 
-        public Task Delete(CertificateInfo input)
+        public Task Delete(ICertificateInfo input)
         {
-            _log.Information("Uninstalling certificate from the certificate store");
-            UninstallCertificate(input.Certificate);
+            // Test if the user manually added the certificate to IIS
+            if (_iisClient.HasWebSites)
+            {
+                var hash = input.Certificate.GetCertHash();
+                if (_iisClient.Sites.Any(site =>
+                    site.Bindings.Any(binding =>
+                    StructuralComparisons.StructuralEqualityComparer.Equals(binding.CertificateHash, hash) &&
+                    Equals(binding.CertificateStoreName, _storeName))))
+                {
+                    _log.Error("The previous certificate was detected in IIS. Configure the IIS installation step to auto-update bindings.");
+                    return Task.CompletedTask;
+                }
+            }
+            _storeClient.UninstallCertificate(input.Certificate);
             return Task.CompletedTask;
-        }
-
-        public CertificateInfo? FindByThumbprint(string thumbprint) => ToInfo(GetCertificate(x => string.Equals(x.Thumbprint, thumbprint)));
-
-        private CertificateInfo? ToInfo(X509Certificate2? cert)
-        {
-            if (cert != null)
-            {
-                var ret = new CertificateInfo(cert);
-                ret.StoreInfo.Add(
-                    GetType(),
-                    new StoreInfo()
-                    {
-                        Path = _store.Name
-                    });
-                return ret;
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        private void InstallCertificate(X509Certificate2 certificate)
-        {
-            try
-            {
-                _store.Open(OpenFlags.ReadWrite);
-                _log.Debug("Opened certificate store {Name}", _store.Name);
-            }
-            catch
-            {
-                _log.Error("Error encountered while opening certificate store {name}", _store.Name);
-                throw;
-            }
-
-            try
-            {
-                _log.Information(LogType.All, "Adding certificate {FriendlyName} to store {name}", certificate.FriendlyName, _store.Name);
-                _log.Verbose("{sub} - {iss} ({thumb})", certificate.Subject, certificate.Issuer, certificate.Thumbprint);
-                _store.Add(certificate);
-            }
-            catch
-            {
-                _log.Error("Error saving certificate");
-                throw;
-            }
-            _log.Debug("Closing certificate store");
-            _store.Close();
-        }
-
-        private void InstallCertificateChain(List<X509Certificate2> chain)
-        {
-            X509Store imStore;
-            try
-            {
-                imStore = new X509Store(StoreName.CertificateAuthority, StoreLocation.LocalMachine);
-                imStore.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
-                if (!imStore.IsOpen)
-                {
-                    _log.Verbose("Unable to open intermediate certificate authority store");
-                    imStore = new X509Store(_storeName!, StoreLocation.LocalMachine);
-                    imStore.Open(OpenFlags.ReadWrite);
-                }
-            }
-            catch
-            {
-                _log.Warning("Error encountered while opening intermediate certificate store");
-                return;
-            }
-
-            foreach (var cert in chain)
-            {
-                if (imStore.Certificates.Find(X509FindType.FindByThumbprint, cert.Thumbprint, false) == null)
-                {
-                    try
-                    {
-                        _log.Verbose("{sub} - {iss} ({thumb}) to store {store}", cert.Subject, cert.Issuer, cert.Thumbprint, imStore.Name);
-                        imStore.Add(cert);
-                    }
-                    catch (Exception ex)
-                    {
-                        _log.Warning("Error saving certificate to store {store}: {message}", imStore.Name, ex.Message);
-                    }
-                }
-                else
-                {
-                    _log.Verbose("{sub} - {iss} ({thumb}) already exists in {store}", cert.Subject, cert.Issuer, cert.Thumbprint, imStore.Name);
-                }
-            }
-
-            _log.Debug("Closing store {store}", imStore.Name);
-            imStore.Close();
-        }
-
-        private void UninstallCertificate(X509Certificate2 certificate)
-        {
-            try
-            {
-                // Test if the user manually added the certificate to IIS
-                if (_iisClient.HasWebSites)
-                {
-                    var hash = certificate.GetCertHash();
-                    if (_iisClient.Sites.Any(site =>
-                        site.Bindings.Any(binding => 
-                        StructuralComparisons.StructuralEqualityComparer.Equals(binding.CertificateHash, hash) &&
-                        Equals(binding.CertificateStoreName, _storeName))))
-                    {
-                        _log.Error("The previous certificate was detected in IIS. Configure the IIS installation step to auto-update bindings.");
-                        return;
-                    }
-                }
-            } 
-            catch
-            {
-
-            }
-            try
-            {
-                _store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Error encountered while opening certificate store");
-                throw;
-            }
-
-            _log.Debug("Opened certificate store {Name}", _store.Name);
-            try
-            {
-                var col = _store.Certificates;
-                var thumbprint = certificate.Thumbprint;
-                foreach (var cert in col)
-                {
-                    if (string.Equals(cert.Thumbprint, thumbprint, StringComparison.InvariantCultureIgnoreCase))
-                    {
-                        _log.Information(LogType.All, "Removing certificate {cert} from store {name}", cert.FriendlyName, _store.Name);
-                        _store.Remove(cert);
-                    }
-                }
-                _log.Debug("Closing certificate store");
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Error removing certificate");
-                throw;
-            }
-            _store.Close();
-        }
-
-        private X509Certificate2? GetCertificate(Func<X509Certificate2, bool> filter)
-        {
-            var possibles = new List<X509Certificate2>();
-            try
-            {
-                _store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadOnly);
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Error encountered while opening certificate store");
-                return null;
-            }
-            try
-            {
-                var col = _store.Certificates;
-                foreach (var cert in col)
-                {
-                    if (filter(cert))
-                    {
-                        possibles.Add(cert);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Error finding certificate in certificate store");
-                return null;
-            }
-            _store.Close();
-            return possibles.OrderByDescending(x => x.NotBefore).FirstOrDefault();
-        }
-
-        (bool, string?) IPlugin.Disabled => Disabled(_userRoleService);
-
-        internal static (bool, string?) Disabled(IUserRoleService userRoleService)
-        {
-            if (userRoleService.IsAdmin) 
-            {
-                return (false, null);
-            } 
-            else 
-            {
-                return (true, "Run as administrator to allow certificate store access.");
-            }
         }
 
         #region IDisposable
@@ -362,7 +176,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             {
                 if (disposing)
                 {
-                    _store.Dispose();
+                    _storeClient.Dispose();
                 }
                 disposedValue = true;
             }

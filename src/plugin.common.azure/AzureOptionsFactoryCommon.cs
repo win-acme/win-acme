@@ -2,6 +2,7 @@
 using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -10,7 +11,7 @@ namespace PKISharp.WACS.Plugins.Azure.Common
     /// <summary>
     /// Azure common options
     /// </summary>
-    public class AzureOptionsFactoryCommon<T> where T: AzureArgumentsCommon, new()
+    public class AzureOptionsFactoryCommon<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T> where T: AzureArgumentsCommon, new()
     {
         private readonly ArgumentsInputService _arguments;
 

@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+﻿using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 
@@ -29,7 +31,7 @@ namespace PKISharp.WACS.Clients.IIS
         /// <summary>
         /// Certificate thumbprint that should be set for the binding
         /// </summary>
-        public byte[]? Thumbprint { get; }
+        public IEnumerable<byte>? Thumbprint { get; }
 
         /// <summary>
         /// Certificate store where the certificate can be found
@@ -87,7 +89,7 @@ namespace PKISharp.WACS.Clients.IIS
             SSLFlags flags = SSLFlags.None,
             int port = IISClient.DefaultBindingPort,
             string ip = IISClient.DefaultBindingIp,
-            byte[]? thumbprint = null,
+            IEnumerable<byte>? thumbprint = null,
             string? store = null,
             string host = "",
             long? siteId = null)
@@ -101,12 +103,12 @@ namespace PKISharp.WACS.Clients.IIS
             SiteId = siteId;
         }
 
-        public BindingOptions WithFlags(SSLFlags flags) => new BindingOptions(flags, Port, IP, Thumbprint, Store, Host, SiteId);
-        public BindingOptions WithPort(int port) => new BindingOptions(Flags, port, IP, Thumbprint, Store, Host, SiteId);
-        public BindingOptions WithIP(string ip) => new BindingOptions(Flags, Port, ip, Thumbprint, Store, Host, SiteId);
-        public BindingOptions WithThumbprint(byte[] thumbprint) => new BindingOptions(Flags, Port, IP, thumbprint, Store, Host, SiteId);
-        public BindingOptions WithStore(string? store) => new BindingOptions(Flags, Port, IP, Thumbprint, store, Host, SiteId);
-        public BindingOptions WithHost(string hostName) => new BindingOptions(Flags, Port, IP, Thumbprint, Store, hostName, SiteId);
-        public BindingOptions WithSiteId(long? siteId) => new BindingOptions(Flags, Port, IP, Thumbprint, Store, Host, siteId);
+        public BindingOptions WithFlags(SSLFlags flags) => new(flags, Port, IP, Thumbprint, Store, Host, SiteId);
+        public BindingOptions WithPort(int port) => new(Flags, port, IP, Thumbprint, Store, Host, SiteId);
+        public BindingOptions WithIP(string ip) => new(Flags, Port, ip, Thumbprint, Store, Host, SiteId);
+        public BindingOptions WithThumbprint(byte[] thumbprint) => new(Flags, Port, IP, thumbprint, Store, Host, SiteId);
+        public BindingOptions WithStore(string? store) => new(Flags, Port, IP, Thumbprint, store, Host, SiteId);
+        public BindingOptions WithHost(string hostName) => new(Flags, Port, IP, Thumbprint, Store, hostName, SiteId);
+        public BindingOptions WithSiteId(long? siteId) => new(Flags, Port, IP, Thumbprint, Store, Host, siteId);
     }
 }

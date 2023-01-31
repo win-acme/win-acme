@@ -1,10 +1,10 @@
 ﻿using ACMESharp;
 using ACMESharp.Authorizations;
 using ACMESharp.Protocol;
-using acme = ACMESharp.Protocol.Resources;
-using Newtonsoft.Json;
+using ACMESharp.Protocol.Resources;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
 using System;
@@ -12,20 +12,31 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net.Mail;
-using System.Security.Authentication;
-using System.Threading;
-using System.Threading.Tasks;
-using PKISharp.WACS.DomainObjects;
 using System.Net;
 using System.Net.Http;
+using System.Net.Mail;
+using System.Security.Authentication;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Threading;
+using System.Threading.Tasks;
+using Protocol = ACMESharp.Protocol.Resources;
 
 namespace PKISharp.WACS.Clients.Acme
 {
+    [JsonSerializable(typeof(AccountSigner))]
+    [JsonSerializable(typeof(AccountDetails))]
+    [JsonSerializable(typeof(Protocol.ServiceDirectory))]
+    [JsonSerializable(typeof(AcmeOrderDetails))]
+    internal partial class AcmeClientJson : JsonSerializerContext
+    {
+        public static AcmeClientJson Insensitive { get; } = new AcmeClientJson(new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
+    }
+
     /// <summary>
     /// Main class that talks to the ACME server
     /// </summary>
-    internal class AcmeClient : IDisposable
+    internal class AcmeClient
     {
         /// <summary>
         /// https://tools.ietf.org/html/rfc8555#section-7.1.6
@@ -82,32 +93,47 @@ namespace PKISharp.WACS.Clients.Acme
             using var httpClient = _proxyService.GetHttpClient();
             httpClient.BaseAddress = _settings.BaseUri;
             httpClient.Timeout = new TimeSpan(0, 0, 10);
+            var success = await CheckNetworkUrl(httpClient, "directory");
+            if (!success)
+            {
+                success = await CheckNetworkUrl(httpClient, "");
+            }
+            if (!success)
+            {
+                _log.Debug("Initial connection failed, retrying with TLS 1.2 forced");
+                _proxyService.SslProtocols = SslProtocols.Tls12;
+                success = await CheckNetworkUrl(httpClient, "directory");
+                if (!success)
+                {
+                    success = await CheckNetworkUrl(httpClient, "");
+                }
+            }
+            if (success)
+            {
+                _log.Information("Connection OK!");
+            } 
+            else
+            {
+                _log.Warning("Initial connection failed");
+            }         
+        }
+
+        /// <summary>
+        /// Test the network connection
+        /// </summary>
+        internal async Task<bool> CheckNetworkUrl(HttpClient httpClient, string path)
+        {
             try
             {
-                _log.Verbose("SecurityProtocol setting: {setting}", ServicePointManager.SecurityProtocol);
-                var response = await httpClient.GetAsync("directory").ConfigureAwait(false);
+                var response = await httpClient.GetAsync(path).ConfigureAwait(false);
                 await CheckNetworkResponse(response);
-
+                return true;
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "Initial connection failed, retrying with TLS 1.2 forced");
-                _proxyService.SslProtocols = SslProtocols.Tls12;
-                using var altClient = _proxyService.GetHttpClient();
-                altClient.BaseAddress = _settings.BaseUri;
-                altClient.Timeout = new TimeSpan(0, 0, 10);
-                try
-                {
-                    var response = await altClient.GetAsync("directory").ConfigureAwait(false);
-                    await CheckNetworkResponse(response);
-                }
-                catch (Exception ex2)
-                {
-                    _log.Error(ex2, "Unable to connect to ACME server at {uri}", _settings.BaseUri);
-                    return;
-                }
+                _log.Debug($"Connection failed: {ex.Message}");
+                return false;
             }
-            _log.Debug("Connection OK!");
         }
 
         /// <summary>
@@ -137,7 +163,7 @@ namespace PKISharp.WACS.Clients.Acme
             }
             try
             {
-                JsonConvert.DeserializeObject<acme.ServiceDirectory>(content);
+                JsonSerializer.Deserialize(content, AcmeClientJson.Insensitive.ServiceDirectory);
             }
             catch (Exception ex)
             {
@@ -182,9 +208,9 @@ namespace PKISharp.WACS.Clients.Acme
         /// </summary>
         /// <param name="client"></param>
         /// <returns></returns>
-        internal async Task<acme.ServiceDirectory> EnsureServiceDirectory(AcmeProtocolClient client)
+        internal async Task<Protocol.ServiceDirectory> EnsureServiceDirectory(AcmeProtocolClient client)
         {
-            acme.ServiceDirectory? directory;
+            Protocol.ServiceDirectory? directory;
             try
             {
                 _log.Verbose("Getting service directory...");
@@ -236,7 +262,7 @@ namespace PKISharp.WACS.Clients.Acme
             {
                 var (_, filename, content) = await client.GetTermsOfServiceAsync();
                 _log.Verbose("Terms of service downloaded");
-                if (!string.IsNullOrEmpty(filename))
+                if (!string.IsNullOrEmpty(filename) && content != null)
                 {
                     if (!await AcceptTos(filename, content))
                     {
@@ -254,7 +280,7 @@ namespace PKISharp.WACS.Clients.Acme
             var eabKid = _accountArguments.EabKeyIdentifier;
             var eabKey = _accountArguments.EabKey;
             var eabAlg = _accountArguments.EabAlgorithm ?? "HS256";
-            var eabFlow = client.Directory?.Meta?.ExternalAccountRequired == "true";
+            var eabFlow = client.Directory?.Meta?.ExternalAccountRequired ?? false;
             var zeroSslFlow = _settings.BaseUri.Host.Contains("zerossl.com");
 
             // Warn about unneeded EAB
@@ -300,8 +326,8 @@ namespace PKISharp.WACS.Clients.Acme
                 if (!string.IsNullOrWhiteSpace(_accountArguments.EmailAddress))
                 {
                     await emailRegistration();
-                }
-                else
+                } 
+                else if (!eabFlow)
                 {
                     var instruction = "ZeroSsl can be used either by setting up a new " +
                         "account using your email address or by connecting it to your existing " +
@@ -352,8 +378,7 @@ namespace PKISharp.WACS.Clients.Acme
             {
                 // Some non-ACME compliant server may not support ES256 or other
                 // algorithms, so attempt fallback to RS256
-                if (apex.ProblemType == acme.ProblemType.BadSignatureAlgorithm &&
-                    signer.KeyType != "RS256")
+                if (apex.ProblemType == ProblemType.BadSignatureAlgorithm && signer.KeyType != "RS256")
                 {
                     signer = _accountManager.NewSigner("RS256");
                     await CreateAccount(client, signer, contacts, eabAlg, eabKid, eabKey);
@@ -395,9 +420,7 @@ namespace PKISharp.WACS.Clients.Acme
             {
                 externalAccount = new ExternalAccountBinding(
                     eabAlg,
-                    JsonConvert.SerializeObject(
-                        signer.JwsTool().ExportJwk(),
-                        Formatting.None),
+                    signer.JwsTool().ExportEab(),
                     eabKid,
                     eabKey,
                     client.Directory?.NewAccount ?? "");
@@ -498,22 +521,34 @@ namespace PKISharp.WACS.Clients.Acme
             return newEmails.Select(x => $"{prefix}{x}").ToArray();
         }
 
-        internal async Task<IChallengeValidationDetails> DecodeChallengeValidation(acme.Authorization auth, acme.Challenge challenge)
+        internal async Task<IChallengeValidationDetails> DecodeChallengeValidation(AcmeAuthorization auth, AcmeChallenge challenge)
         {
             var client = await GetClient();
+            if (challenge.Type == null)
+            {
+                throw new NotSupportedException("Missing challenge type");
+            }
             return AuthorizationDecoder.DecodeChallengeValidation(auth, challenge.Type, client.Signer);
         }
 
-        internal async Task<acme.Challenge> AnswerChallenge(acme.Challenge challenge)
+        internal async Task<AcmeChallenge> AnswerChallenge(AcmeChallenge challenge)
         {
             // Have to loop to wait for server to stop being pending
             var client = await GetClient();
+            if (challenge.Url == null)
+            {
+                throw new NotSupportedException("Missing challenge url");
+            }
             challenge = await Retry(client, () => client.AnswerChallengeAsync(challenge.Url));
             var tries = 1;
             while (
                 challenge.Status == AuthorizationPending ||
                 challenge.Status == AuthorizationProcessing)
             {
+                if (challenge.Url == null)
+                {
+                    throw new NotSupportedException("Missing challenge url");
+                }
                 await Task.Delay(_settings.Acme.RetryInterval * 1000);
                 _log.Debug("Refreshing authorization ({tries}/{count})", tries, _settings.Acme.RetryCount);
                 challenge = await Retry(client, () => client.GetChallengeDetailsAsync(challenge.Url));
@@ -526,10 +561,10 @@ namespace PKISharp.WACS.Clients.Acme
             return challenge;
         }
 
-        internal async Task<OrderDetails> CreateOrder(IEnumerable<Identifier> identifiers)
+        internal async Task<AcmeOrderDetails> CreateOrder(IEnumerable<Identifier> identifiers)
         {
             var client = await GetClient();
-            var acmeIdentifiers = identifiers.Select(i => new acme.Identifier() {
+            var acmeIdentifiers = identifiers.Select(i => new Protocol.AcmeIdentifier() {
                 Type = i.Type switch
                 {
                     IdentifierType.DnsName => "dns", // rfc8555
@@ -541,16 +576,22 @@ namespace PKISharp.WACS.Clients.Acme
             return await Retry(client, () => client.CreateOrderAsync(acmeIdentifiers));
         }
 
-        internal async Task<acme.Challenge> GetChallengeDetails(string url)
+        internal async Task<Protocol.AcmeChallenge> GetChallengeDetails(string url)
         {
             var client = await GetClient();
             return await Retry(client, () => client.GetChallengeDetailsAsync(url));
         }
 
-        internal async Task<acme.Authorization> GetAuthorizationDetails(string url)
+        internal async Task<Protocol.AcmeAuthorization> GetAuthorizationDetails(string url)
         {
             var client = await GetClient();
             return await Retry(client, () => client.GetAuthorizationDetailsAsync(url));
+        }
+
+        internal async Task DeactivateAuthorization(string url)
+        {
+            var client = await GetClient();
+            await Retry(client, () => client.DeactivateAuthorizationAsync(url));
         }
 
         /// <summary>
@@ -559,7 +600,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// <param name="details"></param>
         /// <param name="csr"></param>
         /// <returns></returns>
-        internal async Task<OrderDetails> SubmitCsr(OrderDetails details, byte[] csr)
+        internal async Task<AcmeOrderDetails> SubmitCsr(AcmeOrderDetails details, byte[] csr)
         {
             // First wait for the order to get "ready", meaning that all validations
             // are complete. The program makes sure this is the case at the level of 
@@ -569,7 +610,11 @@ namespace PKISharp.WACS.Clients.Acme
             await WaitForOrderStatus(details, OrderReady);
             if (details.Payload.Status == OrderReady)
             {
-                details = await Retry(client, () => client.FinalizeOrderAsync(details.Payload.Finalize, csr));
+                if (string.IsNullOrEmpty(details.Payload.Finalize))
+                {
+                    throw new Exception("Missing Finalize url");
+                }
+                details = await Retry(client, () => client.FinalizeOrderAsync(details, csr));
                 await WaitForOrderStatus(details, OrderProcessing, true);
             }
             return details;
@@ -582,8 +627,13 @@ namespace PKISharp.WACS.Clients.Acme
         /// <param name="status"></param>
         /// <param name="negate"></param>
         /// <returns></returns>
-        private async Task WaitForOrderStatus(OrderDetails details, string status, bool negate = false)
+        private async Task WaitForOrderStatus(AcmeOrderDetails details, string status, bool negate = false)
         {
+            if (details.OrderUrl == null)
+            {
+                throw new InvalidOperationException();
+            }
+
             // Wait for processing
             _ = await GetClient();
             var tries = 0;
@@ -607,7 +657,7 @@ namespace PKISharp.WACS.Clients.Acme
             );
         }
 
-        internal async Task<OrderDetails> GetOrderDetails(string url)
+        internal async Task<AcmeOrderDetails> GetOrderDetails(string url)
         {
             var client = await GetClient();
             return await Retry(client, () => client.GetOrderDetailsAsync(url));
@@ -617,7 +667,7 @@ namespace PKISharp.WACS.Clients.Acme
         {
             var client = await GetClient();
             var contacts = await GetContacts();
-            var account = await Retry(client, () => client.UpdateAccountAsync(contacts, client.Account));
+            var account = await Retry(client, () => client.UpdateAccountAsync(contacts));
             await UpdateAccount(client);
         }
 
@@ -628,7 +678,7 @@ namespace PKISharp.WACS.Clients.Acme
             client.Account = account;
         }
 
-        internal async Task<AcmeCertificate> GetCertificate(OrderDetails order)
+        internal async Task<AcmeCertificate> GetCertificate(AcmeOrderDetails order)
         {
             var client = await GetClient();
             return await Retry(client, () => client.GetOrderCertificateExAsync(order));
@@ -643,10 +693,10 @@ namespace PKISharp.WACS.Clients.Acme
             });
         }
 
-        internal async Task RevokeCertificate(byte[] crt)
+        internal async Task<bool> RevokeCertificate(byte[] crt)
         {
             var client = await GetClient();
-            _ = await Retry(client, async () => client.RevokeCertificateAsync(crt, acme.RevokeReason.Unspecified));
+            return await Retry(client, () => client.RevokeCertificateAsync(crt, Protocol.RevokeReason.Unspecified));
         }
 
         /// <summary>
@@ -675,13 +725,13 @@ namespace PKISharp.WACS.Clients.Acme
             }
             catch (AcmeProtocolException apex)
             {
-                if (attempt < 3 && apex.ProblemType == acme.ProblemType.BadNonce)
+                if (attempt < 3 && apex.ProblemType == Protocol.ProblemType.BadNonce)
                 {
                     _log.Warning("First chance error calling into ACME server, retrying with new nonce...");
                     await GetNonce(client);
                     return await Retry(client, executor, attempt + 1);
                 }
-                else if (apex.ProblemType == acme.ProblemType.UserActionRequired)
+                else if (apex.ProblemType == Protocol.ProblemType.UserActionRequired)
                 {
                     _log.Error("{detail}: {instance}", apex.ProblemDetail, apex.ProblemInstance);
                     throw;
@@ -728,7 +778,7 @@ namespace PKISharp.WACS.Clients.Acme
             {
                 if (ape.Response.StatusCode == HttpStatusCode.TooManyRequests)
                 {
-                    if (ape.ProblemType == acme.ProblemType.RateLimited)
+                    if (ape.ProblemType == Protocol.ProblemType.RateLimited)
                     {
                         // Do not keep retrying when rate limit is hit
                         throw;
@@ -750,38 +800,6 @@ namespace PKISharp.WACS.Clients.Acme
         /// Prevent sending simulateous requests to the ACME service because it messes
         /// up the nonce tracking mechanism
         /// </summary>
-        private readonly SemaphoreSlim _requestLock = new SemaphoreSlim(1, 1);
-
-        #region IDisposable Support
-        private bool disposedValue = false; // To detect redundant calls
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposedValue)
-            {
-                if (disposing && _client != null)
-                {
-                    _client.Dispose();
-                }
-
-                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
-                // TODO: set large fields to null.
-
-                disposedValue = true;
-            }
-        }
-
-        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
-        // ~AcmeClient()
-        // {
-        //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-        //   Dispose(false);
-        // }
-
-        // This code added to correctly implement the disposable pattern.
-        public void Dispose() =>
-            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-            Dispose(true);// TODO: uncomment the following line if the finalizer is overridden above.// GC.SuppressFinalize(this);
-        #endregion
+        private readonly SemaphoreSlim _requestLock = new(1, 1);
     }
 }

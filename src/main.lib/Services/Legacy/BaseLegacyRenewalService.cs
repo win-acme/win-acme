@@ -1,9 +1,10 @@
-﻿using Newtonsoft.Json;
-using PKISharp.WACS.Host.Services.Legacy;
+﻿using PKISharp.WACS.Host.Services.Legacy;
 using PKISharp.WACS.Plugins.TargetPlugins;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 
 namespace PKISharp.WACS.Services.Legacy
 {
@@ -62,7 +63,7 @@ namespace PKISharp.WACS.Services.Legacy
             LegacyScheduledRenewal? result;
             try
             {
-                result = JsonConvert.DeserializeObject<LegacyScheduledRenewal>(renewal);
+                result = JsonSerializer.Deserialize(renewal, WacsJson.Insensitive.LegacyScheduledRenewal);
                 if (result?.Binding == null)
                 {
                     throw new Exception();

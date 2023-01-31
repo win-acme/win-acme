@@ -4,6 +4,7 @@ using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 
@@ -14,7 +15,9 @@ namespace PKISharp.WACS.Configuration
     /// PluginService for each implementation of IArgumentsStandalone
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class BaseArgumentsProvider<T> : IArgumentsProvider<T> where T : class, IArguments, new()
+    public class BaseArgumentsProvider<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.PublicConstructors)] T> : 
+        IArgumentsProvider<T> 
+        where T : class, IArguments, new()
     {
         /// <summary>
         /// Command line partser internal
@@ -43,14 +46,14 @@ namespace PKISharp.WACS.Configuration
         /// <param name="parser"></param>
         private static void Configure(FluentCommandLineParser<T> parser)
         {
-            foreach (var (commandLineInfo, property) in typeof(T).CommandLineProperties())
+            foreach (var (commandLineInfo, property, propertyType) in typeof(T).CommandLineProperties())
             {
                 var setupMethod = typeof(FluentCommandLineParser<T>).GetMethod(nameof(parser.Setup), new[] { typeof(PropertyInfo) });
                 if (setupMethod == null)
                 {
                     throw new InvalidOperationException();
                 }
-                var typedMethod = setupMethod.MakeGenericMethod(property.PropertyType);
+                var typedMethod = setupMethod.MakeGenericMethod(propertyType.Type);
                 var result = typedMethod.Invoke(parser, new[] { property });
 
                 var clob = typeof(ICommandLineOptionBuilderFluent<>).MakeGenericType(property.PropertyType);
@@ -147,7 +150,7 @@ namespace PKISharp.WACS.Configuration
         }
 
         /// <summary>
-        /// Construct an emtpy instance of T to able to use its properties
+        /// Construct an emtpy instance of TOptions to able to use its properties
         /// </summary>
         private T DefaultInstance
         {

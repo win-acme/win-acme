@@ -1,17 +1,27 @@
 ﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
+    [IPlugin.Plugin<
+        CentralSslOptions, CentralSslOptionsFactory, 
+        DefaultCapability, WacsJsonPlugins>
+        ("af1f77b6-4e7b-4f96-bba5-c2eeb4d0dd42",
+        Name, "IIS Central Certificate Store (.pfx per host)")]
     internal class CentralSsl : IStorePlugin
     {
+        internal const string Name = "CentralSsl";
+
         private readonly ILogService _log;
         private readonly string _path;
         private readonly string? _password;
@@ -46,7 +56,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         private string PathForIdentifier(Identifier identifier) => Path.Combine(_path, $"{identifier.Value.Replace("*", "_")}.pfx");
 
-        public async Task Save(CertificateInfo input)
+        public async Task<StoreInfo?> Save(ICertificateInfo input)
         {
             _log.Information("Copying certificate to the CentralSsl store");
             foreach (var identifier in input.SanNames)
@@ -55,28 +65,20 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 _log.Information("Saving certificate to CentralSsl location {dest}", dest);
                 try
                 {
-                    var collection = new X509Certificate2Collection
-                    {
-                        input.Certificate
-                    };
-                    collection.AddRange(input.Chain.ToArray());
-                    await File.WriteAllBytesAsync(dest, collection.Export(X509ContentType.Pfx, _password)!);
+                    await File.WriteAllBytesAsync(dest, input.Collection.Export(X509ContentType.Pfx, _password)!);
                 }
                 catch (Exception ex)
                 {
                     _log.Error(ex, "Error copying certificate to CentralSsl store");
                 }
             }
-            input.StoreInfo.TryAdd(
-                GetType(),
-                new StoreInfo()
-                {
-                    Name = CentralSslOptions.PluginName,
-                    Path = _path
-                });
+            return new StoreInfo() {
+                Name = Name,
+                Path = _path
+            };
         }
 
-        public Task Delete(CertificateInfo input)
+        public Task Delete(ICertificateInfo input)
         {
             _log.Information("Removing certificate from the CentralSsl store");
             foreach (var identifier in input.SanNames)
@@ -88,6 +90,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 {
                     if (string.Equals(cert.Thumbprint, input.Certificate.Thumbprint, StringComparison.InvariantCultureIgnoreCase))
                     {
+                        _log.Warning("Delete {fi} with thumb {thumb}", fi.FullName, cert.Thumbprint);
                         fi.Delete();
                     }
                     cert.Dispose();
@@ -125,7 +128,5 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
             return cert;
         }
-
-        (bool, string?) IPlugin.Disabled => (false, null);
     }
 }

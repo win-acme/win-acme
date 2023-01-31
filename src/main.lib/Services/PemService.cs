@@ -1,5 +1,5 @@
 ﻿using System.IO;
-using bc = Org.BouncyCastle;
+using Bc = Org.BouncyCastle;
 
 namespace PKISharp.WACS.Services
 {
@@ -15,21 +15,21 @@ namespace PKISharp.WACS.Services
             string pem;
             using (var tw = new StringWriter())
             {
-                var pw = new bc.OpenSsl.PemWriter(tw);
+                var pw = new Bc.OpenSsl.PemWriter(tw);
                 if (string.IsNullOrEmpty(password))
                 {
                     pw.WriteObject(obj);
                 } 
                 else
                 {
-                    pw.WriteObject(obj, "AES-256-CBC", password.ToCharArray(), new bc.Security.SecureRandom());
+                    pw.WriteObject(obj, "AES-256-CBC", password.ToCharArray(), new Bc.Security.SecureRandom());
                 }
                 pem = tw.GetStringBuilder().ToString();
                 tw.GetStringBuilder().Clear();
             }
             return pem;
         }
-        public string GetPem(string name, byte[] content) => GetPem(new bc.Utilities.IO.Pem.PemObject(name, content));
+        public string GetPem(string name, byte[] content) => GetPem(new Bc.Utilities.IO.Pem.PemObject(name, content));
 
         /// <summary>
         /// Helper function for reading PEM encoding
@@ -40,7 +40,7 @@ namespace PKISharp.WACS.Services
         public T? ParsePem<T>(string pem) where T: class
         {
             using var tr = new StringReader(pem);
-            var pr = new bc.OpenSsl.PemReader(tr);
+            var pr = new Bc.OpenSsl.PemReader(tr);
             return pr.ReadObject() as T;
         }
     }

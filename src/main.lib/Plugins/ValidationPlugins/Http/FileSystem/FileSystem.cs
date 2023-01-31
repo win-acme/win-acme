@@ -1,5 +1,8 @@
 ﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.Base.Capabilities;
+using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.IO;
 using System.Linq;
@@ -7,7 +10,12 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    internal class FileSystem : HttpValidation<FileSystemOptions, FileSystem>
+    [IPlugin.Plugin<
+        FileSystemOptions, FileSystemOptionsFactory, 
+        HttpValidationCapability, WacsJsonPlugins>
+        ("1c77b3a4-5310-4c46-92c6-00d866e84d6b", 
+        "FileSystem", "Save verification files on (network) path")]
+    internal class FileSystem : HttpValidation<FileSystemOptions>
     {
         protected IIISClient _iisClient;
 

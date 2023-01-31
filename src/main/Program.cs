@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using Autofac.Features.AttributeFilters;
 using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Clients.DNS;
@@ -7,8 +8,11 @@ using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
+using Serilog;
 using System;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -68,10 +72,7 @@ namespace PKISharp.WACS.Host
             {
                 // Restore original code page
                 Console.OutputEncoding = original;
-                if (_globalMutex != null)
-                {
-                    _globalMutex.Dispose();
-                }
+                _globalMutex?.Dispose();
             }
         }
 
@@ -146,8 +147,9 @@ namespace PKISharp.WACS.Host
             // prints some verbose messages that are interesting
             // to know very early in the start up process
             _ = new VersionService(logger);
-            var pluginService = new PluginService(logger);
-            var argumentsParser = new ArgumentsParser(logger, pluginService, args);
+            var assemblyService = new AssemblyService(logger);
+            var pluginService = new PluginService(logger, assemblyService);
+            var argumentsParser = new ArgumentsParser(logger, assemblyService, args);
             if (!argumentsParser.Validate())
             {
                 return null;
@@ -169,13 +171,16 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterInstance(logger).As<ILogService>();
             _ = builder.RegisterInstance(settingsService).As<ISettingsService>();
             _ = builder.RegisterInstance(pluginService).As<IPluginService>();
+            _ = builder.RegisterType<AdminService>();
+            WacsJson.Configure(builder);
             _ = builder.RegisterType<UserRoleService>().As<IUserRoleService>().SingleInstance();
-            _ = builder.RegisterType<ValidationOptionsService>().As<IValidationOptionsService>().SingleInstance();
+            _ = builder.RegisterType<ValidationOptionsService>().As<IValidationOptionsService>().As<ValidationOptionsService>().SingleInstance();
             _ = builder.RegisterType<InputService>().As<IInputService>().SingleInstance();
             _ = builder.RegisterType<ProxyService>().As<IProxyService>().SingleInstance();
             _ = builder.RegisterType<UpdateClient>().SingleInstance();
             _ = builder.RegisterType<PasswordGenerator>().SingleInstance();
-            _ = builder.RegisterType<RenewalStoreDisk>().As<IRenewalStore>().SingleInstance();
+            _ = builder.RegisterType<RenewalStoreDisk>().As<IRenewalStoreBackend>().SingleInstance();
+            _ = builder.RegisterType<RenewalStore>().As<IRenewalStore>().SingleInstance();
 
             pluginService.Configure(builder);
 
@@ -194,6 +199,8 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterType<EmailClient>().SingleInstance();
             _ = builder.RegisterType<ScriptClient>().SingleInstance();
             _ = builder.RegisterType<LookupClientProvider>().SingleInstance();
+            _ = builder.RegisterType<CacheService>().As<ICacheService>().SingleInstance();
+            _ = builder.RegisterType<CertificatePicker>().SingleInstance();
             _ = builder.RegisterType<CertificateService>().As<ICertificateService>().SingleInstance();
             _ = builder.RegisterType<DueDateRandomService>().As<IDueDateService>().SingleInstance();
             _ = builder.RegisterType<SecretServiceManager>().SingleInstance();
@@ -205,6 +212,7 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterType<RenewalManager>().SingleInstance();
             _ = builder.RegisterType<RenewalCreator>().SingleInstance();
             _ = builder.RegisterType<ArgumentsInputService>().SingleInstance();
+            
 
             _ = builder.RegisterType<Wacs>();
 

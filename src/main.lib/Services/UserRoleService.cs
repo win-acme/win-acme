@@ -1,64 +1,41 @@
 ﻿using PKISharp.WACS.Clients.IIS;
-using System;
-using System.Security.Principal;
+using PKISharp.WACS.Plugins.Interfaces;
 
 namespace PKISharp.WACS.Services
 {
     internal class UserRoleService : IUserRoleService
     {
         private readonly IIISClient _iisClient;
+        private readonly AdminService _adminService;
 
-        public UserRoleService(IIISClient iisClient) => _iisClient = iisClient;
+        public UserRoleService(IIISClient iisClient, AdminService adminService)
+        {
+            _iisClient = iisClient;
+            _adminService = adminService;
+        }
 
-        public bool AllowTaskScheduler => IsAdmin;
-        public bool AllowCertificateStore => IsAdmin;
-        public (bool, string?) AllowIIS
+        public bool AllowTaskScheduler => _adminService.IsAdmin;
+
+        public bool AllowCertificateStore => _adminService.IsAdmin;
+
+        public bool AllowLegacy => _adminService.IsAdmin;
+
+        public bool AllowSelfHosting => _adminService.IsAdmin;
+
+        public State IISState
         {
             get
             {
-                if (!IsAdmin)
+                if (!_adminService.IsAdmin)
                 {
-                    return (false, "Run as administrator to allow access to IIS.");
+                    return State.DisabledState("Run as administrator to allow access to IIS.");
                 }
                 if (_iisClient.Version.Major <= 6)
                 {
-                    return (false, "No supported version of IIS detected.");
+                    return State.DisabledState("No supported version of IIS detected.");
                 }
-                return (true, null);
+                return State.EnabledState();
             }
-        }
-
-        public bool IsAdmin => IsAdminLazy.Value;
-
-        private Lazy<bool> IsAdminLazy => new Lazy<bool>(DetermineAdmin);
-
-        private bool DetermineAdmin()
-        {
-            bool isAdmin;
-            WindowsIdentity? user = null;
-            try
-            {
-                //get the currently logged in user
-                user = WindowsIdentity.GetCurrent();
-                var principal = new WindowsPrincipal(user);
-                isAdmin = principal.IsInRole(WindowsBuiltInRole.Administrator);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                isAdmin = false;
-            }
-            catch (Exception)
-            {
-                isAdmin = false;
-            }
-            finally
-            {
-                if (user != null)
-                {
-                    user.Dispose();
-                }
-            }
-            return isAdmin;
         }
     }
 }

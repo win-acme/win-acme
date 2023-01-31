@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    internal class WebDavOptionsFactory : HttpValidationOptionsFactory<WebDav, WebDavOptions>
+    internal class WebDavOptionsFactory : HttpValidationOptionsFactory<WebDavOptions>
     {
-        public WebDavOptionsFactory(ArgumentsInputService arguments) : base(arguments) { }
+        public WebDavOptionsFactory(Target target, ArgumentsInputService arguments) : base(arguments, target) { }
 
         public override bool PathIsValid(string webRoot)
         {
@@ -28,17 +28,17 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             };
         }
 
-        public override async Task<WebDavOptions?> Default(Target target)
+        public override async Task<WebDavOptions?> Default()
         {
-            return new WebDavOptions(await BaseDefault(target))
+            return new WebDavOptions(await BaseDefault())
             {
                 Credential = await NetworkCredentialOptions.Create(_arguments)
             };
         }
 
-        public override async Task<WebDavOptions?> Aquire(Target target, IInputService inputService, RunLevel runLevel)
+        public override async Task<WebDavOptions?> Aquire(IInputService inputService, RunLevel runLevel)
         {
-            return new WebDavOptions(await BaseAquire(target, inputService))
+            return new WebDavOptions(await BaseAquire(inputService))
             {
                 Credential = await NetworkCredentialOptions.Create(_arguments, inputService, "WebDav server")
             };

@@ -182,6 +182,27 @@ if ($CertInStore)
         "Error: $($Error[0])"
 		return
     }
+    try
+    {
+        # Configure Certificate that RDWebClient checks for
+        # Warning: browser caching can keep the old Certificate for a long time!
+        if ((Get-Command -Module RDWebClientManagement|Measure-Object).Count -eq 0)
+        {
+            "RDWebClient not installed, skipping"
+        }
+        else
+        {
+            Remove-RDWebClientBrokerCert
+            Import-RDWebClientBrokerCert -Path $tempPfxPath -Password $tempPasswordPfx
+            "RDWebClient Certificate for RDS was set"
+        }
+    }
+    catch
+    {
+        "RDWebClient Certificate for RDS was not set"
+        "Error: $($Error[0])"
+        return
+    }
     finally
 	{
 		"Cleaning up"

@@ -9,22 +9,25 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    internal class AcmeOptionsFactory : ValidationPluginOptionsFactory<Acme, AcmeOptions>
+    internal class AcmeOptionsFactory : PluginOptionsFactory<AcmeOptions>
     {
         private readonly IProxyService _proxy;
         private readonly ISettingsService _settings;
         private readonly LookupClientProvider _dnsClient;
         private readonly ILogService _log;
         private readonly ArgumentsInputService _arguments;
+        private readonly Target _target;
 
         public AcmeOptionsFactory(
+            Target target,
             LookupClientProvider dnsClient,
             ILogService log,
             ISettingsService settings,
             IProxyService proxy,
-            ArgumentsInputService arguments) : base(Constants.Dns01ChallengeType)
+            ArgumentsInputService arguments) 
         {
             _log = log;
+            _target = target;
             _arguments = arguments;
             _settings = settings;
             _proxy = proxy;
@@ -36,14 +39,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             Validate(x => Task.FromResult(new Uri(x!).ToString() != ""), "invalid uri").
             Required();
 
-        public override async Task<AcmeOptions?> Aquire(Target target, IInputService input, RunLevel runLevel)
+        public override async Task<AcmeOptions?> Aquire(IInputService input, RunLevel runLevel)
         {
             var ret = new AcmeOptions()
             {
                 BaseUri = await Endpoint.Interactive(input).GetValue()
             };
             var acmeDnsClient = new AcmeDnsClient(_dnsClient, _proxy, _log, _settings, input, new Uri(ret.BaseUri!));
-            var identifiers = target.Parts.SelectMany(x => x.Identifiers).Distinct();
+            var identifiers = _target.Parts.SelectMany(x => x.Identifiers).Distinct();
             foreach (var identifier in identifiers)
             {
                 var registrationResult = await acmeDnsClient.EnsureRegistration(identifier.Value.Replace("*.", ""), true);
@@ -55,14 +58,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return ret;
         }
 
-        public override async Task<AcmeOptions?> Default(Target target)
+        public override async Task<AcmeOptions?> Default()
         {
             var ret = new AcmeOptions()
             {
                 BaseUri = await Endpoint.GetValue()
             };
             var acmeDnsClient = new AcmeDnsClient(_dnsClient, _proxy, _log, _settings, null, new Uri(ret.BaseUri!));
-            var identifiers = target.Parts.SelectMany(x => x.Identifiers).Distinct();
+            var identifiers = _target.Parts.SelectMany(x => x.Identifiers).Distinct();
             var valid = true;
             foreach (var identifier in identifiers)
             {
@@ -78,7 +81,5 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
             return ret;
         }
-
-        public override bool CanValidate(Target target) => target.Parts.SelectMany(x => x.Identifiers).All(x => x.Type == IdentifierType.DnsName);
-    }
+   }
 }

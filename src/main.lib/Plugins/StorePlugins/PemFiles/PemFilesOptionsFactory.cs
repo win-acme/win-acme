@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    internal class PemFilesOptionsFactory : StorePluginOptionsFactory<PemFiles, PemFilesOptions>
+    internal class PemFilesOptionsFactory : PluginOptionsFactory<PemFilesOptions>
     {
         private readonly ILogService _log;
         private readonly ArgumentsInputService _arguments;
@@ -34,26 +34,35 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             Validate(x => Task.FromResult(x.ValidPath(_log)), "invalid path").
             DefaultAsNull();
 
+        private ArgumentResult<string?> Name => _arguments.
+            GetString<PemFilesArguments>(args => args.PemFilesName);
+
         public override async Task<PemFilesOptions?> Aquire(IInputService input, RunLevel runLevel)
         {
             var path = await Path.Interactive(input, "File path").GetValue();
+            var name = await Name.GetValue();
             var password = await Password.Interactive(input).GetValue();
-            return Create(path, password);
+            return Create(path, name, password);
         }
 
         public override async Task<PemFilesOptions?> Default()
         {
             var path = await Path.GetValue();
+            var name = await Name.GetValue();
             var password = await Password.GetValue();
-            return Create(path, password);
+            return Create(path, name, password);
         }
 
-        private static PemFilesOptions Create(string? path, ProtectedString? password)
+        private static PemFilesOptions Create(
+            string? path, 
+            string? name,
+            ProtectedString? password)
         {
             return new PemFilesOptions
             {
                 PemPassword = password,
-                Path = path
+                Path = path,
+                FileName = name
             };
         }
     }

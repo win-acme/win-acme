@@ -156,7 +156,7 @@ try
 		Write-Host "Certificate not found where its supposed to be, try to load from file"
 		$Password = ConvertTo-SecureString $PfxPassword -AsPlainText -Force
 		$importExchangeCertificateParameters = @{
-			FileName = $CacheFile
+			FileData = ([System.IO.File]::ReadAllBytes("$CacheFile"))
 			FriendlyName = $FriendlyName
 			PrivateKeyExportable = $True
 			Password = $Password

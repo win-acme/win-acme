@@ -1,7 +1,9 @@
 ﻿using ACMESharp.Authorizations;
 using Org.BouncyCastle.Asn1;
 using PKISharp.WACS.Context;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -15,6 +17,12 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
 {
+    [IPlugin.Plugin<
+        SelfHostingOptions, SelfHostingOptionsFactory, 
+        SelfHostingCapability, WacsJsonPlugins>
+        ("a1565064-b208-4467-8ca1-1bd3c08aa500", 
+        "SelfHosting", 
+        "Answer TLS verification request from win-acme")]
     internal class SelfHosting : Validation<TlsAlpn01ChallengeValidationDetails>
     {
         internal const int DefaultValidationPort = 443;
@@ -23,7 +31,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
         private readonly SelfHostingOptions _options;
         private readonly ILogService _log;
         private readonly IUserRoleService _userRoleService;
-        private readonly CancellationTokenSource _tokenSource = new CancellationTokenSource();
+        private readonly CancellationTokenSource _tokenSource = new();
 
         private TcpListener Listener
         {
@@ -127,19 +135,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
                 throw;
             }
             return Task.CompletedTask;
-        }
-
-        public override (bool, string?) Disabled => IsDisabled(_userRoleService);
-        internal static (bool, string?) IsDisabled(IUserRoleService userRoleService)
-        {
-            if (!userRoleService.IsAdmin)
-            {
-                return (true, "Run as administrator to allow opening a TCP listener.");
-            }
-            else
-            {
-                return (false, null);
-            }
         }
     }
 }

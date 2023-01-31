@@ -8,12 +8,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Simply
         /// E.g. øbo.dk
         /// </summary>
         [JsonPropertyName("name")]
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         /// <summary>
         /// E.g. xn--bo-kka.dk
         /// </summary>
         [JsonPropertyName("name_idn")]
-        public string NameIdn { get; set; }
+        public string? NameIdn { get; set; }
     }
 }

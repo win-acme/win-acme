@@ -1,9 +1,16 @@
 ﻿using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Services.Serialization;
 using System.Collections.Generic;
 
 namespace PKISharp.WACS.Plugins.OrderPlugins
 {
+    [IPlugin.Plugin<
+        SiteOptions, PluginOptionsFactory<SiteOptions>, 
+        SiteCapability, WacsJsonPlugins>
+        ("74a42b2d-8eaa-4f40-ab6a-f55304254143", 
+        "Site", "Separate certificate for each IIS site")]
     class Site : IOrderPlugin
     {
         public IEnumerable<Order> Split(Renewal renewal, Target target) 

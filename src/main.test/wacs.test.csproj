@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
 
     <IsPackable>false</IsPackable>
 
@@ -15,10 +15,20 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
-    <PackageReference Include="MSTest.TestAdapter" Version="2.2.9" />
-    <PackageReference Include="MSTest.TestFramework" Version="2.2.9" />
-    <PackageReference Include="coverlet.collector" Version="3.1.2">
+    <None Remove="Tests\CsrPluginTests\messedup.pfx" />
+    <None Remove="Tests\CsrPluginTests\original.pfx" />
+    <None Remove="Tests\CsrPluginTests\working.pfx" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <EmbeddedResource Include="Tests\CsrPluginTests\working.pfx" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.1" />
+    <PackageReference Include="MSTest.TestAdapter" Version="3.0.2" />
+    <PackageReference Include="MSTest.TestFramework" Version="3.0.2" />
+    <PackageReference Include="coverlet.collector" Version="3.2.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>

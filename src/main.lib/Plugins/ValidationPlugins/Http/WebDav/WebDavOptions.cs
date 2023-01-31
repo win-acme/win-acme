@@ -1,17 +1,12 @@
 ﻿using PKISharp.WACS.Configuration;
-using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    [Plugin("7e191d0e-30d1-47b3-ae2e-442499d33e16")]
-    internal class WebDavOptions : HttpValidationOptions<WebDav>
+    internal class WebDavOptions : HttpValidationOptions
     {
-        public override string Name => "WebDav";
-        public override string Description => "Upload verification files via WebDav";
-
         public WebDavOptions() : base() { }
-        public WebDavOptions(HttpValidationOptions<WebDav> source) : base(source) { }
+        public WebDavOptions(HttpValidationOptions? source) : base(source) { }
 
         /// <summary>
         /// Credentials to use for WebDav connection
