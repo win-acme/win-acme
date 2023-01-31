@@ -44,6 +44,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             inputService.Show("{OldCertCommonName}", "Common name (primary domain name) of the previously issued certificate");
             inputService.Show("{OldCertFriendlyName}", "Friendly name of the previously issued certificate");
             inputService.Show("{OldCertThumbprint}", "Thumbprint of the previously issued certificate");
+            inputService.Show("{vault://json/mysecret}", "Secret from the vault");
             inputService.CreateSpace();
             ret.ScriptParameters = await Parameters.Interactive(inputService, "Parameters").GetValue();
             return ret;
