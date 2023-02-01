@@ -109,13 +109,13 @@ namespace PKISharp.WACS.Services
                 var validationCapability = typeof(object);
                 switch (parameter?.ToLower())
                 {
-                    case Http01ChallengeValidationDetails.Http01ChallengeType:
+                    case Constants.Http01ChallengeType:
                         validationCapability = typeof(HttpValidationCapability);
                         break;
-                    case Dns01ChallengeValidationDetails.Dns01ChallengeType:
+                    case Constants.Dns01ChallengeType:
                         validationCapability = typeof(HttpValidationCapability);
                         break;
-                    case TlsAlpn01ChallengeValidationDetails.TlsAlpn01ChallengeType:
+                    case Constants.TlsAlpn01ChallengeType:
                         validationCapability = typeof(HttpValidationCapability);
                         break;
                 }
