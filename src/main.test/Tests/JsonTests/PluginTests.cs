@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using Autofac.Core;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
@@ -32,6 +33,7 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
             _ = builder.RegisterInstance(assembly).As<AssemblyService>().SingleInstance();
             _ = builder.RegisterInstance(log).As<ILogService>();
             _ = builder.RegisterInstance(plugin).As<IPluginService>().SingleInstance();
+            _ = builder.Register(c => (ISharingLifetimeScope)c.Resolve<ILifetimeScope>()).As<ISharingLifetimeScope>().ExternallyOwned();
             plugin.Configure(builder);
             WacsJson.Configure(builder);
             _container = builder.Build();
