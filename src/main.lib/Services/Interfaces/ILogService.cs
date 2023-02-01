@@ -30,5 +30,6 @@ namespace PKISharp.WACS.Services
         void Verbose(string message, params object?[] items);
         void Verbose(LogType logType, string message, params object?[] items);
         void Warning(string message, params object?[] items);
+        void SetDiskLoggingPath(string logPath);
     }
 }

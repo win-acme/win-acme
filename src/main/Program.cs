@@ -45,7 +45,6 @@ namespace PKISharp.WACS.Host
                 return;
             }
 
-
             // The main class might change the character encoding
             // save the original setting so that it can be restored
             // after the run.
@@ -103,10 +102,7 @@ namespace PKISharp.WACS.Host
         /// </summary>
         static void FriendlyClose()
         {
-            if (_globalMutex != null)
-            {
-                _globalMutex.ReleaseMutex();
-            }
+            _globalMutex?.ReleaseMutex();
             Environment.ExitCode = -1;
             if (Environment.UserInteractive)
             {
@@ -157,17 +153,11 @@ namespace PKISharp.WACS.Host
             {
                 return null;
             }
-            var settingsService = new SettingsService(logger, mainArguments);
-            if (!settingsService.Valid)
-            {
-                return null;
-            }
-            logger.SetDiskLoggingPath(settingsService.Client.LogPath!);
 
             _ = builder.RegisterInstance(argumentsParser);
             _ = builder.RegisterInstance(mainArguments);
             _ = builder.RegisterInstance(logger).As<ILogService>();
-            _ = builder.RegisterInstance(settingsService).As<ISettingsService>();
+            _ = builder.RegisterType<SettingsService>().As<ISettingsService>().WithParameter(new TypedParameter(typeof(MainArguments), mainArguments)).SingleInstance();
             _ = builder.RegisterInstance(pluginService).As<IPluginService>();
             _ = builder.RegisterType<AdminService>();
             WacsJson.Configure(builder);

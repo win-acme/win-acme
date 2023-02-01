@@ -91,6 +91,12 @@ namespace PKISharp.WACS.Host
         /// </summary>
         public async Task<int> Start()
         {
+            // Exit when settings are not valid
+            if (!_settings.Valid)
+            {
+                return -1;
+            }
+
             // Show informational message and start-up diagnostics
             await ShowBanner().ConfigureAwait(false);
 

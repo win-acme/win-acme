@@ -1,6 +1,7 @@
 ﻿using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Configuration.Settings;
 using PKISharp.WACS.Extensions;
+using Serilog.Core;
 using System;
 using System.IO;
 using System.Security.AccessControl;
@@ -68,7 +69,6 @@ namespace PKISharp.WACS.Services
 
                 // This code specifically deals with backwards compatibility 
                 // so it is allowed to use obsolete properties
-#pragma warning disable CS0612
 #pragma warning disable CS0618
                 static string? Fallback(string? x, string? y) => string.IsNullOrWhiteSpace(x) ? y : x;
                 Source.DefaultSource = Fallback(Source.DefaultSource, Target.DefaultTarget);
@@ -76,7 +76,6 @@ namespace PKISharp.WACS.Services
                 Store.CentralSsl.DefaultPath = Fallback(Store.CentralSsl.DefaultPath, Store.DefaultCentralSslStore);
                 Store.CentralSsl.DefaultPassword = Fallback(Store.CentralSsl.DefaultPassword, Store.DefaultCentralSslPfxPassword);
                 Store.CertificateStore.DefaultStore = Fallback(Store.CertificateStore.DefaultStore, Store.DefaultCertificateStore);
-#pragma warning restore CS0612 
 #pragma warning restore CS0618
             }
             catch (Exception ex)
@@ -99,8 +98,9 @@ namespace PKISharp.WACS.Services
             EnsureFolderExists(Client.ConfigurationPath, "configuration", false);
             EnsureFolderExists(Client.LogPath, "log", !Client.LogPath.StartsWith(Client.ConfigurationPath));
             EnsureFolderExists(Cache.Path, "cache", !Client.LogPath.StartsWith(Client.ConfigurationPath));
-
             Valid = true;
+
+            _log.SetDiskLoggingPath(Client.LogPath);
         }
 
         public Uri BaseUri

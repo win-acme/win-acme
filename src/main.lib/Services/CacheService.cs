@@ -27,14 +27,20 @@ namespace PKISharp.WACS.Services
         private readonly ISettingsService _settings;
         private readonly DirectoryInfo _cache;
 
-        public CacheService(
-            ILogService log,
-            ISettingsService settingsService)
+        public CacheService(ILogService log, ISettingsService settingsService)
         {
-            _log = log;
-            _cache = new DirectoryInfo(settingsService.Cache.Path!);
             _settings = settingsService;
-            CheckStaleFiles();
+            _log = log;
+            if (settingsService.Cache.Path != null)
+            {
+                _cache = new DirectoryInfo(settingsService.Cache.Path);
+                CheckStaleFiles();
+            } 
+            else
+            {
+                _cache = new DirectoryInfo("DUMMY");
+            }
+
         }
 
         /// <summary>
