@@ -51,7 +51,7 @@ namespace PKISharp.WACS.Clients.Acme
             cacheKeyBuilder.Append(order.Target.CommonName);
             cacheKeyBuilder.Append(string.Join(',', order.Target.GetIdentifiers(true).OrderBy(x => x).Select(x => x.Value.ToLower())));
             _ = order.Target.UserCsrBytes != null ?
-                cacheKeyBuilder.Append(Convert.ToBase64String(order.Target.UserCsrBytes)) :
+                cacheKeyBuilder.Append(Convert.ToBase64String(order.Target.UserCsrBytes.ToArray())) :
                 cacheKeyBuilder.Append('-');
             _ = order.Renewal.CsrPluginOptions != null ?
                 cacheKeyBuilder.Append(JsonSerializer.Serialize(order.Renewal.CsrPluginOptions, WacsJson.Insensitive.CsrPluginOptions)) :
@@ -184,7 +184,7 @@ namespace PKISharp.WACS.Clients.Acme
                 }
 
                 // Create the order
-                _log.Verbose("Creating order for hosts: {identifiers}", identifiers);
+                _log.Verbose("Creating order for identifiers: {identifiers}", identifiers);
                 var order = await _client.CreateOrder(identifiers);
                 if (order.Payload.Error != default)
                 {

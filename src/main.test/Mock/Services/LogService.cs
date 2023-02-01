@@ -83,5 +83,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         }
 
         public void Reset() { }
+
+        public void SetDiskLoggingPath(string logPath) {}
     }
 }

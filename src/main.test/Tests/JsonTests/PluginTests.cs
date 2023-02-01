@@ -1,10 +1,12 @@
 ﻿using Autofac;
+using Autofac.Core;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using PKISharp.WACS.UnitTests.Mock.Services;
 using System;
+using System.Linq;
 using System.Text.Json;
 
 namespace PKISharp.WACS.UnitTests.Tests.JsonTests
@@ -32,6 +34,7 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
             _ = builder.RegisterInstance(assembly).As<AssemblyService>().SingleInstance();
             _ = builder.RegisterInstance(log).As<ILogService>();
             _ = builder.RegisterInstance(plugin).As<IPluginService>().SingleInstance();
+            _ = builder.Register(c => (ISharingLifetimeScope)c.Resolve<ILifetimeScope>()).As<ISharingLifetimeScope>().ExternallyOwned();
             plugin.Configure(builder);
             WacsJson.Configure(builder);
             _container = builder.Build();
@@ -39,7 +42,7 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
             _log = _container.Resolve<ILogService>();
         }
 
-        private Renewal Deserialize(string json)
+        private static Renewal Deserialize(string json)
         {
             var wacsJson = _container!.Resolve<WacsJson>();
             var renewal = JsonSerializer.Deserialize(json, wacsJson.Renewal);

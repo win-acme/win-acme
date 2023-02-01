@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using Autofac.Core;
 using Autofac.Features.AttributeFilters;
 using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.Acme;
@@ -6,10 +7,12 @@ using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
+using PKISharp.WACS.Plugins;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Services.Serialization;
 using PKISharp.WACS.UnitTests.Mock.Services;
 using System.Collections.Generic;
+using System.Linq;
 using Mock = PKISharp.WACS.UnitTests.Mock.Services;
 using Real = PKISharp.WACS.Services;
 
@@ -63,13 +66,15 @@ namespace PKISharp.WACS.UnitTests.Mock
             _ = builder.RegisterType<EmailClient>().SingleInstance();
             _ = builder.RegisterType<ScriptClient>().SingleInstance();
             _ = builder.RegisterType<LookupClientProvider>().SingleInstance();
-            _ = builder.RegisterType<Services.CacheService>().As<Real.ICacheService>().SingleInstance();
-            _ = builder.RegisterType<Services.CertificateService>().As<Real.ICertificateService>().SingleInstance();
+            _ = builder.RegisterType<CacheService>().As<Real.ICacheService>().SingleInstance();
+            _ = builder.RegisterType<CertificateService>().As<Real.ICertificateService>().SingleInstance();
             _ = builder.RegisterType<Real.TaskSchedulerService>().SingleInstance();
             _ = builder.RegisterType<Real.NotificationService>().SingleInstance();
             _ = builder.RegisterType<RenewalValidator>().SingleInstance();
             _ = builder.RegisterType<RenewalExecutor>().SingleInstance();
+            _ = builder.RegisterType<OrderProcessor>().SingleInstance();
             _ = builder.RegisterType<RenewalManager>().SingleInstance();
+            _ = builder.Register(c => (ISharingLifetimeScope)c.Resolve<ILifetimeScope>()).As<ISharingLifetimeScope>().ExternallyOwned();
 
             return builder.Build();
         }

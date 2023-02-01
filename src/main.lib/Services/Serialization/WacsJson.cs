@@ -2,7 +2,6 @@
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services.Legacy;
-using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -27,18 +26,10 @@ namespace PKISharp.WACS.Services.Serialization
     internal partial class WacsJson : JsonSerializerContext 
     {
         public WacsJson(WacsJsonOptionsFactory optionsFactory) : base(optionsFactory.Options) {}
-        public static WacsJson Insensitive => new WacsJson(new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
+        public static WacsJson Insensitive => new(new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
         public static void Configure(ContainerBuilder builder)
         {
-            _ = builder.Register(x =>
-            {
-                var context = x.Resolve<IComponentContext>();
-                if (context is ILifetimeScope scope)
-                {
-                    return new PluginOptionsConverter(scope);
-                }
-                throw new Exception();
-            }).As<PluginOptionsConverter>().SingleInstance();
+            _ = builder.RegisterType<PluginOptionsConverter>().SingleInstance();
             _ = builder.RegisterType<PluginOptionsListConverter>().SingleInstance();
             _ = builder.RegisterType<WacsJson>().SingleInstance();
             _ = builder.RegisterType<WacsJsonOptionsFactory>().SingleInstance();

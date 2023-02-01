@@ -134,7 +134,7 @@ namespace PKISharp.WACS
         {
             // Execute them per group, where one group means one validation plugin
             var multipleOrders = authorizations.Any(x => x.Order != authorizations.First().Order);
-            var validationScope = _scopeBuilder.PluginBackend<IValidationPlugin, ValidationPluginOptions>(authorizations.First().Order.OrderScope, pluginOptions);
+            using var validationScope = _scopeBuilder.PluginBackend<IValidationPlugin, IValidationPluginCapability, ValidationPluginOptions>(authorizations.First().Order.OrderScope, pluginOptions);
             var plugin = validationScope.Resolve<IValidationPlugin>();
             var contexts = authorizations.Select(context =>
             {
@@ -150,7 +150,7 @@ namespace PKISharp.WACS
             // Choose between parallel and serial execution
             if (_settings.Validation.DisableMultiThreading != false || plugin.Parallelism == ParallelOperations.None)
             {
-                await SerialValidation(contexts, breakOnError: !multipleOrders);
+                await SerialValidation(contexts, validationScope, breakOnError: !multipleOrders);
             }
             else
             {
@@ -247,15 +247,11 @@ namespace PKISharp.WACS
                 throw new Exception("Missing identifier");
             }
             var identifier = Identifier.Parse(context.Authorization.Identifier);
-            var dummyTarget = new Target(identifier);
-            var targetScope = _scopeBuilder.Target(context.Order.OrderScope, dummyTarget);
-            var plugin = _plugin.GetPlugin(options);
-            var pluginHelper = _scopeBuilder.PluginFrontend<IValidationPluginCapability, ValidationPluginOptions>(targetScope, plugin);
-            var pluginFrontend = pluginHelper.Resolve<PluginFrontend<IValidationPluginCapability, ValidationPluginOptions>>();
+            var pluginFrontend = _scopeBuilder.ValidationFrontend(context.Order.OrderScope, options, identifier);
             var state = pluginFrontend.Capability.State;
             if (state.Disabled)
             {
-                _log.Warning("Validation plugin {name} is not available. {disabledReason}", plugin.Name, state.Reason);
+                _log.Warning("Validation plugin {name} is not available. {disabledReason}", pluginFrontend.Meta.Name, state.Reason);
                 return false;
             }
             if (!context.Authorization.Challenges?.Any(x => x.Type == pluginFrontend.Capability.ChallengeType) ?? false)
@@ -347,7 +343,7 @@ namespace PKISharp.WACS
         /// <param name="context"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        private async Task SerialValidation(IList<ValidationContextParameters> parameters, bool breakOnError)
+        private async Task SerialValidation(IList<ValidationContextParameters> parameters, ILifetimeScope validationScope, bool breakOnError)
         {
             foreach (var parameter in parameters)
             {
@@ -359,7 +355,6 @@ namespace PKISharp.WACS
                     _log.Verbose("Skip authorization because the order has already failed");
                     continue;
                 }
-                using var validationScope = _scopeBuilder.PluginBackend<IValidationPlugin, IValidationPluginCapability, ValidationPluginOptions>(parameter.OrderContext.OrderScope, parameter.Options);
                 await ParallelValidation(
                     ParallelOperations.None, 
                     validationScope, 

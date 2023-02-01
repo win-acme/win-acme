@@ -1,10 +1,10 @@
 ﻿using Autofac;
+using Autofac.Core;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.TargetPlugins;
@@ -26,7 +26,7 @@ namespace PKISharp.WACS
         private readonly ICacheService _cacheService;
         private readonly ArgumentsParser _arguments;
         private readonly MainArguments _args;
-        private readonly IContainer _container;
+        private readonly ISharingLifetimeScope _container;
         private readonly IAutofacBuilder _scopeBuilder;
         private readonly ExceptionHandler _exceptionHandler;
         private readonly RenewalExecutor _renewalExecutor;
@@ -36,7 +36,7 @@ namespace PKISharp.WACS
 
         public RenewalManager(
             ArgumentsParser arguments, MainArguments args,
-            IRenewalStore renewalStore, IContainer container,
+            IRenewalStore renewalStore, ISharingLifetimeScope container,
             ICacheService cacheService, IPluginService plugin,
             IInputService input, ILogService log,
             ISettingsService settings, IDueDateService dueDate,
@@ -235,8 +235,7 @@ namespace PKISharp.WACS
                     "Choose an action or type numbers to select renewals",
                     options, 
                     (string unexpected) =>
-                        Choice.Create<Func<Task>>(
-                          async () => selectedRenewals = await FilterRenewalsById(selectedRenewals, unexpected)));
+                        Choice.Create<Func<Task>>(() => { selectedRenewals = FilterRenewalsById(selectedRenewals, unexpected); return Task.CompletedTask; }));
                 await chosen.Invoke();
                 _container.Resolve<IIISClient>().Refresh();
             }
@@ -417,7 +416,7 @@ namespace PKISharp.WACS
             return await chosen.Invoke();
         }
 
-        private async Task<IEnumerable<Renewal>> FilterRenewalsById(IEnumerable<Renewal> current, string input)
+        private IEnumerable<Renewal> FilterRenewalsById(IEnumerable<Renewal> current, string input)
         {
             var parts = input.ParseCsv();
             if (parts == null)
@@ -473,7 +472,7 @@ namespace PKISharp.WACS
         /// </summary>
         /// <param name="command"></param>
         /// <returns></returns>
-        private async Task<IEnumerable<Renewal>> FilterRenewalsByCommandLine(string command)
+        private IEnumerable<Renewal> FilterRenewalsByCommandLine(string command)
         {
             if (_args.HasFilter)
             {
@@ -650,14 +649,8 @@ namespace PKISharp.WACS
                 _input.CreateSpace();
                 renewal.TargetPluginOptions.Show(_input, _plugin);
                 renewal.ValidationPluginOptions.Show(_input, _plugin);
-                if (renewal.OrderPluginOptions != null)
-                {
-                    renewal.OrderPluginOptions.Show(_input, _plugin);
-                }
-                if (renewal.CsrPluginOptions != null)
-                {
-                    renewal.CsrPluginOptions.Show(_input, _plugin);
-                }
+                renewal.OrderPluginOptions?.Show(_input, _plugin);
+                renewal.CsrPluginOptions?.Show(_input, _plugin);
                 foreach (var ipo in renewal.StorePluginOptions)
                 {
                     ipo.Show(_input, _plugin);
@@ -713,9 +706,9 @@ namespace PKISharp.WACS
         /// Cancel certificate from the command line
         /// </summary>
         /// <returns></returns>
-        internal async Task CancelRenewalsUnattended()
+        internal void CancelRenewalsUnattended()
         {
-            var targets = await FilterRenewalsByCommandLine("cancel");
+            var targets = FilterRenewalsByCommandLine("cancel");
             foreach (var t in targets)
             {
                 _renewalStore.Cancel(t);
@@ -730,7 +723,7 @@ namespace PKISharp.WACS
         internal async Task RevokeCertificatesUnattended()
         {
             _log.Warning($"Certificates should only be revoked in case of a (suspected) security breach. Cancel the renewal if you simply don't need the certificate anymore.");
-            var renewals = await FilterRenewalsByCommandLine("revoke");
+            var renewals = FilterRenewalsByCommandLine("revoke");
             await RevokeCertificates(renewals);
         }
 

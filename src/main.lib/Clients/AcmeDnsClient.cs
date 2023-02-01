@@ -32,13 +32,13 @@ namespace PKISharp.WACS.Clients
             _log = log;
             _input = input;
             var configDir = new DirectoryInfo(settings.Client.ConfigurationPath);
-            var legacyPath = Path.Combine(configDir.FullName, "acme-dns", _baseUri.CleanUri()!);
+            var legacyPath = Path.Combine(configDir.FullName, "acme-dns", _baseUri.CleanUri());
             var legacyDirectory = new DirectoryInfo(legacyPath);
             if (!legacyDirectory.Exists)
             {
                 // Go up one level so that multiple ACME servers
                 // can share the same acme-dns registrations
-                var parentPath = Path.Combine(configDir.Parent!.FullName, "acme-dns", _baseUri.CleanUri()!);
+                var parentPath = Path.Combine(configDir.Parent!.FullName, "acme-dns", _baseUri.CleanUri());
                 var parentDirectory = new DirectoryInfo(parentPath);
                 if (!parentDirectory.Exists)
                 {

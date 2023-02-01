@@ -27,14 +27,20 @@ namespace PKISharp.WACS.Services
         private readonly ISettingsService _settings;
         private readonly DirectoryInfo _cache;
 
-        public CacheService(
-            ILogService log,
-            ISettingsService settingsService)
+        public CacheService(ILogService log, ISettingsService settingsService)
         {
-            _log = log;
-            _cache = new DirectoryInfo(settingsService.Cache.Path!);
             _settings = settingsService;
-            CheckStaleFiles();
+            _log = log;
+            if (settingsService.Cache.Path != null)
+            {
+                _cache = new DirectoryInfo(settingsService.Cache.Path);
+                CheckStaleFiles();
+            } 
+            else
+            {
+                _cache = new DirectoryInfo("DUMMY");
+            }
+
         }
 
         /// <summary>
@@ -268,7 +274,7 @@ namespace PKISharp.WACS.Services
                 cacheKeyBuilder.Append(order.Target.CommonName);
             cacheKeyBuilder.Append(string.Join(',', order.Target.GetIdentifiers(true).OrderBy(x => x).Select(x => x.Value.ToLower())));
             _ = order.Target.UserCsrBytes != null ?
-                cacheKeyBuilder.Append(Convert.ToBase64String(order.Target.UserCsrBytes)) :
+                cacheKeyBuilder.Append(Convert.ToBase64String(order.Target.UserCsrBytes.ToArray())) :
                 cacheKeyBuilder.Append('-');
             _ = order.Renewal.CsrPluginOptions != null ?
                 cacheKeyBuilder.Append(JsonSerializer.Serialize(order.Renewal.CsrPluginOptions, WacsJson.Default.CsrPluginOptions)) :

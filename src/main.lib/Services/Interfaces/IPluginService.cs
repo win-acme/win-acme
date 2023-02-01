@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.Plugins;
+﻿using Autofac;
+using PKISharp.WACS.Plugins;
 using PKISharp.WACS.Services.Serialization;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -12,5 +13,6 @@ namespace PKISharp.WACS.Services
         bool TryGetPlugin([NotNullWhen(true)] PluginOptionsBase? options, [NotNullWhen(true)] out Plugin? plugin);
         Plugin GetPlugin(PluginOptionsBase options);
         Plugin? GetPlugin(Steps step, string name, string? parameter = null);
+        void Configure(ContainerBuilder builder);
     }
 }

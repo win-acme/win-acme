@@ -1,10 +1,7 @@
 ﻿using ACMESharp.Authorizations;
 using Autofac;
 using PKISharp.WACS.Plugins;
-using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Capabilities;
-using PKISharp.WACS.Plugins.Base.Factories;
-using PKISharp.WACS.Plugins.CsrPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services.Serialization;
 using System;
@@ -112,13 +109,13 @@ namespace PKISharp.WACS.Services
                 var validationCapability = typeof(object);
                 switch (parameter?.ToLower())
                 {
-                    case Http01ChallengeValidationDetails.Http01ChallengeType:
+                    case Constants.Http01ChallengeType:
                         validationCapability = typeof(HttpValidationCapability);
                         break;
-                    case Dns01ChallengeValidationDetails.Dns01ChallengeType:
+                    case Constants.Dns01ChallengeType:
                         validationCapability = typeof(HttpValidationCapability);
                         break;
-                    case TlsAlpn01ChallengeValidationDetails.TlsAlpn01ChallengeType:
+                    case Constants.TlsAlpn01ChallengeType:
                         validationCapability = typeof(HttpValidationCapability);
                         break;
                 }
@@ -127,21 +124,6 @@ namespace PKISharp.WACS.Services
                     ToList();
             }
             return plugins.FirstOrDefault();
-        }
-
-        /// <summary>
-        /// Configure the DI system
-        /// </summary>
-        /// <param name="builder"></param>
-        internal void Configure(ContainerBuilder builder)
-        {
-            _plugins.ForEach(p =>
-            {
-                builder.RegisterType(p.Backend).InstancePerLifetimeScope();
-                builder.RegisterType(p.OptionsJson).InstancePerLifetimeScope();
-                builder.RegisterType(p.OptionsFactory).InstancePerLifetimeScope();
-                builder.RegisterType(p.Capability).InstancePerLifetimeScope();
-            });
         }
 
         /// <summary>
@@ -192,6 +174,21 @@ namespace PKISharp.WACS.Services
                     _log.Verbose("Loaded {type} plugin {name} from {location}", type, x.Name, x.Assembly.Location);
                     return false;
                 });
+        }
+
+        /// <summary>
+        /// Configure Autofac container
+        /// </summary>
+        /// <param name="builder"></param>
+        public void Configure(ContainerBuilder builder)
+        {
+            _plugins.ForEach(plugin =>
+            {
+                _ = builder.RegisterType(plugin.Backend).InstancePerLifetimeScope();
+                _ = builder.RegisterType(plugin.OptionsJson).InstancePerLifetimeScope();
+                _ = builder.RegisterType(plugin.OptionsFactory).InstancePerLifetimeScope();
+                _ = builder.RegisterType(plugin.Capability).InstancePerLifetimeScope();
+            });
         }
     }
 }

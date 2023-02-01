@@ -20,18 +20,7 @@ namespace PKISharp.WACS.UnitTests.Tests.RenewalTests
                 "Q" // Quit
             });
             var renewalStore = container.Resolve<Real.IRenewalStore>();
-            var renewalValidator = container.Resolve<RenewalValidator>(
-                new TypedParameter(typeof(IContainer), container));
-            var renewalExecutor = container.Resolve<RenewalExecutor>(
-               new TypedParameter(typeof(RenewalValidator), renewalValidator),
-               new TypedParameter(typeof(IContainer), container));
-            var renewalCreator = container.Resolve<RenewalCreator>(
-                new TypedParameter(typeof(IContainer), container),
-                new TypedParameter(typeof(RenewalExecutor), renewalExecutor));
-            var renewalManager = container.Resolve<RenewalManager>(
-                new TypedParameter(typeof(IContainer), container),
-                new TypedParameter(typeof(RenewalExecutor), renewalExecutor),
-                new TypedParameter(typeof(RenewalCreator), renewalCreator));
+            var renewalManager = container.Resolve<RenewalManager>();
           
             Assert.IsNotNull(renewalManager);
             renewalManager.ManageRenewals().Wait();

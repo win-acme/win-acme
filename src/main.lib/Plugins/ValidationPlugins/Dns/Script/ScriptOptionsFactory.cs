@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.Extensions;
+﻿using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using System;
@@ -73,9 +74,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             ProcessScripts(ret, null, createScript, deleteScript);
 
             input.CreateSpace();
-            input.Show("{Identifier}", "Domain that's being validated");
-            input.Show("{RecordName}", "Full TXT record name");
-            input.Show("{Token}", "Expected value in the TXT record");
+            input.Show("{Identifier}", "Domain that's being validated, e.g. sub.example.com");
+            input.Show("{RecordName}", "Full name of the TXT record that is required, e.g. _acme-challenge.sub.example.com");
+            input.Show("{ZoneName}", "Registerable domain, e.g. example.com");
+            input.Show("{NodeName}", "Full subdomain, e.g. _acme-challenge.sub");
+            input.Show("{Token}", "Token that should be the content of the TXT record");
+            input.Show("{vault://json/mysecret}", "Secret from the vault");
             input.CreateSpace();
             ret.CreateScriptArguments = await CreateScriptArguments.Interactive(input).GetValue();
             if (!string.IsNullOrWhiteSpace(ret.DeleteScript) || !string.IsNullOrWhiteSpace(ret.Script))

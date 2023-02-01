@@ -254,7 +254,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 shortDescription: "How would you like prove ownership for the domain(s)?",
                 longDescription: "The ACME server will need to verify that you are the owner of the domain names that you are requesting" +
                     " the certificate for. This happens both during initial setup *and* for every future renewal. There are two main methods of doing so: " +
-                    "answering specific http requests (http-01) or create specific dns records (dns-01). For wildcard domains the latter is the only option. " +
+                    "answering specific http requests (http-01) or create specific dns records (dns-01). For wildcard identifiers the latter is the only option. " +
                     "Various additional plugins are available from https://github.com/win-acme/win-acme/.");
         }
 
@@ -265,7 +265,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                    defaultParam1: _settings.Order.DefaultPlugin,
                    defaultBackends: new List<Type>() { typeof(Single) },
                    shortDescription: "Would you like to split this source into multiple certificates?",
-                   longDescription: $"By default your source hosts are covered by a single certificate. " +
+                   longDescription: $"By default your source identifiers are covered by a single certificate. " +
                         $"But if you want to avoid the {Constants.MaxNames} domain limit, want to prevent " +
                         $"information disclosure via the SAN list, and/or reduce the operational impact of " +
                         $"a single validation failure, you may choose to convert one source into multiple " +
