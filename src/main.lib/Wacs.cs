@@ -36,15 +36,20 @@ namespace PKISharp.WACS.Host
         private readonly SecretServiceManager _secretServiceManager;
         private readonly ValidationOptionsService _validationOptionsService;
         private readonly TaskSchedulerService _taskScheduler;
+        private readonly VersionService _versionService;
 
         public Wacs(
             ISharingLifetimeScope container, 
             IAutofacBuilder scopeBuilder,
             ExceptionHandler exceptionHandler,
             ILogService logService,
+            IInputService inputService,
             ISettingsService settingsService,
             IUserRoleService userRoleService,
             IDueDateService dueDateService,
+            IRenewalStore renewalStore,
+            VersionService versionService,
+            ArgumentsParser argumentsParser,
             AdminService adminService,
             RenewalCreator renewalCreator,
             RenewalManager renewalManager,
@@ -65,6 +70,11 @@ namespace PKISharp.WACS.Host
             _dueDateService = dueDateService;
             _renewalCreator = renewalCreator; 
             _renewalManager = renewalManager;
+            _arguments = argumentsParser;
+            _input = inputService;
+            _renewalStore = renewalStore;
+            _validationOptionsService = validationOptionsService;
+            _versionService = versionService;
 
             if (!string.IsNullOrWhiteSpace(_settings.UI.TextEncoding))
             {
@@ -78,12 +88,8 @@ namespace PKISharp.WACS.Host
                 }
             }
 
-            _arguments = _container.Resolve<ArgumentsParser>();
             _arguments.ShowCommandLine();
-            _args = _arguments.GetArguments<MainArguments>()!;
-            _input = _container.Resolve<IInputService>();
-            _renewalStore = _container.Resolve<IRenewalStore>();
-            _validationOptionsService = validationOptionsService;
+            _args = _arguments.GetArguments<MainArguments>() ?? new MainArguments();
         }
 
         /// <summary>
@@ -91,16 +97,21 @@ namespace PKISharp.WACS.Host
         /// </summary>
         public async Task<int> Start()
         {
-            // Exit when settings are not valid
+            // Exit when settings are not valid. The settings service
+            // also checks the command line arguments
             if (!_settings.Valid)
+            {
+                return -1;
+            }
+            if (!_versionService.Init())
             {
                 return -1;
             }
 
             // Show informational message and start-up diagnostics
-            await ShowBanner().ConfigureAwait(false);
+            await ShowBanner();
 
-            // Version display (handled by ShowBanner in constructor)
+            // Version display
             if (_args.Version)
             {
                 await CloseDefault();

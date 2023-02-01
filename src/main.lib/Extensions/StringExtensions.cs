@@ -2,9 +2,11 @@
 using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Security.Policy;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -17,6 +19,7 @@ namespace PKISharp.WACS.Extensions
         /// </summary>
         /// <param name="uri"></param>
         /// <returns></returns>
+        [return: NotNullIfNotNull(nameof(uri))]
         public static string? CleanUri(this Uri? uri)
         {
             if (uri == null)
@@ -37,6 +40,7 @@ namespace PKISharp.WACS.Extensions
         /// </summary>
         /// <param name="fileName"></param>
         /// <returns></returns>
+        [return: NotNullIfNotNull(nameof(fileName))]
         public static string? CleanPath(this string? fileName)
         {
             if (fileName == null)

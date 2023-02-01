@@ -5,7 +5,6 @@ using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -28,7 +27,7 @@ namespace PKISharp.WACS.Services
         public IEnumerable<MemoryEntry> Lines => _lines.AsEnumerable();
         public void Reset() => _lines.Clear();
 
-        public LogService()
+        public LogService(bool verbose)
         {
             // Custom configuration support
             ConfigurationPath = Path.Combine(VersionService.BasePath, "serilog.json");
@@ -37,6 +36,10 @@ namespace PKISharp.WACS.Services
 #else
             var initialLevel = LogEventLevel.Information;
 #endif
+            if (verbose)
+            {
+                initialLevel = LogEventLevel.Verbose;
+            }
             _levelSwitch = new LoggingLevelSwitch(initialMinimumLevel: initialLevel);
             try
             {
@@ -96,7 +99,7 @@ namespace PKISharp.WACS.Services
                 .WriteTo.Memory(_lines)
                 .CreateLogger();
 
-            Log.Debug("The global logger has been configured");
+            Debug("Logging at level {initialLevel}", initialLevel);
         }
 
         public void SetDiskLoggingPath(string path)
@@ -147,12 +150,6 @@ namespace PKISharp.WACS.Services
             {
                 Warning("Error creating disk logger: {ex}", ex.Message);
             }
-        }
-
-        public void SetVerbose()
-        {
-            _levelSwitch.MinimumLevel = LogEventLevel.Verbose;
-            Verbose("Verbose mode logging enabled");
         }
 
         public void Verbose(string message, params object?[] items) => Verbose(LogType.Screen | LogType.Disk, message, items);

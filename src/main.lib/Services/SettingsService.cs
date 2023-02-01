@@ -1,7 +1,7 @@
-﻿using PKISharp.WACS.Configuration.Arguments;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Configuration.Settings;
 using PKISharp.WACS.Extensions;
-using Serilog.Core;
 using System;
 using System.IO;
 using System.Security.AccessControl;
@@ -13,14 +13,13 @@ namespace PKISharp.WACS.Services
     public class SettingsService : ISettingsService
     {
         private readonly ILogService _log;
-        private readonly MainArguments _arguments;
         private readonly Settings _settings;
+        private readonly MainArguments? _arguments;
         public bool Valid { get; private set; } = false;
 
-        public SettingsService(ILogService log, MainArguments arguments)
+        public SettingsService(ILogService log, ArgumentsParser parser)
         {
             _log = log;
-            _arguments = arguments;
             _settings = new Settings();
             var settingsFileName = "settings.json";
             var settingsFileTemplateName = "settings_default.json";
@@ -90,7 +89,7 @@ namespace PKISharp.WACS.Services
             }
 
             var configRoot = ChooseConfigPath();
-            Client.ConfigurationPath = Path.Combine(configRoot, BaseUri.CleanUri()!);
+            Client.ConfigurationPath = Path.Combine(configRoot, BaseUri.CleanUri());
             Client.LogPath = ChooseLogPath();
             Cache.Path = ChooseCachePath();
 
@@ -98,28 +97,33 @@ namespace PKISharp.WACS.Services
             EnsureFolderExists(Client.ConfigurationPath, "configuration", false);
             EnsureFolderExists(Client.LogPath, "log", !Client.LogPath.StartsWith(Client.ConfigurationPath));
             EnsureFolderExists(Cache.Path, "cache", !Client.LogPath.StartsWith(Client.ConfigurationPath));
-            Valid = true;
 
+            // Configure disk logger
             _log.SetDiskLoggingPath(Client.LogPath);
+
+            // Validate command line 
+            if (!parser.Validate())
+            {
+                return;
+            }
+            _arguments = parser.GetArguments<MainArguments>();
+            if (_arguments == null)
+            {
+                return;
+            }
+
+            Valid = true;
         }
 
         public Uri BaseUri
         {
             get
             {
-                Uri? ret;
-                if (!string.IsNullOrEmpty(_arguments.BaseUri))
-                {
-                    ret = new Uri(_arguments.BaseUri);
-                }
-                else if (_arguments.Test)
-                {
-                    ret = Acme.DefaultBaseUriTest;
-                }
-                else
-                {
-                    ret = Acme.DefaultBaseUri;
-                }
+                var ret = !string.IsNullOrEmpty(_arguments?.BaseUri)
+                    ? new Uri(_arguments.BaseUri)
+                    : _arguments?.Test ?? false ?
+                        Acme.DefaultBaseUriTest :
+                        Acme.DefaultBaseUri;
                 if (ret == null)
                 {
                     throw new Exception("Unable to determine BaseUri");
@@ -169,7 +173,7 @@ namespace PKISharp.WACS.Services
             else
             {
                 // Create seperate logs for each endpoint
-                return Path.Combine(Client.LogPath, BaseUri.CleanUri()!);
+                return Path.Combine(Client.LogPath, BaseUri.CleanUri());
             }
         }
 

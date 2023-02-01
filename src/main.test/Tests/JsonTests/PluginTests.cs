@@ -6,6 +6,7 @@ using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using PKISharp.WACS.UnitTests.Mock.Services;
 using System;
+using System.Linq;
 using System.Text.Json;
 
 namespace PKISharp.WACS.UnitTests.Tests.JsonTests
@@ -41,7 +42,7 @@ namespace PKISharp.WACS.UnitTests.Tests.JsonTests
             _log = _container.Resolve<ILogService>();
         }
 
-        private Renewal Deserialize(string json)
+        private static Renewal Deserialize(string json)
         {
             var wacsJson = _container!.Resolve<WacsJson>();
             var renewal = JsonSerializer.Deserialize(json, wacsJson.Renewal);

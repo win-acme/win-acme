@@ -7,10 +7,12 @@ using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
+using PKISharp.WACS.Plugins;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Services.Serialization;
 using PKISharp.WACS.UnitTests.Mock.Services;
 using System.Collections.Generic;
+using System.Linq;
 using Mock = PKISharp.WACS.UnitTests.Mock.Services;
 using Real = PKISharp.WACS.Services;
 

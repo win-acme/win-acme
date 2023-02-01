@@ -39,11 +39,6 @@ namespace PKISharp.WACS.Host
 
             // Setup IOC container
             var container = GlobalScope(args);
-            if (container == null)
-            {
-                FriendlyClose();
-                return;
-            }
 
             // The main class might change the character encoding
             // save the original setting so that it can be restored
@@ -62,6 +57,11 @@ namespace PKISharp.WACS.Host
                 if (Verbose)
                 {
                     Console.WriteLine(ex.StackTrace);
+                    while (ex.InnerException != null) {
+                        ex = ex.InnerException;
+                        Console.WriteLine(ex.Message);
+                        Console.WriteLine(ex.StackTrace);
+                    }
                 }
                 FriendlyClose();
             } 
@@ -79,7 +79,7 @@ namespace PKISharp.WACS.Host
         /// overwrite eachothers stuff
         /// </summary>
         /// <returns></returns>
-        static void AllowInstanceToRun(IContainer container)
+        static void AllowInstanceToRun(ILifetimeScope container)
         {
             var logger = container.Resolve<ILogService>();
             _globalMutex = new Mutex(true, "wacs.exe", out var created);
@@ -128,39 +128,18 @@ namespace PKISharp.WACS.Host
         /// </summary>
         /// <param name="args"></param>
         /// <returns></returns>
-        internal static IContainer? GlobalScope(string[] args)
+        internal static ILifetimeScope GlobalScope(string[] args)
         {
             var builder = new ContainerBuilder();
-            var logger = new LogService();
-            if (Verbose)
-            {
-                logger.SetVerbose();
-            }
-            // Not used but should be called anyway because it 
-            // checks if we're not running as dotnet.exe and also
-            // prints some verbose messages that are interesting
-            // to know very early in the start up process
-            _ = new VersionService(logger);
-            var assemblyService = new AssemblyService(logger);
-            var pluginService = new PluginService(logger, assemblyService);
-            var argumentsParser = new ArgumentsParser(logger, assemblyService, args);
-            if (!argumentsParser.Validate())
-            {
-                return null;
-            }
-            var mainArguments = argumentsParser.GetArguments<MainArguments>();
-            if (mainArguments == null)
-            {
-                return null;
-            }
 
-            _ = builder.RegisterInstance(argumentsParser);
-            _ = builder.RegisterInstance(mainArguments);
-            _ = builder.RegisterInstance(logger).As<ILogService>();
-            _ = builder.RegisterType<SettingsService>().As<ISettingsService>().WithParameter(new TypedParameter(typeof(MainArguments), mainArguments)).SingleInstance();
-            _ = builder.RegisterInstance(pluginService).As<IPluginService>();
-            _ = builder.RegisterType<AdminService>();
-            WacsJson.Configure(builder);
+            // Single instance types
+            _ = builder.RegisterType<LogService>().WithParameter(new TypedParameter(typeof(bool), Verbose)).SingleInstance().As<ILogService>();
+            _ = builder.RegisterType<PluginService>().SingleInstance().As<IPluginService>();
+            _ = builder.RegisterType<ArgumentsParser>().WithParameter(new TypedParameter(typeof(string[]), args)).SingleInstance();
+            _ = builder.RegisterType<AdminService>().SingleInstance();
+            _ = builder.RegisterType<VersionService>().SingleInstance();
+            _ = builder.RegisterType<AssemblyService>().SingleInstance();
+            _ = builder.RegisterType<SettingsService>().As<ISettingsService>().SingleInstance();
             _ = builder.RegisterType<UserRoleService>().As<IUserRoleService>().SingleInstance();
             _ = builder.RegisterType<ValidationOptionsService>().As<IValidationOptionsService>().As<ValidationOptionsService>().SingleInstance();
             _ = builder.RegisterType<InputService>().As<IInputService>().SingleInstance();
@@ -169,15 +148,10 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterType<PasswordGenerator>().SingleInstance();
             _ = builder.RegisterType<RenewalStoreDisk>().As<IRenewalStoreBackend>().SingleInstance();
             _ = builder.RegisterType<RenewalStore>().As<IRenewalStore>().SingleInstance();
-
-            pluginService.Configure(builder);
-
             _ = builder.RegisterType<DomainParseService>().SingleInstance();
             _ = builder.RegisterType<IISClient>().As<IIISClient>().InstancePerLifetimeScope();
             _ = builder.RegisterType<IISHelper>().SingleInstance();
             _ = builder.RegisterType<ExceptionHandler>().SingleInstance();
-            _ = builder.RegisterType<UnattendedResolver>();
-            _ = builder.RegisterType<InteractiveResolver>();
             _ = builder.RegisterType<AutofacBuilder>().As<IAutofacBuilder>().SingleInstance();
             _ = builder.RegisterType<AccountManager>().SingleInstance();
             _ = builder.RegisterType<AcmeClient>().SingleInstance();
@@ -201,10 +175,21 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterType<RenewalManager>().SingleInstance();
             _ = builder.RegisterType<RenewalCreator>().SingleInstance();
             _ = builder.RegisterType<ArgumentsInputService>().SingleInstance();
-            _ = builder.RegisterType<Wacs>();
-            _ = builder.Register(c => (ISharingLifetimeScope)c.Resolve<ILifetimeScope>()).As<ISharingLifetimeScope>().ExternallyOwned();
 
-            return builder.Build();
+            // Multi-instance types
+            _ = builder.RegisterType<Wacs>();
+            _ = builder.RegisterType<UnattendedResolver>();
+            _ = builder.RegisterType<InteractiveResolver>();
+
+            // Specials
+            _ = builder.Register(c => c.Resolve<ArgumentsParser>().GetArguments<MainArguments>()!);
+            _ = builder.Register(c => (ISharingLifetimeScope)c.Resolve<ILifetimeScope>()).As<ISharingLifetimeScope>().ExternallyOwned();
+            WacsJson.Configure(builder);
+
+            // Child scope for the plugin service
+            var root = builder.Build();
+            var plugin = root.Resolve<IPluginService>();
+            return root.BeginLifetimeScope("wacs", plugin.Configure);
         }
     }
 }
