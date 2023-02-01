@@ -134,8 +134,8 @@ namespace PKISharp.WACS.Host
 
             // Single instance types
             _ = builder.RegisterType<LogService>().WithParameter(new TypedParameter(typeof(bool), Verbose)).SingleInstance().As<ILogService>();
-            _ = builder.RegisterType<PluginService>().SingleInstance().As<IPluginService>();
             _ = builder.RegisterType<ArgumentsParser>().WithParameter(new TypedParameter(typeof(string[]), args)).SingleInstance();
+            _ = builder.RegisterType<PluginService>().SingleInstance().As<IPluginService>();
             _ = builder.RegisterType<AdminService>().SingleInstance();
             _ = builder.RegisterType<VersionService>().SingleInstance();
             _ = builder.RegisterType<AssemblyService>().SingleInstance();
@@ -175,6 +175,7 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterType<RenewalManager>().SingleInstance();
             _ = builder.RegisterType<RenewalCreator>().SingleInstance();
             _ = builder.RegisterType<ArgumentsInputService>().SingleInstance();
+            _ = builder.RegisterType<MainMenu>().SingleInstance();
 
             // Multi-instance types
             _ = builder.RegisterType<Wacs>();
