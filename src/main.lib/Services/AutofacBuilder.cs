@@ -218,7 +218,7 @@ namespace PKISharp.WACS.Services
         /// <returns></returns>
         public ILifetimeScope PluginFrontend<TCapability, TOptions>(ILifetimeScope execution, Plugin plugin)
             where TCapability : IPluginCapability
-            where TOptions : PluginOptions, new()
+            where TOptions : PluginOptionsBase, new()
         {
             _log.Verbose("Autofac: creating {name}<{backend}> scope with parent {tag}", nameof(PluginFrontend), typeof(TOptions).Name, execution.Tag);
             if (!plugin.Capability.IsAssignableTo(typeof(TCapability)))

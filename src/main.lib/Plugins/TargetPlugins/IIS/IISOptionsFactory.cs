@@ -6,6 +6,7 @@ using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -651,6 +652,41 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
             options.IncludeSiteIds = ret;
             return true;
+        }
+
+        public override IEnumerable<string> Describe(TOptions options)
+        {
+            var host = _arguments.GetString<IISArguments>(x => x.Host);
+            var pattern = _arguments.GetString<IISArguments>(x => x.Pattern);
+            var regex = _arguments.GetString<IISArguments>(x => x.Regex);
+            var siteId = _arguments.GetString<IISArguments>(x => x.SiteId);
+            var types = _arguments.GetString<IISArguments>(x => x.Type);
+            var exclude = _arguments.GetString<IISArguments>(x => x.ExcludeBindings);
+            var common = _arguments.GetString<IISArguments>(x => x.CommonName);
+            if (options.IncludePattern != null)
+            {
+                yield return $"{pattern.ArgumentName} {Escape(options.IncludePattern)}";
+            }
+            if (options.IncludeTypes != null)
+            {
+                yield return $"{types.ArgumentName} {Escape(string.Join(",", options.IncludeTypes))}";
+            }
+            if (options.IncludeHosts != null)
+            {
+                yield return $"{host.ArgumentName} {Escape(string.Join(",", options.IncludeHosts))}";
+            }
+            if (options.CommonName != null)
+            {
+                yield return $"{common.ArgumentName} {Escape(options.CommonName)}";
+            }
+            if (options.ExcludeHosts != null)
+            {
+                yield return $"{exclude.ArgumentName} {Escape(string.Join(",", options.ExcludeHosts))}";
+            }
+            if (options.IncludeSiteIds != null)
+            {
+                yield return $"{siteId.ArgumentName} {string.Join(",", options.IncludeSiteIds)}";
+            }
         }
     }
 

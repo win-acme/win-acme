@@ -2,7 +2,9 @@
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
+using System.Collections.Generic;
 using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
@@ -99,6 +101,22 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 SiteId = siteId
             };
             return ret;
+        }
+
+        public override IEnumerable<string> Describe(TOptions options)
+        {
+            if (options.NewBindingPort != null)
+            {
+                yield return $"{NewBindingPort.ArgumentName} {options.NewBindingPort}";
+            }
+            if (options.NewBindingIp != null)
+            {
+                yield return $"{NewBindingIp.ArgumentName} {Escape(options.NewBindingIp)}";
+            }
+            if (options.SiteId != null)
+            {
+                yield return $"{InstallationSite.ArgumentName} {options.SiteId}";
+            }
         }
     }
 

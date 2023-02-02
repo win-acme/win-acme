@@ -3,6 +3,8 @@ using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
@@ -56,24 +58,43 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             return ret;
         }
 
+        private ArgumentResult<bool?> KeepExisting => _arguments.
+            GetBool<CertificateStoreArguments>(x => x.KeepExisting).
+            WithDefault(false).
+            DefaultAsNull();
+
+        private ArgumentResult<string?> StoreName => _arguments.
+            GetString<CertificateStoreArguments>(x => x.CertificateStore).
+            WithDefault(CertificateStore.DefaultStore(_settingsService, _iisClient)).
+            DefaultAsNull();
+
+        private ArgumentResult<string?> AclFullControl => _arguments.
+            GetString<CertificateStoreArguments>(x => x.AclFullControl);
+
         public override async Task<CertificateStoreOptions?> Default()
         {
             return new CertificateStoreOptions
             {
-                StoreName = await _arguments.
-                    GetString<CertificateStoreArguments>(x => x.CertificateStore).
-                    WithDefault(CertificateStore.DefaultStore(_settingsService, _iisClient)).
-                    DefaultAsNull().
-                    GetValue(),
-                KeepExisting = await _arguments.
-                    GetBool<CertificateStoreArguments>(x => x.KeepExisting).
-                    WithDefault(false).
-                    DefaultAsNull().
-                    GetValue(),
-                AclFullControl = (await _arguments.
-                    GetString<CertificateStoreArguments>(x => x.AclFullControl).
-                    GetValue()).ParseCsv()
+                StoreName = await StoreName.GetValue(),
+                KeepExisting = await KeepExisting.GetValue(),
+                AclFullControl = (await AclFullControl.GetValue()).ParseCsv()
             };
+        }
+
+        public override IEnumerable<string> Describe(CertificateStoreOptions options)
+        {
+            if (options.KeepExisting != null)
+            {
+                yield return KeepExisting.ArgumentName;
+            }
+            if (options.StoreName != null)
+            {
+                yield return $"{StoreName.ArgumentName} {Escape(options.StoreName)}";
+            }
+            if (options.AclFullControl != null)
+            {
+                yield return $"{AclFullControl.ArgumentName} {Escape(string.Join(",", options.AclFullControl))}";
+            }
         }
     }
 }

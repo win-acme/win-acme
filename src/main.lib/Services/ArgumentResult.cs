@@ -9,6 +9,11 @@ namespace PKISharp.WACS.Services
     public class ArgumentResult<TResult>
     {
         /// <summary>
+        /// Name of the argument
+        /// </summary>
+        public string ArgumentName => $"--{_metaData.ArgumentName}";
+
+        /// <summary>
         /// Metadata obtained through reflection
         /// </summary>
         private readonly CommandLineAttribute _metaData;
@@ -42,7 +47,6 @@ namespace PKISharp.WACS.Services
         /// Required value
         /// </summary>
         private bool _inputMultiline = false;
-
 
         /// <summary>
         /// Allow null input from interactive mode

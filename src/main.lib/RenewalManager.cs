@@ -12,6 +12,7 @@ using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -659,7 +660,10 @@ namespace PKISharp.WACS
                 {
                     ipo.Show(_input, _plugin);
                 }
-                _input.CreateSpace();
+
+                WriteCommandLine(renewal);
+
+                // Show history
                 var historyLimit = 10; 
                 if (renewal.History.Count <= historyLimit)
                 {
@@ -682,6 +686,45 @@ namespace PKISharp.WACS
             {
                 _log.Error(ex, "Unable to list details for target");
             }
+        }
+
+        /// <summary>
+        /// Write the command line that can be used to create 
+        /// </summary>
+        /// <param name="renewal"></param>
+        private void WriteCommandLine(Renewal renewal)
+        {
+            // Show the command line that may be used to (re)create this renewal
+            _input.CreateSpace();
+            var parts = new List<string>() { "wacs.exe" };
+            var target = _plugin.GetPlugin(renewal.TargetPluginOptions);
+            parts.Add($"--source {target.Name.ToLower()}");
+            parts.Add(renewal.TargetPluginOptions.Describe(_container, _scopeBuilder, _plugin));
+            var validation = _plugin.GetPlugin(renewal.ValidationPluginOptions);
+            parts.Add($"--validation {validation.Name.ToLower()}");
+            parts.Add(renewal.ValidationPluginOptions.Describe(_container, _scopeBuilder, _plugin));
+            if (renewal.OrderPluginOptions != null)
+            {
+                var order = _plugin.GetPlugin(renewal.OrderPluginOptions);
+                parts.Add($"--order {order.Name.ToLower()}");
+                parts.Add(renewal.OrderPluginOptions.Describe(_container, _scopeBuilder, _plugin));
+            }
+            if (renewal.CsrPluginOptions != null)
+            {
+                var csr = _plugin.GetPlugin(renewal.CsrPluginOptions);
+                parts.Add($"--csr {csr.Name.ToLower()}");
+                parts.Add(renewal.CsrPluginOptions.Describe(_container, _scopeBuilder, _plugin));
+            }
+            var storeNames = string.Join(",", renewal.StorePluginOptions.Select(_plugin.GetPlugin).Select(x => x.Name.ToLower()));
+            parts.Add($"--store {storeNames}");
+            var storeOptions = string.Join(" ", renewal.StorePluginOptions.Select(x => x.Describe(_container, _scopeBuilder, _plugin)).Where(x => !string.IsNullOrWhiteSpace(x)));
+            parts.Add(storeOptions);
+            var installNames = string.Join(",", renewal.InstallationPluginOptions.Select(_plugin.GetPlugin).Select(x => x.Name.ToLower()));
+            parts.Add($"--installation {installNames}");
+            var installOptions = string.Join(" ", renewal.InstallationPluginOptions.Select(x => x.Describe(_container, _scopeBuilder, _plugin)).Where(x => !string.IsNullOrWhiteSpace(x)));
+            parts.Add(installOptions);
+            _input.Show("Command", string.Join(" ", parts.Where(x => !string.IsNullOrWhiteSpace(x))));
+            _input.CreateSpace();
         }
 
         #region  Unattended 

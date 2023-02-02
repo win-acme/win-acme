@@ -5,7 +5,7 @@ namespace PKISharp.WACS.Plugins.Base
 {
     internal class PluginFrontend<TCapability, TOptions>
         where TCapability : IPluginCapability
-        where TOptions : PluginOptions, new()
+        where TOptions : PluginOptionsBase, new()
     {
         public IPluginOptionsFactory<TOptions> OptionsFactory { get; }
         public TCapability Capability { get; }

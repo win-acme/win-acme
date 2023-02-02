@@ -2,6 +2,8 @@
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
+using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
@@ -57,6 +59,18 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 Script = await Script.GetValue(),
                 ScriptParameters = await Parameters.GetValue()
             };
+        }
+
+        public override IEnumerable<string> Describe(ScriptOptions options)
+        {
+            if (options.Script != null)
+            {
+                yield return $"{Script.ArgumentName} {Escape(options.Script)}";
+            }
+            if (options.ScriptParameters != null)
+            {
+                yield return $"{Parameters.ArgumentName} {Escape(options.ScriptParameters)}";
+            }
         }
     }
 }

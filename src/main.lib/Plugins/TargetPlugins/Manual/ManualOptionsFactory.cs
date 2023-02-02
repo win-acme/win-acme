@@ -2,7 +2,9 @@
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
@@ -57,6 +59,18 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             else
             {
                 return null;
+            }
+        }
+
+        public override IEnumerable<string> Describe(ManualOptions options)
+        {
+            if (options.CommonName != null)
+            {
+                yield return $"{Common.ArgumentName} {Escape(options.CommonName)}";
+            }
+            if (options.AlternativeNames != null)
+            {
+                yield return $"{Host.ArgumentName} {Escape(string.Join(",", options.AlternativeNames))}";
             }
         }
     }

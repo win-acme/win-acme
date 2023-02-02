@@ -84,7 +84,7 @@ namespace PKISharp.WACS.Services
         /// <returns></returns>
         ILifetimeScope PluginFrontend<TCapability, TOptions>(ILifetimeScope execution, Plugin plugin)
             where TCapability : IPluginCapability
-            where TOptions : PluginOptions, new();
+            where TOptions : PluginOptionsBase, new();
 
         /// <summary>
         /// Return validation frontend for a given target and options

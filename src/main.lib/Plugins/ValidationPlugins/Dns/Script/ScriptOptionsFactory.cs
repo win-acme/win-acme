@@ -4,6 +4,7 @@ using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
@@ -159,6 +160,30 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 return false;
             }
             return true;
+        }
+
+        public override IEnumerable<string> Describe(ScriptOptions options)
+        {
+            if (options.CreateScript != null)
+            {
+                yield return $"{CreateScript.ArgumentName} {Escape(options.CreateScript)}";
+            }
+            if (options.CreateScriptArguments != null)
+            {
+                yield return $"{CreateScriptArguments.ArgumentName} {Escape(options.CreateScriptArguments)}";
+            }
+            if (options.DeleteScript != null)
+            {
+                yield return $"{DeleteScript.ArgumentName} {Escape(options.DeleteScript)}";
+            }
+            if (options.DeleteScriptArguments != null)
+            {
+                yield return $"{DeleteScriptArguments.ArgumentName} {Escape(options.DeleteScriptArguments)}";
+            }
+            if (options.Parallelism != null)
+            {
+                yield return $"{Parallelism.ArgumentName} {options.Parallelism}";
+            }
         }
     }
 }
