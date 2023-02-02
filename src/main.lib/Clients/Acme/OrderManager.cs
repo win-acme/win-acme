@@ -184,7 +184,7 @@ namespace PKISharp.WACS.Clients.Acme
                 }
 
                 // Create the order
-                _log.Verbose("Creating order for identifiers: {identifiers}", identifiers);
+                _log.Verbose("Creating order for identifiers: {identifiers}", identifiers.Select(x => x.Value));
                 var order = await _client.CreateOrder(identifiers);
                 if (order.Payload.Error != default)
                 {

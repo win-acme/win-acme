@@ -77,8 +77,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             _ = builder.RegisterType<Mock.Services.UserRoleService>().As<IUserRoleService>().SingleInstance();
             _ = builder.RegisterType<UnattendedResolver>().As<IResolver>();
             _ = builder.Register(c => c.Resolve<ArgumentsParser>().GetArguments<MainArguments>()!).SingleInstance();
-            plugins.Configure(builder);
-            
+
             var scope = builder.Build();
             var resolver = scope.Resolve<IResolver>(new TypedParameter(typeof(ILifetimeScope), scope));
             var first = await resolver.GetInstallationPlugin(

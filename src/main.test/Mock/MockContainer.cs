@@ -7,13 +7,10 @@ using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
-using PKISharp.WACS.Plugins;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Services.Serialization;
 using PKISharp.WACS.UnitTests.Mock.Services;
 using System.Collections.Generic;
-using System.Linq;
-using Mock = PKISharp.WACS.UnitTests.Mock.Services;
 using Real = PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.UnitTests.Mock
@@ -50,9 +47,6 @@ namespace PKISharp.WACS.UnitTests.Mock
             _ = builder.RegisterType<Real.PasswordGenerator>().SingleInstance();
             _ = builder.RegisterType<RenewalCreator>().SingleInstance();
             _ = builder.RegisterType<Real.SecretServiceManager>();
-
-            pluginService.Configure(builder);
-
             _ = builder.RegisterType<Real.DomainParseService>().SingleInstance();
             _ = builder.RegisterType<Mock.Clients.MockIISClient>().As<IIISClient>().SingleInstance();
             _ = builder.RegisterType<IISHelper>().SingleInstance();
