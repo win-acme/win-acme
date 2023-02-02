@@ -1,6 +1,7 @@
 ﻿using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
@@ -36,6 +37,21 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             {
                 Credential = await NetworkCredentialOptions.Create(_arguments, inputService, "SFTP server")
             };
+        }
+
+        public override IEnumerable<string> Describe(SftpOptions options)
+        {
+            foreach (var x in base.Describe(options))
+            {
+                yield return x;
+            }
+            if (options.Credential != null)
+            {
+                foreach (var x in options.Credential.Describe(_arguments))
+                {
+                    yield return x;
+                }
+            }
         }
     }
 }

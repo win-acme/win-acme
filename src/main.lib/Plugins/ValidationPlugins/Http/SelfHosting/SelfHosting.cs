@@ -26,7 +26,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         private readonly ConcurrentDictionary<string, string> _files;
         private readonly SelfHostingOptions _options;
         private readonly ILogService _log;
-        private readonly IUserRoleService _userRoleService;
 
         /// <summary>
         /// We can answer requests for multiple domains
@@ -47,12 +46,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             set => _listener = value;
         }
 
-        public SelfHosting(ILogService log, SelfHostingOptions options, IUserRoleService userRoleService)
+        public SelfHosting(ILogService log, SelfHostingOptions options)
         {
             _log = log;
             _options = options;
             _files = new ConcurrentDictionary<string, string>();
-            _userRoleService = userRoleService;
         }
 
         private async Task ReceiveRequests()
@@ -131,20 +129,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             }
 
             return Task.CompletedTask;
-        }
-
-        public (bool, string?) Disabled => IsDisabled(_userRoleService);
-
-        internal static (bool, string?) IsDisabled(IUserRoleService userRoleService)
-        {
-            if (!userRoleService.AllowSelfHosting)
-            {
-                return (true, "Run as administrator to allow use of the built-in web listener.");
-            }
-            else
-            {
-                return (false, null);
-            }
         }
     }
 }

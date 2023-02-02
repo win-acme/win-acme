@@ -2,6 +2,8 @@
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
+using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -48,6 +50,18 @@ namespace PKISharp.WACS.Configuration
                 await arguments.GetString<NetworkCredentialArguments>(x => x.UserName).Interactive(input, purpose + " username").GetValue(),
                 await arguments.GetProtectedString<NetworkCredentialArguments>(x => x.Password).Interactive(input, purpose + "password").GetValue()
             );
+        }
+
+        internal IEnumerable<string> Describe(ArgumentsInputService arguments)
+        {
+            if (UserName != null)
+            {
+                yield return $"{arguments.GetString<NetworkCredentialArguments>(x => x.UserName).ArgumentName} {UserName}";
+            }
+            if (Password != null)
+            {
+                yield return $"{arguments.GetString<NetworkCredentialArguments>(x => x.Password).ArgumentName} *******";
+            }
         }
     }
 }

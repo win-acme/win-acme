@@ -2,6 +2,7 @@
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -27,7 +28,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 
         public override bool PathIsValid(string path) => path.ValidPath(_log);
         public override bool AllowEmtpy() => _target.IIS;
-        private ArgumentResult<long?> ValidationSite() => _arguments.GetLong<FileSystemArguments>(x => x.ValidationSiteId);
+        private ArgumentResult<long?> ValidationSite => _arguments.GetLong<FileSystemArguments>(x => x.ValidationSiteId);
 
         public override async Task<FileSystemOptions?> Default()
         {
@@ -36,7 +37,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             {
                 if (_target.IIS && _iisClient.HasWebSites)
                 {
-                    ret.SiteId = await ValidationSite().
+                    ret.SiteId = await ValidationSite.
                         Validate(s => Task.FromResult(_iisClient.GetSite(s!.Value, IISSiteType.Web) != null), "site doesn't exist").
                         GetValue();
                 }
@@ -53,7 +54,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                 string.IsNullOrEmpty(ret.Path) && 
                 runLevel.HasFlag(RunLevel.Advanced))
             {
-                var siteId = await ValidationSite().GetValue();
+                var siteId = await ValidationSite.GetValue();
                 if (siteId != null || await inputService.PromptYesNo("Use different site for validation?", false))
                 {
                     var site = await inputService.ChooseOptional("Validation site, must receive requests for all identifiers on port 80",
@@ -68,6 +69,18 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                 }
             }
             return ret;
+        }
+
+        public override IEnumerable<string> Describe(FileSystemOptions options)
+        {
+            foreach (var x in base.Describe(options))
+            {
+                yield return x;
+            }
+            if (options.SiteId != null)
+            {
+                yield return $"{ValidationSite.ArgumentName} {options.SiteId}";
+            }
         }
     }
 

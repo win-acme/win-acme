@@ -1,5 +1,6 @@
 ﻿using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
@@ -19,6 +20,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
             {
                 Port = await _arguments.GetInt<SelfHostingArguments>(x => x.ValidationPort).GetValue(),
             };
+        }
+
+        public override IEnumerable<string> Describe(SelfHostingOptions options)
+        {
+            if (options.Port != null)
+            {
+                yield return $"{_arguments.GetInt<SelfHostingArguments>(x => x.ValidationPort).ArgumentName} {options.Port}";
+            }
         }
     }
 }
