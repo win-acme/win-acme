@@ -9,6 +9,7 @@ using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -699,51 +700,100 @@ namespace PKISharp.WACS
         {
             // Show the command line that may be used to (re)create this renewal
             var args = new Dictionary<string, string?>();
-            
-            renewal.TargetPluginOptions.Describe(_container, _scopeBuilder, _plugin);
-            var target = _plugin.GetPlugin(renewal.TargetPluginOptions);
-            args.Add("source", target.Name.ToLower());
-           
-            var targetArgs = renewal.TargetPluginOptions.Describe(_container, _scopeBuilder, _plugin);
-            foreach (var arg in targetArgs)
+            var addArgs = (PluginOptions p) =>
             {
-                var meta = arg.Key;
-                var value = arg.Value;
-                if (!args.ContainsKey(meta.ArgumentName))
+                var arguments = p.Describe(_container, _scopeBuilder, _plugin);
+                foreach (var arg in arguments)
                 {
-                    if (value != null)
+                    var meta = arg.Key;
+                    if (!args.ContainsKey(meta.ArgumentName))
                     {
-                        args.Add(meta.ArgumentName, value?.ToString());
+                        var value = arg.Value;
+                        if (value != null)
+                        {
+                            var add = true;
+                            if (value is ProtectedString protectedString)
+                            {
+                                value = protectedString.Value?.StartsWith(SecretServiceManager.VaultPrefix) ?? false ? protectedString.Value : (object)"*******";
+                            }
+                            else if (value is string singleString)
+                            {
+                                value = meta.Secret ? "*******" : Escape(singleString); 
+                            } 
+                            else if (value is List<string> listString)
+                            {
+                                value = Escape(string.Join(",", listString));
+                            }
+                            else if (value is List<int> listInt)
+                            {
+                                value = string.Join(",", listInt);
+                            }
+                            else if (value is List<long> listLong)
+                            {
+                                value = string.Join(",", listLong);
+                            }
+                            else if (value is bool boolean)
+                            {
+                                value = boolean ? null : add = false;
+                            }
+                            if (add)
+                            {
+                                args.Add(meta.ArgumentName, value?.ToString());
+                            }
+                        }
                     }
                 }
+            };
+
+            args.Add("source", _plugin.GetPlugin(renewal.TargetPluginOptions).Name.ToLower());
+            addArgs(renewal.TargetPluginOptions);
+            var validationPlugin = _plugin.GetPlugin(renewal.ValidationPluginOptions);
+            var validationName = validationPlugin.Name.ToLower();
+            if (!string.Equals(validationName, _settings.Validation.DefaultValidation ?? "selfhosting", StringComparison.OrdinalIgnoreCase))
+            {
+                args.Add("validation", validationName);
             }
-            //var validation = _plugin.GetPlugin(renewal.ValidationPluginOptions);
-            //parts.Add($"--validation {validation.Name.ToLower()}");
-            //parts.Add(renewal.ValidationPluginOptions.Describe(_container, _scopeBuilder, _plugin));
-            //if (renewal.OrderPluginOptions != null)
-            //{
-            //    var order = _plugin.GetPlugin(renewal.OrderPluginOptions);
-            //    parts.Add($"--order {order.Name.ToLower()}");
-            //    parts.Add(renewal.OrderPluginOptions.Describe(_container, _scopeBuilder, _plugin));
-            //}
-            //if (renewal.CsrPluginOptions != null)
-            //{
-            //    var csr = _plugin.GetPlugin(renewal.CsrPluginOptions);
-            //    parts.Add($"--csr {csr.Name.ToLower()}");
-            //    parts.Add(renewal.CsrPluginOptions.Describe(_container, _scopeBuilder, _plugin));
-            //}
-            //var storeNames = string.Join(",", renewal.StorePluginOptions.Select(_plugin.GetPlugin).Select(x => x.Name.ToLower()));
-            //parts.Add($"--store {storeNames}");
-            //var storeOptions = string.Join(" ", renewal.StorePluginOptions.Select(x => x.Describe(_container, _scopeBuilder, _plugin)).Where(x => !string.IsNullOrWhiteSpace(x)));
-            //parts.Add(storeOptions);
-            //var installNames = string.Join(",", renewal.InstallationPluginOptions.Select(_plugin.GetPlugin).Select(x => x.Name.ToLower()));
-            //parts.Add($"--installation {installNames}");
-            //var installOptions = string.Join(" ", renewal.InstallationPluginOptions.Select(x => x.Describe(_container, _scopeBuilder, _plugin)).Where(x => !string.IsNullOrWhiteSpace(x)));
-            //parts.Add(installOptions);
+            addArgs(renewal.ValidationPluginOptions);
+            if (renewal.OrderPluginOptions != null)
+            {
+                var orderName = _plugin.GetPlugin(renewal.OrderPluginOptions).Name.ToLower();
+                if (!string.Equals(orderName, _settings.Order.DefaultPlugin ?? "single", StringComparison.OrdinalIgnoreCase))
+                {
+                    args.Add("order", orderName);
+                }
+                addArgs(renewal.OrderPluginOptions);
+            }
+            if (renewal.CsrPluginOptions != null)
+            {
+                var csrName = _plugin.GetPlugin(renewal.CsrPluginOptions).Name.ToLower();
+                if (!string.Equals(csrName, _settings.Csr.DefaultCsr ?? "rsa", StringComparison.OrdinalIgnoreCase))
+                {
+                    args.Add("csr", csrName);
+                }
+                addArgs(renewal.CsrPluginOptions);
+            }
+            var storeNames = string.Join(",", renewal.StorePluginOptions.Select(_plugin.GetPlugin).Select(x => x.Name.ToLower()));
+            if (!string.Equals(storeNames, _settings.Store.DefaultStore ?? "certificatestore", StringComparison.OrdinalIgnoreCase))
+            {
+                args.Add("store", storeNames);
+            }
+            foreach (var so in renewal.StorePluginOptions)
+            {
+                addArgs(so);
+            }
+            var installationNames = string.Join(",", renewal.InstallationPluginOptions.Select(_plugin.GetPlugin).Select(x => x.Name.ToLower()));
+            if (!string.Equals(installationNames, _settings.Installation.DefaultInstallation ?? "none", StringComparison.OrdinalIgnoreCase))
+            {
+                args.Add("installation", installationNames);
+            }
+            foreach (var so in renewal.InstallationPluginOptions)
+            {
+                addArgs(so);
+            }
             return "wacs.exe " + string.Join(" ", args.Select(a => $"--{a.Key.ToLower()} {a.Value}".Trim()));
         }
 
-        private string Escape(string value)
+        private static string Escape(string value)
         {
             if (value.Contains(' ') || value.Contains('"'))
             {

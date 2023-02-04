@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.Clients.IIS;
+﻿using Fclp.Internals.Extensions;
+using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Extensions;
@@ -669,8 +670,22 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         public override IEnumerable<(CommandLineAttribute, object?)> Describe(TOptions options)
         {
             // Special case "s"
+            if (string.IsNullOrWhiteSpace(options.IncludePattern) &&
+                string.IsNullOrWhiteSpace(options.IncludeRegex) &&
+                (options.IncludeHosts == null || options.IncludeHosts.Count == 0) &&
+                (options.IncludeSiteIds == null || options.IncludeSiteIds.Count == 0))
+            {
+                yield return (SiteId.Meta, "s");
+                yield break;
+            }
+
+            yield return (Regex.Meta, options.IncludeRegex);
             yield return (Pattern.Meta, options.IncludePattern);
-            yield return (Type.Meta, options.IncludeTypes);
+            if (options.IncludeTypes != null && 
+                string.Join(",", options.IncludeTypes).ToLower() != "http")
+            {
+                yield return (Type.Meta, options.IncludeTypes);
+            }
             yield return (Host.Meta, options.IncludeHosts);
             yield return (CommonName.Meta, options.CommonName);
             yield return (ExcludeBindings.Meta, options.ExcludeHosts);

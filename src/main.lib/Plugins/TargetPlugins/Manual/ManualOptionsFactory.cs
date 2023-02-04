@@ -65,7 +65,10 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         public override IEnumerable<(CommandLineAttribute, object?)> Describe(ManualOptions options)
         {
-            yield return (Common.Meta, options.CommonName);
+            if (options.AlternativeNames.FirstOrDefault() != options.CommonName)
+            {
+                yield return (Common.Meta, options.CommonName);
+            }
             yield return (Host.Meta, options.AlternativeNames);
         }
     }
