@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.Extensions;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
@@ -61,16 +62,10 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             return ret;
         }
 
-        public override IEnumerable<string> Describe(CentralSslOptions options)
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(CentralSslOptions options)
         {
-            if (options.Path != null)
-            {
-                yield return $"{Path.ArgumentName} {Escape(options.Path)}";
-            }
-            if (options.PfxPassword != null)
-            {
-                yield return $"{PfxPassword.ArgumentName} ******";
-            }
+            yield return (Path.Meta, options.Path);
+            yield return (PfxPassword.Meta, options.PfxPassword);
         }
     }
 }

@@ -1,8 +1,10 @@
 ﻿using ACMESharp.Authorizations;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -41,6 +43,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 Account = await Account.GetValue(),
                 ApiKey = await ApiKey.GetValue()
             };
+        }
+
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(SimplyOptions options)
+        {
+            yield return (Account.Meta, options.Account);
+            yield return (ApiKey.Meta, options.ApiKey);
         }
     }
 }

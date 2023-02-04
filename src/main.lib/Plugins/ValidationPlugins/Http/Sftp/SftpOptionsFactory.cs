@@ -39,7 +39,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             };
         }
 
-        public override IEnumerable<string> Describe(SftpOptions options)
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(SftpOptions options)
         {
             foreach (var x in base.Describe(options))
             {

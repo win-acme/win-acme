@@ -1,6 +1,8 @@
 ﻿using MorseCode.ITask;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
+using System.Collections.Generic;
 
 namespace PKISharp.WACS.Plugins.Interfaces
 {
@@ -29,7 +31,7 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// </summary>
         /// <param name="options"></param>
         /// <returns></returns>
-        string Describe(PluginOptions options);
+        IDictionary<CommandLineAttribute, object?> Describe(PluginOptions options);
     }
 
 }

@@ -1,8 +1,11 @@
 ﻿using Autofac;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins;
 using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Interfaces;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace PKISharp.WACS.Services.Serialization
 {
@@ -36,13 +39,13 @@ namespace PKISharp.WACS.Services.Serialization
         /// Provide plugin command line arguments to user
         /// </summary>
         /// <param name="input"></param>
-        internal string Describe(ILifetimeScope sc, IAutofacBuilder ab, IPluginService plugin)
+        internal IDictionary<CommandLineAttribute, object?> Describe(ILifetimeScope sc, IAutofacBuilder ab, IPluginService plugin)
         {
             var meta = plugin.GetPlugin(this);
             var ts = ab.Target(sc, new Target(new DnsIdentifier("www.example.com")));
             var fs = ab.PluginFrontend<IPluginCapability, PluginOptionsBase>(ts, meta);
             var fe = fs.Resolve<PluginFrontend<IPluginCapability, PluginOptionsBase>>();
-            return fe.OptionsFactory.Describe(this).Trim();
+            return fe.OptionsFactory.Describe(this);
         }
 
         /// <summary>

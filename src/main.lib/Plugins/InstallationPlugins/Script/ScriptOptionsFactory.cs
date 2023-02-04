@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.Extensions;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
@@ -61,16 +62,10 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             };
         }
 
-        public override IEnumerable<string> Describe(ScriptOptions options)
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(ScriptOptions options)
         {
-            if (options.Script != null)
-            {
-                yield return $"{Script.ArgumentName} {Escape(options.Script)}";
-            }
-            if (options.ScriptParameters != null)
-            {
-                yield return $"{Parameters.ArgumentName} {Escape(options.ScriptParameters)}";
-            }
+            yield return (Script.Meta, options.Script);
+            yield return (Parameters.Meta, options.ScriptParameters);
         }
     }
 }

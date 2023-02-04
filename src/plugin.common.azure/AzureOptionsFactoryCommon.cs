@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.Services;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
@@ -52,7 +53,7 @@ namespace PKISharp.WACS.Plugins.Azure.Common
                     description: kvp.Key,
                     @default: kvp.Key == defaultEnvironment)))
             {
-                Choice.Create<Func<Task>>(async () => await InputUrl(_input, options), "Use a custom resource manager url")
+                Choice.Create<Func<Task>>(async () => await AzureOptionsFactoryCommon<T>.InputUrl(_input, options), "Use a custom resource manager url")
             };
             var chosen = await _input.ChooseFromMenu("Which Azure environment are you using?", environments);
             await chosen.Invoke();
@@ -83,7 +84,7 @@ namespace PKISharp.WACS.Plugins.Azure.Common
             }
         }
 
-        private async Task InputUrl(IInputService input, IAzureOptionsCommon options)
+        private static async Task InputUrl(IInputService input, IAzureOptionsCommon options)
         {
             string raw;
             do
@@ -109,6 +110,15 @@ namespace PKISharp.WACS.Plugins.Azure.Common
             {
                 return false;
             }
+        }
+        
+        public IEnumerable<(CommandLineAttribute, object?)> Describe(IAzureOptionsCommon options)
+        {
+            yield return (Environment.Meta, options.AzureEnvironment);
+            yield return (UseMsi.Meta, options.UseMsi);
+            yield return (TenantId.Meta, options.TenantId);
+            yield return (ClientId.Meta, options.ClientId);
+            yield return (ClientSecret.Meta, options.Secret);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.Clients.IIS;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
@@ -32,7 +33,22 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _args = args;
         }
 
+        /// <summary>
+        /// Change order in the menu
+        /// </summary>
         public override int Order => 2;
+
+        private ArgumentResult<string?> Host => _arguments.GetString<IISArguments>(x => x.Host);
+        private ArgumentResult<string?> Pattern => _arguments.GetString<IISArguments>(x => x.Pattern);
+        private ArgumentResult<string?> Regex => _arguments.GetString<IISArguments>(x => x.Regex);
+        private ArgumentResult<string?> SiteId => _arguments.GetString<IISArguments>(x => x.SiteId);
+        private ArgumentResult<string?> Type => _arguments.
+            GetString<IISArguments>(x => x.Type).
+            DefaultAsNull().
+            Validate(x => Task.FromResult(x.ParseCsv()?.All(x => x == IISHelper.WebTypeFilter || x == IISHelper.FtpTypeFilter) ?? false), "unsupported value");
+
+        private ArgumentResult<string?> ExcludeBindings => _arguments.GetString<IISArguments>(x => x.ExcludeBindings);
+        private ArgumentResult<string?> CommonName => _arguments.GetString<IISArguments>(x => x.CommonName);
 
         /// <summary>
         /// Get settings in interactive mode
@@ -433,15 +449,11 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         public override async Task<TOptions?> Default()
         {
             var options = new TOptions();
-            var host = await _arguments.GetString<IISArguments>(x => x.Host).GetValue();
-            var pattern = await _arguments.GetString<IISArguments>(x => x.Pattern).GetValue();
-            var regex = await _arguments.GetString<IISArguments>(x => x.Regex).GetValue();
-            var siteId = await _arguments.GetString<IISArguments>(x => x.SiteId).GetValue();
-            var types = await _arguments.
-                GetString<IISArguments>(x => x.Type).
-                DefaultAsNull().
-                Validate(x => Task.FromResult(x.ParseCsv()?.All(x => x == IISHelper.WebTypeFilter || x == IISHelper.FtpTypeFilter) ?? false), "unsupported value").
-                GetValue();
+            var host = await Host.GetValue();
+            var pattern = await Pattern.GetValue();
+            var regex = await Regex.GetValue();
+            var siteId = await SiteId.GetValue();
+            var types = await Type.GetValue();
 
             if (string.IsNullOrWhiteSpace(host) && 
                 string.IsNullOrWhiteSpace(pattern) &&
@@ -509,7 +521,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
 
             // Excludes
-            var excludes = await _arguments.GetString<IISArguments>(x => x.ExcludeBindings).GetValue();
+            var excludes = await ExcludeBindings.GetValue();
             var filtered = _iisHelper.FilterBindings(allBindings, options);
             if (options.IncludeHosts == null && !string.IsNullOrEmpty(excludes))
             {
@@ -521,7 +533,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
 
             // Common name
-            var common = await _arguments.GetString<IISArguments>(x => x.CommonName).GetValue();
+            var common = await CommonName.GetValue();
             if (common != null)
             {
                 if (!ParseCommonName(common, filtered.Select(x => x.HostUnicode), options))
@@ -654,39 +666,15 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             return true;
         }
 
-        public override IEnumerable<string> Describe(TOptions options)
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(TOptions options)
         {
-            var host = _arguments.GetString<IISArguments>(x => x.Host);
-            var pattern = _arguments.GetString<IISArguments>(x => x.Pattern);
-            var regex = _arguments.GetString<IISArguments>(x => x.Regex);
-            var siteId = _arguments.GetString<IISArguments>(x => x.SiteId);
-            var types = _arguments.GetString<IISArguments>(x => x.Type);
-            var exclude = _arguments.GetString<IISArguments>(x => x.ExcludeBindings);
-            var common = _arguments.GetString<IISArguments>(x => x.CommonName);
-            if (options.IncludePattern != null)
-            {
-                yield return $"{pattern.ArgumentName} {Escape(options.IncludePattern)}";
-            }
-            if (options.IncludeTypes != null)
-            {
-                yield return $"{types.ArgumentName} {Escape(string.Join(",", options.IncludeTypes))}";
-            }
-            if (options.IncludeHosts != null)
-            {
-                yield return $"{host.ArgumentName} {Escape(string.Join(",", options.IncludeHosts))}";
-            }
-            if (options.CommonName != null)
-            {
-                yield return $"{common.ArgumentName} {Escape(options.CommonName)}";
-            }
-            if (options.ExcludeHosts != null)
-            {
-                yield return $"{exclude.ArgumentName} {Escape(string.Join(",", options.ExcludeHosts))}";
-            }
-            if (options.IncludeSiteIds != null)
-            {
-                yield return $"{siteId.ArgumentName} {string.Join(",", options.IncludeSiteIds)}";
-            }
+            // Special case "s"
+            yield return (Pattern.Meta, options.IncludePattern);
+            yield return (Type.Meta, options.IncludeTypes);
+            yield return (Host.Meta, options.IncludeHosts);
+            yield return (CommonName.Meta, options.CommonName);
+            yield return (ExcludeBindings.Meta, options.ExcludeHosts);
+            yield return (SiteId.Meta, options.IncludeSiteIds);
         }
     }
 

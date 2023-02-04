@@ -1,10 +1,9 @@
-﻿using PKISharp.WACS.Extensions;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System.Collections.Generic;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
@@ -69,16 +68,10 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             };
         }
 
-        public override IEnumerable<string> Describe(PemFilesOptions options)
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(PemFilesOptions options)
         {
-            if (options.Path != null)
-            {
-                yield return $"{Path.ArgumentName} {Escape(options.Path)}";
-            }
-            if (options.PemPassword != null)
-            {
-                yield return $"{Password.ArgumentName} ******";
-            }
+            yield return (Path.Meta, options.Path);
+            yield return (Password.Meta, options.PemPassword);
         }
     }
 

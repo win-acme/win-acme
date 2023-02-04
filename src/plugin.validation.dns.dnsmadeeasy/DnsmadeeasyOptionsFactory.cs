@@ -1,6 +1,8 @@
-﻿using PKISharp.WACS.Plugins.Base.Factories;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
@@ -38,6 +40,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 ApiKey = await ApiKey.GetValue(),
                 ApiSecret = await ApiSecret.GetValue(),
             };
+        }
+
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(DnsMadeEasyOptions options)
+        {
+            yield return (ApiKey.Meta, options.ApiKey);
+            yield return (ApiSecret.Meta, options.ApiSecret);
         }
     }
 }

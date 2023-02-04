@@ -1,6 +1,8 @@
-﻿using PKISharp.WACS.Plugins.Base.Factories;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
@@ -34,6 +36,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 Username = await Username.GetValue(),
                 APIKey = await ApiKey.GetValue()
             };
+        }
+
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(LuaDnsOptions options)
+        {
+            yield return (Username.Meta, options.Username);
+            yield return (ApiKey.Meta, options.APIKey);
         }
     }
 }

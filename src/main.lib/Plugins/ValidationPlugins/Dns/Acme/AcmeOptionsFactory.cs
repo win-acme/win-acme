@@ -1,5 +1,6 @@
 ﻿using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
@@ -83,12 +84,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return ret;
         }
 
-        public override IEnumerable<string> Describe(AcmeOptions options)
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(AcmeOptions options)
         {
-            if (options.BaseUri != null)
-            {
-                yield return $"{Endpoint.ArgumentName} {Escape(options.BaseUri)}";
-            }
+            yield return (Endpoint.Meta, options.BaseUri);
         }
     }
 }

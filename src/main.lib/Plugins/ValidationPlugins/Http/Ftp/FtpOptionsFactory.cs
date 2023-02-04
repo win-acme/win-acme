@@ -55,7 +55,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             };
         }
 
-        public override IEnumerable<string> Describe(FtpOptions options)
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(FtpOptions options)
         {
             foreach (var x in base.Describe(options))
             {

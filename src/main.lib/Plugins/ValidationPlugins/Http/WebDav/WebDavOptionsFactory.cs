@@ -45,7 +45,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             };
         }
 
-        public override IEnumerable<string> Describe(WebDavOptions options)
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(WebDavOptions options)
         {
             foreach (var x in base.Describe(options))
             {

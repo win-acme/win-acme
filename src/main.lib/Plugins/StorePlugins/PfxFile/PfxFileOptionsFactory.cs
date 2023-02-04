@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.Extensions;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
@@ -65,16 +66,10 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             };
         }
 
-        public override IEnumerable<string> Describe(PfxFileOptions options)
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(PfxFileOptions options)
         {
-            if (options.Path != null)
-            {
-                yield return $"{Path.ArgumentName} {Escape(options.Path)}";
-            }
-            if (options.PfxPassword != null)
-            {
-                yield return $"{Password.ArgumentName} ******";
-            }
+            yield return (Path.Meta, options.Path);
+            yield return (Password.Meta, options.PfxPassword);
         }
     }
 

@@ -52,16 +52,10 @@ namespace PKISharp.WACS.Configuration
             );
         }
 
-        internal IEnumerable<string> Describe(ArgumentsInputService arguments)
+        internal IEnumerable<(CommandLineAttribute, object?)> Describe(ArgumentsInputService arguments)
         {
-            if (UserName != null)
-            {
-                yield return $"{arguments.GetString<NetworkCredentialArguments>(x => x.UserName).ArgumentName} {UserName}";
-            }
-            if (Password != null)
-            {
-                yield return $"{arguments.GetString<NetworkCredentialArguments>(x => x.Password).ArgumentName} *******";
-            }
+            yield return (arguments.GetString<NetworkCredentialArguments>(x => x.UserName).Meta, UserName);
+            yield return (arguments.GetString<NetworkCredentialArguments>(x => x.Password).Meta, Password);
         }
     }
 }

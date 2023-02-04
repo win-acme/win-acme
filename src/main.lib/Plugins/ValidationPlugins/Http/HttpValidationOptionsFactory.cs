@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
@@ -96,16 +97,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             return ret.ToArray();
         }
 
-        public override IEnumerable<string> Describe(TOptions options)
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(TOptions options)
         {
-            if (options.CopyWebConfig != null)
-            {
-                yield return $"{CopyWebConfig.ArgumentName}";
-            }
-            if (options.Path != null)
-            {
-                yield return $"{Path(true).ArgumentName} {Escape(options.Path)}";
-            }
+            yield return (CopyWebConfig.Meta, options.CopyWebConfig);
+            yield return (Path(false).Meta, options.Path);
         }
     }
 

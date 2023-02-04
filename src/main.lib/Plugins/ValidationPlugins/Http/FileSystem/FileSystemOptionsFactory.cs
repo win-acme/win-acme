@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.Clients.IIS;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
@@ -71,16 +72,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             return ret;
         }
 
-        public override IEnumerable<string> Describe(FileSystemOptions options)
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(FileSystemOptions options)
         {
             foreach (var x in base.Describe(options))
             {
                 yield return x;
             }
-            if (options.SiteId != null)
-            {
-                yield return $"{ValidationSite.ArgumentName} {options.SiteId}";
-            }
+            yield return (ValidationSite.Meta, options.SiteId);
         }
     }
 

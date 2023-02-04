@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.Plugins.Base.Options;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.CsrPlugins;
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
@@ -39,16 +40,10 @@ namespace PKISharp.WACS.Plugins.Base.Factories
             };
         }
 
-        public override IEnumerable<string> Describe(TOptions options)
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(TOptions options)
         {
-            if (options.OcspMustStaple == true)
-            {
-                yield return OcspMustStaple.ArgumentName;
-            }
-            if (options.ReusePrivateKey == true)
-            {
-                yield return ReusePrivateKey.ArgumentName;
-            }
+            yield return (OcspMustStaple.Meta, options.OcspMustStaple);
+            yield return (ReusePrivateKey.Meta, options.ReusePrivateKey);
         }
     }
 }

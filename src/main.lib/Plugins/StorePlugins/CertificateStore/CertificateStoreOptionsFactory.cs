@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.Clients.IIS;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
@@ -81,20 +82,11 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             };
         }
 
-        public override IEnumerable<string> Describe(CertificateStoreOptions options)
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(CertificateStoreOptions options)
         {
-            if (options.KeepExisting != null)
-            {
-                yield return KeepExisting.ArgumentName;
-            }
-            if (options.StoreName != null)
-            {
-                yield return $"{StoreName.ArgumentName} {Escape(options.StoreName)}";
-            }
-            if (options.AclFullControl != null)
-            {
-                yield return $"{AclFullControl.ArgumentName} {Escape(string.Join(",", options.AclFullControl))}";
-            }
+            yield return (KeepExisting.Meta, options.KeepExisting);
+            yield return (StoreName.Meta, options.StoreName);
+            yield return (AclFullControl.Meta, options.AclFullControl);
         }
     }
 }

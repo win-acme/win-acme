@@ -9,14 +9,9 @@ namespace PKISharp.WACS.Services
     public class ArgumentResult<TResult>
     {
         /// <summary>
-        /// Name of the argument
-        /// </summary>
-        public string ArgumentName => $"--{_metaData.ArgumentName}";
-
-        /// <summary>
         /// Metadata obtained through reflection
         /// </summary>
-        private readonly CommandLineAttribute _metaData;
+        public readonly CommandLineAttribute Meta;
 
         /// <summary>
         /// Starting value from command line parser
@@ -131,7 +126,7 @@ namespace PKISharp.WACS.Services
             bool allowEmtpy = false)
         {
             _argumentValue = baseValue;
-            _metaData = metaData;
+            Meta = metaData;
             _inputFunction = input;
             _allowEmpty = allowEmtpy;
             _log = log;
@@ -215,20 +210,20 @@ namespace PKISharp.WACS.Services
         private async Task<TResult?> GetInput(IInputService input, TResult? current)
         {
             input.CreateSpace();
-            input.Show("Description", _inputDescription ?? _metaData.Description);
+            input.Show("Description", _inputDescription ?? Meta.Description);
             if (HasValue(_defaultValue))
             {
-                var showValue = _metaData.Secret ? "********" : _defaultValue?.ToString();
+                var showValue = Meta.Secret ? "********" : _defaultValue?.ToString();
                 input.Show("Default", showValue);
             }
             if (HasValue(_argumentValue))
             {
-                var showValue = _metaData.Secret ? "********" : _argumentValue?.ToString();
+                var showValue = Meta.Secret ? "********" : _argumentValue?.ToString();
                 input.Show("Argument", $"{showValue} (press <Enter> to use this)");
             }
             var args = new ArgumentResultInputArguments<TResult>()
             {
-                Label = _inputLabel ?? _metaData.Name,
+                Label = _inputLabel ?? Meta.Name,
                 Default = current,
                 Required = _required,
                 Multiline = _inputMultiline
@@ -247,7 +242,7 @@ namespace PKISharp.WACS.Services
                 } 
                 else
                 {
-                    return (false, $"missing --{_metaData.ArgumentName}");
+                    return (false, $"missing --{Meta.ArgumentName}");
                 }
             }
             if (HasValue(returnValue))
@@ -261,7 +256,7 @@ namespace PKISharp.WACS.Services
                     } 
                     catch 
                     {
-                        return (false, $"failed --{_metaData.ArgumentName}: {validator.Item2}");
+                        return (false, $"failed --{Meta.ArgumentName}: {validator.Item2}");
                     }
                     if (!validationResult)
                     {
@@ -271,7 +266,7 @@ namespace PKISharp.WACS.Services
                         }
                         else
                         {
-                            return (false, $"invalid --{_metaData.ArgumentName}: {validator.Item2}");
+                            return (false, $"invalid --{Meta.ArgumentName}: {validator.Item2}");
                         }
                     }
                 }

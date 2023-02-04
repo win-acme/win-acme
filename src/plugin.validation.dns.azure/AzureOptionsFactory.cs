@@ -1,6 +1,8 @@
-﻿using PKISharp.WACS.Plugins.Azure.Common;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Plugins.Azure.Common;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
@@ -45,6 +47,18 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             options.SubscriptionId = await SubscriptionId.GetValue();
             options.HostedZone = await HostedZone.GetValue();
             return options;
+        }
+
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(AzureOptions options)
+        {
+            var common = new AzureOptionsFactoryCommon<AzureArguments>(_arguments);
+            foreach (var x in common.Describe(options))
+            {
+                yield return x;
+            }
+            yield return (ResourceGroupName.Meta, options.ResourceGroupName);
+            yield return (SubscriptionId.Meta, options.SubscriptionId);
+            yield return (HostedZone.Meta, options.HostedZone);
         }
 
     }

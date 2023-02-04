@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
@@ -162,28 +163,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return true;
         }
 
-        public override IEnumerable<string> Describe(ScriptOptions options)
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(ScriptOptions options)
         {
-            if (options.CreateScript != null)
-            {
-                yield return $"{CreateScript.ArgumentName} {Escape(options.CreateScript)}";
-            }
-            if (options.CreateScriptArguments != null)
-            {
-                yield return $"{CreateScriptArguments.ArgumentName} {Escape(options.CreateScriptArguments)}";
-            }
-            if (options.DeleteScript != null)
-            {
-                yield return $"{DeleteScript.ArgumentName} {Escape(options.DeleteScript)}";
-            }
-            if (options.DeleteScriptArguments != null)
-            {
-                yield return $"{DeleteScriptArguments.ArgumentName} {Escape(options.DeleteScriptArguments)}";
-            }
-            if (options.Parallelism != null)
-            {
-                yield return $"{Parallelism.ArgumentName} {options.Parallelism}";
-            }
+            yield return (CreateScript.Meta, options.CreateScript);
+            yield return (CreateScriptArguments.Meta, options.CreateScriptArguments);
+            yield return (DeleteScript.Meta, options.DeleteScript);
+            yield return (DeleteScriptArguments.Meta, options.DeleteScriptArguments);
+            yield return (Parallelism.Meta, options.Parallelism);
         }
     }
 }

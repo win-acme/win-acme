@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.Extensions;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
@@ -49,16 +50,10 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             };
         }
 
-        public override IEnumerable<string> Describe(CsrOptions options)
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(CsrOptions options)
         {
-            if (options.CsrFile != null)
-            {
-                yield return $"{CsrFile.ArgumentName} {Escape(options.CsrFile)}";
-            }
-            if (options.PkFile != null)
-            {
-                yield return $"{PkFile.ArgumentName} {Escape(options.PkFile)}";
-            }
+            yield return (CsrFile.Meta, options.CsrFile);
+            yield return (PkFile.Meta, options.PkFile);
         }
     }
 }
