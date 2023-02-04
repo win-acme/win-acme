@@ -344,6 +344,11 @@ namespace PKISharp.WACS.Configuration.Settings
         /// the configuration across a cluster of machines.
         /// </summary>
         public bool EncryptConfig { get; set; }
+        /// <summary>
+        /// Apply a datetimestamp to the friendly name 
+        /// of the generated certificates
+        /// </summary>
+        public bool? FriendlyNameDateTimeStamp { get; set; }
     }
 
     /// <summary>
