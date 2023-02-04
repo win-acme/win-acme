@@ -99,7 +99,7 @@ namespace PKISharp.WACS.Extensions
         /// <param name="input"></param>
         /// <param name="logService"></param>
         /// <returns></returns>
-        public static bool ValidFile(this string? input, ILogService logService)
+        public static bool ValidFile([NotNullWhen(true)] this string? input, ILogService logService)
         {
             if (string.IsNullOrWhiteSpace(input))
             {

@@ -1,6 +1,9 @@
-﻿using PKISharp.WACS.Plugins.Base.Options;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.CsrPlugins;
 using PKISharp.WACS.Services;
+using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.Base.Factories
@@ -35,6 +38,12 @@ namespace PKISharp.WACS.Plugins.Base.Factories
                 OcspMustStaple = await OcspMustStaple.GetValue(),
                 ReusePrivateKey = await ReusePrivateKey.GetValue()
             };
+        }
+
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(TOptions options)
+        {
+            yield return (OcspMustStaple.Meta, options.OcspMustStaple);
+            yield return (ReusePrivateKey.Meta, options.ReusePrivateKey);
         }
     }
 }

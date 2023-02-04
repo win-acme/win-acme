@@ -1,8 +1,11 @@
 ﻿using PKISharp.WACS.Clients.IIS;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
+using System.Collections.Generic;
 using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
@@ -99,6 +102,13 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 SiteId = siteId
             };
             return ret;
+        }
+
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(TOptions options)
+        {
+            yield return (NewBindingPort.Meta, options.NewBindingPort);
+            yield return (NewBindingIp.Meta, options.NewBindingIp);
+            yield return (InstallationSite.Meta, options.SiteId);
         }
     }
 

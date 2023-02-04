@@ -1,6 +1,8 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using ACMESharp.Authorizations;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
@@ -32,6 +34,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             {
                 ApiToken = await ApiKey.GetValue()
             };
+        }
+
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(DigitalOceanOptions options)
+        {
+            yield return (ApiKey.Meta, options.ApiToken);
         }
     }
 }

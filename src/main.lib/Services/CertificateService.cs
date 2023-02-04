@@ -23,9 +23,11 @@ namespace PKISharp.WACS.Services
         private readonly AcmeClient _client;
         private readonly PemService _pemService;
         private readonly CertificatePicker _picker;
+        private readonly ISettingsService _settings;
 
         public CertificateService(
             ILogService log,
+            ISettingsService settings,
             AcmeClient client,
             PemService pemService,
             IInputService inputService,
@@ -34,6 +36,7 @@ namespace PKISharp.WACS.Services
         {
             _log = log;
             _client = client;
+            _settings = settings;
             _pemService = pemService;
             _cacheService = cacheService;
             _inputService = inputService;
@@ -55,8 +58,13 @@ namespace PKISharp.WACS.Services
             {
                 throw new InvalidOperationException("No order details found");
             }
+
             // What are we going to get?
-            var friendlyName = $"{order.FriendlyNameIntermediate} @ {_inputService.FormatDate(DateTime.Now)}";
+            var friendlyName = order.FriendlyNameIntermediate;
+            if (_settings.Security.FriendlyNameDateTimeStamp == true)
+            {
+                friendlyName = $"{friendlyName} @ {_inputService.FormatDate(DateTime.Now)}";
+            }
 
             // Generate the CSR here, because we want to save it 
             // in the certificate cache folder even though we might

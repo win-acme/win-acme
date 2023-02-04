@@ -1,11 +1,13 @@
 ﻿using MorseCode.ITask;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
+using System.Collections.Generic;
 
 namespace PKISharp.WACS.Plugins.Interfaces
 {
     public interface IPluginOptionsFactory<out TOptions>
-        where TOptions: PluginOptions, new()
+        where TOptions: PluginOptionsBase, new()
     {
         /// <summary>
         /// How its sorted in the menu
@@ -23,6 +25,13 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// </summary>
         /// <param name="target"></param>
         ITask<TOptions?> Default();
+
+        /// <summary>
+        /// Convert options back to command line
+        /// </summary>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        IDictionary<CommandLineAttribute, object?> Describe(PluginOptions options);
     }
 
 }

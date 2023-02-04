@@ -1,6 +1,8 @@
-﻿using PKISharp.WACS.Plugins.Base.Factories;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
@@ -50,6 +52,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             options.AccessKeyId = await AccessKeyId.GetValue();
             options.SecretAccessKey = await AccessKey.GetValue();
             return options;
+        }
+
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(Route53Options options)
+        {
+            yield return (IamRole.Meta, options.IAMRole);
+            yield return (AccessKeyId.Meta, options.AccessKeyId);
+            yield return (AccessKey.Meta, options.SecretAccessKey);
         }
     }
 }

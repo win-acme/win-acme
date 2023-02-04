@@ -1,7 +1,9 @@
-﻿using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
@@ -39,6 +41,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                 SecurityToken = await SecurityToken.GetValue(),
                 UseHttps = await UseHttps.GetValue(),
             };
+        }
+
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(RestOptions options)
+        {
+            yield return (SecurityToken.Meta, options.SecurityToken);
+            yield return (UseHttps.Meta, options.UseHttps);
         }
     }
 

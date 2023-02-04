@@ -1,8 +1,11 @@
-﻿using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
@@ -58,6 +61,15 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 return null;
             }
+        }
+
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(ManualOptions options)
+        {
+            if (options.AlternativeNames.FirstOrDefault() != options.CommonName)
+            {
+                yield return (Common.Meta, options.CommonName);
+            }
+            yield return (Host.Meta, options.AlternativeNames);
         }
     }
 }

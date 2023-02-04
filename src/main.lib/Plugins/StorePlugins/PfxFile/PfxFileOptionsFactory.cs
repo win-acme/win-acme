@@ -1,7 +1,10 @@
-﻿using PKISharp.WACS.Extensions;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
+using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
@@ -61,6 +64,12 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 Path = path,
                 FileName = name
             };
+        }
+
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(PfxFileOptions options)
+        {
+            yield return (Path.Meta, options.Path);
+            yield return (Password.Meta, options.PfxPassword);
         }
     }
 

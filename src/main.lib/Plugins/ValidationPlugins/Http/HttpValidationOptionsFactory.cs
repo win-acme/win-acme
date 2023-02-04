@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
@@ -19,7 +20,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             _target = target;
         }
 
-        private ArgumentResult<string?> GetPath(bool allowEmpty)
+        private ArgumentResult<string?> Path(bool allowEmpty)
         {
             var pathArg = _arguments.
                 GetString<HttpValidationArguments>(x => x.WebRoot).
@@ -31,14 +32,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             return pathArg;
         }
 
-        private ArgumentResult<bool?> GetCopyWebConfig()
-        {
-            var pathArg = _arguments.
+        private ArgumentResult<bool?> CopyWebConfig =>
+            _arguments.
                 GetBool<HttpValidationArguments>(x => x.ManualTargetIsIIS).
                 DefaultAsNull().
                 WithDefault(false);
-            return pathArg;
-        }
 
         /// <summary>
         /// Get webroot path manually
@@ -47,14 +45,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         {
             var allowEmpty = AllowEmtpy();
             var webRootHint = WebrootHint(allowEmpty);
-            var pathGetter = GetPath(allowEmpty);
+            var pathGetter = Path(allowEmpty);
             pathGetter = webRootHint.Length > 1
                 ? pathGetter.Interactive(input, webRootHint[0], string.Join('\n', webRootHint[1..]))
                 : pathGetter.Interactive(input, webRootHint[0]);
             return new TOptions
             {
                 Path = await pathGetter.GetValue(),
-                CopyWebConfig = _target.IIS || await GetCopyWebConfig().Interactive(input, "Copy default web.config before validation?").GetValue() == true
+                CopyWebConfig = _target.IIS || await CopyWebConfig.Interactive(input, "Copy default web.config before validation?").GetValue() == true
             };
         }
 
@@ -66,8 +64,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             var allowEmpty = AllowEmtpy();
             return new TOptions
             {
-                Path = await GetPath(allowEmpty).GetValue(),
-                CopyWebConfig = _target.IIS || await GetCopyWebConfig().GetValue() == true
+                Path = await Path(allowEmpty).GetValue(),
+                CopyWebConfig = _target.IIS || await CopyWebConfig.GetValue() == true
             };
         }
 
@@ -97,6 +95,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 ret.Add("Leave empty to automatically read the path from IIS");
             }
             return ret.ToArray();
+        }
+
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(TOptions options)
+        {
+            yield return (CopyWebConfig.Meta, options.CopyWebConfig);
+            yield return (Path(false).Meta, options.Path);
         }
     }
 

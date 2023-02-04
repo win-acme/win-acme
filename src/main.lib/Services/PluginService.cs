@@ -1,5 +1,4 @@
-﻿using ACMESharp.Authorizations;
-using Autofac;
+﻿using Autofac;
 using PKISharp.WACS.Plugins;
 using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
@@ -174,21 +173,6 @@ namespace PKISharp.WACS.Services
                     _log.Verbose("Loaded {type} plugin {name} from {location}", type, x.Name, x.Assembly.Location);
                     return false;
                 });
-        }
-
-        /// <summary>
-        /// Configure Autofac container
-        /// </summary>
-        /// <param name="builder"></param>
-        public void Configure(ContainerBuilder builder)
-        {
-            _plugins.ForEach(plugin =>
-            {
-                _ = builder.RegisterType(plugin.Backend).InstancePerLifetimeScope();
-                _ = builder.RegisterType(plugin.OptionsJson).InstancePerLifetimeScope();
-                _ = builder.RegisterType(plugin.OptionsFactory).InstancePerLifetimeScope();
-                _ = builder.RegisterType(plugin.Capability).InstancePerLifetimeScope();
-            });
         }
     }
 }

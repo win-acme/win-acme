@@ -14,13 +14,12 @@ namespace PKISharp.WACS.Host
 {
     internal static class Autofac
     {
-
         /// <summary>
-        /// Configure dependency injection 
+        /// Configure dependency injection container
         /// </summary>
         /// <param name="args"></param>
         /// <returns></returns>
-        internal static ILifetimeScope GlobalScope(string[] args, bool verbose)
+        internal static ILifetimeScope Container(string[] args, bool verbose)
         {
             var builder = new ContainerBuilder();
 
@@ -79,10 +78,7 @@ namespace PKISharp.WACS.Host
             _ = builder.Register(c => (ISharingLifetimeScope)c.Resolve<ILifetimeScope>()).As<ISharingLifetimeScope>().ExternallyOwned();
             WacsJson.Configure(builder);
 
-            // Child scope for the plugin service
-            var root = builder.Build();
-            var plugin = root.Resolve<IPluginService>();
-            return root.BeginLifetimeScope("wacs", plugin.Configure);
+            return builder.Build();
         }
     }
 }

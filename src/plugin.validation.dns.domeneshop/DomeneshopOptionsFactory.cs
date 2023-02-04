@@ -1,6 +1,8 @@
-﻿using PKISharp.WACS.Plugins.Base.Factories;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
@@ -39,5 +41,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             };
         }
 
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(DomeneshopOptions options)
+        {
+            yield return (ClientId.Meta, options.ClientId);
+            yield return (ClientSecret.Meta, options.ClientSecret);
+        }
     }
 }

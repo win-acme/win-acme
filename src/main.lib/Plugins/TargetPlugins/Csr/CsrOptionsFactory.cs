@@ -1,6 +1,11 @@
-﻿using PKISharp.WACS.Extensions;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
+using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
@@ -43,6 +48,12 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 PkFile = await PkFile.GetValue(),
                 CsrFile = await CsrFile.GetValue()
             };
+        }
+
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(CsrOptions options)
+        {
+            yield return (CsrFile.Meta, options.CsrFile);
+            yield return (PkFile.Meta, options.PkFile);
         }
     }
 }

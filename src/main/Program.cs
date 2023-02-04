@@ -17,8 +17,6 @@ namespace PKISharp.WACS.Host
         /// </summary>
         private static Mutex? _globalMutex;
 
-        private static bool Verbose { get; set; }
-
         private async static Task Main(string[] args)
         {
             // Error handling
@@ -26,7 +24,7 @@ namespace PKISharp.WACS.Host
                 new UnhandledExceptionEventHandler(OnUnhandledException);
 
             // Are we running in verbose mode?
-            Verbose = args.Contains("--verbose");
+            var verbose = args.Contains("--verbose");
 
             // The main class might change the character encoding
             // save the original setting so that it can be restored
@@ -35,7 +33,7 @@ namespace PKISharp.WACS.Host
             try
             {
                 // Setup IOC container
-                var container = Autofac.GlobalScope(args, Verbose);
+                var container = Autofac.Container(args, verbose);
                 AllowInstanceToRun(container);
                 var wacs = container.Resolve<Wacs>();
                 Environment.ExitCode = await wacs.Start().ConfigureAwait(false);
@@ -43,7 +41,7 @@ namespace PKISharp.WACS.Host
             catch (Exception ex)
             {
                 Console.WriteLine(" Error in main function: " + ex.Message);
-                if (Verbose)
+                if (verbose)
                 {
                     Console.WriteLine(ex.StackTrace);
                     while (ex.InnerException != null) {

@@ -59,7 +59,8 @@
     "RSAKeyBits": 3072,
     "ECCurve": "secp384r1",
     "PrivateKeyExportable": false,
-    "EncryptConfig": true
+    "EncryptConfig": true,
+    "FriendlyNameDateTimeStamp": true
   },
   "Script": {
     "Timeout": 600,

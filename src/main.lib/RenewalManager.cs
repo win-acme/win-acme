@@ -9,9 +9,12 @@ using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -158,7 +161,7 @@ namespace PKISharp.WACS
                         async () => { 
                             foreach (var renewal in selectedRenewals) {
                                 var index = selectedRenewals.ToList().IndexOf(renewal) + 1;
-                                _log.Information("Details for renewal {n}/{m}", index, selectedRenewals.Count());
+                                _input.Show($"{index}/{selectedRenewals.Count()}");
                                 await ShowRenewal(renewal);
                                 var cont = false;
                                 if (index != selectedRenewals.Count())
@@ -177,6 +180,18 @@ namespace PKISharp.WACS
                             } 
                         },
                         $"Show details for {selectionLabel}", "D",
+                        state: noneState));
+                options.Add(
+                    Choice.Create<Func<Task>>(
+                        async () => {
+                            foreach (var renewal in selectedRenewals)
+                            {
+                                _input.Show(null, AsCommandLine(renewal));
+                                _input.CreateSpace();
+                            }
+                            await _input.Wait();
+                        },
+                        $"Show command line for {selectionLabel}", "L",
                         state: noneState));
                 options.Add(
                     Choice.Create<Func<Task>>(() => Run(selectedRenewals, RunLevel.Interactive),
@@ -646,6 +661,7 @@ namespace PKISharp.WACS
                     _input.Show("Renewal due", _input.FormatDate(dueDate.Value));
                 }
                 _input.Show("Renewed", $"{renewal.History.Where(x => x.Success == true).Count()} times");
+                _input.Show("Command", AsCommandLine(renewal));
                 _input.CreateSpace();
                 renewal.TargetPluginOptions.Show(_input, _plugin);
                 renewal.ValidationPluginOptions.Show(_input, _plugin);
@@ -660,28 +676,129 @@ namespace PKISharp.WACS
                     ipo.Show(_input, _plugin);
                 }
                 _input.CreateSpace();
+                // Show history
                 var historyLimit = 10; 
-                if (renewal.History.Count <= historyLimit)
-                {
-                    _input.Show(null, "[History]");
-                }
-                else
-                {
-                    _input.Show($"History ({historyLimit}/{renewal.History.Count})");
-                   
-                }
                 await _input.WritePagedList(
                     renewal.History.
                     AsEnumerable().
                     Reverse().
                     Take(historyLimit).
-                    Reverse().
-                    Select(x => Choice.Create(x)));
+                    Select(x => Choice.Create(x, command: "")));
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "Unable to list details for target");
             }
+        }
+
+        /// <summary>
+        /// Write the command line that can be used to create 
+        /// </summary>
+        /// <param name="renewal"></param>
+        private string AsCommandLine(Renewal renewal)
+        {
+            // Show the command line that may be used to (re)create this renewal
+            var args = new Dictionary<string, string?>();
+            var addArgs = (PluginOptions p) =>
+            {
+                var arguments = p.Describe(_container, _scopeBuilder, _plugin);
+                foreach (var arg in arguments)
+                {
+                    var meta = arg.Key;
+                    if (!args.ContainsKey(meta.ArgumentName))
+                    {
+                        var value = arg.Value;
+                        if (value != null)
+                        {
+                            var add = true;
+                            if (value is ProtectedString protectedString)
+                            {
+                                value = protectedString.Value?.StartsWith(SecretServiceManager.VaultPrefix) ?? false ? protectedString.Value : (object)"*******";
+                            }
+                            else if (value is string singleString)
+                            {
+                                value = meta.Secret ? "*******" : Escape(singleString); 
+                            } 
+                            else if (value is List<string> listString)
+                            {
+                                value = Escape(string.Join(",", listString));
+                            }
+                            else if (value is List<int> listInt)
+                            {
+                                value = string.Join(",", listInt);
+                            }
+                            else if (value is List<long> listLong)
+                            {
+                                value = string.Join(",", listLong);
+                            }
+                            else if (value is bool boolean)
+                            {
+                                value = boolean ? null : add = false;
+                            }
+                            if (add)
+                            {
+                                args.Add(meta.ArgumentName, value?.ToString());
+                            }
+                        }
+                    }
+                }
+            };
+
+            args.Add("source", _plugin.GetPlugin(renewal.TargetPluginOptions).Name.ToLower());
+            addArgs(renewal.TargetPluginOptions);
+            var validationPlugin = _plugin.GetPlugin(renewal.ValidationPluginOptions);
+            var validationName = validationPlugin.Name.ToLower();
+            if (!string.Equals(validationName, _settings.Validation.DefaultValidation ?? "selfhosting", StringComparison.OrdinalIgnoreCase))
+            {
+                args.Add("validation", validationName);
+            }
+            addArgs(renewal.ValidationPluginOptions);
+            if (renewal.OrderPluginOptions != null)
+            {
+                var orderName = _plugin.GetPlugin(renewal.OrderPluginOptions).Name.ToLower();
+                if (!string.Equals(orderName, _settings.Order.DefaultPlugin ?? "single", StringComparison.OrdinalIgnoreCase))
+                {
+                    args.Add("order", orderName);
+                }
+                addArgs(renewal.OrderPluginOptions);
+            }
+            if (renewal.CsrPluginOptions != null)
+            {
+                var csrName = _plugin.GetPlugin(renewal.CsrPluginOptions).Name.ToLower();
+                if (!string.Equals(csrName, _settings.Csr.DefaultCsr ?? "rsa", StringComparison.OrdinalIgnoreCase))
+                {
+                    args.Add("csr", csrName);
+                }
+                addArgs(renewal.CsrPluginOptions);
+            }
+            var storeNames = string.Join(",", renewal.StorePluginOptions.Select(_plugin.GetPlugin).Select(x => x.Name.ToLower()));
+            if (!string.Equals(storeNames, _settings.Store.DefaultStore ?? "certificatestore", StringComparison.OrdinalIgnoreCase))
+            {
+                args.Add("store", storeNames);
+            }
+            foreach (var so in renewal.StorePluginOptions)
+            {
+                addArgs(so);
+            }
+            var installationNames = string.Join(",", renewal.InstallationPluginOptions.Select(_plugin.GetPlugin).Select(x => x.Name.ToLower()));
+            if (!string.Equals(installationNames, _settings.Installation.DefaultInstallation ?? "none", StringComparison.OrdinalIgnoreCase))
+            {
+                args.Add("installation", installationNames);
+            }
+            foreach (var so in renewal.InstallationPluginOptions)
+            {
+                addArgs(so);
+            }
+            return "wacs.exe " + string.Join(" ", args.Select(a => $"--{a.Key.ToLower()} {a.Value}".Trim()));
+        }
+
+        private static string Escape(string value)
+        {
+            if (value.Contains(' ') || value.Contains('"'))
+            {
+                return $"\"{value.Replace("\"", "\\\"")}\"";
+            }
+            return value;
         }
 
         #region  Unattended 

@@ -88,6 +88,18 @@ namespace PKISharp.WACS.Services
                 return;
             }
 
+            // Validate command line and ensure main arguments
+            // are loaded, because those influence the BaseUri
+            if (!parser.Validate())
+            {
+                return;
+            }
+            _arguments = parser.GetArguments<MainArguments>();
+            if (_arguments == null)
+            {
+                return;
+            }
+
             var configRoot = ChooseConfigPath();
             Client.ConfigurationPath = Path.Combine(configRoot, BaseUri.CleanUri());
             Client.LogPath = ChooseLogPath();
@@ -101,16 +113,7 @@ namespace PKISharp.WACS.Services
             // Configure disk logger
             _log.SetDiskLoggingPath(Client.LogPath);
 
-            // Validate command line 
-            if (!parser.Validate())
-            {
-                return;
-            }
-            _arguments = parser.GetArguments<MainArguments>();
-            if (_arguments == null)
-            {
-                return;
-            }
+
 
             Valid = true;
         }

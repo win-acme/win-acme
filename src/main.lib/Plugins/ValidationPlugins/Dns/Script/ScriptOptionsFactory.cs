@@ -1,9 +1,11 @@
-﻿using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
@@ -159,6 +161,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 return false;
             }
             return true;
+        }
+
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(ScriptOptions options)
+        {
+            yield return (CreateScript.Meta, options.CreateScript);
+            yield return (CreateScriptArguments.Meta, options.CreateScriptArguments);
+            yield return (DeleteScript.Meta, options.DeleteScript);
+            yield return (DeleteScriptArguments.Meta, options.DeleteScriptArguments);
+            yield return (Parallelism.Meta, options.Parallelism);
         }
     }
 }

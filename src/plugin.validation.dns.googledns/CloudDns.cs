@@ -60,7 +60,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             {
                 throw new Exception("Configuration error");
             }
-            using (var stream = new FileStream(_options.ServiceAccountKeyPath!, FileMode.Open, FileAccess.Read))
+            using (var stream = new FileStream(_options.ServiceAccountKeyPath, FileMode.Open, FileAccess.Read))
             {
                 credential = GoogleCredential.FromStream(stream);
             }

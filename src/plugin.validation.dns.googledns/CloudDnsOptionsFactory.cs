@@ -1,5 +1,7 @@
-﻿using PKISharp.WACS.Plugins.Base.Factories;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
@@ -35,6 +37,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 ServiceAccountKeyPath = await ServiceAccountKey.GetValue(),
                 ProjectId = await ProjectId.GetValue()
             };
+        }
+
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(CloudDnsOptions options)
+        {
+            yield return (ServiceAccountKey.Meta, options.ServiceAccountKeyPath);
+            yield return (ProjectId.Meta, options.ProjectId);
         }
     }
 }

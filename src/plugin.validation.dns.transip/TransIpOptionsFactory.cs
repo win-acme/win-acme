@@ -1,9 +1,12 @@
-﻿using PKISharp.WACS.DomainObjects;
+﻿using ACMESharp.Protocol.Resources;
+using PKISharp.WACS.Configuration;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using TransIp.Library;
@@ -84,6 +87,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 _log.Error(ex, "Invalid private key");
             }
             return false;
+        }
+
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(TransIpOptions options)
+        {
+            yield return (Login.Meta, options.Login);
+            yield return (PrivateKey.Meta, options.PrivateKey);
         }
     }
 }

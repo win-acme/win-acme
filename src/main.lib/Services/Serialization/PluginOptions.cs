@@ -1,4 +1,11 @@
-﻿using PKISharp.WACS.Plugins;
+﻿using Autofac;
+using PKISharp.WACS.Configuration;
+using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins;
+using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.Interfaces;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace PKISharp.WACS.Services.Serialization
 {
@@ -24,8 +31,21 @@ namespace PKISharp.WACS.Services.Serialization
         /// <param name="input"></param>
         internal void Show(IInputService input, IPluginService plugin) {
             var meta = plugin.GetPlugin(this);
-            input.Show(null, $"[{meta.Step}]");
-            input.Show("Plugin", $"{meta.Name} - ({meta.Description})", level: 1);
+            input.Show(meta.Step.ToString(), meta.Name);
+            input.Show("Description", meta.Description, level: 2);
+        }
+
+        /// <summary>
+        /// Provide plugin command line arguments to user
+        /// </summary>
+        /// <param name="input"></param>
+        internal IDictionary<CommandLineAttribute, object?> Describe(ILifetimeScope sc, IAutofacBuilder ab, IPluginService plugin)
+        {
+            var meta = plugin.GetPlugin(this);
+            var ts = ab.Target(sc, new Target(new DnsIdentifier("www.example.com")));
+            var fs = ab.PluginFrontend<IPluginCapability, PluginOptionsBase>(ts, meta);
+            var fe = fs.Resolve<PluginFrontend<IPluginCapability, PluginOptionsBase>>();
+            return fe.OptionsFactory.Describe(this);
         }
 
         /// <summary>
