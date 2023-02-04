@@ -31,8 +31,8 @@ namespace PKISharp.WACS.Services.Serialization
         /// <param name="input"></param>
         internal void Show(IInputService input, IPluginService plugin) {
             var meta = plugin.GetPlugin(this);
-            input.Show(null, $"[{meta.Step}]");
-            input.Show("Plugin", $"{meta.Name} - ({meta.Description})", level: 1);
+            input.Show(meta.Step.ToString(), meta.Name);
+            input.Show("Description", meta.Description, level: 2);
         }
 
         /// <summary>

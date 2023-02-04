@@ -161,7 +161,7 @@ namespace PKISharp.WACS
                         async () => { 
                             foreach (var renewal in selectedRenewals) {
                                 var index = selectedRenewals.ToList().IndexOf(renewal) + 1;
-                                _log.Information("Details for renewal {n}/{m}", index, selectedRenewals.Count());
+                                _input.Show($"{index}/{selectedRenewals.Count()}");
                                 await ShowRenewal(renewal);
                                 var cont = false;
                                 if (index != selectedRenewals.Count())
@@ -180,6 +180,18 @@ namespace PKISharp.WACS
                             } 
                         },
                         $"Show details for {selectionLabel}", "D",
+                        state: noneState));
+                options.Add(
+                    Choice.Create<Func<Task>>(
+                        async () => {
+                            foreach (var renewal in selectedRenewals)
+                            {
+                                _input.Show(null, AsCommandLine(renewal));
+                                _input.CreateSpace();
+                            }
+                            await _input.Wait();
+                        },
+                        $"Show command line for {selectionLabel}", "L",
                         state: noneState));
                 options.Add(
                     Choice.Create<Func<Task>>(() => Run(selectedRenewals, RunLevel.Interactive),
@@ -649,6 +661,7 @@ namespace PKISharp.WACS
                     _input.Show("Renewal due", _input.FormatDate(dueDate.Value));
                 }
                 _input.Show("Renewed", $"{renewal.History.Where(x => x.Success == true).Count()} times");
+                _input.Show("Command", AsCommandLine(renewal));
                 _input.CreateSpace();
                 renewal.TargetPluginOptions.Show(_input, _plugin);
                 renewal.ValidationPluginOptions.Show(_input, _plugin);
@@ -662,29 +675,15 @@ namespace PKISharp.WACS
                 {
                     ipo.Show(_input, _plugin);
                 }
-
                 _input.CreateSpace();
-                _input.Show("Command", AsCommandLine(renewal));
-                _input.CreateSpace();
-
                 // Show history
                 var historyLimit = 10; 
-                if (renewal.History.Count <= historyLimit)
-                {
-                    _input.Show(null, "[History]");
-                }
-                else
-                {
-                    _input.Show($"History ({historyLimit}/{renewal.History.Count})");
-                   
-                }
                 await _input.WritePagedList(
                     renewal.History.
                     AsEnumerable().
                     Reverse().
                     Take(historyLimit).
-                    Reverse().
-                    Select(x => Choice.Create(x)));
+                    Select(x => Choice.Create(x, command: "")));
             }
             catch (Exception ex)
             {
