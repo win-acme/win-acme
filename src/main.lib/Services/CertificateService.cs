@@ -61,7 +61,7 @@ namespace PKISharp.WACS.Services
 
             // What are we going to get?
             var friendlyName = order.FriendlyNameIntermediate;
-            if (_settings.Security.FriendlyNameDateTimeStamp == true)
+            if (_settings.Security.FriendlyNameDateTimeStamp != false)
             {
                 friendlyName = $"{friendlyName} @ {_inputService.FormatDate(DateTime.Now)}";
             }
