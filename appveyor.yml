@@ -28,6 +28,7 @@ build_script:
   - cmd: dotnet publish ./src/main/wacs.csproj -c "ReleaseTrimmed" -r win-x86 --self-contained /p:warninglevel=0
   - cmd: dotnet publish ./src/main/wacs.csproj -c "ReleaseTrimmed" -r win-arm64 --self-contained /p:warninglevel=0
   - cmd: dotnet publish ./src/plugin.store.keyvault/wacs.store.keyvault.csproj -c Release
+  - cmd: dotnet publish ./src/plugin.store.userstore/wacs.store.userstore.csproj -c "Release"
   - cmd: dotnet publish ./src/plugin.validation.dns.azure/wacs.validation.dns.azure.csproj -c Release
   - cmd: dotnet publish ./src/plugin.validation.dns.cloudflare/wacs.validation.dns.cloudflare.csproj -c Release
   - cmd: dotnet publish ./src/plugin.validation.dns.digitalocean/wacs.validation.dns.digitalocean.csproj -c Release
