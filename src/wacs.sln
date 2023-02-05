@@ -61,7 +61,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.dns.simply"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.dns.dnsmadeeasy", "plugin.validation.dns.dnsmadeeasy\wacs.validation.dns.dnsmadeeasy.csproj", "{6674B3F3-706A-491A-87D8-E2D0673C252B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.store.userstore", "plugin.store.personalstore\wacs.store.userstore.csproj", "{938DF02B-246F-4E53-AB61-E6BA59388E6A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.store.userstore", "plugin.store.userstore\wacs.store.userstore.csproj", "{3C1E78B0-DCFD-418A-8C38-B5F428AF749F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -207,14 +207,14 @@ Global
 		{6674B3F3-706A-491A-87D8-E2D0673C252B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6674B3F3-706A-491A-87D8-E2D0673C252B}.ReleaseTrimmed|Any CPU.ActiveCfg = Release|Any CPU
 		{6674B3F3-706A-491A-87D8-E2D0673C252B}.ReleaseTrimmed|Any CPU.Build.0 = Release|Any CPU
-		{938DF02B-246F-4E53-AB61-E6BA59388E6A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{938DF02B-246F-4E53-AB61-E6BA59388E6A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{938DF02B-246F-4E53-AB61-E6BA59388E6A}.DebugTrimmed|Any CPU.ActiveCfg = Debug|Any CPU
-		{938DF02B-246F-4E53-AB61-E6BA59388E6A}.DebugTrimmed|Any CPU.Build.0 = Debug|Any CPU
-		{938DF02B-246F-4E53-AB61-E6BA59388E6A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{938DF02B-246F-4E53-AB61-E6BA59388E6A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{938DF02B-246F-4E53-AB61-E6BA59388E6A}.ReleaseTrimmed|Any CPU.ActiveCfg = Release|Any CPU
-		{938DF02B-246F-4E53-AB61-E6BA59388E6A}.ReleaseTrimmed|Any CPU.Build.0 = Release|Any CPU
+		{3C1E78B0-DCFD-418A-8C38-B5F428AF749F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3C1E78B0-DCFD-418A-8C38-B5F428AF749F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3C1E78B0-DCFD-418A-8C38-B5F428AF749F}.DebugTrimmed|Any CPU.ActiveCfg = Debug|Any CPU
+		{3C1E78B0-DCFD-418A-8C38-B5F428AF749F}.DebugTrimmed|Any CPU.Build.0 = Debug|Any CPU
+		{3C1E78B0-DCFD-418A-8C38-B5F428AF749F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3C1E78B0-DCFD-418A-8C38-B5F428AF749F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3C1E78B0-DCFD-418A-8C38-B5F428AF749F}.ReleaseTrimmed|Any CPU.ActiveCfg = Release|Any CPU
+		{3C1E78B0-DCFD-418A-8C38-B5F428AF749F}.ReleaseTrimmed|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
