@@ -28,8 +28,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         AzureOptions, AzureOptionsFactory,
         DnsValidationCapability, AzureJson>
         ("aa57b028-45fb-4aca-9cac-a63d94c76b4a",
-        "Azure",
-        "Create verification records in Azure DNS")]
+        "Azure", "Create verification records in Azure DNS")]
     internal class Azure : DnsValidation<Azure>
     {
         private ArmClient? _armClient;
@@ -80,10 +79,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             {
                 var currentRecords = zone.GetDnsTxtRecords().FirstOrDefault(x => x.Data.Name == relativeKey);
                 var currentRecord = currentRecords?.Data;
-                if (currentRecord == null)
-                {
-                    currentRecord = new DnsTxtRecordData() { TtlInSeconds = 0 };
-                }
+                currentRecord ??= new DnsTxtRecordData() { TtlInSeconds = 0 };
                 _recordSets[zone].Add(relativeKey, currentRecord);
             }
             var txtRecord = new DnsTxtRecordInfo();
