@@ -21,43 +21,31 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
         SelfHostingOptions, SelfHostingOptionsFactory, 
         SelfHostingCapability, WacsJsonPlugins>
         ("a1565064-b208-4467-8ca1-1bd3c08aa500", 
-        "SelfHosting", 
-        "Answer TLS verification request from win-acme")]
+        "SelfHosting", "Answer TLS verification request from win-acme")]
     internal class SelfHosting : Validation<TlsAlpn01ChallengeValidationDetails>
     {
         internal const int DefaultValidationPort = 443;
         private TcpListener? _listener;
+        private CancellationTokenSource? _tokenSource;
         private X509Certificate2? _certificate;
         private readonly SelfHostingOptions _options;
         private readonly ILogService _log;
-        private readonly IUserRoleService _userRoleService;
-        private readonly CancellationTokenSource _tokenSource = new();
 
-        private TcpListener Listener
-        {
-            get
-            {
-                if (_listener == null)
-                {
-                    throw new InvalidOperationException("Listener not present");
-                }
-                return _listener;
-            }
-            set => _listener = value;
-        }
-
-        public SelfHosting(ILogService log, SelfHostingOptions options, IUserRoleService userRoleService)
+        public SelfHosting(ILogService log, SelfHostingOptions options)
         {
             _log = log;
             _options = options;
-            _userRoleService = userRoleService;
         }
 
         public async Task RecieveRequests()
         {
-            while (true)
+            if (_tokenSource == null || _listener == null)
             {
-                using var client = await Listener.AcceptTcpClientAsync();
+                throw new InvalidOperationException();
+            }
+            while (!_tokenSource.Token.IsCancellationRequested)
+            {
+                using var client = await _listener.AcceptTcpClientAsync();
                 using var sslStream = new SslStream(client.GetStream());
                 var sslOptions = new SslServerAuthenticationOptions
                 {
@@ -67,11 +55,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
                     },
                     ServerCertificate = _certificate
                 };
-                await sslStream.AuthenticateAsServerAsync(sslOptions, _tokenSource.Token);
-                if (_tokenSource.Token.IsCancellationRequested)
-                {
-                    break;
-                }
+                sslStream.AuthenticateAsServer(sslOptions);
+                sslStream.Flush();
+                client.Close();
             }
         }
 
@@ -79,14 +65,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
 
         public override Task CleanUp()
         {
-            try
-            {
-                _tokenSource.Cancel();
-                Listener.Stop();
-            } 
-            catch 
-            { 
-            }
+            _tokenSource?.Cancel();
+            _listener?.Stop();
+            _listener = null;
             return Task.CompletedTask;
         }
 
@@ -99,16 +80,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
 
                 var request = new CertificateRequest(
                     name,
-                    rsa, 
-                    HashAlgorithmName.SHA256, 
+                    rsa,
+                    HashAlgorithmName.SHA256,
                     RSASignaturePadding.Pkcs1);
-
-                using var sha = SHA256.Create();
-                var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(challenge.TokenValue));
+                var hash = SHA256.HashData(Encoding.UTF8.GetBytes(challenge.TokenValue));
                 request.CertificateExtensions.Add(
                     new X509Extension(
-                        new AsnEncodedData("1.3.6.1.5.5.7.1.31", 
-                            new DerOctetString(hash).GetDerEncoded()), 
+                        new AsnEncodedData("1.3.6.1.5.5.7.1.31",
+                            new DerOctetString(hash).GetDerEncoded()),
                             true));
 
                 var sanBuilder = new SubjectAlternativeNameBuilder();
@@ -116,7 +95,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
                 request.CertificateExtensions.Add(sanBuilder.Build());
 
                 _certificate = request.CreateSelfSigned(
-                    new DateTimeOffset(DateTime.UtcNow.AddDays(-1)), 
+                    new DateTimeOffset(DateTime.UtcNow.AddDays(-1)),
                     new DateTimeOffset(DateTime.UtcNow.AddDays(1)));
 
                 _certificate = new X509Certificate2(
@@ -124,7 +103,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
                     context.Identifier,
                     X509KeyStorageFlags.MachineKeySet);
 
-                _listener = new TcpListener(IPAddress.Any, _options.Port ?? DefaultValidationPort);
+                _tokenSource = new();
+                _listener = new TcpListener(IPAddress.IPv6Any, _options.Port ?? DefaultValidationPort);
+                _listener.Server.DualMode = true;
+                _listener.AllowNatTraversal(true);
                 _listener.Start();
 
                 Task.Run(RecieveRequests);

@@ -16,8 +16,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         TransIpOptions, TransIpOptionsFactory, 
         DnsValidationCapability, TransIpJson>
         ("c49a7a9a-f8c9-494a-a6a4-c6b9daae7d9d", 
-        "TransIp", 
-        "Create verification records at TransIp")]
+        "TransIp", "Create verification records at TransIp")]
     internal sealed class TransIp : DnsValidation<TransIp>
     {
         private readonly DnsService _dnsService;

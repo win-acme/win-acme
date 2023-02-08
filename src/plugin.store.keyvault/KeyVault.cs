@@ -20,8 +20,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         KeyVaultOptions, KeyVaultOptionsFactory, 
         DefaultCapability, KeyVaultJson>
         ("dbfa91e2-28c0-4b37-857c-df6575dbb388", 
-        "KeyVault", 
-        "Store certificate in Azure Key Vault")]
+        "KeyVault", "Store certificate in Azure Key Vault")]
     internal class KeyVault : IStorePlugin
     {
         private readonly KeyVaultOptions _options;

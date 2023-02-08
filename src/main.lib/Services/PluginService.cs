@@ -112,10 +112,10 @@ namespace PKISharp.WACS.Services
                         validationCapability = typeof(HttpValidationCapability);
                         break;
                     case Constants.Dns01ChallengeType:
-                        validationCapability = typeof(HttpValidationCapability);
+                        validationCapability = typeof(DnsValidationCapability);
                         break;
                     case Constants.TlsAlpn01ChallengeType:
-                        validationCapability = typeof(HttpValidationCapability);
+                        validationCapability = typeof(TlsValidationCapability);
                         break;
                 }
                 plugins = plugins.

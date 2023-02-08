@@ -10,6 +10,7 @@ using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Protocol = ACMESharp.Protocol.Resources;
 
@@ -213,7 +214,6 @@ namespace PKISharp.WACS
                 if (globalOptions != null &&
                     CanValidate(authorisationContext, globalOptions))
                 {
-
                     add(globalOptions, authorisationContext);
                 }
                 else if ((globalOptions == null || localOptions.Plugin != globalOptions.Plugin) &&
@@ -534,7 +534,7 @@ namespace PKISharp.WACS
                     _log.Error("[{identifier}] Authorization result: {Status}", validationContext.Label, updatedChallenge.Status);
                     if (updatedChallenge.Error != null)
                     {
-                        _log.Error("[{identifier}] {Error}", validationContext.Label, updatedChallenge.Error.ToString());
+                        _log.Error("[{identifier}] {Error}", validationContext.Label, JsonSerializer.Serialize(updatedChallenge.Error, AcmeClientJson.Default.Problem));
                     }
                     validationContext.OrderResult.AddErrorMessage("Validation failed", !validationContext.Valid);
                     return;
