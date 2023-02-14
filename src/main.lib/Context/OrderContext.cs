@@ -8,7 +8,7 @@ namespace PKISharp.WACS.Context
     /// <summary>
     /// Common objects used throughout the renewal process
     /// </summary>
-    [DebuggerDisplay("{Order.CacheKeyPart}")]
+    [DebuggerDisplay("{OrderName}")]
     public class OrderContext
     {
         public const string DefaultOrderName = "Main";
