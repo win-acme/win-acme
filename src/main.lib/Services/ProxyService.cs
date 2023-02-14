@@ -7,6 +7,7 @@ using System.Reflection.Metadata;
 using System.Security.Authentication;
 using System.Threading;
 using System.Threading.Tasks;
+using static ACMESharp.Protocol.AcmeProtocolClient;
 
 namespace PKISharp.WACS.Services
 {
@@ -77,10 +78,42 @@ namespace PKISharp.WACS.Services
 
             public LoggingHttpClientHandler(ILogService log) => _log = log;
 
-            protected override HttpResponseMessage Send(HttpRequestMessage request, CancellationToken cancellationToken) => 
-                SendAsync(request, cancellationToken).Result;
+            /// <summary>
+            /// Synchronous request (note that this cannot call SendAsync,
+            /// see issue #2311)
+            /// </summary>
+            /// <param name="request"></param>
+            /// <param name="cancellationToken"></param>
+            /// <returns></returns>
+            protected override HttpResponseMessage Send(HttpRequestMessage request, CancellationToken cancellationToken) 
+            {
+                PreSend(request, cancellationToken).RunSynchronously();
+                var response = base.Send(request, cancellationToken);
+                PostSend(response, cancellationToken).RunSynchronously();
+                return response;
+            }
 
+            /// <summary>
+            /// Asynchronous request
+            /// </summary>
+            /// <param name="request"></param>
+            /// <param name="cancellationToken"></param>
+            /// <returns></returns>
             protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                await PreSend(request, cancellationToken);
+                var response = await base.SendAsync(request, cancellationToken);
+                await PostSend(response, cancellationToken);
+                return response;
+            }
+        
+            /// <summary>
+            /// Common pre-send functionality
+            /// </summary>
+            /// <param name="request"></param>
+            /// <param name="cancellationToken"></param>
+            /// <returns></returns>
+            private async Task PreSend(HttpRequestMessage request, CancellationToken cancellationToken)
             {
                 _log.Debug("[HTTP] Send {method} to {uri}", request.Method, request.RequestUri);
 #if DEBUG
@@ -93,15 +126,24 @@ namespace PKISharp.WACS.Services
                     }
                 }
 #endif
-                var response = await base.SendAsync(request, cancellationToken);
+            }
+
+            /// <summary>
+            /// Common post-send functionality
+            /// </summary>
+            /// <param name="response"></param>
+            /// <param name="cancellationToken"></param>
+            /// <returns></returns>
+            private async Task PostSend(HttpResponseMessage response, CancellationToken cancellationToken)
+            {
                 _log.Verbose("[HTTP] Request completed with status {s}", response.StatusCode);
 #if DEBUG
                 if (response.Content != null && response.Content.Headers.ContentLength > 0)
                 {
-                    var printableTypes = new[] { 
-                        "text/json", 
-                        "application/json", 
-                        "application/problem+json" 
+                    var printableTypes = new[] {
+                        "text/json",
+                        "application/json",
+                        "application/problem+json"
                     };
                     if (printableTypes.Contains(response.Content.Headers.ContentType?.MediaType))
                     {
@@ -121,7 +163,6 @@ namespace PKISharp.WACS.Services
                     _log.Verbose("[HTTP] Empty response");
                 }
 #endif
-                return response;
             }
         }
 
