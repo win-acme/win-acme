@@ -97,26 +97,28 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <returns></returns>
         protected async Task<bool> PreValidate(DnsValidationRecord record)
         {
+            var success = 0;
+            var count = record.Authority.Nameservers.Count();
             try
             {
-                var randomized = record.Authority.Nameservers.OrderBy(x => Guid.NewGuid()).ToList();
                 _log.Debug("[{identifier}] Looking for TXT value {DnsRecordValue}...", record.Context.Label, record.Value);
-                foreach (var client in randomized)
+                foreach (var client in record.Authority.Nameservers)
                 {
                     _log.Debug("[{identifier}] Preliminary validation asking {ip}...", record.Context.Label, client.IpAddress);
                     var answers = await client.GetTxtRecords(record.Authority.Domain);
                     if (!answers.Any())
                     {
                         _log.Warning("[{identifier}] Preliminary validation failed: no TXT records found", record.Context.Label);
-                        return false;
+                        continue;
                     }
                     if (!answers.Contains(record.Value))
                     {
                         _log.Debug("[{identifier}] Preliminary validation found values: {answers}", record.Context.Label, answers);
                         _log.Warning("[{identifier}] Preliminary validation failed: incorrect TXT record(s) found", record.Context.Label);
-                        return false;
+                        continue;
                     }
                     _log.Debug("[{identifier}] Preliminary validation from {ip} looks good", record.Context.Label, client.IpAddress);
+                    success++;
                 }
             }
             catch (Exception ex)
@@ -124,8 +126,21 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 _log.Error(ex, "[{identifier}] Preliminary validation failed", record.Context.Label);
                 return false;
             }
-            _log.Information("[{identifier}] Preliminary validation succeeded", record.Context.Label);
-            return true;
+            if (success == count)
+            {
+                _log.Information("[{identifier}] Preliminary validation succeeded", record.Context.Label);
+                return true;
+            }
+            if (success == 0)
+            {
+                _log.Information("[{identifier}] Preliminary validation failed", record.Context.Label);
+            }
+            else
+            {
+                _log.Information("[{identifier}] Preliminary validation failed on {n}/{m} nameservers", record.Context.Label, success, count);
+            }
+            return false;
+
         }
 
         /// <summary>
