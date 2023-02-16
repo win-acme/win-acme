@@ -99,8 +99,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         {
             try
             {
+                var randomized = record.Authority.Nameservers.OrderBy(x => Guid.NewGuid()).ToList();
                 _log.Debug("[{identifier}] Looking for TXT value {DnsRecordValue}...", record.Context.Label, record.Value);
-                foreach (var client in record.Authority.Nameservers)
+                foreach (var client in randomized)
                 {
                     _log.Debug("[{identifier}] Preliminary validation asking {ip}...", record.Context.Label, client.IpAddress);
                     var answers = await client.GetTxtRecords(record.Authority.Domain);
