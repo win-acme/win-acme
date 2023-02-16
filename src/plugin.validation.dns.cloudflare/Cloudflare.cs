@@ -93,6 +93,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
             var dns = ctx.Zone(zone).Dns;
             _ = await dns.Create(DnsRecordType.TXT, record.Authority.Domain, record.Value)
+                .Ttl(60)
                 .CallAsync(_hc)
                 .ConfigureAwait(false);
             return true;

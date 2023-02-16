@@ -413,7 +413,7 @@ namespace PKISharp.WACS
                     {
                         return;
                     }
-                    _log.Information("[{identifier}] Handling challenge anyway because --test and/or --force is active", context.Label);
+                    _log.Information("[{identifier}] Handling challenge anyway because --test and/or --nocache is active", context.Label);
                 }
 
                 _log.Information("[{identifier}] Authorizing...", context.Label);
