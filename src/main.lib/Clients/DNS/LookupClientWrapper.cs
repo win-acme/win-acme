@@ -25,7 +25,7 @@ namespace PKISharp.WACS.Clients.DNS
             var clientOptions = _ipAddress != null ?
                 new LookupClientOptions(new[] { _ipAddress }) : 
                 new LookupClientOptions();
-            clientOptions.UseCache = true;
+            clientOptions.UseCache = false;
             _lookupClient = new LookupClient(clientOptions);
             _log = logService;
             _provider = provider;
