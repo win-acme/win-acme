@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <AssemblyName>PKISharp.WACS.Plugins.ValidationPlugins.GoogleDns</AssemblyName>
     <RootNamespace>PKISharp.WACS.Plugins.ValidationPlugins</RootNamespace>
     <Version>2.1.0.0</Version>
@@ -14,7 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Google.Apis.Dns.v1" Version="1.57.0.2583" />
+    <PackageReference Include="Google.Apis.Dns.v1" Version="1.59.0.2870" />
   </ItemGroup>
 
   <ItemGroup>

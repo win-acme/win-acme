@@ -1,9 +1,8 @@
-﻿using ACMESharp.Authorizations;
-using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Plugins.Azure.Common;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
-using System.Linq;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
@@ -11,13 +10,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     /// <summary>
     /// Azure DNS validation
     /// </summary>
-    internal class AzureOptionsFactory : ValidationPluginOptionsFactory<Azure, AzureOptions>
+    internal class AzureOptionsFactory : PluginOptionsFactory<AzureOptions>
     {
         private readonly ArgumentsInputService _arguments;
 
-        public AzureOptionsFactory(ArgumentsInputService arguments) : 
-            base(Dns01ChallengeValidationDetails.Dns01ChallengeType) 
-            => _arguments = arguments;
+        public AzureOptionsFactory(ArgumentsInputService arguments) => _arguments = arguments;
 
         private ArgumentResult<string?> ResourceGroupName => _arguments.
             GetString<AzureArguments>(a => a.AzureResourceGroupName).
@@ -30,7 +27,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         private ArgumentResult<string?> HostedZone => _arguments.
              GetString<AzureArguments>(a => a.AzureHostedZone);
 
-        public override async Task<AzureOptions?> Aquire(Target target, IInputService input, RunLevel runLevel)
+        public override async Task<AzureOptions?> Aquire(IInputService input, RunLevel runLevel)
         {
             var options = new AzureOptions();
             var common = new AzureOptionsFactoryCommon<AzureArguments>(_arguments);
@@ -41,7 +38,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return options;
         }
 
-        public override async Task<AzureOptions?> Default(Target target)
+        public override async Task<AzureOptions?> Default()
         {
             var options = new AzureOptions();
             var common = new AzureOptionsFactoryCommon<AzureArguments>(_arguments);
@@ -52,6 +49,17 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return options;
         }
 
-        public override bool CanValidate(Target target) => target.Parts.SelectMany(x => x.Identifiers).All(x => x.Type == IdentifierType.DnsName);
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(AzureOptions options)
+        {
+            var common = new AzureOptionsFactoryCommon<AzureArguments>(_arguments);
+            foreach (var x in common.Describe(options))
+            {
+                yield return x;
+            }
+            yield return (ResourceGroupName.Meta, options.ResourceGroupName);
+            yield return (SubscriptionId.Meta, options.SubscriptionId);
+            yield return (HostedZone.Meta, options.HostedZone);
+        }
+
     }
 }

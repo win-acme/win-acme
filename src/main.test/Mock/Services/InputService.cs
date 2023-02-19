@@ -50,6 +50,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         }
         public Task<string?> ReadPassword(string what) => Task.FromResult<string?>(GetNextInput());
         public Task<string> RequestString(string what, bool multiline) => Task.FromResult(GetNextInput());
+        public Task<int?> RequestInt(string what) => Task.FromResult((int?)int.Parse(GetNextInput()));
         public void Show(string? label, string? value = null, int level = 0) { }
         public Task<bool> Wait(string message = "") => Task.FromResult(true);
         public Task WritePagedList(IEnumerable<Choice> listItems) => Task.CompletedTask;
@@ -68,14 +69,11 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
             }
             throw new Exception();
         }
-        internal void NumberChoices(List<Choice> choices)
+        internal static void NumberChoices(List<Choice> choices)
         {
             foreach (var c in choices)
             {
-                if (c.Command == null)
-                {
-                    c.Command = (choices.IndexOf(c) + 1).ToString();
-                }
+                c.Command ??= (choices.IndexOf(c) + 1).ToString();
             }
         }
 

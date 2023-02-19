@@ -1,13 +1,14 @@
 ﻿using ACMESharp.Protocol;
-using Newtonsoft.Json;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Clients.Acme
@@ -50,10 +51,10 @@ namespace PKISharp.WACS.Clients.Acme
             cacheKeyBuilder.Append(order.Target.CommonName);
             cacheKeyBuilder.Append(string.Join(',', order.Target.GetIdentifiers(true).OrderBy(x => x).Select(x => x.Value.ToLower())));
             _ = order.Target.UserCsrBytes != null ?
-                cacheKeyBuilder.Append(Convert.ToBase64String(order.Target.UserCsrBytes)) :
+                cacheKeyBuilder.Append(Convert.ToBase64String(order.Target.UserCsrBytes.ToArray())) :
                 cacheKeyBuilder.Append('-');
             _ = order.Renewal.CsrPluginOptions != null ?
-                cacheKeyBuilder.Append(JsonConvert.SerializeObject(order.Renewal.CsrPluginOptions)) :
+                cacheKeyBuilder.Append(JsonSerializer.Serialize(order.Renewal.CsrPluginOptions, WacsJson.Insensitive.CsrPluginOptions)) :
                 cacheKeyBuilder.Append('-');
             cacheKeyBuilder.Append(order.KeyPath);
             return cacheKeyBuilder.ToString().SHA1();
@@ -65,28 +66,35 @@ namespace PKISharp.WACS.Clients.Acme
         /// <param name="renewal"></param>
         /// <param name="target"></param>
         /// <returns></returns>
-        public async Task<OrderDetails?> GetOrCreate(Order order, RunLevel runLevel)
+        public async Task<AcmeOrderDetails?> GetOrCreate(Order order, RunLevel runLevel)
         {
             var cacheKey = CacheKey(order);
-            if (string.IsNullOrWhiteSpace(order.KeyPath))
+            if (_settings.Cache.ReuseDays > 0)
             {
-                order.KeyPath = Path.Combine(_orderPath.FullName, $"{cacheKey}.{_orderKeyExtension}");
-            }
-            var orderDetails = await GetFromCache(cacheKey, runLevel);
-            if (orderDetails != null)
-            {
-                var keyFile = new FileInfo(order.KeyPath);
-                if (keyFile.Exists)
+                // Above conditional not only prevents us from reading a cached
+                // order from disk, but also prevent the "KeyPath" property from
+                // being set in the first place, which in turn prevents the
+                // CsrPlugin from caching the private key on disk.
+                if (string.IsNullOrWhiteSpace(order.KeyPath))
                 {
-                    _log.Warning("Using cache. To force a new order within {days} days, " +
-                          "run with --{switch}. Beware that you might run into rate limits.",
-                          _settings.Cache.ReuseDays,
-                          nameof(MainArguments.Force).ToLower());
-                    return orderDetails;
+                    order.KeyPath = Path.Combine(_orderPath.FullName, $"{cacheKey}.{_orderKeyExtension}");
                 }
-                else
+                var orderDetails = await GetFromCache(cacheKey, runLevel);
+                if (orderDetails != null)
                 {
-                    _log.Warning("Cached order available but not used due to missing private key");
+                    var keyFile = new FileInfo(order.KeyPath);
+                    if (keyFile.Exists)
+                    {
+                        _log.Warning("Using cache. To force a new order within {days} days, " +
+                              "run with --{switch}. Beware that you might run into rate limits.",
+                              _settings.Cache.ReuseDays,
+                              nameof(MainArguments.NoCache).ToLower());
+                        return orderDetails;
+                    }
+                    else
+                    {
+                        _log.Debug("Cached order available but not used.");
+                    }
                 }
             }
             return await CreateOrder(cacheKey, order.Target);
@@ -98,7 +106,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// <param name="cacheKey"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        private async Task<OrderDetails?> GetFromCache(string cacheKey, RunLevel runLevel)
+        private async Task<AcmeOrderDetails?> GetFromCache(string cacheKey, RunLevel runLevel)
         {
             var existingOrder = FindRecentOrder(cacheKey);
             if (existingOrder == null)
@@ -107,10 +115,10 @@ namespace PKISharp.WACS.Clients.Acme
                 return null;
             }
 
-            if (runLevel.HasFlag(RunLevel.IgnoreCache))
+            if (runLevel.HasFlag(RunLevel.NoCache))
             {
                 _log.Warning("Cached order available but not used with --{switch} option.",
-                    nameof(MainArguments.Force).ToLower());
+                    nameof(MainArguments.NoCache).ToLower());
                 return null;
             }
 
@@ -142,9 +150,13 @@ namespace PKISharp.WACS.Clients.Acme
         /// </summary>
         /// <param name="order"></param>
         /// <returns></returns>
-        private async Task<OrderDetails> RefreshOrder(OrderDetails order)
+        private async Task<AcmeOrderDetails> RefreshOrder(AcmeOrderDetails order)
         {
             _log.Debug("Refreshing order...");
+            if (order.OrderUrl == null) 
+            {
+                throw new InvalidOperationException("Missing order url");
+            }
             var update = await _client.GetOrderDetails(order.OrderUrl);
             order.Payload = update.Payload;
             return order;
@@ -158,7 +170,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// <param name="privateKeyFile"></param>
         /// <param name="target"></param>
         /// <returns></returns>
-        private async Task<OrderDetails?> CreateOrder(string cacheKey, Target target)
+        private async Task<AcmeOrderDetails?> CreateOrder(string cacheKey, Target target)
         {
             try
             {
@@ -172,9 +184,9 @@ namespace PKISharp.WACS.Clients.Acme
                 }
 
                 // Create the order
-                _log.Verbose("Creating order for hosts: {identifiers}", identifiers);
+                _log.Verbose("Creating order for identifiers: {identifiers}", identifiers.Select(x => x.Value));
                 var order = await _client.CreateOrder(identifiers);
-                if (order.Payload.Error != null)
+                if (order.Payload.Error != default)
                 {
                     _log.Error("Failed to create order {url}: {detail}", order.OrderUrl, order.Payload.Error.Detail);
                     return null;
@@ -201,7 +213,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// </summary>
         /// <param name="identifiers"></param>
         /// <returns></returns>
-        private OrderDetails? FindRecentOrder(string cacheKey)
+        private AcmeOrderDetails? FindRecentOrder(string cacheKey)
         {
             DeleteStaleFiles();
             var fi = new FileInfo(Path.Combine(_orderPath.FullName, $"{cacheKey}.{_orderFileExtension}"));
@@ -212,7 +224,7 @@ namespace PKISharp.WACS.Clients.Acme
             try
             {
                 var content = File.ReadAllText(fi.FullName);
-                var order = JsonConvert.DeserializeObject<OrderDetails>(content);
+                var order = JsonSerializer.Deserialize(content, AcmeClientJson.Insensitive.AcmeOrderDetails);
                 return order;
             } 
             catch (Exception ex)
@@ -260,21 +272,38 @@ namespace PKISharp.WACS.Clients.Acme
         /// Save order to disk
         /// </summary>
         /// <param name="order"></param>
-        private async Task SaveOrder(OrderDetails order, string cacheKey)
+        private async Task SaveOrder(AcmeOrderDetails order, string cacheKey)
         {
             try
             {
+                if (_settings.Cache.ReuseDays <= 0)
+                {
+                    return;
+                }
                 if (!_orderPath.Exists)
                 {
                     _orderPath.Create();
                 }
-                var content = JsonConvert.SerializeObject(order);
+                var content = JsonSerializer.Serialize(order, AcmeClientJson.Default.AcmeOrderDetails);
                 var path = Path.Combine(_orderPath.FullName, $"{cacheKey}.{_orderFileExtension}");
                 await File.WriteAllTextAsync(path, content);
             }
             catch (Exception ex)
             {
                 _log.Warning("Unable to write to order cache: {ex}", ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Encrypt or decrypt the cached private keys
+        /// </summary>
+        public void Encrypt()
+        {
+            foreach (var f in _orderPath.EnumerateFiles($"*.{_orderKeyExtension}"))
+            {
+                var x = new ProtectedString(File.ReadAllText(f.FullName), _log);
+                _log.Information("Rewriting {x}", f.Name);
+                File.WriteAllText(f.FullName, x.DiskValue(_settings.Security.EncryptConfig));
             }
         }
     }

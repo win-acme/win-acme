@@ -1,9 +1,17 @@
 ﻿using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Services.Serialization;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace PKISharp.WACS.Plugins.OrderPlugins
 {
+    [IPlugin.Plugin<
+        SiteOptions, PluginOptionsFactory<SiteOptions>, 
+        SiteCapability, WacsJsonPlugins>
+        ("74a42b2d-8eaa-4f40-ab6a-f55304254143", 
+        "Site", "Separate certificate for each IIS site")]
     class Site : IOrderPlugin
     {
         public IEnumerable<Order> Split(Renewal renewal, Target target) 
@@ -11,9 +19,14 @@ namespace PKISharp.WACS.Plugins.OrderPlugins
             var ret = new List<Order>();
             foreach (var part in target.Parts)
             {
-               var newTarget = new Target(
+                var commonName = target.CommonName;
+                if (!part.Identifiers.Contains(commonName))
+                {
+                    commonName = part.Identifiers.First();
+                }
+                var newTarget = new Target(
                     target.FriendlyName ?? "",
-                    target.CommonName,
+                    commonName,
                     new List<TargetPart> { part });
                 var newOrder = new Order(
                     renewal, 

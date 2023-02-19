@@ -1,46 +1,29 @@
 ﻿using PKISharp.WACS.Clients.IIS;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
-using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    internal class IISOptionsFactory : InstallationPluginFactory<IIS, IISOptions>
+    internal class IISOptionsFactory<TOptions> : PluginOptionsFactory<TOptions>
+        where TOptions: IISOptions, new()
     {
         public override int Order => 5;
         private readonly IIISClient _iisClient;
         private readonly ArgumentsInputService _arguments;
+        private readonly Target _target;
 
-        /// <summary>
-        /// Match with the legacy target plugin names
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        public override bool Match(string name)
-        {
-            return name.ToLowerInvariant() switch
-            {
-                "iisftp" => true,
-                _ => base.Match(name),
-            };
-        }
-
-        public IISOptionsFactory(IIISClient iisClient, ArgumentsInputService arguments, IUserRoleService userRoleService)
+        public IISOptionsFactory(IIISClient iisClient, Target target, ArgumentsInputService arguments)
         {
             _iisClient = iisClient;
             _arguments = arguments;
-            Disabled = IIS.Disabled(userRoleService, iisClient);
+            _target = target;
         }
-
-        public override bool CanInstall(IEnumerable<Type> storeTypes) => 
-            storeTypes.Contains(typeof(CertificateStore)) || 
-            storeTypes.Contains(typeof(CentralSsl));
 
         private ArgumentResult<int?> NewBindingPort => _arguments.
             GetInt<IISArguments>(x => x.SSLPort).
@@ -64,21 +47,42 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             Validate(x => Task.FromResult(_iisClient.GetSite(x!.Value) != null), "invalid site").
             Validate(x => Task.FromResult(_iisClient.GetSite(x!.Value).Type == IISSiteType.Ftp), "not an ftp site");
 
-        public override async Task<IISOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
+        public override async Task<TOptions?> Aquire(IInputService inputService, RunLevel runLevel)
         {
-            var ret = new IISOptions()
+            var ret = new TOptions()
             {
                 NewBindingPort = await NewBindingPort.GetValue(),
                 NewBindingIp = await NewBindingIp.GetValue()
             };
-            var ask = true;
-            if (target.IIS)
+
+            var explained = false;
+            var explain = () => {
+                if (explained)
+                {
+                    return;
+                }
+                inputService.CreateSpace();
+                inputService.Show(null,
+                       "This plugin will update *all* binding using the previous certificate in both Web and " +
+                       "FTP sites, regardless of whether those bindings were created manually or by the program " +
+                       "itself. Therefor you'll never need to run this installation step twice.");
+                inputService.CreateSpace();
+                inputService.Show(null,
+                    "During initial setup, it will try to make as few changes as possible to IIS to cover " +
+                    "the source identifiers. If new bindings are needed, by default it will create those at " +
+                    "the same site where the HTTP binding for that host was found.");
+                explained = true;
+            };
+            
+            var askSite = !_target.IIS;
+            if (_target.IIS && runLevel.HasFlag(RunLevel.Advanced))
             {
-                ask = runLevel.HasFlag(RunLevel.Advanced) && 
-                    await inputService.PromptYesNo("Use different site for installation?", false);
-            }
-            if (ask)
+                explain();
+                askSite = await inputService.PromptYesNo("Create new bindings in a different site?", false);
+            } 
+            if (askSite)
             {
+                explain();
                 var chosen = await inputService.ChooseRequired("Choose site to create new bindings",
                    _iisClient.Sites,
                    x => Choice.Create(x.Id, x.Name, x.Id.ToString()));
@@ -87,14 +91,11 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             return ret;
         }
 
-        public override async Task<IISOptions> Default(Target target)
+        public override async Task<TOptions?> Default()
         {
             var siteId = await FtpSite.GetValue();
-            if (siteId == null)
-            {
-                siteId = await InstallationSite.Required(!target.IIS).GetValue();
-            }
-            var ret = new IISOptions()
+            siteId ??= await InstallationSite.Required(!_target.IIS).GetValue();
+            var ret = new TOptions()
             {
                 NewBindingPort = await NewBindingPort.GetValue(),
                 NewBindingIp = await NewBindingIp.GetValue(),
@@ -102,5 +103,28 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             };
             return ret;
         }
+
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(TOptions options)
+        {
+            yield return (NewBindingPort.Meta, options.NewBindingPort);
+            yield return (NewBindingIp.Meta, options.NewBindingIp);
+            yield return (InstallationSite.Meta, options.SiteId);
+        }
+    }
+
+    /// <summary>
+    /// FTP options factory
+    /// </summary>
+    internal class IISFTPOptionsFactory : IISOptionsFactory<IISFtpOptions>
+    {
+        public IISFTPOptionsFactory(IIISClient iisClient, Target target, ArgumentsInputService arguments) : base(iisClient, target, arguments) { }
+    }
+
+    /// <summary>
+    /// Regular options factory
+    /// </summary>
+    internal class IISOptionsFactory : IISOptionsFactory<IISOptions>
+    {
+        public IISOptionsFactory(IIISClient iisClient, Target target, ArgumentsInputService arguments) : base(iisClient, target, arguments) { }
     }
 }

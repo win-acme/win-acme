@@ -24,5 +24,6 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         public InstallationSettings Installation => new();
         public ScriptSettings Script => new();
         public SecretsSettings Secrets => new();
+        public bool Valid => true;
     }
 }

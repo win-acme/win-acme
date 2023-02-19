@@ -1,20 +1,22 @@
 ﻿using PKISharp.WACS.Clients.IIS;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    internal class CertificateStoreOptionsFactory : StorePluginOptionsFactory<CertificateStore, CertificateStoreOptions>
+    internal class CertificateStoreOptionsFactory : PluginOptionsFactory<CertificateStoreOptions>
     {
         private readonly ArgumentsInputService _arguments;
         private readonly IIISClient _iisClient;
         private readonly ISettingsService _settingsService;
 
         public CertificateStoreOptionsFactory(
-            IUserRoleService userRoleService,
             ArgumentsInputService arguments,
             ISettingsService settings,
             IIISClient iisClient)
@@ -22,7 +24,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             _arguments = arguments;
             _iisClient = iisClient;
             _settingsService = settings;
-            Disabled = CertificateStore.Disabled(userRoleService);
         }
 
         public override async Task<CertificateStoreOptions?> Aquire(IInputService inputService, RunLevel runLevel)
@@ -58,24 +59,34 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             return ret;
         }
 
+        private ArgumentResult<bool?> KeepExisting => _arguments.
+            GetBool<CertificateStoreArguments>(x => x.KeepExisting).
+            WithDefault(false).
+            DefaultAsNull();
+
+        private ArgumentResult<string?> StoreName => _arguments.
+            GetString<CertificateStoreArguments>(x => x.CertificateStore).
+            WithDefault(CertificateStore.DefaultStore(_settingsService, _iisClient)).
+            DefaultAsNull();
+
+        private ArgumentResult<string?> AclFullControl => _arguments.
+            GetString<CertificateStoreArguments>(x => x.AclFullControl);
+
         public override async Task<CertificateStoreOptions?> Default()
         {
             return new CertificateStoreOptions
             {
-                StoreName = await _arguments.
-                    GetString<CertificateStoreArguments>(x => x.CertificateStore).
-                    WithDefault(CertificateStore.DefaultStore(_settingsService, _iisClient)).
-                    DefaultAsNull().
-                    GetValue(),
-                KeepExisting = await _arguments.
-                    GetBool<CertificateStoreArguments>(x => x.KeepExisting).
-                    WithDefault(false).
-                    DefaultAsNull().
-                    GetValue(),
-                AclFullControl = (await _arguments.
-                    GetString<CertificateStoreArguments>(x => x.AclFullControl).
-                    GetValue()).ParseCsv()
+                StoreName = await StoreName.GetValue(),
+                KeepExisting = await KeepExisting.GetValue(),
+                AclFullControl = (await AclFullControl.GetValue()).ParseCsv()
             };
+        }
+
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(CertificateStoreOptions options)
+        {
+            yield return (KeepExisting.Meta, options.KeepExisting);
+            yield return (StoreName.Meta, options.StoreName);
+            yield return (AclFullControl.Meta, options.AclFullControl);
         }
     }
 }

@@ -13,20 +13,23 @@ namespace PKISharp.WACS.Services
     internal class NotificationService
     {
         private readonly ILogService _log;
-        private readonly ICertificateService _certificateService;
+        private readonly ICacheService _cacheService;
+        private readonly IPluginService _plugin;
         private readonly ISettingsService _settings;
         private readonly EmailClient _email;
 
         public NotificationService(
             ILogService log,
             ISettingsService setttings,
+            IPluginService pluginService,
             EmailClient email,
-            ICertificateService certificateService)
+            ICacheService certificateService)
         {
             _log = log;
-            _certificateService = certificateService;
+            _cacheService = certificateService;
             _email = email;
             _settings = setttings;
+            _plugin = pluginService;
         }
 
         /// <summary>
@@ -59,19 +62,20 @@ namespace PKISharp.WACS.Services
         /// <param name="renewal"></param>
         internal async Task NotifySuccess(Renewal renewal, IEnumerable<MemoryEntry> log)
         {
-            // Do not send emails when running interactively
+            var withErrors = log.Any(l => l.Level == LogEventLevel.Error);
             _log.Information(
                 LogType.All, 
-                "Renewal for {friendlyName} succeeded",
+                "Renewal for {friendlyName} succeeded" + (withErrors ? " with errors" : ""),
                 renewal.LastFriendlyName);
-            if (_settings.Notification.EmailOnSuccess)
+
+            if (withErrors || _settings.Notification.EmailOnSuccess)
             {
                 await _email.Send(
-                    $"Certificate renewal {renewal.LastFriendlyName} completed",
-                    @$"<p>Certificate <b>{HttpUtility.HtmlEncode(renewal.LastFriendlyName)}</b> successfully renewed.</p> 
+                    $"Certificate renewal {renewal.LastFriendlyName} completed" + (withErrors ? " with errors" : ""),
+                    @$"<p>Certificate <b>{HttpUtility.HtmlEncode(renewal.LastFriendlyName)}</b> {(withErrors ? "renewed with errors" : "succesfully renewed")}.</p> 
                     {NotificationInformation(renewal)}
                     {RenderLog(log)}",
-                    MessagePriority.NonUrgent);
+                    withErrors ? MessagePriority.Urgent : MessagePriority.NonUrgent);
             }
         }
 
@@ -83,15 +87,20 @@ namespace PKISharp.WACS.Services
         internal async Task NotifyFailure(
             RunLevel runLevel, 
             Renewal renewal, 
-            List<string> errors,
+            RenewResult result,
             IEnumerable<MemoryEntry> log)
         {
-            // Do not send emails when running interactively       
+ 
             _log.Error("Renewal for {friendlyName} failed, will retry on next run", renewal.LastFriendlyName);
+            var errors = result.ErrorMessages?.ToList() ?? new List<string>();
+            errors.AddRange(result.OrderResults?.SelectMany(o => o.ErrorMessages ?? Enumerable.Empty<string>()) ?? Enumerable.Empty<string>());
             if (errors.Count == 0)
             {
                 errors.Add("No specific error reason provided.");
             }
+            errors.ForEach(e => _log.Error(e));
+            
+            // Do not send emails when running interactively      
             if (runLevel.HasFlag(RunLevel.Unattended))
             {
                 await _email.Send(
@@ -104,9 +113,9 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        private string RenderLog(IEnumerable<MemoryEntry> log) => @$"<p>Log output:<ul><li>{string.Join("</li><li>", log.Select(x => RenderLogEntry(x)))}</ul></p>";
+        private static string RenderLog(IEnumerable<MemoryEntry> log) => @$"<p>Log output:<ul><li>{string.Join("</li><li>", log.Select(x => RenderLogEntry(x)))}</ul></p>";
 
-        private string RenderLogEntry(MemoryEntry log)
+        private static string RenderLogEntry(MemoryEntry log)
         {
             var color = $"00000";
             switch (log.Level)
@@ -142,18 +151,18 @@ namespace PKISharp.WACS.Services
                         <tr><td colspan=""2"">{NotificationHosts(renewal)}</td></tr>
                         <tr><td colspan=""2"">&nbsp;</td></tr>
                         <tr><td><b>Plugins</b></td><td></td></tr>
-                        <tr><td>Target: </td><td> {renewal.TargetPluginOptions.Name}</td></tr>";
-                extraMessage += @$"<tr><td>Validation: </td><td> {renewal.ValidationPluginOptions.Name}</td></tr>";
+                        <tr><td>Target: </td><td> {_plugin.GetPlugin(renewal.TargetPluginOptions).Name}</td></tr>";
+                extraMessage += @$"<tr><td>Validation: </td><td> {_plugin.GetPlugin(renewal.ValidationPluginOptions).Name}</td></tr>";
                 if (renewal.OrderPluginOptions != null)
                 {
-                    extraMessage += @$"<tr><td>Order: </td><td> {renewal.OrderPluginOptions.Name}</td></tr>";
+                    extraMessage += @$"<tr><td>Order: </td><td> {_plugin.GetPlugin(renewal.OrderPluginOptions).Name}</td></tr>";
                 }
                 if (renewal.CsrPluginOptions != null)
                 {
-                    extraMessage += @$"<tr><td>Csr: </td><td> {renewal.CsrPluginOptions.Name}</td></tr>";
+                    extraMessage += @$"<tr><td>Csr: </td><td> {_plugin.GetPlugin(renewal.CsrPluginOptions).Name}</td></tr>";
                 }
-                extraMessage += @$"<tr><td>Store: </td><td> {string.Join(", ", renewal.StorePluginOptions.Select(x => x.Name))}</td></tr>";
-                extraMessage += $"<tr><td>Installation: </td><td> {string.Join(", ", renewal.InstallationPluginOptions.Select(x => x.Name))}</td></tr>";
+                extraMessage += @$"<tr><td>Store: </td><td> {string.Join(", ", renewal.StorePluginOptions.Select(x => _plugin.GetPlugin(x).Name))}</td></tr>";
+                extraMessage += $"<tr><td>Installation: </td><td> {string.Join(", ", renewal.InstallationPluginOptions.Select(x => _plugin.GetPlugin(x).Name))}</td></tr>";
                 extraMessage += "</table></p>";
                 return extraMessage;
             }
@@ -168,7 +177,7 @@ namespace PKISharp.WACS.Services
         {
             try
             {
-                var infos = _certificateService.CachedInfos(renewal);
+                var infos = _cacheService.CachedInfos(renewal);
                 if (infos == null || !infos.Any())
                 {
                     return "Unknown";

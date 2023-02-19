@@ -1,15 +1,18 @@
 ﻿using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services.Serialization;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    [Plugin("1a87d670-3fa3-4a2a-bb10-491d48feb5db")]
-    internal class DigitalOceanOptions : ValidationPluginOptions<DigitalOcean>
+    [JsonSerializable(typeof(DigitalOceanOptions))]
+    internal partial class DigitalOceanJson : JsonSerializerContext
     {
-        public override string Name => "DigitalOcean";
-        public override string Description => "Create verification records on DigitalOcean";
-        public override string ChallengeType => Constants.Dns01ChallengeType;
+        public DigitalOceanJson(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
+    }
+
+    internal class DigitalOceanOptions : ValidationPluginOptions
+    {
         public ProtectedString? ApiToken { get; set; }
     }
 }

@@ -1,10 +1,11 @@
 ﻿using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Reflection;
 
 namespace PKISharp.WACS.Configuration.Arguments
 {
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
     public abstract class BaseArguments : IArguments
     {
         public abstract string Name { get; }
@@ -13,7 +14,7 @@ namespace PKISharp.WACS.Configuration.Arguments
         public virtual bool Default => false;
         public virtual bool Active(string[] args) 
         {
-            foreach (var (meta, _) in GetType().CommandLineProperties())
+            foreach (var (meta, _, _) in GetType().CommandLineProperties())
             {
                 if (args.Select(x => x.ToLower()).Contains(meta.ArgumentName.ToLower()))
                 {

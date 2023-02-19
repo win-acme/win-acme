@@ -1,8 +1,10 @@
-﻿using Newtonsoft.Json;
-using PKISharp.WACS.Services;
+﻿using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Clients.Acme
@@ -38,7 +40,7 @@ namespace PKISharp.WACS.Clients.Acme
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
-                    var result = JsonConvert.DeserializeObject<ZeroSslEabCredential>(content);
+                    var result = JsonSerializer.Deserialize(content, WacsJson.Insensitive.ZeroSslEabCredential);
                     if (result == null)
                     {
                         _log.Error("Unexpected response while attemting to register at ZeroSsl");
@@ -81,7 +83,7 @@ namespace PKISharp.WACS.Clients.Acme
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
-                    var result = JsonConvert.DeserializeObject<ZeroSslEabCredential>(content);
+                    var result = JsonSerializer.Deserialize(content, WacsJson.Insensitive.ZeroSslEabCredential);
                     if (result == null)
                     {
                         _log.Error("Invalid response while attemting to obtain credential from ZeroSsl");
@@ -117,16 +119,16 @@ namespace PKISharp.WACS.Clients.Acme
         /// </summary>
         public class ZeroSslEabCredential
         {
-            [JsonProperty("success")]
+            [JsonPropertyName("success")]
             public bool? Success { get; set; }
 
-            [JsonProperty("error")]
+            [JsonPropertyName("error")]
             public ZeroSslApiError? Error { get; set; }
 
-            [JsonProperty("eab_kid")]
+            [JsonPropertyName("eab_kid")]
             public string? Kid { get; set; }
 
-            [JsonProperty("eab_hmac_key")]
+            [JsonPropertyName("eab_hmac_key")]
             public string? Hmac { get; set; }
         }
 
@@ -135,10 +137,10 @@ namespace PKISharp.WACS.Clients.Acme
         /// </summary>
         public class ZeroSslApiError
         {
-            [JsonProperty("code")]
+            [JsonPropertyName("code")]
             public int? Code { get; set; }
 
-            [JsonProperty("type")]
+            [JsonPropertyName("type")]
             public string? Type { get; set; }
         }
 

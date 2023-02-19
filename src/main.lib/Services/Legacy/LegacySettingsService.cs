@@ -30,7 +30,8 @@ namespace PKISharp.WACS.Host.Services.Legacy
         public InstallationSettings Installation { get; private set; } = new InstallationSettings();
         public SecretsSettings Secrets { get; private set; } = new SecretsSettings();
         public List<string> ClientNames { get; private set; }
-        public Uri BaseUri { get; private set; } 
+        public Uri BaseUri { get; private set; }
+        public bool Valid => true;
 
         public LegacySettingsService(ILogService log, MainArguments main, ISettingsService settings)
         {
@@ -141,6 +142,6 @@ namespace PKISharp.WACS.Host.Services.Legacy
             _log.Debug("Legacy config folder: {_configPath}", Client.ConfigurationPath);
         }
 
-        public string CleanFileName(string fileName) => Path.GetInvalidFileNameChars().Aggregate(fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
+        public static string CleanFileName(string fileName) => Path.GetInvalidFileNameChars().Aggregate(fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
     }
 }

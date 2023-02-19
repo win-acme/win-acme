@@ -1,21 +1,20 @@
-﻿using ACMESharp.Authorizations;
-using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
-using System.Linq;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     /// <summary>
-    /// Azure DNS validation
+    /// Godaddy DNS validation
     /// </summary>
-    internal class GodaddyOptionsFactory : ValidationPluginOptionsFactory<GodaddyDnsValidation, GodaddyOptions>
+    internal class GodaddyOptionsFactory : PluginOptionsFactory<GodaddyOptions>
     {
         private readonly ArgumentsInputService _arguments;
 
-        public GodaddyOptionsFactory(ArgumentsInputService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
+        public GodaddyOptionsFactory(ArgumentsInputService arguments) => _arguments = arguments;
 
         private ArgumentResult<ProtectedString?> ApiKey => _arguments.
             GetProtectedString<GodaddyArguments>(a => a.ApiKey).
@@ -24,7 +23,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         private ArgumentResult<ProtectedString?> ApiSecret => _arguments.
             GetProtectedString<GodaddyArguments>(a => a.ApiSecret);
 
-        public override async Task<GodaddyOptions?> Aquire(Target target, IInputService input, RunLevel runLevel)
+        public override async Task<GodaddyOptions?> Aquire(IInputService input, RunLevel runLevel)
         {
             return new GodaddyOptions()
             {
@@ -33,7 +32,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             };
         }
 
-        public override async Task<GodaddyOptions?> Default(Target target)
+        public override async Task<GodaddyOptions?> Default()
         {
             return new GodaddyOptions()
             {
@@ -42,6 +41,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             };
         }
 
-        public override bool CanValidate(Target target) => target.Parts.SelectMany(x => x.Identifiers).All(x => x.Type == IdentifierType.DnsName);
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(GodaddyOptions options)
+        {
+            yield return (ApiKey.Meta, options.ApiKey);
+            yield return (ApiSecret.Meta, options.ApiSecret);
+        }
     }
 }

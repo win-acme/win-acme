@@ -1,7 +1,9 @@
 ﻿using PKISharp.WACS.Clients.IIS;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -10,31 +12,33 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     /// <summary>
     /// Classic FileSystem validation
     /// </summary>
-    internal class FileSystemOptionsFactory : HttpValidationOptionsFactory<FileSystem, FileSystemOptions>
+    internal class FileSystemOptionsFactory : HttpValidationOptionsFactory<FileSystemOptions>
     {
         private readonly IIISClient _iisClient;
         private readonly ILogService _log;
 
         public FileSystemOptionsFactory(
-            IIISClient iisClient, ILogService log,
-            ArgumentsInputService arguments) : base(arguments)
+            Target target,
+            IIISClient iisClient, 
+            ILogService log,
+            ArgumentsInputService arguments) : base(arguments, target)
         {
             _log = log;
             _iisClient = iisClient;
         }
 
         public override bool PathIsValid(string path) => path.ValidPath(_log);
-        public override bool AllowEmtpy(Target target) => target.IIS;
-        private ArgumentResult<long?> ValidationSite() => _arguments.GetLong<FileSystemArguments>(x => x.ValidationSiteId);
+        public override bool AllowEmtpy() => _target.IIS;
+        private ArgumentResult<long?> ValidationSite => _arguments.GetLong<FileSystemArguments>(x => x.ValidationSiteId);
 
-        public override async Task<FileSystemOptions?> Default(Target target)
+        public override async Task<FileSystemOptions?> Default()
         {
-            var ret = new FileSystemOptions(await BaseDefault(target));
+            var ret = new FileSystemOptions(await BaseDefault());
             if (string.IsNullOrEmpty(ret.Path))
             {
-                if (target.IIS && _iisClient.HasWebSites)
+                if (_target.IIS && _iisClient.HasWebSites)
                 {
-                    ret.SiteId = await ValidationSite().
+                    ret.SiteId = await ValidationSite.
                         Validate(s => Task.FromResult(_iisClient.GetSite(s!.Value, IISSiteType.Web) != null), "site doesn't exist").
                         GetValue();
                 }
@@ -42,19 +46,19 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             return ret;
         }
 
-        public override async Task<FileSystemOptions?> Aquire(Target target, IInputService inputService, RunLevel runLevel)
+        public override async Task<FileSystemOptions?> Aquire(IInputService inputService, RunLevel runLevel)
         {
             // Choose alternative site for validation
-            var ret = new FileSystemOptions(await BaseAquire(target, inputService));
-            if (target.IIS && 
+            var ret = new FileSystemOptions(await BaseAquire(inputService));
+            if (_target.IIS && 
                 _iisClient.HasWebSites &&
                 string.IsNullOrEmpty(ret.Path) && 
                 runLevel.HasFlag(RunLevel.Advanced))
             {
-                var siteId = await ValidationSite().GetValue();
+                var siteId = await ValidationSite.GetValue();
                 if (siteId != null || await inputService.PromptYesNo("Use different site for validation?", false))
                 {
-                    var site = await inputService.ChooseOptional("Validation site, must receive requests for all hosts on port 80",
+                    var site = await inputService.ChooseOptional("Validation site, must receive requests for all identifiers on port 80",
                         _iisClient.Sites.Where(x => x.Type == IISSiteType.Web),
                         x => Choice.Create<IIISSite?>(x, x.Name, x.Id.ToString(), @default: x.Id == siteId),
                         "Automatic (target site)");
@@ -66,6 +70,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                 }
             }
             return ret;
+        }
+
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(FileSystemOptions options)
+        {
+            foreach (var x in base.Describe(options))
+            {
+                yield return x;
+            }
+            yield return (ValidationSite.Meta, options.SiteId);
         }
     }
 

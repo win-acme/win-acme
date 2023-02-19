@@ -1,6 +1,7 @@
 ﻿using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace PKISharp.WACS.Services
 {
@@ -12,7 +13,7 @@ namespace PKISharp.WACS.Services
         string Name { get; }
 
         /// <summary>
-        /// Group (e.g. Target, Validation, Store)
+        /// Group (e.g. MainTarget, Validation, Store)
         /// </summary>
         string Group { get; }
 
@@ -75,7 +76,7 @@ namespace PKISharp.WACS.Services
         bool Active(object current, string[] args);
     }
 
-    public interface IArgumentsProvider<T> : IArgumentsProvider where T : class, new()
+    public interface IArgumentsProvider<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T> : IArgumentsProvider where T : class, new()
     {
         /// <summary>
         /// Get the parsed result

@@ -12,6 +12,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         [CommandLine(Description = ".pem files are exported to this folder.")]
         public string? PemFilesPath { get; set; }
 
+        [CommandLine(Description = "Prefix to use for the .pem files, defaults to the common name.")]
+        public string? PemFilesName { get; set; }
+
         [CommandLine(Description = "Password to set for the private key .pem file.", Secret = true)]
         public string? PemPassword { get; set; }
     }

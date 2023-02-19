@@ -2,11 +2,9 @@
 using Microsoft.Web.Administration;
 using Microsoft.Win32;
 using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.ServiceProcess;
 
@@ -19,15 +17,15 @@ namespace PKISharp.WACS.Clients.IIS
         public const string DefaultBindingIp = "*";
 
         public Version Version { get; set; }
-        [SuppressMessage("Code Quality", "IDE0069:Disposable fields should be disposed", Justification = "Actually is disposed")]
+
         private readonly ILogService _log;
         private ServerManager? _serverManager;
         private List<IISSiteWrapper>? _sites = null;
 
-        public IISClient(ILogService log)
+        public IISClient(ILogService log, AdminService adminService)
         {
             _log = log;
-            Version = GetIISVersion();
+            Version = GetIISVersion(adminService);
         }
 
         /// <summary>
@@ -107,9 +105,7 @@ namespace PKISharp.WACS.Clients.IIS
                 {
                     return new List<IISSiteWrapper>();
                 }
-                if (_sites == null)
-                {
-                   _sites = ServerManager.Sites.AsEnumerable().
+                _sites ??= ServerManager.Sites.AsEnumerable().
                        Select(x => new IISSiteWrapper(x)).
                        Where(s =>
                        {
@@ -135,7 +131,6 @@ namespace PKISharp.WACS.Clients.IIS
                        }).
                        OrderBy(s => s.Name).
                        ToList();
-                }
                 return _sites;
             }
         }
@@ -178,7 +173,7 @@ namespace PKISharp.WACS.Clients.IIS
             var newBinding = site.Site.Bindings.CreateElement("binding");
             newBinding.BindingInformation = options.Binding;
             newBinding.CertificateStoreName = options.Store;
-            newBinding.CertificateHash = options.Thumbprint;
+            newBinding.CertificateHash = options.Thumbprint?.ToArray();
             newBinding.Protocol = "https";
             if (options.Flags > 0)
             {
@@ -201,7 +196,7 @@ namespace PKISharp.WACS.Clients.IIS
             var replacement = site.Site.Bindings.CreateElement("binding");
             replacement.BindingInformation = existingBinding.BindingInformation;
             replacement.CertificateStoreName = options.Store;
-            replacement.CertificateHash = options.Thumbprint;
+            replacement.CertificateHash = options.Thumbprint?.ToArray();
             replacement.Protocol = existingBinding.Protocol;
             foreach (var attr in existingBinding.Binding.Attributes)
             {
@@ -236,12 +231,11 @@ namespace PKISharp.WACS.Clients.IIS
         /// <param name="id"></param>
         /// <param name="newCertificate"></param>
         /// <param name="oldCertificate"></param>
-        public void UpdateFtpSite(long? id, CertificateInfo newCertificate, CertificateInfo? oldCertificate)
+        public void UpdateFtpSite(long? id, string? newStore, ICertificateInfo newCertificate, ICertificateInfo? oldCertificate)
         {
             var ftpSites = Sites.Where(x => x.Type == IISSiteType.Ftp).ToList();
             var oldThumbprint = oldCertificate?.Certificate?.Thumbprint;
             var newThumbprint = newCertificate?.Certificate?.Thumbprint;
-            var newStore = newCertificate?.StoreInfo[typeof(CertificateStore)].Path;
             var updated = 0;
 
             if (ServerManager == null)
@@ -301,7 +295,7 @@ namespace PKISharp.WACS.Clients.IIS
         /// <param name="newThumbprint"></param>
         /// <param name="newStore"></param>
         /// <returns></returns>
-        private bool RequireUpdate(ConfigurationElement element, 
+        private static bool RequireUpdate(ConfigurationElement element, 
             bool installSite, 
             string? oldThumbprint, string? newThumbprint,
             string? newStore)
@@ -315,12 +309,19 @@ namespace PKISharp.WACS.Clients.IIS
             bool update;
             if (installSite)
             {
+                // For the main installation target we want to replace
+                // any binding that doesn't match the exact thumbprint 
+                // and store of the new certificate
                 update =
                     !string.Equals(currentThumbprint, newThumbprint, StringComparison.CurrentCultureIgnoreCase) ||
                     !string.Equals(currentStore, newStore, StringComparison.CurrentCultureIgnoreCase);
             }
             else
             {
+                // For all other sites, we only want to update bindings
+                // that contain the old thumbprint, e.g. which were 
+                // at some point manually linked to the certificate by the 
+                // admin.
                 update = string.Equals(currentThumbprint, oldThumbprint, StringComparison.CurrentCultureIgnoreCase);
             }
             return update;
@@ -332,14 +333,14 @@ namespace PKISharp.WACS.Clients.IIS
         /// Determine IIS version based on registry
         /// </summary>
         /// <returns></returns>
-        private Version GetIISVersion()
+        private Version GetIISVersion(AdminService adminService)
         {
             // Get the W3SVC service
             try
             {
                 var anyService = false;
                 var allServices = ServiceController.GetServices();
-                var w3Service = allServices.FirstOrDefault(s => s.ServiceName == "W3SVC");
+                var w3Service = allServices.FirstOrDefault(s => string.Equals(s.ServiceName, "W3SVC", StringComparison.OrdinalIgnoreCase));
                 if (w3Service == null)
                 {
                     _log.Verbose("No W3SVC detected");
@@ -353,7 +354,7 @@ namespace PKISharp.WACS.Clients.IIS
                     _log.Verbose("W3SVC detected and running");
                     anyService = true;
                 }
-                var ftpService = allServices.FirstOrDefault(s => s.ServiceName == "FTPSVC");
+                var ftpService = allServices.FirstOrDefault(s => string.Equals(s.ServiceName, "FTPSVC", StringComparison.OrdinalIgnoreCase));
                 if (ftpService == null)
                 {
                     _log.Verbose("No FTPSVC detected");
@@ -379,8 +380,11 @@ namespace PKISharp.WACS.Clients.IIS
             try
             {
                 // Try to create a ServerManager object and read from it
-                using var x = new ServerManager();
-                _ = x.ApplicationDefaults;
+                if (adminService.IsAdmin)
+                {
+                    using var x = new ServerManager();
+                    _ = x.ApplicationDefaults;
+                }
             }
             catch (Exception ex)
             {
@@ -422,10 +426,7 @@ namespace PKISharp.WACS.Clients.IIS
             {
                 if (disposing)
                 {
-                    if (_serverManager != null)
-                    {
-                        _serverManager.Dispose();
-                    }
+                    _serverManager?.Dispose();
                 }
                 disposedValue = true;
             }

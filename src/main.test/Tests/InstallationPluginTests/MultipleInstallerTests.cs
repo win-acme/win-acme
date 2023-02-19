@@ -1,21 +1,21 @@
 ﻿using Autofac;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
-using PKISharp.WACS.Plugins.Base.Factories.Null;
+using PKISharp.WACS.Configuration.Arguments;
+using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins;
 using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
-using mock = PKISharp.WACS.UnitTests.Mock.Services;
+using PKISharp.WACS.UnitTests.Mock.Services;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
-using PKISharp.WACS.Clients.DNS;
-using PKISharp.WACS.UnitTests.Mock;
-using PKISharp.WACS.UnitTests.Mock.Services;
-using PKISharp.WACS.Configuration.Arguments;
 
 namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
 {
@@ -23,14 +23,14 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
     public class MultipleInstallerTests
     {
         private readonly ILogService log;
-        private readonly mock.MockPluginService plugins;
-        private readonly mock.MockSettingsService settings;
+        private readonly PluginService plugins;
+        private readonly MockSettingsService settings;
 
         public MultipleInstallerTests()
         {
-            log = new mock.LogService(false);
-            plugins = new mock.MockPluginService(log);
-            settings = new mock.MockSettingsService();
+            log = new Mock.Services.LogService(false);
+            plugins = new PluginService(log, new MockAssemblyService(log));
+            settings = new MockSettingsService();
         }
 
         /// <summary>
@@ -42,51 +42,55 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         {
             var commandLine = "--installation iis";
             var types = new List<Type>() { typeof(CertificateStore) };
-            var chosen = new List<IInstallationPluginOptionsFactory>();
+            var chosen = new List<Plugin>();
             
             
             var builder = new ContainerBuilder();
             _ = builder.RegisterType<LookupClientProvider>();
-            _ = builder.RegisterType<mock.ProxyService>().As<IProxyService>();
+            _ = builder.RegisterType<Mock.Services.ProxyService>().As<IProxyService>();
             _ = builder.RegisterType<DomainParseService>();
             _ = builder.RegisterType<ArgumentsInputService>();
             _ = builder.RegisterType<IISHelper>();
-            var input = new mock.InputService(new List<string>());
+            _ = builder.RegisterType<MockAssemblyService>().As<AssemblyService>();
+
+            var input = new Mock.Services.InputService(new List<string>());
             _ = builder.RegisterInstance(input).As<IInputService>();
             _ = builder.RegisterType<SecretService>().As<ISecretService>();
-            _ = builder.RegisterType<SecretServiceManager>();
+            _ = builder.RegisterType<SecretServiceManager>(); 
+            _ = builder.RegisterType<AutofacBuilder>().As<IAutofacBuilder>();
+            _ = builder.RegisterInstance(new Target(new DnsIdentifier("www.example.com")));
             _ = builder.RegisterInstance(plugins).
-              As<IPluginService>().
-              SingleInstance();
+                    As<IPluginService>().
+                    SingleInstance();
             _ = builder.RegisterInstance(settings).
-              As<ISettingsService>().
-              SingleInstance();
+                  As<ISettingsService>().
+                  SingleInstance();
             _ = builder.RegisterInstance(log).
-                As<ILogService>().
-                SingleInstance();
+                    As<ILogService>().
+                    SingleInstance();
             _ = builder.RegisterType<Mock.Clients.MockIISClient>().
-                As<IIISClient>().
-                SingleInstance();
+                    As<IIISClient>().
+                    SingleInstance();
             _ = builder.RegisterType<ArgumentsParser>().
-                SingleInstance().
-                WithParameter(new TypedParameter(typeof(string[]), commandLine.Split(' ')));
-            _ = builder.RegisterType<mock.UserRoleService>().As<IUserRoleService>().SingleInstance();
+                    SingleInstance().
+                    WithParameter(new TypedParameter(typeof(string[]), commandLine.Split(' ')));
+            _ = builder.RegisterType<Mock.Services.UserRoleService>().As<IUserRoleService>().SingleInstance();
             _ = builder.RegisterType<UnattendedResolver>().As<IResolver>();
             _ = builder.Register(c => c.Resolve<ArgumentsParser>().GetArguments<MainArguments>()!).SingleInstance();
-            plugins.Configure(builder);
 
             var scope = builder.Build();
-            var resolver = scope.Resolve<IResolver>();
-            var first = await resolver.GetInstallationPlugin(scope, types, chosen);
+            var resolver = scope.Resolve<IResolver>(new TypedParameter(typeof(ILifetimeScope), scope));
+            var first = await resolver.GetInstallationPlugin(
+                types.Select(t => plugins.GetPlugins().First(x => x.Backend == t)),
+                chosen);
             Assert.IsNotNull(first);
-            if (first != null)
-            {
-                Assert.IsInstanceOfType(first, typeof(IISOptionsFactory));
-                chosen.Add(first);
-                var second = await resolver.GetInstallationPlugin(scope, types, chosen);
-                Assert.IsNotNull(second);
-                Assert.IsInstanceOfType(second, typeof(NullInstallationOptionsFactory));
-            }
+            Assert.AreEqual(first.OptionsFactory.GetType(), typeof(IISOptionsFactory));
+            chosen.Add(first.Meta);
+            var second = await resolver.GetInstallationPlugin(
+                types.Select(t => plugins.GetPlugins().First(x => x.Backend == t)),
+                chosen);
+            Assert.IsNotNull(second);
+            Assert.AreEqual(second.OptionsFactory.GetType(), typeof(Plugins.InstallationPlugins.NullOptionsFactory));
         }
     }
 }

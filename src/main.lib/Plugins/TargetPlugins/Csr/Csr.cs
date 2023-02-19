@@ -3,8 +3,10 @@ using Org.BouncyCastle.Asn1.Pkcs;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Pkcs;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,6 +15,11 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
+    [IPlugin.Plugin<
+        CsrOptions, CsrOptionsFactory, 
+        DefaultCapability, WacsJsonPlugins>
+        ("5C3DB0FB-840B-469F-B5A7-0635D8E9A93D", 
+        CsrOptions.NameLabel, "CSR created by another program")]
     internal class Csr : ITargetPlugin
     {
         private readonly ILogService _log;
@@ -26,14 +33,14 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _options = options;
         }
 
-        public async Task<Target> Generate()
+        public Task<Target?> Generate()
         {
             // Read CSR
             string csrString;
             if (string.IsNullOrEmpty(_options.CsrFile))
             {
                 _log.Error("No CsrFile specified in options");
-                return new NullTarget();
+                return Task.FromResult<Target?>(null);
             }
             try
             {
@@ -42,7 +49,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             catch (Exception ex)
             {
                 _log.Error(ex, "Unable to read CSR from {CsrFile}", _options.CsrFile);
-                return new NullTarget();
+                return Task.FromResult<Target?>(null);
             }
 
             // Parse CSR
@@ -68,7 +75,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             catch (Exception ex)
             {
                 _log.Error(ex, "Unable to parse CSR");
-                return new NullTarget();
+                return Task.FromResult<Target?>(null);
             }
 
             AsymmetricKeyParameter? pkBytes = null;
@@ -83,7 +90,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 catch (Exception ex)
                 {
                     _log.Error(ex, "Unable to read private key from {PkFile}", _options.PkFile);
-                    return new NullTarget();
+                    return Task.FromResult<Target?>(null);
                 }
 
                 // Parse PK
@@ -103,7 +110,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 catch (Exception ex)
                 {
                     _log.Error(ex, "Unable to parse private key");
-                    return new NullTarget();
+                    return Task.FromResult<Target?>(null);
                 }
             }
 
@@ -116,7 +123,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 UserCsrBytes = csrBytes,
                 PrivateKey = pkBytes
             };
-            return ret;
+            return Task.FromResult<Target?>(ret);
         }
 
         /// <summary>
@@ -124,7 +131,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         /// </summary>
         /// <param name="info"></param>
         /// <returns></returns>
-        private Identifier ParseCn(CertificationRequestInfo info)
+        private static Identifier ParseCn(CertificationRequestInfo info)
         {
             var subject = info.Subject;
             var cnValue = subject.GetValueList(new DerObjectIdentifier("2.5.4.3"));
@@ -196,7 +203,5 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
             return default;
         }
-
-        (bool, string?) IPlugin.Disabled => (false, null);
     }
 }

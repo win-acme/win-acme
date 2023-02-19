@@ -1,119 +1,82 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using PKISharp.WACS.Extensions;
+﻿using Autofac;
+using Autofac.Core;
 using System;
-using System.Collections.Generic;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Services.Serialization
 {
     /// <summary>
-    /// Non-generic base class needed for serialization
-    /// </summary>
-    public abstract class PluginOptions
-    {
-        public PluginOptions() => Plugin = GetType().PluginId();
-
-        /// <summary>
-        /// Contains the unique GUID of the plugin
-        /// </summary>
-        public string? Plugin { get; set; }
-
-        /// <summary>
-        /// Describe the plugin to the user
-        /// </summary>
-        /// <param name="input"></param>
-        public virtual void Show(IInputService input) { }
-
-        [JsonIgnore]
-        public abstract Type Instance { get; }
-
-        /// <summary>
-        /// Short name for the plugin to be shown in the menu and e-mails
-        /// </summary>
-        [JsonIgnore]
-        public abstract string Name { get; }
-
-        /// <summary>
-        /// One-line description for the plugin to be shown in the menu
-        /// </summary>
-        [JsonIgnore]
-        public abstract string Description { get; }
-    }
-
-    /// <summary>
     /// Read flat PluginOptions objects from JSON and convert them into 
     /// the propery strongly typed object required by the plugin
     /// </summary>
-    /// <typeparam name="TOptions"></typeparam>
-    internal class PluginOptionsConverter<TOptions> : JsonConverter where TOptions : PluginOptions
+    internal class PluginOptionsConverter : JsonConverter<PluginOptionsBase>
     {
+        private readonly IPluginService _pluginService;
+        private readonly ILogService _log;
+        private readonly ISharingLifetimeScope _scope;
 
-        /// <summary>
-        /// Possible plugins to match with, indexed by GUID
-        /// </summary>
-        private readonly IDictionary<string, Type> _pluginsOptions;
-
-        public PluginOptionsConverter(IEnumerable<Type> plugins, ILogService _log)
+        public PluginOptionsConverter(ISharingLifetimeScope context) 
         {
-            // Index plugins by key
-            _pluginsOptions = new Dictionary<string, Type>();
-            foreach (var p in plugins)
-            {
-                var key = p.PluginId();
-                if (key == null)
-                {
-                    _log.Warning("No PluginId found on plugin {p}", p.FullName);
-                }
-                else if (!_pluginsOptions.ContainsKey(key))
-                {
-                    _pluginsOptions.Add(key, p);
-                }
-                else
-                {
-                    var existing = _pluginsOptions[key];
-                    _log.Warning(
-                        "Duplicate plugin with key {key}. " +
-                        "{Name1} from {Location1} and " +
-                        "{Name2} from {Location2}",
-                        key,
-                        p.FullName, p.Assembly.Location,
-                        existing.FullName, existing.Assembly.Location);
-                }
-            }
+            _pluginService = context.Resolve<IPluginService>();
+            _log = context.Resolve<ILogService>();
+            _scope = context;
         }
 
-        public override bool CanConvert(Type objectType) => typeof(TOptions) == objectType;
+        public override bool CanConvert(Type typeToConvert) => typeof(PluginOptionsBase).IsAssignableFrom(typeToConvert);
 
         /// <summary>
-        /// Override reading to allow strongly typed object return, based on Plugin
+        /// Override reading to allow strongly typed object return, based on PluginBackend
         /// </summary>
         /// <param name="reader"></param>
-        /// <param name="objectType"></param>
-        /// <param name="existingValue"></param>
-        /// <param name="serializer"></param>
+        /// <param name="typeToConvert"></param>
+        /// <param name="options"></param>
         /// <returns></returns>
-        public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
+        public override PluginOptionsBase? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            var data = JObject.Load(reader);
-            var key = data.Property("Plugin")?.Value.Value<string>();
-            if (key == null)
+            var readerClone = reader;
+            var neutral = JsonSerializer.Deserialize(ref readerClone, WacsJson.Insensitive.PluginOptionsBase);
+            if (!_pluginService.TryGetPlugin(neutral, out var plugin))
             {
+                _log.Error("Unable to find {typeToConvert} plugin {id}", 
+                    typeToConvert.Name.Replace("PluginOptions", "").Replace("Target", "Source").ToLower(), 
+                    neutral?.Plugin);
+                reader.Skip();
                 return null;
             }
-            var plugin = _pluginsOptions.ContainsKey(key) ? _pluginsOptions[key] : null;
-            if (plugin != null)
+            if (_scope.Resolve(plugin.OptionsJson) is not JsonSerializerContext context)
             {
-                return data.ToObject(plugin, serializer);
+                throw new Exception("Unable to create JsonSerializerContext");
             }
-            return null;
+            return JsonSerializer.Deserialize(ref reader, plugin.Options, context) as PluginOptionsBase;
         }
 
         /// <summary>
-        /// Standard write
+        /// Write plugin to string
         /// </summary>
         /// <param name="writer"></param>
         /// <param name="value"></param>
-        /// <param name="serializer"></param>
-        public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer) => serializer.Serialize(writer, value);
+        /// <param name="options"></param>
+        public override void Write(Utf8JsonWriter writer, PluginOptionsBase value, JsonSerializerOptions options)
+        {
+            if (!_pluginService.TryGetPlugin(value, out var plugin))
+            {
+                throw new Exception("Can't figure out for which plugin these options are");
+            }
+            if (string.IsNullOrWhiteSpace(value.Plugin))
+            {
+                // Add plugin identifier for future reference
+                value.Plugin = plugin.Id.ToString();
+            }
+            else if (!string.Equals(value.Plugin, plugin.Id.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                throw new Exception("Mismatch between detected plugin and pre-existing identifier");
+            }
+            if (_scope.Resolve(plugin.OptionsJson) is not JsonSerializerContext context)
+            {
+                throw new Exception("Unable to create JsonSerializerContext");
+            }
+            JsonSerializer.Serialize(writer, value, plugin.Options, context);
+        }
     }
 }

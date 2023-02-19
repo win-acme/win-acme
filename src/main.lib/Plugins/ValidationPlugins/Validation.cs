@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     /// <summary>
     /// Base implementation for all validation plugins
     /// </summary>
-    public abstract class Validation<TChallenge> : IValidationPlugin where TChallenge : class, IChallengeValidationDetails
+    public abstract class Validation<TChallenge> : IValidationPlugin where TChallenge : IChallengeValidationDetails
     {
         /// <summary>
         /// Handle the challenge
@@ -40,11 +40,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public abstract Task Commit();
 
         public abstract Task CleanUp();
-
-        /// <summary>
-        /// Is the plugin currently disabled
-        /// </summary>
-        public virtual (bool, string?) Disabled => (false, null);
 
         /// <summary>
         /// No parallelism by default

@@ -1,4 +1,6 @@
 ﻿using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Plugins.Base.Capabilities;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
@@ -15,6 +17,12 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
+    [IPlugin.Plugin<
+        LuaDnsOptions, LuaDnsOptionsFactory, 
+        DnsValidationCapability, LuaDnsJson>
+        ("3b0c3cca-db98-40b7-b678-b34791070d42", 
+        "LuaDns", 
+        "Create verification records in LuaDns")]
     internal sealed class LuaDns : DnsValidation<LuaDns>
     {
         private class ZoneData
@@ -47,8 +55,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             public int TTL { get; set; }
         }
 
-        private static readonly Uri _LuaDnsApiEndpoint = new Uri("https://api.luadns.com/v1/", UriKind.Absolute);
-        private static readonly Dictionary<string, RecordData> _recordsMap = new Dictionary<string, RecordData>();
+        private static readonly Uri _LuaDnsApiEndpoint = new("https://api.luadns.com/v1/", UriKind.Absolute);
+        private static readonly Dictionary<string, RecordData> _recordsMap = new();
 
         private readonly IProxyService _proxyService;
 

@@ -1,4 +1,5 @@
-﻿using MimeKit;
+﻿using ACMESharp.Protocol.Resources;
+using MimeKit;
 using PKISharp.WACS.Extensions;
 using System;
 using System.Diagnostics;
@@ -25,7 +26,7 @@ namespace PKISharp.WACS.DomainObjects
             Value = value;
             Type = identifierType;
         }
-        public static Identifier Parse(ACMESharp.Protocol.Resources.Identifier identifier, bool? wildcard = null)
+        public static Identifier Parse(AcmeIdentifier identifier, bool? wildcard = null)
         {
             return identifier.Type switch
             {
@@ -34,8 +35,15 @@ namespace PKISharp.WACS.DomainObjects
                 _ => new UnknownIdentifier(identifier.Value)
             };
         }
-        public static Identifier Parse(ACMESharp.Protocol.Resources.Authorization authorization) =>
-            Parse(authorization.Identifier, authorization.Wildcard);
+        public static Identifier Parse(AcmeAuthorization authorization)
+        {
+            if (authorization.Identifier == null)
+            {
+                throw new NotSupportedException("Missing identifier");
+            }
+            return Parse(authorization.Identifier, authorization.Wildcard);
+        }
+           
 
         public virtual Identifier Unicode(bool unicode) => this;
 

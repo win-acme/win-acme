@@ -1,6 +1,8 @@
-﻿using PKISharp.WACS.Plugins.Azure.Common;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Plugins.Azure.Common;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
@@ -8,7 +10,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     /// <summary>
     /// Azure Key Vault
     /// </summary>
-    internal class KeyVaultOptionsFactory : StorePluginOptionsFactory<KeyVault, KeyVaultOptions>
+    internal class KeyVaultOptionsFactory : PluginOptionsFactory<KeyVaultOptions>
     {
         private readonly ArgumentsInputService _arguments;
 
@@ -40,6 +42,17 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             options.VaultName = await VaultName.GetValue();
             options.CertificateName = await CertificateName.GetValue();
             return options;
+        }
+
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(KeyVaultOptions options)
+        {
+            var common = new AzureOptionsFactoryCommon<KeyVaultArguments>(_arguments);
+            foreach (var x in common.Describe(options))
+            {
+                yield return x;
+            }
+            yield return (CertificateName.Meta, options.CertificateName);
+            yield return (VaultName.Meta, options.VaultName);
         }
     }
 }

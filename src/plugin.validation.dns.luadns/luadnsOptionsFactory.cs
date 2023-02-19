@@ -1,17 +1,16 @@
-﻿using ACMESharp.Authorizations;
-using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
-using System.Linq;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    internal sealed class LuaDnsOptionsFactory : ValidationPluginOptionsFactory<LuaDns, LuaDnsOptions>
+    internal sealed class LuaDnsOptionsFactory : PluginOptionsFactory<LuaDnsOptions>
     {
         private readonly ArgumentsInputService _arguments;
-        public LuaDnsOptionsFactory(ArgumentsInputService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
+        public LuaDnsOptionsFactory(ArgumentsInputService arguments) => _arguments = arguments;
 
         private ArgumentResult<ProtectedString?> ApiKey => _arguments.
             GetProtectedString<LuaDnsArguments>(a => a.LuaDnsAPIKey).
@@ -21,7 +20,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             GetString<LuaDnsArguments>(a => a.LuaDnsUsername).
             Required();
 
-        public override async Task<LuaDnsOptions?> Aquire(Target target, IInputService input, RunLevel runLevel)
+        public override async Task<LuaDnsOptions?> Aquire(IInputService input, RunLevel runLevel)
         {
             return new LuaDnsOptions
             {
@@ -30,7 +29,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             };
         }
 
-        public override async Task<LuaDnsOptions?> Default(Target target)
+        public override async Task<LuaDnsOptions?> Default()
         {
             return new LuaDnsOptions
             {
@@ -39,6 +38,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             };
         }
 
-        public override bool CanValidate(Target target) => target.Parts.SelectMany(x => x.Identifiers).All(x => x.Type == IdentifierType.DnsName);
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(LuaDnsOptions options)
+        {
+            yield return (Username.Meta, options.Username);
+            yield return (ApiKey.Meta, options.APIKey);
+        }
     }
 }

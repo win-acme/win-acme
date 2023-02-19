@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -167,7 +166,7 @@ namespace PKISharp.WACS.Services.Serialization
         /// </summary>
         /// <param name="clearText"></param>
         /// <returns></returns>
-        private string Encode(string clearText)
+        private static string Encode(string clearText)
         {
             var clearBytes = Encoding.UTF8.GetBytes(clearText);
             return Convert.ToBase64String(clearBytes);
@@ -217,7 +216,7 @@ namespace PKISharp.WACS.Services.Serialization
         public bool Equals(ProtectedString? other) => other?.Value == Value;
         public int CompareTo(object? obj) => (obj as ProtectedString)?.Value?.CompareTo(Value) ?? -1;
         public int CompareTo(ProtectedString? other) => other?.Value?.CompareTo(Value) ?? -1;
-        public static bool operator ==(ProtectedString a, ProtectedString b) => a.Value == b.Value;
-        public static bool operator !=(ProtectedString a, ProtectedString b) => a.Value != b.Value;
+        public static bool operator ==(ProtectedString? a, ProtectedString? b) => a?.Value == b?.Value;
+        public static bool operator !=(ProtectedString? a, ProtectedString? b) => a?.Value != b?.Value;
     }
 }

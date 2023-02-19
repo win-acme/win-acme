@@ -155,6 +155,20 @@ namespace PKISharp.WACS.Services
             }
         }
 
+        public async Task<int?> RequestInt(string what)
+        {
+            var str = await RequestString(what);
+            if (int.TryParse(str, out var ret))
+            {
+                return ret;
+            }
+            else
+            {
+                _log.Warning("Invalid number: {ret}", str);
+                return null;
+            }
+        }
+
         public Task<string> RequestString(string what, bool multiline = false)
         {
             Validate(what);
@@ -329,7 +343,7 @@ namespace PKISharp.WACS.Services
             }
             var defaults = baseChoices.Where(x => x.Default);
             var cancel = Choice.Create(default(TResult), nullLabel, _cancelCommand);
-            if (defaults.Count() == 0)
+            if (!defaults.Any())
             {
                 cancel.Command = "<Enter>";
                 cancel.Default = true;
@@ -393,12 +407,9 @@ namespace PKISharp.WACS.Services
                         Where(t => string.Equals(t.Command, choice, StringComparison.InvariantCultureIgnoreCase)).
                         FirstOrDefault();
 
-                    if (selected == null)
-                    {
-                        selected = choices.
+                    selected ??= choices.
                             Where(t => string.Equals(t.Description, choice, StringComparison.InvariantCultureIgnoreCase)).
                             FirstOrDefault();
-                    }
 
                     if (selected != null && selected.Disabled)
                     {
@@ -451,10 +462,7 @@ namespace PKISharp.WACS.Services
                     Take(_settings.UI.PageSize);
                 foreach (var target in page)
                 {
-                    if (target.Command == null)
-                    {
-                        target.Command = (currentIndex + 1).ToString();
-                    }
+                    target.Command ??= (currentIndex + 1).ToString();
 
                     if (!string.IsNullOrEmpty(target.Command))
                     {

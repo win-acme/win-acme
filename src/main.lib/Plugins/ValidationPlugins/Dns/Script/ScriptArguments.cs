@@ -26,8 +26,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         [CommandLine(Description = "Configure parallelism mode. " +
             "0 is fully serial (default), " +
-            "1 allows multiple records to be created simulatenously, " +
-            "2 allows multiple records to be validated simulateously and " +
+            "1 allows multiple records to be created simultaneously, " +
+            "2 allows multiple records to be validated simultaneously and " +
             "3 is a combination of both forms of parallelism.")]
         public int? DnsScriptParallelism { get; set; }
     }

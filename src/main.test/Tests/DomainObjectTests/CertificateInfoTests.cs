@@ -2,6 +2,7 @@
 using PKISharp.WACS.DomainObjects;
 using System;
 using System.Linq;
+using System.Runtime.ConstrainedExecution;
 using System.Security.Cryptography.X509Certificates;
 
 namespace PKISharp.WACS.UnitTests.Tests.CertificateInfoTests

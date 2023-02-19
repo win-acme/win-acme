@@ -1,33 +1,25 @@
-﻿using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    internal class ScriptOptionsFactory : ValidationPluginOptionsFactory<Script, ScriptOptions>
+    internal class ScriptOptionsFactory : PluginOptionsFactory<ScriptOptions>
     {
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
         private readonly ArgumentsInputService _arguments;
 
-        public override bool Match(string name)
-        {
-            return name.ToLowerInvariant() switch
-            {
-                "dnsscript" => true,
-                _ => base.Match(name),
-            };
-        }
-
         public ScriptOptionsFactory(
             ILogService log, 
             ISettingsService settings,
-            ArgumentsInputService arguments) : base(Constants.Dns01ChallengeType)
+            ArgumentsInputService arguments)
         {
             _log = log;
             _settings = settings;   
@@ -61,7 +53,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             Validate(x => Task.FromResult(x!.Value is >= 0 and <= 3), "invalid value").
             DefaultAsNull();
 
-        public override async Task<ScriptOptions?> Aquire(Target target, IInputService input, RunLevel runLevel)
+        public override async Task<ScriptOptions?> Aquire(IInputService input, RunLevel runLevel)
         {
             var ret = new ScriptOptions();
             var createScript = await CreateScript.Interactive(input).GetValue();
@@ -84,9 +76,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             ProcessScripts(ret, null, createScript, deleteScript);
 
             input.CreateSpace();
-            input.Show("{Identifier}", "Domain that's being validated");
-            input.Show("{RecordName}", "Full TXT record name");
-            input.Show("{Token}", "Expected value in the TXT record");
+            input.Show("{Identifier}", "Domain that's being validated, e.g. sub.example.com");
+            input.Show("{RecordName}", "Full name of the TXT record that is required, e.g. _acme-challenge.sub.example.com");
+            input.Show("{ZoneName}", "Registerable domain, e.g. example.com");
+            input.Show("{NodeName}", "Full subdomain, e.g. _acme-challenge.sub");
+            input.Show("{Token}", "Token that should be the content of the TXT record");
+            input.Show("{vault://json/mysecret}", "Secret from the vault");
             input.CreateSpace();
             ret.CreateScriptArguments = await CreateScriptArguments.Interactive(input).GetValue();
             if (!string.IsNullOrWhiteSpace(ret.DeleteScript) || !string.IsNullOrWhiteSpace(ret.Script))
@@ -100,7 +95,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                     "Enable parallel execution?",
                     new List<Choice<int?>>()
                     {
-                        Choice.Create<int?>(null, "Run everything one by one (default)"),
+                        Choice.Create<int?>(null, "Run everything one by one", @default: true),
                         Choice.Create<int?>(1, "Allow multiple instances of the script to run at the same time"),
                         Choice.Create<int?>(2, "Allow multiple records to be validated at the same time"),
                         Choice.Create<int?>(3, "Allow both modes of parallelism")
@@ -110,13 +105,16 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return ret;
         }
 
-        public override async Task<ScriptOptions?> Default(Target target)
+        public override async Task<ScriptOptions?> Default()
         {
             var ret = new ScriptOptions();
             var commonScript = await CommonScript.GetValue();
             var createScript = await CreateScript.GetValue();
             var deleteScript = await DeleteScript.GetValue();
-            ProcessScripts(ret, commonScript, createScript, deleteScript);
+            if (!ProcessScripts(ret, commonScript, createScript, deleteScript))
+            {
+                return null;
+            }
             ret.DeleteScriptArguments = await DeleteScriptArguments.GetValue();
             ret.CreateScriptArguments = await CreateScriptArguments.GetValue();
             ret.Parallelism = await Parallelism.GetValue();
@@ -130,7 +128,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         /// <param name="commonInput"></param>
         /// <param name="createInput"></param>
         /// <param name="deleteInput"></param>
-        private void ProcessScripts(ScriptOptions options, string? commonInput, string? createInput, string? deleteInput)
+        private bool ProcessScripts(ScriptOptions options, string? commonInput, string? createInput, string? deleteInput)
         {
             if (!string.IsNullOrWhiteSpace(commonInput))
             {
@@ -157,9 +155,21 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 options.CreateScript = string.IsNullOrWhiteSpace(createInput) ? null : createInput;
                 options.DeleteScript = string.IsNullOrWhiteSpace(deleteInput) ? null : deleteInput;
             }
+            if (options.CreateScript == null && options.Script == null)
+            {
+                _log.Error("Missing --dnsscript or --dnscreatescript");
+                return false;
+            }
+            return true;
         }
 
-        public override bool CanValidate(Target target) => target.Parts.SelectMany(x => x.Identifiers).All(x => x.Type == IdentifierType.DnsName);
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(ScriptOptions options)
+        {
+            yield return (CreateScript.Meta, options.CreateScript);
+            yield return (CreateScriptArguments.Meta, options.CreateScriptArguments);
+            yield return (DeleteScript.Meta, options.DeleteScript);
+            yield return (DeleteScriptArguments.Meta, options.DeleteScriptArguments);
+            yield return (Parallelism.Meta, options.Parallelism);
+        }
     }
-
 }

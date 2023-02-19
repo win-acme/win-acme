@@ -11,31 +11,28 @@ namespace PKISharp.WACS.Services
     /// Manage the collection of renewals. The actual 
     /// implementations handle persistance of the objects
     /// </summary>
-    internal abstract class RenewalStore : IRenewalStore
+    internal class RenewalStore : IRenewalStore
     {
         internal ISettingsService _settings;
         internal ILogService _log;
-        internal IPluginService _plugin;
-        internal ICertificateService _certificateService;
         internal IInputService _inputService;
         internal IDueDateService _dueDateService;
+        internal IRenewalStoreBackend _backend;
         internal PasswordGenerator _passwordGenerator;
 
         public RenewalStore(
+            IRenewalStoreBackend backend,
             ISettingsService settings,
             ILogService log,
             IInputService input,
             PasswordGenerator password,
-            IPluginService plugin,
-            IDueDateService dueDateService,
-            ICertificateService certificateService)
+            IDueDateService dueDateService)
         {
+            _backend = backend;
             _log = log;
-            _plugin = plugin;
             _inputService = input;
             _passwordGenerator = password;
             _settings = settings;
-            _certificateService = certificateService;
             _dueDateService = dueDateService;
             _log.Debug("Renewal period: {RenewalDays} days", _settings.ScheduledTask.RenewalDays);
         }
@@ -97,13 +94,13 @@ namespace PKISharp.WACS.Services
                 r.Updated = true;
                 _log.Information("Re-writing password information for {friendlyName}", r.LastFriendlyName);
             }
-            WriteRenewals(renewals);
+            _backend.Write(renewals);
         }
 
         public IEnumerable<Renewal> Renewals
         {
-            get => ReadRenewals();
-            private set => WriteRenewals(value);
+            get => _backend.Read();
+            private set => _backend.Write(value);
         }
 
         /// <summary>
@@ -113,9 +110,9 @@ namespace PKISharp.WACS.Services
         public void Cancel(Renewal renewal)
         {
             renewal.Deleted = true;
-            Renewals = Renewals;
+            var renewals = Renewals;
+            Renewals = renewals;
             _log.Warning("Renewal {target} cancelled", renewal);
-            _certificateService.Delete(renewal);
         }
 
         /// <summary>
@@ -124,22 +121,10 @@ namespace PKISharp.WACS.Services
         public void Clear()
         {
             var renewals = Renewals;
-            renewals.All(x => x.Deleted = true);
+            _ = renewals.All(x => x.Deleted = true);
             Renewals = renewals;
             _log.Warning("All renewals cancelled");
         }
-
-        /// <summary>
-        /// Parse renewals from store
-        /// </summary>
-        protected abstract IEnumerable<Renewal> ReadRenewals();
-
-        /// <summary>
-        /// Serialize renewal information to store
-        /// </summary>
-        /// <param name="BaseUri"></param>
-        /// <param name="Renewals"></param>
-        protected abstract void WriteRenewals(IEnumerable<Renewal> Renewals);
     }
 
 }

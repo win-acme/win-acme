@@ -1,8 +1,10 @@
 ﻿using ACMESharp.Authorizations;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -11,11 +13,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     /// <summary>
     /// Simply DNS validation
     /// </summary>
-    internal class SimplyOptionsFactory : ValidationPluginOptionsFactory<SimplyDnsValidation, SimplyOptions>
+    internal class SimplyOptionsFactory : PluginOptionsFactory<SimplyOptions>
     {
         private readonly ArgumentsInputService _arguments;
 
-        public SimplyOptionsFactory(ArgumentsInputService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
+        public SimplyOptionsFactory(ArgumentsInputService arguments) => _arguments = arguments;
 
         private ArgumentResult<string?> Account => _arguments.
             GetString<SimplyArguments>(a => a.Account).
@@ -25,7 +27,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             GetProtectedString<SimplyArguments>(a => a.ApiKey).
             Required();
 
-        public override async Task<SimplyOptions?> Aquire(Target target, IInputService input, RunLevel runLevel)
+        public override async Task<SimplyOptions?> Aquire(IInputService input, RunLevel runLevel)
         {
             return new SimplyOptions()
             {
@@ -34,7 +36,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             };
         }
 
-        public override async Task<SimplyOptions?> Default(Target target)
+        public override async Task<SimplyOptions?> Default()
         {
             return new SimplyOptions()
             {
@@ -43,6 +45,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             };
         }
 
-        public override bool CanValidate(Target target) => target.Parts.SelectMany(x => x.Identifiers).All(x => x.Type == IdentifierType.DnsName);
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(SimplyOptions options)
+        {
+            yield return (Account.Meta, options.Account);
+            yield return (ApiKey.Meta, options.ApiKey);
+        }
     }
 }

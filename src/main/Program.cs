@@ -1,11 +1,4 @@
 ﻿using Autofac;
-using PKISharp.WACS.Clients;
-using PKISharp.WACS.Clients.Acme;
-using PKISharp.WACS.Clients.DNS;
-using PKISharp.WACS.Clients.IIS;
-using PKISharp.WACS.Configuration;
-using PKISharp.WACS.Configuration.Arguments;
-using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Services;
 using System;
 using System.Linq;
@@ -24,8 +17,6 @@ namespace PKISharp.WACS.Host
         /// </summary>
         private static Mutex? _globalMutex;
 
-        private static bool Verbose { get; set; }
-
         private async static Task Main(string[] args)
         {
             // Error handling
@@ -33,16 +24,7 @@ namespace PKISharp.WACS.Host
                 new UnhandledExceptionEventHandler(OnUnhandledException);
 
             // Are we running in verbose mode?
-            Verbose = args.Contains("--verbose");
-
-            // Setup IOC container
-            var container = GlobalScope(args);
-            if (container == null)
-            {
-                FriendlyClose();
-                return;
-            }
-
+            var verbose = args.Contains("--verbose");
 
             // The main class might change the character encoding
             // save the original setting so that it can be restored
@@ -50,17 +32,23 @@ namespace PKISharp.WACS.Host
             var original = Console.OutputEncoding;
             try
             {
-                // Load instance of the main class and start the program
+                // Setup IOC container
+                var container = Autofac.Container(args, verbose);
                 AllowInstanceToRun(container);
-                var wacs = container.Resolve<Wacs>(new TypedParameter(typeof(IContainer), container));
+                var wacs = container.Resolve<Wacs>();
                 Environment.ExitCode = await wacs.Start().ConfigureAwait(false);
             } 
             catch (Exception ex)
             {
                 Console.WriteLine(" Error in main function: " + ex.Message);
-                if (Verbose)
+                if (verbose)
                 {
                     Console.WriteLine(ex.StackTrace);
+                    while (ex.InnerException != null) {
+                        ex = ex.InnerException;
+                        Console.WriteLine(ex.Message);
+                        Console.WriteLine(ex.StackTrace);
+                    }
                 }
                 FriendlyClose();
             } 
@@ -68,10 +56,7 @@ namespace PKISharp.WACS.Host
             {
                 // Restore original code page
                 Console.OutputEncoding = original;
-                if (_globalMutex != null)
-                {
-                    _globalMutex.Dispose();
-                }
+                _globalMutex?.Dispose();
             }
         }
 
@@ -81,7 +66,7 @@ namespace PKISharp.WACS.Host
         /// overwrite eachothers stuff
         /// </summary>
         /// <returns></returns>
-        static void AllowInstanceToRun(IContainer container)
+        static void AllowInstanceToRun(ILifetimeScope container)
         {
             var logger = container.Resolve<ILogService>();
             _globalMutex = new Mutex(true, "wacs.exe", out var created);
@@ -104,10 +89,7 @@ namespace PKISharp.WACS.Host
         /// </summary>
         static void FriendlyClose()
         {
-            if (_globalMutex != null)
-            {
-                _globalMutex.ReleaseMutex();
-            }
+            _globalMutex?.ReleaseMutex();
             Environment.ExitCode = -1;
             if (Environment.UserInteractive)
             {
@@ -126,89 +108,6 @@ namespace PKISharp.WACS.Host
         {
             var ex = (Exception)args.ExceptionObject;
             Console.WriteLine(" Unhandled exception caught: " + ex.Message);
-        }
-
-        /// <summary>
-        /// Configure dependency injection 
-        /// </summary>
-        /// <param name="args"></param>
-        /// <returns></returns>
-        internal static IContainer? GlobalScope(string[] args)
-        {
-            var builder = new ContainerBuilder();
-            var logger = new LogService();
-            if (Verbose)
-            {
-                logger.SetVerbose();
-            }
-            // Not used but should be called anyway because it 
-            // checks if we're not running as dotnet.exe and also
-            // prints some verbose messages that are interesting
-            // to know very early in the start up process
-            _ = new VersionService(logger);
-            var pluginService = new PluginService(logger);
-            var argumentsParser = new ArgumentsParser(logger, pluginService, args);
-            if (!argumentsParser.Validate())
-            {
-                return null;
-            }
-            var mainArguments = argumentsParser.GetArguments<MainArguments>();
-            if (mainArguments == null)
-            {
-                return null;
-            }
-            var settingsService = new SettingsService(logger, mainArguments);
-            if (!settingsService.Valid)
-            {
-                return null;
-            }
-            logger.SetDiskLoggingPath(settingsService.Client.LogPath!);
-
-            _ = builder.RegisterInstance(argumentsParser);
-            _ = builder.RegisterInstance(mainArguments);
-            _ = builder.RegisterInstance(logger).As<ILogService>();
-            _ = builder.RegisterInstance(settingsService).As<ISettingsService>();
-            _ = builder.RegisterInstance(pluginService).As<IPluginService>();
-            _ = builder.RegisterType<UserRoleService>().As<IUserRoleService>().SingleInstance();
-            _ = builder.RegisterType<ValidationOptionsService>().As<IValidationOptionsService>().SingleInstance();
-            _ = builder.RegisterType<InputService>().As<IInputService>().SingleInstance();
-            _ = builder.RegisterType<ProxyService>().As<IProxyService>().SingleInstance();
-            _ = builder.RegisterType<UpdateClient>().SingleInstance();
-            _ = builder.RegisterType<PasswordGenerator>().SingleInstance();
-            _ = builder.RegisterType<RenewalStoreDisk>().As<IRenewalStore>().SingleInstance();
-
-            pluginService.Configure(builder);
-
-            _ = builder.RegisterType<DomainParseService>().SingleInstance();
-            _ = builder.RegisterType<IISClient>().As<IIISClient>().InstancePerLifetimeScope();
-            _ = builder.RegisterType<IISHelper>().SingleInstance();
-            _ = builder.RegisterType<ExceptionHandler>().SingleInstance();
-            _ = builder.RegisterType<UnattendedResolver>();
-            _ = builder.RegisterType<InteractiveResolver>();
-            _ = builder.RegisterType<AutofacBuilder>().As<IAutofacBuilder>().SingleInstance();
-            _ = builder.RegisterType<AccountManager>().SingleInstance();
-            _ = builder.RegisterType<AcmeClient>().SingleInstance();
-            _ = builder.RegisterType<ZeroSsl>().SingleInstance();
-            _ = builder.RegisterType<OrderManager>().SingleInstance();
-            _ = builder.RegisterType<PemService>().SingleInstance();
-            _ = builder.RegisterType<EmailClient>().SingleInstance();
-            _ = builder.RegisterType<ScriptClient>().SingleInstance();
-            _ = builder.RegisterType<LookupClientProvider>().SingleInstance();
-            _ = builder.RegisterType<CertificateService>().As<ICertificateService>().SingleInstance();
-            _ = builder.RegisterType<DueDateRandomService>().As<IDueDateService>().SingleInstance();
-            _ = builder.RegisterType<SecretServiceManager>().SingleInstance();
-            _ = builder.RegisterType<JsonSecretService>().As<ISecretService>().SingleInstance();
-            _ = builder.RegisterType<TaskSchedulerService>().SingleInstance();
-            _ = builder.RegisterType<NotificationService>().SingleInstance();
-            _ = builder.RegisterType<RenewalExecutor>().SingleInstance();
-            _ = builder.RegisterType<RenewalValidator>().SingleInstance();
-            _ = builder.RegisterType<RenewalManager>().SingleInstance();
-            _ = builder.RegisterType<RenewalCreator>().SingleInstance();
-            _ = builder.RegisterType<ArgumentsInputService>().SingleInstance();
-
-            _ = builder.RegisterType<Wacs>();
-
-            return builder.Build();
         }
     }
 }

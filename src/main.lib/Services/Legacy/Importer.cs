@@ -2,18 +2,17 @@
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Plugins.Base.Factories.Null;
 using PKISharp.WACS.Plugins.CsrPlugins;
 using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using dns = PKISharp.WACS.Plugins.ValidationPlugins.Dns;
-using http = PKISharp.WACS.Plugins.ValidationPlugins.Http;
-using install = PKISharp.WACS.Plugins.InstallationPlugins;
-using store = PKISharp.WACS.Plugins.StorePlugins;
-using target = PKISharp.WACS.Plugins.TargetPlugins;
+using Dns = PKISharp.WACS.Plugins.ValidationPlugins.Dns;
+using Http = PKISharp.WACS.Plugins.ValidationPlugins.Http;
+using Install = PKISharp.WACS.Plugins.InstallationPlugins;
+using Store = PKISharp.WACS.Plugins.StorePlugins;
+using Target = PKISharp.WACS.Plugins.TargetPlugins;
 
 namespace PKISharp.WACS.Services.Legacy
 {
@@ -124,7 +123,7 @@ namespace PKISharp.WACS.Services.Legacy
             switch (legacy.Binding.TargetPluginName.ToLower())
             {
                 case "iisbinding":
-                    var options = new target.IISOptions();
+                    var options = new Target.IISOptions();
                     if (!string.IsNullOrEmpty(legacy.Binding.Host))
                     {
                         options.IncludeHosts = new List<string>() { legacy.Binding.Host };
@@ -137,7 +136,7 @@ namespace PKISharp.WACS.Services.Legacy
                     ret.TargetPluginOptions = options;
                     break;
                 case "iissite":
-                    options = new target.IISOptions();
+                    options = new Target.IISOptions();
                     if (!string.IsNullOrEmpty(legacy.Binding.CommonName))
                     {
                         options.CommonName = legacy.Binding.CommonName.ConvertPunycode();
@@ -151,7 +150,7 @@ namespace PKISharp.WACS.Services.Legacy
                     ret.TargetPluginOptions = options;
                     break;
                 case "iissites":
-                    options = new target.IISOptions();
+                    options = new Target.IISOptions();
                     if (!string.IsNullOrEmpty(legacy.Binding.CommonName))
                     {
                         options.CommonName = legacy.Binding.CommonName.ConvertPunycode();
@@ -164,7 +163,7 @@ namespace PKISharp.WACS.Services.Legacy
                     ret.TargetPluginOptions = options;
                     break;
                 case "manual":
-                    var manual = new target.ManualOptions()
+                    var manual = new Target.ManualOptions()
                     {
                         CommonName = string.IsNullOrEmpty(legacy.Binding.CommonName) ? legacy.Binding.Host : legacy.Binding.CommonName.ConvertPunycode(),
                         AlternativeNames = legacy.Binding.AlternativeNames.Select(x => x.ConvertPunycode()).ToList()
@@ -194,7 +193,7 @@ namespace PKISharp.WACS.Services.Legacy
             {
                 case "dns-01.script":
                 case "dns-01.dnsscript":
-                    ret.ValidationPluginOptions = new dns.ScriptOptions()
+                    ret.ValidationPluginOptions = new Dns.ScriptOptions()
                     {
                         CreateScript = legacy.Binding.DnsScriptOptions?.CreateScript,
                         CreateScriptArguments = "{Identifier} {RecordName} {Token}",
@@ -213,7 +212,7 @@ namespace PKISharp.WACS.Services.Legacy
                     };
                     break;
                 case "http-01.ftp":
-                    ret.ValidationPluginOptions = new http.FtpOptions()
+                    ret.ValidationPluginOptions = new Http.FtpOptions()
                     {
                         CopyWebConfig = legacy.Binding.IIS == true,
                         Path = legacy.Binding.WebRootPath,
@@ -221,7 +220,7 @@ namespace PKISharp.WACS.Services.Legacy
                     };
                     break;
                 case "http-01.sftp":
-                    ret.ValidationPluginOptions = new http.SftpOptions()
+                    ret.ValidationPluginOptions = new Http.SftpOptions()
                     {
                         CopyWebConfig = legacy.Binding.IIS == true,
                         Path = legacy.Binding.WebRootPath,
@@ -229,7 +228,7 @@ namespace PKISharp.WACS.Services.Legacy
                     };
                     break;
                 case "http-01.webdav":
-                    var options = new http.WebDavOptions()
+                    var options = new Http.WebDavOptions()
                     {
                         CopyWebConfig = legacy.Binding.IIS == true,
                         Path = legacy.Binding.WebRootPath
@@ -244,18 +243,18 @@ namespace PKISharp.WACS.Services.Legacy
                     break;
                 case "tls-sni-01.iis":
                     _log.Warning("TLS-SNI-01 validation was removed from ACMEv2, changing to SelfHosting. Note that this requires port 80 to be public rather than port 443.");
-                    ret.ValidationPluginOptions = new http.SelfHostingOptions();
+                    ret.ValidationPluginOptions = new Http.SelfHostingOptions();
                     break;
                 case "http-01.iis":
                 case "http-01.selfhosting":
-                    ret.ValidationPluginOptions = new http.SelfHostingOptions()
+                    ret.ValidationPluginOptions = new Http.SelfHostingOptions()
                     {
                         Port = legacy.Binding.ValidationPort
                     };
                     break;
                 case "http-01.filesystem":
                 default:
-                    ret.ValidationPluginOptions = new http.FileSystemOptions()
+                    ret.ValidationPluginOptions = new Http.FileSystemOptions()
                     {
                         CopyWebConfig = legacy.Binding.IIS == true,
                         Path = legacy.Binding.WebRootPath,
@@ -270,7 +269,7 @@ namespace PKISharp.WACS.Services.Legacy
             // Configure store
             if (!string.IsNullOrEmpty(legacy.CentralSslStore))
             {
-                ret.StorePluginOptions.Add(new store.CentralSslOptions()
+                ret.StorePluginOptions.Add(new Store.CentralSslOptions()
                 {
                     Path = legacy.CentralSslStore,
                     KeepExisting = legacy.KeepExisting == true
@@ -278,17 +277,17 @@ namespace PKISharp.WACS.Services.Legacy
             }
             else
             {
-                ret.StorePluginOptions.Add(new store.CertificateStoreOptions()
+                ret.StorePluginOptions.Add(new Store.CertificateStoreOptions()
                 {
                     StoreName = legacy.CertificateStore,
                     KeepExisting = legacy.KeepExisting == true
                 });
             }
-            ret.StorePluginOptions.Add(new store.PemFilesOptions()
+            ret.StorePluginOptions.Add(new Store.PemFilesOptions()
             {
                 Path = _settings.Cache.Path
             });
-            ret.StorePluginOptions.Add(new store.PfxFileOptions()
+            ret.StorePluginOptions.Add(new Store.PfxFileOptions()
             {
                 Path = _settings.Cache.Path
             });
@@ -328,7 +327,7 @@ namespace PKISharp.WACS.Services.Legacy
                 switch (legacyName.ToLower())
                 {
                     case "iis":
-                        ret.InstallationPluginOptions.Add(new install.IISOptions()
+                        ret.InstallationPluginOptions.Add(new Install.IISOptions()
                         {
                             SiteId = legacy.Binding.InstallationSiteId,
                             NewBindingIp = legacy.Binding.SSLIPAddress,
@@ -336,7 +335,7 @@ namespace PKISharp.WACS.Services.Legacy
                         });
                         break;
                     case "iisftp":
-                        ret.InstallationPluginOptions.Add(new install.IISOptions()
+                        ret.InstallationPluginOptions.Add(new Install.IISOptions()
                         {
                             SiteId = legacy.Binding.FtpSiteId ?? 
                                 legacy.Binding.InstallationSiteId ?? 
@@ -345,14 +344,14 @@ namespace PKISharp.WACS.Services.Legacy
                         });
                         break;
                     case "manual":
-                        ret.InstallationPluginOptions.Add(new install.ScriptOptions()
+                        ret.InstallationPluginOptions.Add(new Install.ScriptOptions()
                         {
                             Script = legacy.Script,
                             ScriptParameters = legacy.ScriptParameters
                         });
                         break;
                     case "none":
-                        ret.InstallationPluginOptions.Add(new NullInstallationOptions());
+                        ret.InstallationPluginOptions.Add(new Install.NullOptions());
                         break;
                 }
             }

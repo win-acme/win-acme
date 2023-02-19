@@ -1,6 +1,6 @@
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Services.Legacy
 {
@@ -21,7 +21,7 @@ namespace PKISharp.WACS.Services.Legacy
         /// is stored in the Certificate store instead). This takes priority
         /// over CertificateStore
         /// </summary>
-        [JsonProperty(PropertyName = "CentralSsl")]
+        [JsonPropertyName("CentralSsl")]
         public string? CentralSslStore { get; set; }
 
         /// <summary>
@@ -30,7 +30,7 @@ namespace PKISharp.WACS.Services.Legacy
         public string? CertificateStore { get; set; }
 
         /// <summary>
-        /// Legacy, replaced by HostIsDns parameter on Target
+        /// Legacy, replaced by HostIsDns parameter on MainTarget
         /// </summary>
         public bool? San { get; set; }
 

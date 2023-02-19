@@ -3,6 +3,7 @@ using Amazon.Route53;
 using Amazon.Route53.Model;
 using Amazon.Runtime;
 using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
@@ -15,6 +16,11 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
+    [IPlugin.Plugin<
+        Route53Options, Route53OptionsFactory, 
+        DnsValidationCapability, Route53Json>
+        ("4e5dc595-45c7-4461-929a-8f96a0c96b3d", 
+        "Route53", "Create verification records in AWS Route 53")]
     internal sealed class Route53 : DnsValidation<Route53>
     {
         private readonly IAmazonRoute53 _route53Client;

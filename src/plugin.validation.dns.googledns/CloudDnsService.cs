@@ -8,7 +8,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     internal sealed class CloudDnsService
     {
-        private DnsService _client;
+        private readonly DnsService _client;
 
         public CloudDnsService(DnsService client)
         {
@@ -33,12 +33,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             if (!name.EndsWith("."))
                 name += ".";
 
-            var body = new ResourceRecordSet();
-            body.Kind = "dns#resourceRecordSet";
-            body.Name = name;
-            body.Type = "TXT";
-            body.Ttl = 0;
-            body.Rrdatas = new List<string>(){"\"" + value + "\"" };
+            var body = new ResourceRecordSet
+            {
+                Kind = "dns#resourceRecordSet",
+                Name = name,
+                Type = "TXT",
+                Ttl = 0,
+                Rrdatas = new List<string>() { "\"" + value + "\"" }
+            };
 
             var request = _client.ResourceRecordSets.Create(body, projectId, zone.Name);
 

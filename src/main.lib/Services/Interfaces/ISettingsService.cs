@@ -23,5 +23,6 @@ namespace PKISharp.WACS.Services
         CsrSettings Csr { get; }
         StoreSettings Store { get; }
         InstallationSettings Installation { get; }
+        bool Valid { get; }
     }
 }

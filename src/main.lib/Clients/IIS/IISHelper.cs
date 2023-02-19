@@ -82,7 +82,7 @@ namespace PKISharp.WACS.Clients.IIS
         private List<IISBindingOption> GetBindings(IEnumerable<IIISSite> sites)
         {
             // Get all bindings matched together with their respective sites
-            _log.Debug("Scanning IIS bindings for hosts");
+            _log.Debug("Scanning IIS bindings for host names");
             var siteBindings = sites.
                 SelectMany(site => site.Bindings, (site, binding) => new { site, binding }).
                 Where(sb => !string.IsNullOrWhiteSpace(sb.binding.Host)).
@@ -195,7 +195,7 @@ namespace PKISharp.WACS.Clients.IIS
             {
                 _log.Debug("Filtering by host: {regex}", regex);
                 bindings = bindings.Where(x => Matches(x, regex)).ToList();
-                _log.Verbose("{0} bindings remaining after host filter", bindings.Count());
+                _log.Verbose("{0} bindings remaining after host filter", bindings.Count);
             }
             else
             {
@@ -206,11 +206,11 @@ namespace PKISharp.WACS.Clients.IIS
             if (options.ExcludeHosts != null && options.ExcludeHosts.Any())
             {
                 bindings = bindings.Where(x => !options.ExcludeHosts.Contains(x.HostUnicode)).ToList();
-                _log.Verbose("{0} named bindings remaining after explicit exclusions", bindings.Count());
+                _log.Verbose("{0} named bindings remaining after explicit exclusions", bindings.Count);
             }
 
             // Check if we have anything left
-            _log.Verbose($"{{0}} matching binding{(bindings.Count() != 1 ? "s" : "")} found", bindings.Count());
+            _log.Verbose($"{{0}} matching binding{(bindings.Count != 1 ? "s" : "")} found", bindings.Count);
             return bindings.ToList();
         }
 
@@ -233,7 +233,11 @@ namespace PKISharp.WACS.Clients.IIS
             {
                 return new Regex(HostsToRegex(options.IncludeHosts));
             }
-            return options.IncludeRegex;
+            if (!string.IsNullOrEmpty(options.IncludeRegex))
+            {
+                return new Regex(options.IncludeRegex);
+            }
+            return null;
         }
 
         private List<string> GetHosts(IIISSite site)
