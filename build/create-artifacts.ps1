@@ -169,7 +169,7 @@ PluginRelease plugin.validation.dns.googledns @(
 )
 PluginRelease plugin.validation.dns.linode @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.Linode.dll",
-	"Newtonsoft.Json.dll",
+	"Newtonsoft.Json.dll"
 )
 PluginRelease plugin.validation.dns.luadns @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.LuaDns.dll"
