@@ -59,6 +59,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.dns.ns1", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.dns.simply", "plugin.validation.dns.simply\wacs.validation.dns.simply.csproj", "{FD141C92-C8A7-46D5-B66C-19C4412F37A1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wacs.validation.dns.linode", "plugin.validation.dns.linode\wacs.validation.dns.linode.csproj", "{7B0F79E0-07F4-42D9-99F5-FFD780FD691C}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.dns.dnsmadeeasy", "plugin.validation.dns.dnsmadeeasy\wacs.validation.dns.dnsmadeeasy.csproj", "{6674B3F3-706A-491A-87D8-E2D0673C252B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.store.userstore", "plugin.store.userstore\wacs.store.userstore.csproj", "{3C1E78B0-DCFD-418A-8C38-B5F428AF749F}"
