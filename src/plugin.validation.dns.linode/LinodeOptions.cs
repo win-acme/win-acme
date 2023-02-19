@@ -1,15 +1,17 @@
-﻿using PKISharp.WACS.Plugins.Base;
-using PKISharp.WACS.Plugins.Base.Options;
+﻿using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services.Serialization;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    [Plugin("12fdc54c-be30-4458-8066-2c1c565fe2d9")]
-    internal class LinodeOptions : ValidationPluginOptions<LinodeDnsValidation>
+    [JsonSerializable(typeof(LinodeOptions))]
+    internal partial class LinodeJson : JsonSerializerContext
     {
-        public override string Name => "Linode";
-        public override string Description => "Create verification records in Linode DNS";
-        public override string ChallengeType => Constants.Dns01ChallengeType;
+        public LinodeJson(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
+    }
+
+    internal class LinodeOptions : ValidationPluginOptions
+    {
         public ProtectedString? ApiToken { get; set; }
     }
 }

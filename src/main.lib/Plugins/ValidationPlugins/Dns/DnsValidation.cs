@@ -278,7 +278,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <returns></returns>
         public string RelativeRecordName(string zone, string recordName)
         {
-            var ret = recordName.Substring(0, recordName.LastIndexOf(zone)).TrimEnd('.');
+            var ret = recordName[..recordName.LastIndexOf(zone)].TrimEnd('.');
             return string.IsNullOrEmpty(ret) ? "@" : ret;
         }
 

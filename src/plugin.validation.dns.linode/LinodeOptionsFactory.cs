@@ -1,22 +1,21 @@
-﻿using ACMESharp.Authorizations;
-using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    internal class LinodeOptionsFactory : ValidationPluginOptionsFactory<LinodeDnsValidation, LinodeOptions>
+    internal class LinodeOptionsFactory : PluginOptionsFactory<LinodeOptions>
     {
         private readonly ArgumentsInputService _arguments;
 
-        public LinodeOptionsFactory(ArgumentsInputService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
+        public LinodeOptionsFactory(ArgumentsInputService arguments) => _arguments = arguments;
 
         private ArgumentResult<ProtectedString?> ApiKey => _arguments.
             GetProtectedString<LinodeArguments>(a => a.ApiToken).
             Required();
 
-        public override async Task<LinodeOptions?> Aquire(Target target, IInputService input, RunLevel runLevel)
+        public override async Task<LinodeOptions?> Aquire(IInputService input, RunLevel runLevel)
         {
             return new LinodeOptions()
             {
@@ -24,7 +23,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             };
         }
 
-        public override async Task<LinodeOptions?> Default(Target target)
+        public override async Task<LinodeOptions?> Default()
         {
             return new LinodeOptions()
             {
@@ -32,6 +31,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             };
         }
 
-        public override bool CanValidate(Target target) => target.Parts.SelectMany(x => x.Identifiers).All(x => x.Type == IdentifierType.DnsName);
+        public override IEnumerable<(CommandLineAttribute, object?)> Describe(LinodeOptions options)
+        {
+            yield return (ApiKey.Meta, options.ApiToken);
+        }
     }
 }
