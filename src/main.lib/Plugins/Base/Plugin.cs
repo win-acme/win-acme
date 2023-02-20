@@ -9,12 +9,22 @@ namespace PKISharp.WACS.Plugins
     /// Metadata for a specific plugin
     /// </summary>
     [DebuggerDisplay("{Backend.Name}")]
-    public class Plugin
+    public class BasePlugin
+    {
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+        public Type Backend { get; set; }
+        public BasePlugin(Type source) => Backend = source;
+    }
+
+    /// <summary>
+    /// Metadata for a specific plugin
+    /// </summary>
+    [DebuggerDisplay("{Backend.Name}")]
+    public class Plugin : BasePlugin
     {
         public Guid Id { get; set; }
         public Steps Step { get; set; }
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
-        public Type Backend { get; set; }
         private IPluginMeta Meta { get; set; }
         public string Name => Meta.Name;
         public string Description => Meta.Description;
@@ -28,10 +38,9 @@ namespace PKISharp.WACS.Plugins
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
         public Type Capability => Meta.Capability;
 
-        public Plugin([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type source, IPluginMeta meta, Steps step)
+        public Plugin([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type source, IPluginMeta meta, Steps step) : base(source)
         {
             Id = meta.Id;
-            Backend = source;
             Meta = meta;
             Step = step;
         }

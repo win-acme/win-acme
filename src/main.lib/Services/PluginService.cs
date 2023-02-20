@@ -14,6 +14,7 @@ namespace PKISharp.WACS.Services
     {
         private readonly AssemblyService _assemblyService;
         private readonly List<Plugin> _plugins;
+        private readonly List<BasePlugin> _secretServices;
         internal readonly ILogService _log;
 
         public PluginService(ILogService logger, AssemblyService assemblyService)
@@ -27,7 +28,15 @@ namespace PKISharp.WACS.Services
             AddPluginType<ICsrPlugin>(Steps.Csr);
             AddPluginType<IStorePlugin>(Steps.Store);
             AddPluginType<IInstallationPlugin>(Steps.Installation);
+            _secretServices = GetPluginType<ISecretService>("secret");
         }
+
+        /// <summary>
+        /// Get all secret services
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public IEnumerable<BasePlugin> GetSecretStores() => _secretServices;
 
         /// <summary>
         /// Get all plugins
@@ -161,6 +170,18 @@ namespace PKISharp.WACS.Services
         }
 
         /// <summary>
+        /// Extract meta data from found types
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="step"></param>
+        private List<BasePlugin> GetPluginType<T>(string label)
+        {
+            var types = _assemblyService.GetResolvable<T>().ToList();
+            ListPlugins(types.Select(x => x.Type), label);
+            return types.Select(x => new BasePlugin(x.Type)).ToList();
+        }
+
+        /// <summary>
         /// Log externally loaded plugins to the screen in verbose mode
         /// </summary>
         /// <param name="list"></param>
@@ -174,5 +195,6 @@ namespace PKISharp.WACS.Services
                     return false;
                 });
         }
+
     }
 }

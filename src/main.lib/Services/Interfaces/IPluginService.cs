@@ -9,6 +9,7 @@ namespace PKISharp.WACS.Services
     {
         IEnumerable<Plugin> GetPlugins();
         IEnumerable<Plugin> GetPlugins(Steps step);
+        IEnumerable<BasePlugin> GetSecretStores();
         bool TryGetPlugin([NotNullWhen(true)] PluginOptionsBase? options, [NotNullWhen(true)] out Plugin? plugin);
         Plugin GetPlugin(PluginOptionsBase options);
         Plugin? GetPlugin(Steps step, string name, string? parameter = null);

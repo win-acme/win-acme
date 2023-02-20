@@ -1,6 +1,7 @@
 ﻿using Autofac;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Options;
+using PKISharp.WACS.Plugins.SecretPlugins;
 using PKISharp.WACS.Services.Legacy;
 using System.Collections.Generic;
 using System.Text.Json;

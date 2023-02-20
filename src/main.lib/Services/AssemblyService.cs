@@ -69,7 +69,10 @@ namespace PKISharp.WACS.Services
                 // Installation plugins
                 new(typeof(Plugins.InstallationPlugins.IIS)), new(typeof(Plugins.InstallationPlugins.IISArguments)),
                 new(typeof(Plugins.InstallationPlugins.Script)), new(typeof(Plugins.InstallationPlugins.ScriptArguments)),
-                new(typeof(Plugins.InstallationPlugins.Null))
+                new(typeof(Plugins.InstallationPlugins.Null)),
+
+                // Secret plugins
+                new(typeof(Plugins.SecretPlugins.JsonSecretService))
             };
         }
 

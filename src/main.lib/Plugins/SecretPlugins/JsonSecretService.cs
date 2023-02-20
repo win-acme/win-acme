@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.Services.Serialization;
+﻿using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6,7 +7,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace PKISharp.WACS.Services
+namespace PKISharp.WACS.Plugins.SecretPlugins
 {
     /// <summary>
     /// Save secrets to a JSON file in the configuration folder, protected by ProtectedStrings

@@ -7,7 +7,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
     {
         /// <summary>
         /// Alternative port for validation. Note that ACME always requires
-        /// port 80 to be open. This is only useful if the port is interally 
+        /// port 443 to be open. This is only useful if the port is interally 
         /// mapped/forwarded to a different one.
         /// </summary>
         public int? Port { get; set; }
