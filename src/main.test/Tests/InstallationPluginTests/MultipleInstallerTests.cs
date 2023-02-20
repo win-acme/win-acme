@@ -51,6 +51,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             _ = builder.RegisterType<DomainParseService>();
             _ = builder.RegisterType<ArgumentsInputService>();
             _ = builder.RegisterType<IISHelper>();
+                        _ = builder.RegisterType<SecretService>().As<SecretService>().As<ISecretService>().SingleInstance();
             _ = builder.RegisterType<MockAssemblyService>().As<AssemblyService>();
 
             var input = new Mock.Services.InputService(new List<string>());

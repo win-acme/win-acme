@@ -19,15 +19,15 @@ namespace PKISharp.WACS.UnitTests.Mock
     {
         public ILifetimeScope TestScope(List<string>? inputSequence = null, string commandLine = "")
         {
-            var log = new Services.LogService(false);
+            var log = new LogService(false);
             var assemblyService = new MockAssemblyService(log);
             var pluginService = new Real.PluginService(log, assemblyService);
             var argumentsParser = new ArgumentsParser(log, assemblyService, commandLine.Split(' '));
-            var input = new Services.InputService(inputSequence ?? new List<string>());
+            var input = new InputService(inputSequence ?? new List<string>());
 
             var builder = new ContainerBuilder();
-            _ = builder.RegisterType<Services.SecretService>().As<Real.ISecretService>().SingleInstance();
             _ = builder.RegisterType<Real.SecretServiceManager>();
+            _ = builder.RegisterType<SecretService>().As<SecretService>().As<Real.ISecretService>().SingleInstance();
             _ = builder.RegisterType<AccountManager>();
             _ = builder.RegisterType<ZeroSsl>();
             WacsJson.Configure(builder);
@@ -46,7 +46,6 @@ namespace PKISharp.WACS.UnitTests.Mock
             _ = builder.RegisterType<Services.ProxyService>().As<Real.IProxyService>().SingleInstance();
             _ = builder.RegisterType<Real.PasswordGenerator>().SingleInstance();
             _ = builder.RegisterType<RenewalCreator>().SingleInstance();
-            _ = builder.RegisterType<Real.SecretServiceManager>();
             _ = builder.RegisterType<Real.DomainParseService>().SingleInstance();
             _ = builder.RegisterType<Mock.Clients.MockIISClient>().As<IIISClient>().SingleInstance();
             _ = builder.RegisterType<IISHelper>().SingleInstance();

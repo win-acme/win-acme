@@ -207,8 +207,8 @@ namespace PKISharp.WACS.Services
                 );
         }
 #endif
-
-        public List<TypeDescriptor> GetResolvable<T>()
+        
+        public virtual List<TypeDescriptor> GetResolvable<T>()
         {
             return _allTypes.
                 AsEnumerable().

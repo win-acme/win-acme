@@ -7,6 +7,7 @@ using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.UnitTests.Mock;
 using PKISharp.WACS.UnitTests.Mock.Services;
 using System.Linq;
 using Mock = PKISharp.WACS.UnitTests.Mock.Services;
@@ -39,7 +40,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         {
             var optionsParser = new ArgumentsParser(log, new MockAssemblyService(log), commandLine.Split(' '));
             var input = new Mock.Services.InputService(new());
-            var secretService = new SecretServiceManager(new SecretService(), input, log);
+            var secretService = new SecretServiceManager(new MockContainer().TestScope(), input, plugins, log);
             var argsInput = new ArgumentsInputService(log, optionsParser, input, secretService);
             var args = new MainArguments();
             var x = new IISOptionsFactory(log, helper, args, argsInput);

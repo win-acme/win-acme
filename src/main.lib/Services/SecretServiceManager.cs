@@ -16,7 +16,7 @@ namespace PKISharp.WACS.Services
         public const string VaultPrefix = "vault://";
 
         public SecretServiceManager(
-            ISharingLifetimeScope scope,
+            ILifetimeScope scope,
             IInputService input, 
             IPluginService pluginService,
             ILogService logService) 

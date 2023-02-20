@@ -1,10 +1,12 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Autofac.Core;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.UnitTests.Mock;
 using PKISharp.WACS.UnitTests.Mock.Services;
 using System;
 using System.Linq;
@@ -27,7 +29,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         {
             var optionsParser = new ArgumentsParser(log, new MockAssemblyService(log), commandLine.Split(' '));
             var input = new Mock.Services.InputService(new());
-            var secretService = new SecretServiceManager(new SecretService(), input, log);
+            var secretService = new SecretServiceManager(new MockContainer().TestScope(), input, plugins, log);
             var argsInput = new ArgumentsInputService(log, optionsParser, input, secretService);
             var x = new ManualOptionsFactory(argsInput);
             return x.Default().Result;
