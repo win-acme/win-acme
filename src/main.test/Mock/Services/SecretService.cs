@@ -11,9 +11,11 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
 
         public SecretService()
         {
-            _secrets = new();
-            _secrets.Add(new Tuple<string, string>("key1", "secret1"));
-            _secrets.Add(new Tuple<string, string>("key2", "secret2"));
+            _secrets = new()
+            {
+                new Tuple<string, string>("key1", "secret1"),
+                new Tuple<string, string>("key2", "secret2")
+            };
         }
 
         public string Prefix => "mock";
@@ -30,6 +32,6 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
             _secrets.Add(new Tuple<string, string>(identifier, secret));
         }
 
-        public void Save() { }
+        public void Encrypt() { }
     }
 }

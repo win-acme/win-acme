@@ -105,7 +105,7 @@ namespace PKISharp.WACS.Plugins.SecretPlugins
         /// <summary>
         /// Save files back to JSON
         /// </summary>
-        public void Save()
+        private void Save()
         {
             var options = new JsonSerializerOptions();
             options.Converters.Add(new ProtectedStringConverter(_log, _settings));
@@ -141,6 +141,8 @@ namespace PKISharp.WACS.Plugins.SecretPlugins
                 Save();
             }
         }
+
+        public void Encrypt() => Save();
 
         /// <summary>
         /// Interal data storage format

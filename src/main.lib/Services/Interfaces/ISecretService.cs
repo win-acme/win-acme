@@ -13,7 +13,7 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// (Re)save to disk to support encrypt/decrypt operations
         /// </summary>
-        void Save();
+        void Encrypt();
 
         /// <summary>
         /// List available keys in the system

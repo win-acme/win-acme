@@ -113,7 +113,11 @@ namespace PKISharp.WACS.Services
         /// Add a secret to the store from the main menu
         /// </summary>
         /// <returns></returns>
-        public void Encrypt() => _secretService.First().Save();
+        public void Encrypt() {
+            foreach (var backend in _secretService) {
+                backend.Encrypt();
+            }
+        }
 
         /// <summary>
         /// Add a secret to the store from the main menu
