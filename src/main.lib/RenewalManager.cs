@@ -789,6 +789,10 @@ namespace PKISharp.WACS
             {
                 addArgs(so);
             }
+            if (renewal.FriendlyName != null)
+            {
+                args.Add("friendlyname", renewal.FriendlyName);
+            }
             return "wacs.exe " + string.Join(" ", args.Select(a => $"--{a.Key.ToLower()} {a.Value}".Trim()));
         }
 
