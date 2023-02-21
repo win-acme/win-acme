@@ -1,5 +1,4 @@
 ﻿using Autofac;
-using Autofac.Core;
 using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
@@ -10,7 +9,7 @@ namespace PKISharp.WACS.Services
 {
     public class SecretServiceManager
     {
-        private readonly List<ISecretService> _secretService;
+        private readonly List<ISecretService> _backends;
         private readonly IInputService _inputService;
         private readonly ILogService _logService;
         public const string VaultPrefix = "vault://";
@@ -21,7 +20,7 @@ namespace PKISharp.WACS.Services
             IPluginService pluginService,
             ILogService logService) 
         {
-            _secretService = pluginService.
+            _backends = pluginService.
                 GetSecretStores().
                 Select(b => scope.Resolve(b.Backend)).
                 OfType<ISecretService>().
@@ -110,17 +109,17 @@ namespace PKISharp.WACS.Services
         }
 
         /// <summary>
-        /// Add a secret to the store from the main menu
+        /// Add a secret to the backend from the main menu
         /// </summary>
         /// <returns></returns>
         public void Encrypt() {
-            foreach (var backend in _secretService) {
+            foreach (var backend in _backends) {
                 backend.Encrypt();
             }
         }
 
         /// <summary>
-        /// Add a secret to the store from the main menu
+        /// Add a secret to the backend from the main menu
         /// </summary>
         /// <returns></returns>
         public async Task<string?> AddSecret()
@@ -137,18 +136,35 @@ namespace PKISharp.WACS.Services
         }
 
         /// <summary>
-        /// Pick key and store the secret in the vault
+        /// Pick key and backend the secret in the vault
+        /// </summary>
+        /// <param name="secret"></param>
+        /// <returns></returns>
+        private async Task<ISecretService> ChooseBackend()
+        {
+            if (_backends.Count == 1)
+            {
+                return _backends[0];
+            }
+            return await _inputService. 
+                ChooseRequired("Choose secret store", 
+                _backends, x => Choice.Create(x, description: x.GetType().ToString()));
+        }
+
+        /// <summary>
+        /// Pick key and backend the secret in the vault
         /// </summary>
         /// <param name="secret"></param>
         /// <returns></returns>
         private async Task<string> ChooseKeyAndStoreSecret(string secret)
         {
+            var backend = await ChooseBackend();
             var key = "";
             while (string.IsNullOrEmpty(key))
             {
                 key = await _inputService.RequestString("Please provide a unique name to reference this secret", false);
                 key = key.Trim().ToLower().Replace(" ", "-");
-                if (_secretService.First().ListKeys().Contains(key))
+                if (backend.ListKeys().Contains(key))
                 {
                     var overwrite = await _inputService.PromptYesNo($"Key {key} already exists in vault, overwrite?", true);
                     if (!overwrite)
@@ -157,15 +173,15 @@ namespace PKISharp.WACS.Services
                     }
                 }
             }
-            _secretService.First().PutSecret(key, secret);
-            return FormatKey(key);
+            backend.PutSecret(key, secret);
+            return FormatKey(backend, key);
         }
 
         /// <summary>
         /// Format the key
         /// </summary>
         /// <returns></returns>
-        public string FormatKey(string key) => $"{VaultPrefix}{_secretService.First().Prefix}/{key}";
+        public static string FormatKey(ISecretService store, string key) => $"{VaultPrefix}{store.Prefix}/{key}";
 
         /// <summary>
         /// List secrets currently in vault as choices to pick from
@@ -173,10 +189,11 @@ namespace PKISharp.WACS.Services
         /// <returns></returns>
         private async Task<string?> FindSecret()
         {
+            var backend = await ChooseBackend();
             var chosenKey = await _inputService.ChooseOptional(
                 "Which vault secret do you want to use?",
-                _secretService.First().ListKeys(),
-                (key) => Choice.Create<string?>(key, description: FormatKey(key)),
+                backend.ListKeys(),
+                (key) => Choice.Create<string?>(key, description: FormatKey(backend, key)),
                 "Cancel");
             if (chosenKey == null)
             {
@@ -184,7 +201,7 @@ namespace PKISharp.WACS.Services
             }
             else
             {
-                return FormatKey(chosenKey);
+                return FormatKey(backend, chosenKey);
             }
         }
 
@@ -213,11 +230,14 @@ namespace PKISharp.WACS.Services
             if (input.StartsWith(VaultPrefix))
             {
                 var remainingValue = input[VaultPrefix.Length..];
-                var providerKey = $"{_secretService.First().Prefix}/";
-                if (remainingValue.StartsWith(providerKey))
+                foreach (var provider in _backends)
                 {
-                    var key = remainingValue[providerKey.Length..];
-                    return _secretService.First().GetSecret(key);
+                    var providerKey = $"{provider.Prefix}/";
+                    if (remainingValue.StartsWith(providerKey))
+                    {
+                        var key = remainingValue[providerKey.Length..];
+                        return provider.GetSecret(key);
+                    }
                 }
             }
             return input;
@@ -232,7 +252,14 @@ namespace PKISharp.WACS.Services
             var exit = false;
             while (!exit)
             {
-                var choices = _secretService.First().ListKeys().Select(x => Choice.Create<Func<Task>>(() => EditSecret(x), description: FormatKey(x))).ToList();
+                var choices = _backends.
+                    SelectMany(backend => 
+                        backend.
+                            ListKeys().
+                            Select(key => Choice.Create<Func<Task>>(
+                                () => EditSecret(backend, key), 
+                                description: FormatKey(backend, key)))).
+                            ToList();
                 choices.Add(Choice.Create<Func<Task>>(() => AddSecret(), "Add secret", command: "A"));
                 choices.Add(Choice.Create<Func<Task>>(() => { 
                     exit = true; 
@@ -249,22 +276,22 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="key"></param>
         /// <returns></returns>
-        internal async Task EditSecret(string key) {
+        internal async Task EditSecret(ISecretService backend, string key) {
             var exit = false;
             while (!exit)
             {
-                var secret = _secretService.First().GetSecret(key);
+                var secret = backend.GetSecret(key);
                 _inputService.CreateSpace();
                 _inputService.Show("Reference", key);
                 _inputService.Show("Secret", "********");
                 var choices = new List<Choice<Func<Task>>>
                 {
-                    Choice.Create<Func<Task>>(() => ShowSecret(key), "Show secret", command: "S"),
-                    Choice.Create<Func<Task>>(() => UpdateSecret(key), "Update secret", command: "U"),
+                    Choice.Create<Func<Task>>(() => ShowSecret(backend, key), "Show secret", command: "S"),
+                    Choice.Create<Func<Task>>(() => UpdateSecret(backend, key), "Update secret", command: "U"),
                     Choice.Create<Func<Task>>(() =>
                     {
                         exit = true;
-                        return DeleteSecret(key);
+                        return DeleteSecret(backend, key);
                     }, "Delete secret", command: "D"),
                     Choice.Create<Func<Task>>(() =>
                     {
@@ -278,28 +305,28 @@ namespace PKISharp.WACS.Services
         }
 
         /// <summary>
-        /// Delete a secret from the store
+        /// Delete a secret from the backend
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-        private Task DeleteSecret(string key)
+        private Task DeleteSecret(ISecretService backend, string key)
         {
-            _secretService.First().DeleteSecret(key);
-            _logService.Warning($"Secret {key} deleted from {_secretService.First().Prefix} store");
+            backend.DeleteSecret(key);
+            _logService.Warning($"Secret {key} deleted from {backend.Prefix} store");
             return Task.CompletedTask;
         }
 
         /// <summary>
-        /// Update a secret in the store
+        /// Update a secret in the backend
         /// </summary>
         /// <param name="key"></param>
         /// <returns></returns>
-        private async Task UpdateSecret(string key)
+        private async Task UpdateSecret(ISecretService backend, string key)
         {
             var secret = await _inputService.ReadPassword("Secret");
             if (!string.IsNullOrWhiteSpace(secret))
             {
-                _secretService.First().PutSecret(key, secret);
+                backend.PutSecret(key, secret);
             }
             else
             {
@@ -312,8 +339,8 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="key"></param>
         /// <returns></returns>
-        private Task ShowSecret(string key) {
-            var secret = _secretService.First().GetSecret(key);
+        private Task ShowSecret(ISecretService backend, string key) {
+            var secret = backend.GetSecret(key);
             _inputService.Show("Secret", secret);
             return Task.CompletedTask;
         }
