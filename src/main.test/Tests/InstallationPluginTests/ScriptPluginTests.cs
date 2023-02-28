@@ -25,6 +25,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         private readonly FileInfo psPath;
         private readonly FileInfo psNamedPath;
         private readonly FileInfo psTrickyPath;
+        private readonly FileInfo psMulti;
 
         public ScriptPluginTests()
         {
@@ -66,12 +67,36 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
                 $"Write-Host \"Hello\""
             );
 
+            psMulti = new FileInfo(tempPath.FullName + "\\real.ps1");
+            File.WriteAllText(psMulti.FullName,
+                $"param(" +
+                $"  [Parameter(Mandatory)][string]$Param1,\n" +
+                $"  [Parameter(Mandatory)][string]$Param2\n" +
+                $")\n" +
+                $"if ($Param1 -ne \"param1 param1\") " +
+                $"{{ " +
+                $"  Write-Error \"Wrong: $Param1\" " +
+                $"}} else {{ " +
+                $"  Write-Host \"Hello $Param1\"" +
+                $"}}" + 
+                $"if ($Param2 -ne \"param2 param2\") " +
+                $"{{ " +
+                $"  Write-Error \"Wrong: $Param2\" " +
+                $"}} else {{ " +
+                $"  Write-Host \"Hello $Param2\"" +
+                $"}}"
+            );
+
         }
 
-        private void TestScript(string script, string? parameters)
+        private void TestScript(string script, bool psCore, string? parameters)
         {
             var renewal = new Renewal();
             var settings = new MockSettingsService();
+            if (psCore)
+            {
+                settings.Script.PowershellExecutablePath = "C:\\Program Files\\PowerShell\\7\\pwsh.exe";
+            }
             var target = new Target("", "test.local", new List<TargetPart>());
             var targetOrder = new Order(renewal, target);
             var oldCert = cs.RequestCertificate(null, targetOrder).Result;
@@ -93,7 +118,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         [TestMethod]
         public void BatRegular()
         {
-            TestScript(batchPath.FullName, null);
+            TestScript(batchPath.FullName, false, null);
             Assert.IsTrue(log.WarningMessages.IsEmpty);
             Assert.IsTrue(log.ErrorMessages.IsEmpty);
         }
@@ -101,7 +126,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         [TestMethod]
         public void BatWithParams()
         {
-            TestScript(batchPath.FullName, "-world");
+            TestScript(batchPath.FullName, false, "-world");
             Assert.IsTrue(log.WarningMessages.IsEmpty);
             Assert.IsTrue(log.ErrorMessages.IsEmpty);
         }
@@ -109,7 +134,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         [TestMethod]
         public void BatWithSingleQuoteParams()
         {
-            TestScript(batchPath.FullName, "'-world 2'");
+            TestScript(batchPath.FullName, false, "'-world 2'");
             Assert.IsTrue(log.WarningMessages.IsEmpty);
             Assert.IsTrue(log.ErrorMessages.IsEmpty);
         }
@@ -117,7 +142,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         [TestMethod]
         public void BatWithDoubleQuoteParams()
         {
-            TestScript(batchPath.FullName, "\"-world 2\"");
+            TestScript(batchPath.FullName, false, "\"-world 2\"");
             Assert.IsTrue(log.WarningMessages.IsEmpty);
             Assert.IsTrue(log.ErrorMessages.IsEmpty);
         }
@@ -125,69 +150,96 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         [TestMethod]
         public void BatWithPs()
         {
-            TestScript(batchPsPath.FullName, psPath.FullName);
+            TestScript(batchPsPath.FullName, false, psPath.FullName);
             Assert.IsTrue(log.WarningMessages.IsEmpty);
             Assert.IsTrue(log.ErrorMessages.IsEmpty);
         }
 
         [TestMethod]
-        public void Ps1Regular()
+        [DataRow(true, DisplayName = "PScore")]
+        [DataRow(false, DisplayName = "PSclassic")]
+        public void Ps1Regular(bool psCore)
         {
-            TestScript(psPath.FullName, null);
+            TestScript(psPath.FullName, psCore, null);
             Assert.IsTrue(log.WarningMessages.IsEmpty);
             Assert.IsTrue(log.ErrorMessages.IsEmpty);
         }
 
         [TestMethod]
-        public void Ps1Tricky()
+        [DataRow(true, DisplayName = "PScore")]
+        [DataRow(false, DisplayName = "PSclassic")]
+        public void Ps1Tricky(bool psCore)
         {
-            TestScript(psTrickyPath.FullName, null);
+            TestScript(psTrickyPath.FullName, psCore, null);
             Assert.IsTrue(log.WarningMessages.IsEmpty);
             Assert.IsTrue(log.ErrorMessages.IsEmpty);
         }
 
         [TestMethod]
-        public void Ps1WithParams()
+        [DataRow(true, DisplayName = "PScore")]
+        [DataRow(false, DisplayName = "PSclassic")]
+        public void Ps1WithParams(bool psCore)
         {
-            TestScript(psPath.FullName, "world");
+            TestScript(psPath.FullName, psCore, "world");
             Assert.IsTrue(log.WarningMessages.IsEmpty);
             Assert.IsTrue(log.ErrorMessages.IsEmpty);
         }
 
         [TestMethod]
-        public void Ps1WithSingleQuoteParams()
+        [DataRow(true, DisplayName = "PScore")]
+        [DataRow(false, DisplayName = "PSclassic")]
+        public void Ps1WithSingleQuoteParams(bool psCore)
         {
-            TestScript(psPath.FullName, "'world'");
+            TestScript(psPath.FullName, psCore, "'world'");
             Assert.IsTrue(log.WarningMessages.IsEmpty);
             Assert.IsTrue(log.ErrorMessages.IsEmpty);
         }
 
         [TestMethod]
-        public void Ps1WithDoubleQuoteParams()
+        [DataRow(true, DisplayName = "PScore")]
+        [DataRow(false, DisplayName = "PSclassic")]
+        public void Ps1WithDoubleQuoteParams(bool psCore)
         {
-            TestScript(psPath.FullName, "\"world\"");
+            TestScript(psPath.FullName, psCore, "\"world\"");
             Assert.IsTrue(log.WarningMessages.IsEmpty);
             Assert.IsTrue(log.ErrorMessages.IsEmpty);
         }
+
         [TestMethod]
-        public void Ps1WithError()
+        [DataRow(true, DisplayName = "PScore")]
+        [DataRow(false, DisplayName = "PSclassic")]
+        public void Ps1WithError(bool psCore)
         {
-            TestScript(psPath.FullName, "world2");
+            TestScript(psPath.FullName, psCore, "world2");
             Assert.IsTrue(log.WarningMessages.IsEmpty);
             Assert.IsTrue(!log.ErrorMessages.IsEmpty);
         }
 
         [TestMethod]
-        public void Ps1NamedWrong()
+        [DataRow(true, DisplayName = "PScore")]
+        [DataRow(false, DisplayName = "PSclassic")]
+        public void Ps1NamedWrong(bool psCore)
         {
-            TestScript(psNamedPath.FullName, "-wrong 'world'");
+            TestScript(psNamedPath.FullName, psCore, "-wrong 'world'");
             Assert.IsTrue(!log.ErrorMessages.IsEmpty);
         }
 
         [TestMethod]
-        public void Ps1NamedCorrect()
+        [DataRow(true, DisplayName = "PScore")]
+        [DataRow(false, DisplayName = "PSclassic")]
+        public void Ps1NamedCorrect(bool psCore)
         {
-            TestScript(psNamedPath.FullName, "-what 'world'");
+            TestScript(psNamedPath.FullName, psCore, "-what 'world'");
+            Assert.IsTrue(log.WarningMessages.IsEmpty);
+            Assert.IsTrue(log.ErrorMessages.IsEmpty);
+        }
+
+        [TestMethod]
+        [DataRow(true, DisplayName = "PScore")]
+        [DataRow(false, DisplayName = "PSclassic")]
+        public void PsRealworld(bool psCore)
+        {
+            TestScript(psMulti.FullName, psCore, " -Param1 'param1 param1' -Param2 \"param2 param2\"");
             Assert.IsTrue(log.WarningMessages.IsEmpty);
             Assert.IsTrue(log.ErrorMessages.IsEmpty);
         }
