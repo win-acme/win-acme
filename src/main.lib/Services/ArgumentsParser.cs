@@ -151,7 +151,13 @@ namespace PKISharp.WACS.Configuration
                 {
                     if (!censor)
                     {
-                        censoredArgs.Add(_args[i]);
+                        var value = _args[i];
+                        value.Replace("\"", "\\\"");
+                        if (value.Contains(' '))
+                        {
+                            value = $"\"{value}\"";
+                        }
+                        censoredArgs.Add(value);
                         censor = SecretArguments.Any(c => _args[i].ToLower() == $"--{c}");
                     }
                     else
