@@ -152,7 +152,7 @@ namespace PKISharp.WACS.Configuration
                     if (!censor)
                     {
                         var value = _args[i];
-                        value.Replace("\"", "\\\"");
+                        value = value.Replace("\"", "\\\"");
                         if (value.Contains(' '))
                         {
                             value = $"\"{value}\"";

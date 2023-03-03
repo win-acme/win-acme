@@ -13,7 +13,7 @@ namespace PKISharp.WACS.Plugins
     {
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
         public Type Backend { get; set; }
-        public BasePlugin(Type source) => Backend = source;
+        public BasePlugin([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type source) => Backend = source;
     }
 
     /// <summary>
@@ -24,7 +24,6 @@ namespace PKISharp.WACS.Plugins
     {
         public Guid Id { get; set; }
         public Steps Step { get; set; }
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
         private IPluginMeta Meta { get; set; }
         public string Name => Meta.Name;
         public string Description => Meta.Description;
