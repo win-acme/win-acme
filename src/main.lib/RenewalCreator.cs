@@ -23,7 +23,6 @@ namespace PKISharp.WACS
         private readonly ILogService _log;
         private readonly IRenewalStore _renewalStore;
         private readonly MainArguments _args;
-        private readonly PasswordGenerator _passwordGenerator;
         private readonly IPluginService _plugin;
         private readonly ISharingLifetimeScope _container;
         private readonly IAutofacBuilder _scopeBuilder;
@@ -34,7 +33,7 @@ namespace PKISharp.WACS
         private readonly NotificationService _notification;
 
         public RenewalCreator(
-            PasswordGenerator passwordGenerator, MainArguments args,
+            MainArguments args,
             IRenewalStore renewalStore, ISharingLifetimeScope container,
             IInputService input, ILogService log,
             IPluginService plugin, IAutofacBuilder autofacBuilder,
@@ -42,7 +41,6 @@ namespace PKISharp.WACS
             NotificationService notification, IDueDateService dueDateService,
             ExceptionHandler exceptionHandler, RenewalExecutor renewalExecutor)
         {
-            _passwordGenerator = passwordGenerator;
             _renewalStore = renewalStore;
             _args = args;
             _input = input;
@@ -126,7 +124,7 @@ namespace PKISharp.WACS
             }
             _log.Information(LogType.All, "Running in mode: {runLevel}", runLevel);
 
-            tempRenewal ??= Renewal.Create(_args.Id, _passwordGenerator);
+            tempRenewal ??= Renewal.Create(_args.Id);
 
             // Choose the target plugin
             var resolver = CreateResolver(_container, runLevel);

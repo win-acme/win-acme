@@ -18,20 +18,17 @@ namespace PKISharp.WACS.Services
         internal IInputService _inputService;
         internal IDueDateService _dueDateService;
         internal IRenewalStoreBackend _backend;
-        internal PasswordGenerator _passwordGenerator;
 
         public RenewalStore(
             IRenewalStoreBackend backend,
             ISettingsService settings,
             ILogService log,
             IInputService input,
-            PasswordGenerator password,
             IDueDateService dueDateService)
         {
             _backend = backend;
             _log = log;
             _inputService = input;
-            _passwordGenerator = password;
             _settings = settings;
             _dueDateService = dueDateService;
             _log.Debug("Renewal period: {RenewalDays} days", _settings.ScheduledTask.RenewalDays);
