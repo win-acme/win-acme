@@ -192,9 +192,6 @@ PluginRelease plugin.validation.dns.transip @(
 PluginRelease plugin.validation.http.rest @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.Rest.dll"
 )
-PluginRelease plugin.validation.dns.linode @(
-	"PKISharp.WACS.Plugins.ValidationPlugins.Linode.dll"
-)
 
 "Created artifacts:"
 dir $Out
