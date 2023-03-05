@@ -40,15 +40,14 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
             else
             {
-                var flags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet;
+                var flags = X509KeyStorageFlags.UserKeySet | X509KeyStorageFlags.PersistKeySet;
                 if (_settings.Security.PrivateKeyExportable)
                 {
                     flags |= X509KeyStorageFlags.Exportable;
                 }
-                var cert = input.Certificate.Export(X509ContentType.Pkcs12, string.Empty);
-                var import = new X509Certificate2(cert, string.Empty, flags);
                 _log.Information("Installing certificate in the certificate store");
-                _storeClient.InstallCertificate(import);
+                var convert = _storeClient.ConvertCertificate(input.Certificate, flags);
+                _storeClient.InstallCertificate(convert);
             }
             return Task.FromResult<StoreInfo?>(new StoreInfo() {
                 Name = Name,
