@@ -86,37 +86,60 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public Task<StoreInfo?> Save(ICertificateInfo input)
         {
             var existing = _storeClient.FindByThumbprint(input.Certificate.Thumbprint);
+            var store = input.Certificate;
+
             if (existing != null)
             {
                 _log.Warning("Certificate with thumbprint {thumbprint} is already in the store", input.Certificate.Thumbprint);
+                store = existing;
             }
             else
             {
+                var exportable = 
+                    _settings.Store.CertificateStore.PrivateKeyExportable == true ||
+                    #pragma warning disable CS0618 // Type or member is obsolete
+                    (_settings.Store.CertificateStore.PrivateKeyExportable == null && _settings.Security.PrivateKeyExportable == true);
+                    #pragma warning restore CS0618 // Type or member is obsolete
+
                 var flags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet;
-                if (_settings.Security.PrivateKeyExportable)
+                if (exportable)
                 {
                     flags |= X509KeyStorageFlags.Exportable;
                 }
-                var convert = _storeClient.ConvertCertificate(input.Certificate, flags);
-                _log.Information("Installing certificate in the certificate store");
-                _storeClient.InstallCertificate(convert);
-                if (_options.AclFullControl != null)
+
+                store = _storeClient.ApplyFlags(store, flags);
+                if (_settings.Store.CertificateStore.UseNextGenerationCryptoApi != true)
                 {
-                    SetAcl(convert, _options.AclFullControl);
+                    store = _storeClient.ConvertCertificate(store, flags);
                 }
+
+                _log.Information("Installing certificate in the certificate store");
+                _storeClient.InstallCertificate(store);
                 if (!_runLevel.HasFlag(RunLevel.Test))
                 {
                     _storeClient.InstallCertificateChain(input.Chain);
                 }
+                store = _storeClient.FindByThumbprint(input.Certificate.Thumbprint);
             }
+
+            if (_options.AclFullControl != null)
+            {
+                SetAcl(store, _options.AclFullControl);
+            }
+
             return Task.FromResult<StoreInfo?>(new StoreInfo() {
                 Name = Name,
                 Path = _storeName
             });
         }
 
-        private void SetAcl(X509Certificate2 cert, List<string> fullControl)
+        private void SetAcl(X509Certificate2? cert, List<string> fullControl)
         {
+            if (cert == null)
+            {
+                _log.Error("Unable to set requested ACL on private key (certificate not found)");
+                return;
+            }
             try
             {
                 var file = _keyFinder.Find(cert);
@@ -139,6 +162,10 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                         }
                     }
                     file.SetAccessControl(fs);
+                } 
+                else
+                {
+                    _log.Error("Unable to set requested ACL on private key (file not found)");
                 }
             }
             catch (Exception ex)
