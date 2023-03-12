@@ -6,6 +6,7 @@ using System;
 using System.Runtime.Versioning;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using static System.Formats.Asn1.AsnWriter;
 
 [assembly: SupportedOSPlatform("windows")]
 
@@ -40,14 +41,24 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
             else
             {
+                var exportable =
+                    _settings.Store.CertificateStore.PrivateKeyExportable == true ||
+                    #pragma warning disable CS0618 // Type or member is obsolete
+                    (_settings.Store.CertificateStore.PrivateKeyExportable == null && _settings.Security.PrivateKeyExportable == true);
+                    #pragma warning restore CS0618 // Type or member is obsolete
+
                 var flags = X509KeyStorageFlags.UserKeySet | X509KeyStorageFlags.PersistKeySet;
-                if (_settings.Security.PrivateKeyExportable)
+                if (exportable)
                 {
                     flags |= X509KeyStorageFlags.Exportable;
                 }
+                var store = _storeClient.ApplyFlags(input.Certificate, flags);
+                if (_settings.Store.CertificateStore.UseNextGenerationCryptoApi != true)
+                {
+                    store = _storeClient.ConvertCertificate(store, flags);
+                }
                 _log.Information("Installing certificate in the certificate store");
-                var convert = _storeClient.ConvertCertificate(input.Certificate, flags);
-                _storeClient.InstallCertificate(convert);
+                _storeClient.InstallCertificate(store);
             }
             return Task.FromResult<StoreInfo?>(new StoreInfo() {
                 Name = Name,

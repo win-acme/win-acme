@@ -58,7 +58,6 @@
   "Security": {
     "RSAKeyBits": 3072,
     "ECCurve": "secp384r1",
-    "PrivateKeyExportable": false,
     "EncryptConfig": true,
     "FriendlyNameDateTimeStamp": true
   },
@@ -91,7 +90,9 @@
   "Store": {
     "DefaultStore": null,
     "CertificateStore": {
-      "DefaultStore": null
+      "DefaultStore": null,
+      "PrivateKeyExportable": false,
+      "UseNextGenerationCryptoApi": false
     },
     "CentralSsl": {
       "DefaultPath": null,

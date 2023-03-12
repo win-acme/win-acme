@@ -132,6 +132,24 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         }
 
         /// <summary>
+        /// Re-open certificate with specific X509KeyStorageFlags applied
+        /// </summary>
+        /// <param name="original"></param>
+        /// <param name="flags"></param>
+        /// <returns></returns>
+        public X509Certificate2 ApplyFlags(X509Certificate2 original, X509KeyStorageFlags flags)
+        {
+            // If no RSA key is present, we only export and re-fallback to
+            // set the correct flags on the certificate.
+            _log.Debug("Re-opening certificate with flags {flags}", flags);
+            var cert = original.Export(X509ContentType.Pkcs12, string.Empty);
+            return new X509Certificate2(cert, string.Empty, flags)
+            {
+                FriendlyName = original.FriendlyName
+            };
+        }
+
+        /// <summary>
         /// Set the right flags on the certificate and
         /// convert the private key to the right cryptographic
         /// provider
@@ -141,15 +159,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// <returns></returns>
         public X509Certificate2 ConvertCertificate(X509Certificate2 original, X509KeyStorageFlags flags)
         {
-            // If no RSA key is present, we only export and re-fallback to
-            // set the correct flags on the certificate.
-            _log.Debug("Re-opening certificate with flags {flags}", flags);
-            var cert = original.Export(X509ContentType.Pkcs12, string.Empty);
-            var fallback = new X509Certificate2(cert, string.Empty, flags)
-            {
-                FriendlyName = original.FriendlyName
-            };
-
             // If there is an RSA key, we change it to be stored in the
             // Microsoft RSA SChannel Cryptographic Provider so that its 
             // usable for older versions of Microsoft Exchange and exportable
@@ -158,7 +167,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             using var rsaPrivateKey = original.GetRSAPrivateKey();
             if (rsaPrivateKey == null)
             {
-                return fallback;
+                return original;
             }
             else
             {
@@ -207,7 +216,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 // make sure it's retried on the next run.
                 _log.Warning("Error converting private key to Microsoft RSA SChannel Cryptographic Provider");
                 _log.Verbose("{ex}", ex);
-                return fallback;
+                return original;
             }
         }
 
