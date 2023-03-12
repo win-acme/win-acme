@@ -1,7 +1,9 @@
 ﻿using PKISharp.WACS.Services;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
@@ -10,7 +12,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
     /// <summary>
     /// Based on Microsoft "FindPrivateKey" example
     /// </summary>
-    class FindPrivateKey
+    partial class FindPrivateKey
     {
         private readonly ILogService _log;
 
@@ -41,8 +43,21 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             return new FileInfo(Path.Combine(dir, file));
         }
 
-        string GetKeyFileName(X509Certificate2 cert)
+        static string GetKeyFileName(X509Certificate2 cert)
         {
+            var ecdsa = cert.GetECDsaPrivateKey();
+            if (ecdsa is ECDsaCng ecdsaCng && !string.IsNullOrWhiteSpace(ecdsaCng.Key.UniqueName)) 
+            { 
+                return ecdsaCng.Key.UniqueName;
+            }
+            var rsa = cert.GetRSAPrivateKey();
+            if (rsa is RSACng rsaCng && !string.IsNullOrWhiteSpace(rsaCng.Key.UniqueName))
+            {
+                return rsaCng.Key.UniqueName;
+            }
+
+            // Fallback using Win32 API magic, might not be needed at all anymore?
+
             var hProvider = IntPtr.Zero; // CSP handle
             var freeProvider = false; // Do we need to free the CSP ?
             uint acquireFlags = 0;
@@ -88,53 +103,36 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             return keyFileName;
         }
 
-        string GetKeyFileDirectory(string keyFileName)
+        static string GetKeyFileDirectory(string keyFileName)
         {
-            // Look up All User profile from environment variable
-            var allUserProfile = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
-
-            // set up searching directory
-            var machineKeyDir = allUserProfile + "\\Microsoft\\Crypto\\RSA\\MachineKeys";
-
-            // Seach the key file
-            var fs = Directory.GetFiles(machineKeyDir, keyFileName);
-
-            // If found
-            if (fs.Length > 0)
+            var common = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+            var foldersToCheck = new List<string>
             {
-                return machineKeyDir;
-            }
-
-            // Next try current user profile
-            var currentUserProfile = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-
-            // seach all sub directory
-            var userKeyDir = currentUserProfile + "\\Microsoft\\Crypto\\RSA\\";
-
-            fs = Directory.GetDirectories(userKeyDir);
-            foreach (var keyDir in fs)
+                Path.Join(common, "\\Microsoft\\Crypto\\RSA\\MachineKeys"),
+                Path.Join(common, "\\Microsoft\\Crypto\\Keys")
+            };
+            foreach (var folder in foldersToCheck)
             {
-                fs = Directory.GetFiles(keyDir, keyFileName);
-                if (fs.Length == 0)
+                var files = Directory.GetFiles(folder, keyFileName);
+                if (files.Length > 0)
                 {
-                    continue;
-                }
-                else
-                {
-                    return keyDir;
+                    return folder;
                 }
             }
             throw new InvalidOperationException("Unable to locate private key file directory");
         }
 
-        [DllImport("crypt32", CharSet = CharSet.Unicode, SetLastError = true)]
-        private extern static bool CryptAcquireCertificatePrivateKey(IntPtr pCert, uint dwFlags, IntPtr pvReserved, ref IntPtr phCryptProv, ref int pdwKeySpec, ref bool pfCallerFreeProv);
+        [LibraryImport("crypt32", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static partial bool CryptAcquireCertificatePrivateKey(IntPtr pCert, uint dwFlags, IntPtr pvReserved, ref IntPtr phCryptProv, ref int pdwKeySpec, [MarshalAs(UnmanagedType.Bool)] ref bool pfCallerFreeProv);
 
-        [DllImport("advapi32", CharSet = CharSet.Unicode, SetLastError = true)]
-        private extern static bool CryptGetProvParam(IntPtr hCryptProv, CryptGetProvParamType dwParam, IntPtr pvData, ref int pcbData, uint dwFlags);
+        [LibraryImport("advapi32", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static partial bool CryptGetProvParam(IntPtr hCryptProv, CryptGetProvParamType dwParam, IntPtr pvData, ref int pcbData, uint dwFlags);
 
-        [DllImport("advapi32", SetLastError = true)]
-        private extern static bool CryptReleaseContext(IntPtr hProv, uint dwFlags);
+        [LibraryImport("advapi32", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static partial bool CryptReleaseContext(IntPtr hProv, uint dwFlags);
     }
 
     enum CryptGetProvParamType

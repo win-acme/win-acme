@@ -12,6 +12,7 @@ using System.Security.AccessControl;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
 using System.Threading.Tasks;
+
 using static System.IO.FileSystemAclExtensions;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
@@ -96,13 +97,12 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 {
                     flags |= X509KeyStorageFlags.Exportable;
                 }
-                var cert = input.Certificate.Export(X509ContentType.Pkcs12, string.Empty);
-                var import = new X509Certificate2(cert, string.Empty, flags);
+                var convert = _storeClient.ConvertCertificate(input.Certificate, flags);
                 _log.Information("Installing certificate in the certificate store");
-                _storeClient.InstallCertificate(import);
+                _storeClient.InstallCertificate(convert);
                 if (_options.AclFullControl != null)
                 {
-                    SetAcl(import, _options.AclFullControl);
+                    SetAcl(convert, _options.AclFullControl);
                 }
                 if (!_runLevel.HasFlag(RunLevel.Test))
                 {

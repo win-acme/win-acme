@@ -5,7 +5,7 @@ namespace PKISharp.WACS.Services
 {
     internal class PasswordGenerator
     {
-        public string Generate()
+        public static string Generate()
         {
             // Set 256 bit random password that will be used to keep the .pfx file in the cache folder safe.
             var random = RandomNumberGenerator.Create();

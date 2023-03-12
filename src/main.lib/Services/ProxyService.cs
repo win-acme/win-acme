@@ -116,7 +116,6 @@ namespace PKISharp.WACS.Services
             private async Task PreSend(HttpRequestMessage request, CancellationToken cancellationToken)
             {
                 _log.Debug("[HTTP] Send {method} to {uri}", request.Method, request.RequestUri);
-#if DEBUG
                 if (request.Content != null)
                 {
                     var content = await request.Content.ReadAsStringAsync(cancellationToken);
@@ -125,7 +124,6 @@ namespace PKISharp.WACS.Services
                         _log.Verbose("[HTTP] Request content: {content}", content);
                     }
                 }
-#endif
             }
 
             /// <summary>
@@ -137,7 +135,6 @@ namespace PKISharp.WACS.Services
             private async Task PostSend(HttpResponseMessage response, CancellationToken cancellationToken)
             {
                 _log.Verbose("[HTTP] Request completed with status {s}", response.StatusCode);
-#if DEBUG
                 if (response.Content != null && response.Content.Headers.ContentLength > 0)
                 {
                     var printableTypes = new[] {
@@ -162,7 +159,6 @@ namespace PKISharp.WACS.Services
                 {
                     _log.Verbose("[HTTP] Empty response");
                 }
-#endif
             }
         }
 

@@ -45,8 +45,6 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             _pemService = pemService;
         }
 
-        public virtual Task<X509Certificate2> PostProcess(X509Certificate2 original) => Task.FromResult(original);
-
         async Task<Pkcs10CertificationRequest> ICsrPlugin.GenerateCsr(Target target, string? keyPath)
         {
             var identifiers = target.GetIdentifiers(false);

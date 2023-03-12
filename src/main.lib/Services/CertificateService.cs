@@ -108,36 +108,6 @@ namespace PKISharp.WACS.Services
             _log.Information("Downloading certificate {friendlyName}", order.FriendlyNameIntermediate);
             var selected = await DownloadCertificate(order.Details, friendlyName, order.Target.PrivateKey);
 
-            // Do post-processing on the private key. This is a legacy feature
-            // to support Microsoft Exchange 2013 and can/should probably be
-            // abandoned in a future release.
-            if (csrPlugin != null)
-            {
-                try
-                {
-                    var collection = selected.WithPrivateKey.Collection;
-                    var cert = collection.
-                        OfType<X509Certificate2>().
-                        Where(x => x.HasPrivateKey).
-                        FirstOrDefault();
-                    if (cert != null)
-                    {
-                        var certIndex = collection.IndexOf(cert);
-                        var newVersion = await csrPlugin.PostProcess(cert);
-                        if (newVersion != cert)
-                        {
-                            newVersion.FriendlyName = friendlyName;
-                            collection[certIndex] = newVersion;
-                            selected.WithPrivateKey = new CertificateInfo(collection);
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _log.Warning("Private key conversion error: {ex}", ex.Message);
-                }
-            }
-
             // Update LastFriendlyName so that the user sees
             // the most recently issued friendlyName in
             // the WACS GUI

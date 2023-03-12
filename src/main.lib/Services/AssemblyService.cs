@@ -32,7 +32,7 @@ namespace PKISharp.WACS.Services
                 new(typeof(Configuration.Arguments.NetworkCredentialArguments)),
   
                 // Target plugins
-                new(typeof(Plugins.TargetPlugins.Csr)),
+                new(typeof(Plugins.TargetPlugins.Csr)), new(typeof(Plugins.TargetPlugins.CsrArguments)),
                 new(typeof(Plugins.TargetPlugins.IIS)), new(typeof(Plugins.TargetPlugins.IISArguments)),
                 new(typeof(Plugins.TargetPlugins.Manual)), new(typeof(Plugins.TargetPlugins.ManualArguments)),
 

@@ -18,13 +18,13 @@ namespace PKISharp.WACS.DomainObjects
     [DebuggerDisplay("Renewal {Id}: {FriendlyName}")]
     public class Renewal
     {
-        internal static Renewal Create(string? id, PasswordGenerator generator)
+        internal static Renewal Create(string? id = null)
         {
             var ret = new Renewal
             {
                 New = true,
                 Id = string.IsNullOrEmpty(id) ? ShortGuid.NewGuid().ToString() : id,
-                PfxPassword = new ProtectedString(generator.Generate())
+                PfxPassword = new ProtectedString(PasswordGenerator.Generate())
             };
             return ret;
         }

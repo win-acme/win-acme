@@ -136,7 +136,7 @@ namespace PKISharp.WACS.Services
                 }
 
                 _diskLogger = new LoggerConfiguration()
-                    .MinimumLevel.ControlledBy(_levelSwitch)
+                    .MinimumLevel.Verbose()
                     .Enrich.FromLogContext()
                     .Enrich.WithProperty("ProcessId", Environment.ProcessId)
                     .WriteTo.File(
