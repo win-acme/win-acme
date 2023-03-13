@@ -12,15 +12,17 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private readonly X509Store _store;
         private X509Store? _imStore;
         private readonly ILogService _log;
+        private readonly ISettingsService _settings;
         private readonly StoreLocation _location;
         private bool disposedValue;
 
-        public CertificateStoreClient(string storeName, StoreLocation storeLocation, ILogService log)
+        public CertificateStoreClient(string storeName, StoreLocation storeLocation, ILogService log, ISettingsService settings)
         {
             _log = log;
             _location = storeLocation;
             _log.Debug("Certificate store name: {_storeName}", storeName);
             _store = new X509Store(storeName, storeLocation);
+            _settings = settings;
         }
 
         public X509Certificate2? FindByThumbprint(string thumbprint) => GetCertificate(x => string.Equals(x.Thumbprint, thumbprint));
@@ -42,6 +44,16 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             {
                 _log.Information(LogType.All, "Adding certificate {FriendlyName} to store {name}", certificate.FriendlyName, _store.Name);
                 _log.Verbose("{sub} - {iss} ({thumb})", certificate.Subject, certificate.Issuer, certificate.Thumbprint);
+                var flags = X509KeyStorageFlags.PersistKeySet;
+                if (_location == StoreLocation.CurrentUser)
+                {
+                    flags |= X509KeyStorageFlags.UserKeySet;
+                }
+                else
+                {
+                    flags |= X509KeyStorageFlags.MachineKeySet;
+                }
+                certificate = ProcessCertificate(certificate, flags);
                 _store.Add(certificate);
             }
             catch
@@ -137,7 +149,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// <param name="original"></param>
         /// <param name="flags"></param>
         /// <returns></returns>
-        public X509Certificate2 ApplyFlags(X509Certificate2 original, X509KeyStorageFlags flags)
+        private static X509Certificate2 ApplyFlags(X509Certificate2 original, X509KeyStorageFlags flags)
         {
             // If no RSA key is present, we only export and re-fallback to
             // set the correct flags on the certificate.
@@ -149,6 +161,47 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         }
 
         /// <summary>
+        /// Apply certificate flags and convert private key provider if asked
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="baseFlags"></param>
+        /// <returns></returns>
+        private X509Certificate2 ProcessCertificate(X509Certificate2 input, X509KeyStorageFlags baseFlags)
+        {
+            var exportable =
+                _settings.Store.CertificateStore.PrivateKeyExportable == true ||
+                #pragma warning disable CS0618 // Type or member is obsolete
+                (_settings.Store.CertificateStore.PrivateKeyExportable == null && _settings.Security.PrivateKeyExportable == true);
+
+            var finalFlags = baseFlags;
+            if (exportable)
+            {
+                finalFlags |= X509KeyStorageFlags.Exportable;
+            }
+            _log.Debug("Storing certificate with flags {flags}", finalFlags);
+
+            X509Certificate2? store;
+            if (_settings.Store.CertificateStore.UseNextGenerationCryptoApi != true)
+            {
+                // Should always be exportable before we attempt to convert,
+                // because otherwise we won't be able to get to the private key
+                store = ApplyFlags(input, baseFlags | X509KeyStorageFlags.Exportable);
+
+                // If the ConvertCertificate fails it returns null, and when that
+                // happend we apply the final flags to the original input instead
+                store = ConvertCertificate(store, finalFlags);
+                store ??= ApplyFlags(input, finalFlags);
+            }
+            else
+            {
+                // Do not attempt conversion, just apply the final flags
+                store = ApplyFlags(input, finalFlags);
+            }
+            return store;
+        }
+
+
+        /// <summary>
         /// Set the right flags on the certificate and
         /// convert the private key to the right cryptographic
         /// provider
@@ -156,7 +209,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// <param name="original"></param>
         /// <param name="flags"></param>
         /// <returns></returns>
-        public X509Certificate2? ConvertCertificate(X509Certificate2 original, X509KeyStorageFlags flags)
+        private X509Certificate2? ConvertCertificate(X509Certificate2 original, X509KeyStorageFlags flags)
         {
             try
             {
@@ -213,12 +266,17 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 // means we're left with a pfx generated with the
                 // 'wrong' Crypto provider therefor delete it to 
                 // make sure it's retried on the next run.
-                _log.Warning("Error converting private key to Microsoft RSA SChannel Cryptographic Provider");
+                _log.Warning("Error converting key to legacy CryptoAPI, using CNG instead.");
                 _log.Verbose("{ex}", ex);
                 return null;
             }
         }
 
+        /// <summary>
+        /// Find certificate in the store
+        /// </summary>
+        /// <param name="filter"></param>
+        /// <returns></returns>
         public X509Certificate2? GetCertificate(Func<X509Certificate2, bool> filter)
         {
             var possibles = new List<X509Certificate2>();

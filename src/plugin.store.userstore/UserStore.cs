@@ -22,14 +22,12 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         internal const string Name = "UserStore";
         private const string DefaultStoreName = nameof(StoreName.My);
         private readonly ILogService _log;
-        private readonly ISettingsService _settings;
         private readonly CertificateStoreClient _storeClient;
 
         public UserStore(ILogService log, ISettingsService settings)
         {
             _log = log;
-            _settings = settings;
-            _storeClient = new CertificateStoreClient(DefaultStoreName, StoreLocation.CurrentUser, _log);
+            _storeClient = new CertificateStoreClient(DefaultStoreName, StoreLocation.CurrentUser, _log, settings);
         }
 
         public Task<StoreInfo?> Save(ICertificateInfo input)
@@ -41,40 +39,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
             else
             {
-                var exportable =
-                    _settings.Store.CertificateStore.PrivateKeyExportable == true ||
-                    #pragma warning disable CS0618 // Type or member is obsolete
-                    (_settings.Store.CertificateStore.PrivateKeyExportable == null && _settings.Security.PrivateKeyExportable == true);
-                    #pragma warning restore CS0618 // Type or member is obsolete
-
-                var baseFlags = X509KeyStorageFlags.UserKeySet | X509KeyStorageFlags.PersistKeySet;
-                var finalFlags = baseFlags;
-                if (exportable)
-                {
-                    finalFlags |= X509KeyStorageFlags.Exportable;
-                }
-                _log.Debug("Storing certificate with flags {flags}", finalFlags);
-
-                var store = input.Certificate;
-                if (_settings.Store.CertificateStore.UseNextGenerationCryptoApi != true)
-                {
-                    // Should always be exportable before we attempt to convert,
-                    // because otherwise we won't be able to get to the private key
-                    store = _storeClient.ApplyFlags(store, baseFlags | X509KeyStorageFlags.Exportable);
-
-                    // If the ConvertCertificate fails we fall back to the original
-                    // input certificate wit the base flags applied
-                    store = _storeClient.ConvertCertificate(store, finalFlags);
-                    store ??= _storeClient.ApplyFlags(input.Certificate, baseFlags);
-                }
-                else
-                {
-                    // Do not attempt conversion, just apply the final flags
-                    store = _storeClient.ApplyFlags(store, finalFlags);
-                }
-            
                 _log.Information("Installing certificate in the certificate store");
-                _storeClient.InstallCertificate(store);
+                _storeClient.InstallCertificate(input.Certificate);
             }
             return Task.FromResult<StoreInfo?>(new StoreInfo() {
                 Name = Name,

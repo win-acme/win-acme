@@ -27,7 +27,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         internal const string Name = "CertificateStore";
         private const string DefaultStoreName = nameof(StoreName.My);
         private readonly ILogService _log;
-        private readonly ISettingsService _settings;
         private readonly string _storeName;
         private readonly IIISClient _iisClient;
         private readonly CertificateStoreOptions _options;
@@ -43,7 +42,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             _log = log;
             _iisClient = iisClient;
             _options = options;
-            _settings = settings;
             _keyFinder = keyFinder;
             _storeName = options.StoreName ?? DefaultStore(settings, iisClient);
             if (string.Equals(_storeName, "Personal", StringComparison.InvariantCultureIgnoreCase) ||
@@ -53,7 +51,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 // config files, because that's what the store is called in mmc
                 _storeName = nameof(StoreName.My);
             }
-            _storeClient = new CertificateStoreClient(_storeName, StoreLocation.LocalMachine, _log);
+            _storeClient = new CertificateStoreClient(_storeName, StoreLocation.LocalMachine, _log, settings);
             _runLevel = runLevel;
         }
 
@@ -95,37 +93,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
             else
             {
-                var exportable = 
-                    _settings.Store.CertificateStore.PrivateKeyExportable == true ||
-                    #pragma warning disable CS0618 // Type or member is obsolete
-                    (_settings.Store.CertificateStore.PrivateKeyExportable == null && _settings.Security.PrivateKeyExportable == true);
-                    #pragma warning restore CS0618 // Type or member is obsolete
-
-                var baseFlags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet;
-                var finalFlags = baseFlags;
-                if (exportable)
-                {
-                    finalFlags |= X509KeyStorageFlags.Exportable;
-                }
-                _log.Debug("Storing certificate with flags {flags}", finalFlags);
-
-                if (_settings.Store.CertificateStore.UseNextGenerationCryptoApi != true)
-                {
-                    // Should always be exportable before we attempt to convert,
-                    // because otherwise we won't be able to get to the private key
-                    store = _storeClient.ApplyFlags(store, baseFlags | X509KeyStorageFlags.Exportable);
-
-                    // If the ConvertCertificate fails we fall back to the original
-                    // input certificate wit the base flags applied
-                    store = _storeClient.ConvertCertificate(store, finalFlags);
-                    store ??= _storeClient.ApplyFlags(input.Certificate, baseFlags);
-                } 
-                else
-                {
-                    // Do not attempt conversion, just apply the final flags
-                    store = _storeClient.ApplyFlags(store, finalFlags);
-                }
-
                 _log.Information("Installing certificate in the certificate store");
                 _storeClient.InstallCertificate(store);
                 if (!_runLevel.HasFlag(RunLevel.Test))

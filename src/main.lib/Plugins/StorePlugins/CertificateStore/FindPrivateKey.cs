@@ -46,12 +46,16 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         static string GetKeyFileName(X509Certificate2 cert)
         {
             var ecdsa = cert.GetECDsaPrivateKey();
-            if (ecdsa is ECDsaCng ecdsaCng && !string.IsNullOrWhiteSpace(ecdsaCng.Key.UniqueName)) 
+            if (ecdsa is ECDsaCng ecdsaCng && 
+                ecdsaCng.Key != null && 
+                !string.IsNullOrWhiteSpace(ecdsaCng.Key.UniqueName)) 
             { 
                 return ecdsaCng.Key.UniqueName;
             }
             var rsa = cert.GetRSAPrivateKey();
-            if (rsa is RSACng rsaCng && !string.IsNullOrWhiteSpace(rsaCng.Key.UniqueName))
+            if (rsa is RSACng rsaCng && 
+                rsaCng.Key != null && 
+                !string.IsNullOrWhiteSpace(rsaCng.Key.UniqueName))
             {
                 return rsaCng.Key.UniqueName;
             }
