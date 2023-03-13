@@ -141,7 +141,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         {
             // If no RSA key is present, we only export and re-fallback to
             // set the correct flags on the certificate.
-            _log.Debug("Re-opening certificate with flags {flags}", flags);
             var cert = original.Export(X509ContentType.Pkcs12, string.Empty);
             return new X509Certificate2(cert, string.Empty, flags)
             {
@@ -157,32 +156,32 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// <param name="original"></param>
         /// <param name="flags"></param>
         /// <returns></returns>
-        public X509Certificate2 ConvertCertificate(X509Certificate2 original, X509KeyStorageFlags flags)
+        public X509Certificate2? ConvertCertificate(X509Certificate2 original, X509KeyStorageFlags flags)
         {
-            // If there is an RSA key, we change it to be stored in the
-            // Microsoft RSA SChannel Cryptographic Provider so that its 
-            // usable for older versions of Microsoft Exchange and exportable
-            // from IIS. This also is required to allow the SetAcl logic to 
-            // work.
-            using var rsaPrivateKey = original.GetRSAPrivateKey();
-            if (rsaPrivateKey == null)
-            {
-                return original;
-            }
-            else
-            {
-                _log.Debug("Converting private key...", flags);
-            }
-
-            // Export private key parameters
-            // https://github.com/dotnet/runtime/issues/36899
-            var pwd = Guid.NewGuid().ToString();
-            using var tempRsa = RSA.Create();
-            var pbeParameters = new PbeParameters(PbeEncryptionAlgorithm.Aes256Cbc, HashAlgorithmName.SHA256, 10);
-            tempRsa.ImportEncryptedPkcs8PrivateKey(pwd, rsaPrivateKey.ExportEncryptedPkcs8PrivateKey(pwd, pbeParameters), out var read);
-
             try
             {
+                // If there is an RSA key, we change it to be stored in the
+                // Microsoft RSA SChannel Cryptographic Provider so that its 
+                // usable for older versions of Microsoft Exchange and exportable
+                // from IIS. This also is required to allow the SetAcl logic to 
+                // work.
+                using var rsaPrivateKey = original.GetRSAPrivateKey();
+                if (rsaPrivateKey == null)
+                {
+                    return null;
+                }
+                else
+                {
+                    _log.Debug("Converting private key...", flags);
+                }
+
+                // Export private key parameters
+                // https://github.com/dotnet/runtime/issues/36899
+                var pwd = Guid.NewGuid().ToString();
+                using var tempRsa = RSA.Create();
+                var pbeParameters = new PbeParameters(PbeEncryptionAlgorithm.Aes256Cbc, HashAlgorithmName.SHA256, 10);
+                tempRsa.ImportEncryptedPkcs8PrivateKey(pwd, rsaPrivateKey.ExportEncryptedPkcs8PrivateKey(pwd, pbeParameters), out var read);
+
                 var cspFlags = CspProviderFlags.NoPrompt;
                 if (flags.HasFlag(X509KeyStorageFlags.MachineKeySet))
                 {
@@ -216,7 +215,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 // make sure it's retried on the next run.
                 _log.Warning("Error converting private key to Microsoft RSA SChannel Cryptographic Provider");
                 _log.Verbose("{ex}", ex);
-                return original;
+                return null;
             }
         }
 

@@ -101,16 +101,29 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     (_settings.Store.CertificateStore.PrivateKeyExportable == null && _settings.Security.PrivateKeyExportable == true);
                     #pragma warning restore CS0618 // Type or member is obsolete
 
-                var flags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet;
+                var baseFlags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet;
+                var finalFlags = baseFlags;
                 if (exportable)
                 {
-                    flags |= X509KeyStorageFlags.Exportable;
+                    finalFlags |= X509KeyStorageFlags.Exportable;
                 }
+                _log.Debug("Storing certificate with flags {flags}", finalFlags);
 
-                store = _storeClient.ApplyFlags(store, flags);
                 if (_settings.Store.CertificateStore.UseNextGenerationCryptoApi != true)
                 {
-                    store = _storeClient.ConvertCertificate(store, flags);
+                    // Should always be exportable before we attempt to convert,
+                    // because otherwise we won't be able to get to the private key
+                    store = _storeClient.ApplyFlags(store, baseFlags | X509KeyStorageFlags.Exportable);
+
+                    // If the ConvertCertificate fails we fall back to the original
+                    // input certificate wit the base flags applied
+                    store = _storeClient.ConvertCertificate(store, finalFlags);
+                    store ??= _storeClient.ApplyFlags(input.Certificate, baseFlags);
+                } 
+                else
+                {
+                    // Do not attempt conversion, just apply the final flags
+                    store = _storeClient.ApplyFlags(store, finalFlags);
                 }
 
                 _log.Information("Installing certificate in the certificate store");
