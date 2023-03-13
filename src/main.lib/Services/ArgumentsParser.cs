@@ -158,7 +158,7 @@ namespace PKISharp.WACS.Configuration
                             value = $"\"{value}\"";
                         }
                         censoredArgs.Add(value);
-                        censor = SecretArguments.Any(c => _args[i].ToLower() == $"--{c}");
+                        censor = SecretArguments.Any(c => _args[i].ToLower() == $"--{c}" || _args[i].ToLower() == $"/{c}");
                     }
                     else
                     {

@@ -24,7 +24,7 @@ namespace PKISharp.WACS.Host
                 new UnhandledExceptionEventHandler(OnUnhandledException);
 
             // Are we running in verbose mode?
-            var verbose = args.Contains("--verbose");
+            var verbose = args.Contains("--verbose") || args.Contains("/verbose");
 
             // The main class might change the character encoding
             // save the original setting so that it can be restored
