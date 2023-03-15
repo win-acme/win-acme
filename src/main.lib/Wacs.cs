@@ -17,7 +17,7 @@ namespace PKISharp.WACS.Host
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
         private readonly AdminService _adminService;
-        private readonly AcmeClient _acmeClient;
+        private readonly NetworkCheckService _networkCheck;
         private readonly UpdateClient _updateClient;
         private readonly ArgumentsParser _arguments;
         private readonly ExceptionHandler _exceptionHandler;
@@ -40,6 +40,7 @@ namespace PKISharp.WACS.Host
             ArgumentsParser argumentsParser,
             AdminService adminService,
             RenewalCreator renewalCreator,
+            NetworkCheckService networkCheck,
             RenewalManager renewalManager,
             TaskSchedulerService taskSchedulerService,
             MainMenu mainMenu)
@@ -48,8 +49,8 @@ namespace PKISharp.WACS.Host
             _exceptionHandler = exceptionHandler;
             _log = logService;
             _settings = settingsService;
-            _acmeClient = acmeClient;
             _updateClient = updateClient;
+            _networkCheck = networkCheck;
             _adminService = adminService;
             _taskScheduler = taskSchedulerService;
             _renewalCreator = renewalCreator; 
@@ -218,7 +219,7 @@ namespace PKISharp.WACS.Host
             }
 
             _log.Information("Connecting to {ACME}...", _settings.BaseUri);
-            await _acmeClient.CheckNetwork().ConfigureAwait(false);
+            await _networkCheck.CheckNetwork().ConfigureAwait(false);
 
             if (_adminService.IsAdmin)
             {
