@@ -18,8 +18,6 @@ namespace PKISharp.WACS.Clients.Acme
 
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
-        private AccountSigner? _currentSigner;
-        private AccountDetails? _currentAccount;
 
         public AccountManager(
             ILogService log,
@@ -46,7 +44,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// </summary>
         /// <param name="keyType"></param>
         /// <returns></returns>
-        public AccountSigner NewSigner(string keyType = "ES256")
+        private AccountSigner NewSigner(string keyType)
         {
             _log.Debug("Creating new {keyType} signer", keyType);
             return new AccountSigner(keyType);
@@ -56,50 +54,74 @@ namespace PKISharp.WACS.Clients.Acme
         /// Create a new default signer
         /// </summary>
         /// <returns></returns>
-        public AccountSigner DefaultSigner()
+        public Account NewAccount(string keyType = "ES256")
         {
+            AccountSigner? signer;
             try
             {
-                return NewSigner("ES256");
+                signer = NewSigner(keyType);
             }
             catch (CryptographicException cex)
             {
-                _log.Verbose("First chance error generating signer: {cex}", cex.Message);
-                return NewSigner("RS256");
+                if (keyType == "ES256")
+                {
+                    _log.Verbose("First chance error generating signer: {cex}", cex.Message);
+                    signer = NewSigner("RS256");
+                } 
+                else
+                {
+                    throw;
+                }
+            }
+            return new Account(default, signer);
+        }
+
+        /// <summary>
+        /// Load the default account for the endpoint
+        /// </summary>
+        public Account? DefaultAccount
+        {
+            get
+            {
+                var details = DefaultAccountDetails;
+                var signer = DefaultAccountSigner;
+                if (details != default && signer != null)
+                {
+                    return new Account(details, signer);
+                }
+                return null;
+            }
+            set
+            {
+                DefaultAccountSigner = value?.Signer;
+                DefaultAccountDetails = value?.Details ?? default;
             }
         }
 
         /// <summary>
         /// Get or set the currently stored signer
         /// </summary>
-        public AccountSigner? CurrentSigner
+        private AccountSigner? DefaultAccountSigner
         {
             get
             {
-                if (_currentSigner == null)
+                if (File.Exists(SignerPath))
                 {
-                    if (File.Exists(SignerPath))
+                    try
                     {
-                        try
+                        _log.Debug("Loading signer from {signerPath}", SignerPath);
+                        var signerString = new ProtectedString(File.ReadAllText(SignerPath), _log);
+                        if (signerString.Value != null)
                         {
-                            _log.Debug("Loading signer from {signerPath}", SignerPath);
-                            var signerString = new ProtectedString(File.ReadAllText(SignerPath), _log);
-                            if (signerString.Value != null)
-                            {
-                               _currentSigner = JsonSerializer.Deserialize(signerString.Value, AcmeClientJson.Insensitive.AccountSigner);
-                            }
+                            return JsonSerializer.Deserialize(signerString.Value, AcmeClientJson.Insensitive.AccountSigner);
                         }
-                        catch (Exception ex)
-                        {
-                            _log.Error(ex, "Unable to load signer");
-                        }
-                    } 
-                    else
+                    }
+                    catch (Exception ex)
                     {
-                        _log.Debug("No signer found at {signerPath}", SignerPath);
+                        _log.Error(ex, "Unable to load signer");
                     }
                 }
-                return _currentSigner;
+                return null;
             }
             set
             {
@@ -108,51 +130,31 @@ namespace PKISharp.WACS.Clients.Acme
                     _log.Debug("Saving signer to {SignerPath}", SignerPath);
                     var x = new ProtectedString(JsonSerializer.Serialize(value, AcmeClientJson.Default.AccountSigner));
                     File.WriteAllText(SignerPath, x.DiskValue(_settings.Security.EncryptConfig));
-                } 
-                _currentSigner = value;
+                }
             }
         }
 
         /// <summary>
         /// Get or set the currently stored account
         /// </summary>
-        public AccountDetails? CurrentAccount
+        private AccountDetails DefaultAccountDetails
         {
             get
             {
-                if (_currentAccount == null)
+                if (File.Exists(AccountPath))
                 {
-                    if (File.Exists(AccountPath))
-                    {
-                        if (CurrentSigner != null)
-                        {
-                            _log.Debug("Loading account from {accountPath}", AccountPath);
-                            _currentAccount = JsonSerializer.Deserialize(File.ReadAllText(AccountPath), AcmeClientJson.Insensitive.AccountDetails);
-                            // Maybe we should update the account details 
-                            // on every start of the program to figure out
-                            // if it hasn't been suspended or cancelled?
-                            // UpdateAccount();
-                        }
-                        else
-                        {
-                            _log.Error("Account found but no valid signer could be loaded");
-                        }
-                    } 
-                    else
-                    {
-                        _log.Debug("No account found at {accountPath}", AccountPath);
-                    }
+                    _log.Debug("Loading account from {accountPath}", AccountPath);
+                    return JsonSerializer.Deserialize(File.ReadAllText(AccountPath), AcmeClientJson.Insensitive.AccountDetails);
                 }
-                return _currentAccount;
+                return default;
             }
             set
             {
-                if (value != null)
+                if (value != default)
                 {
                     _log.Debug("Saving account to {AccountPath}", AccountPath);
-                    File.WriteAllText(AccountPath, JsonSerializer.Serialize(value.Value, AcmeClientJson.Insensitive.AccountDetails));
+                    File.WriteAllText(AccountPath, JsonSerializer.Serialize(value, AcmeClientJson.Insensitive.AccountDetails));
                 }
-                _currentAccount = value;
             }
         }
 
@@ -163,8 +165,8 @@ namespace PKISharp.WACS.Clients.Acme
         {
             try
             {
-                var signer = CurrentSigner;
-                CurrentSigner = signer; //forces a re-save of the signer
+                var signer = DefaultAccountSigner;
+                DefaultAccountSigner = signer; //forces a re-save of the signer
                 _log.Information("Signer re-saved");
             }
             catch

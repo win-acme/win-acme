@@ -26,7 +26,7 @@ namespace PKISharp.WACS.Clients.Acme
 {
     [JsonSerializable(typeof(AccountSigner))]
     [JsonSerializable(typeof(AccountDetails))]
-    [JsonSerializable(typeof(Protocol.ServiceDirectory))]
+    [JsonSerializable(typeof(ServiceDirectory))]
     [JsonSerializable(typeof(AcmeOrderDetails))]
     internal partial class AcmeClientJson : JsonSerializerContext
     {
@@ -64,6 +64,7 @@ namespace PKISharp.WACS.Clients.Acme
 
         private AcmeProtocolClient? _client;
         private readonly AccountManager _accountManager;
+        private Account? _account;
         private bool _initialized = false;
 
         public AcmeClient(
@@ -82,6 +83,7 @@ namespace PKISharp.WACS.Clients.Acme
             _input = inputService;
             _proxyService = proxy;
             _accountManager = accountManager;
+            _account = accountManager.DefaultAccount;
             _zeroSsl = zeroSsl;
         }
 
@@ -182,25 +184,44 @@ namespace PKISharp.WACS.Clients.Acme
             _log.Verbose("Constructing ACME protocol client...");
             var client = new AcmeProtocolClient(httpClient, usePostAsGet: _settings.Acme.PostAsGet);
             client.Directory = await EnsureServiceDirectory(client);
+
             // Try to load prexisting account
-            if (_accountManager.CurrentAccount != null &&
-                _accountManager.CurrentSigner != null)
+            var account = _accountManager.DefaultAccount;
+            if (account != null)
             {
-                _log.Verbose("Using existing ACME account");
-                await client.ChangeAccountKeyAsync(_accountManager.CurrentSigner.JwsTool());
-                client.Account = _accountManager.CurrentAccount;
+                _log.Verbose("Using existing default ACME account");
+                await UseAccount(client, account);
             }
             else
             {
                 _log.Verbose("No account found, creating new one");
-                await SetupAccount(client);
+                account = await SetupAccount(client);
+                if (account == null)
+                {
+                    throw new Exception("AcmeClient was unable to find or create an account");
+                }
+                // Save newly created account to disk
+                _accountManager.DefaultAccount = account;
+                // Start using it
+                await UseAccount(client, account);
             }
-            if (client.Account == null)
-            {
-                throw new Exception("AcmeClient was unable to find or create an account");
-            }
+
             _client = client;
             _log.Verbose("ACME client initialized");
+        }
+
+        /// <summary>
+        /// Set the account to use
+        /// </summary>
+        /// <returns></returns>
+        internal async Task UseAccount(AcmeProtocolClient client, Account account)
+        {
+            _log.Verbose("Using ACME account {id}", account.Details.Kid);
+            client.Account = null;
+            await client.ChangeAccountKeyAsync(account.Signer.JwsTool());
+            client.Account = account.Details;
+            client.NextNonce = null;
+            _account = account;
         }
 
         /// <summary>
@@ -208,9 +229,9 @@ namespace PKISharp.WACS.Clients.Acme
         /// </summary>
         /// <param name="client"></param>
         /// <returns></returns>
-        internal async Task<Protocol.ServiceDirectory> EnsureServiceDirectory(AcmeProtocolClient client)
+        internal async Task<ServiceDirectory> EnsureServiceDirectory(AcmeProtocolClient client)
         {
-            Protocol.ServiceDirectory? directory;
+            ServiceDirectory? directory;
             try
             {
                 _log.Verbose("Getting service directory...");
@@ -255,7 +276,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// </summary>
         /// <param name="client"></param>
         /// <returns></returns>
-        private async Task SetupAccount(AcmeProtocolClient client)
+        private async Task<Account?> SetupAccount(AcmeProtocolClient client)
         {
             // Accept the terms of service, if defined by the server
             try
@@ -266,7 +287,7 @@ namespace PKISharp.WACS.Clients.Acme
                 {
                     if (!await AcceptTos(filename, content))
                     {
-                        return;
+                        return null;
                     }
                 }
             }
@@ -369,19 +390,20 @@ namespace PKISharp.WACS.Clients.Acme
                 contacts = await GetContacts();
             }
 
-            var signer = _accountManager.DefaultSigner();
+            var newAccount = _accountManager.NewAccount();
+            var newAccountDetails = default(AccountDetails);
             try
             {
-                await CreateAccount(client, signer, contacts, eabAlg, eabKid, eabKey);
+                newAccountDetails = await CreateAccount(client, newAccount.Signer, contacts, eabAlg, eabKid, eabKey);
             }
             catch (AcmeProtocolException apex)
             {
                 // Some non-ACME compliant server may not support ES256 or other
                 // algorithms, so attempt fallback to RS256
-                if (apex.ProblemType == ProblemType.BadSignatureAlgorithm && signer.KeyType != "RS256")
+                if (apex.ProblemType == ProblemType.BadSignatureAlgorithm && newAccount.Signer.KeyType != "RS256")
                 {
-                    signer = _accountManager.NewSigner("RS256");
-                    await CreateAccount(client, signer, contacts, eabAlg, eabKid, eabKey);
+                    newAccount = _accountManager.NewAccount("RS256");
+                    newAccountDetails = await CreateAccount(client, newAccount.Signer, contacts, eabAlg, eabKid, eabKey);
                 }
                 else
                 {
@@ -390,9 +412,14 @@ namespace PKISharp.WACS.Clients.Acme
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "Error creating account");
-                throw;
+                _log.Error(ex, ex.Message);
+                return null;
             }
+            if (newAccountDetails == default)
+            {
+                return null;
+            }
+            return new Account(newAccountDetails, newAccount.Signer);
         }
 
         /// <summary>
@@ -405,7 +432,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// <param name="eabKid"></param>
         /// <param name="eabKey"></param>
         /// <returns></returns>
-        private async Task CreateAccount(
+        private async Task<AccountDetails> CreateAccount(
             AcmeProtocolClient client, AccountSigner signer,
             string[]? contacts,
             string eabAlg, string? eabKid, string? eabKey)
@@ -426,13 +453,11 @@ namespace PKISharp.WACS.Clients.Acme
                     client.Directory?.NewAccount ?? "");
             }
             await client.ChangeAccountKeyAsync(signer.JwsTool());
-            client.Account = await Retry(client,
+            return await Retry(client,
                 () => client.CreateAccountAsync(
                     contacts,
                     termsOfServiceAgreed: true,
                     externalAccountBinding: externalAccount?.Payload() ?? null));
-            _accountManager.CurrentSigner = signer;
-            _accountManager.CurrentAccount = client.Account;
         }
 
         /// <summary>
@@ -564,7 +589,7 @@ namespace PKISharp.WACS.Clients.Acme
         internal async Task<AcmeOrderDetails> CreateOrder(IEnumerable<Identifier> identifiers)
         {
             var client = await GetClient();
-            var acmeIdentifiers = identifiers.Select(i => new Protocol.AcmeIdentifier() {
+            var acmeIdentifiers = identifiers.Select(i => new AcmeIdentifier() {
                 Type = i.Type switch
                 {
                     IdentifierType.DnsName => "dns", // rfc8555
@@ -576,13 +601,13 @@ namespace PKISharp.WACS.Clients.Acme
             return await Retry(client, () => client.CreateOrderAsync(acmeIdentifiers));
         }
 
-        internal async Task<Protocol.AcmeChallenge> GetChallengeDetails(string url)
+        internal async Task<AcmeChallenge> GetChallengeDetails(string url)
         {
             var client = await GetClient();
             return await Retry(client, () => client.GetChallengeDetailsAsync(url));
         }
 
-        internal async Task<Protocol.AcmeAuthorization> GetAuthorizationDetails(string url)
+        internal async Task<AcmeAuthorization> GetAuthorizationDetails(string url)
         {
             var client = await GetClient();
             return await Retry(client, () => client.GetAuthorizationDetailsAsync(url));
@@ -673,9 +698,17 @@ namespace PKISharp.WACS.Clients.Acme
 
         internal async Task UpdateAccount(AcmeProtocolClient client)
         {
-            var account = await Retry(client, () => client.CheckAccountAsync());
-            _accountManager.CurrentAccount = account;
-            client.Account = account;
+            if (_account == null)
+            {
+                throw new InvalidOperationException();
+            }
+            var newDetails = await Retry(client, client.CheckAccountAsync);
+            if (newDetails != null)
+            {
+                _account.Details = newDetails;
+                _accountManager.DefaultAccount = _account;
+            }
+            await UseAccount(client, _account);
         }
 
         internal async Task<AcmeCertificate> GetCertificate(AcmeOrderDetails order)
