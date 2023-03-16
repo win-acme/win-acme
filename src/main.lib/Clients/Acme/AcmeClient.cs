@@ -12,11 +12,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Mail;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading;
 using System.Threading.Tasks;
 using Protocol = ACMESharp.Protocol.Resources;
 
@@ -147,7 +145,7 @@ namespace PKISharp.WACS.Clients.Acme
             try
             {
                 _log.Verbose("Getting service directory...");
-                directory = await Backoff(async () => await client.GetDirectoryAsync("directory"));
+                directory = await client.Backoff(async () => await client.GetDirectoryAsync("directory"), _log);
                 if (directory != null)
                 {
                     return directory;
@@ -159,7 +157,7 @@ namespace PKISharp.WACS.Clients.Acme
             }
             // Perhaps the BaseUri *is* the directory, such
             // as implemented by Digicert (#1434)
-            directory = await Backoff(async () => await client.GetDirectoryAsync(""));
+            directory = await client.Backoff(async () => await client.GetDirectoryAsync(""), _log);
             if (directory != null)
             {
                 return directory;
@@ -365,11 +363,11 @@ namespace PKISharp.WACS.Clients.Acme
                     client.Directory?.NewAccount ?? "");
             }
             await client.ChangeAccountKeyAsync(signer.JwsTool());
-            return await Retry(client,
+            return await client.Retry(
                 () => client.CreateAccountAsync(
                     contacts,
                     termsOfServiceAgreed: true,
-                    externalAccountBinding: externalAccount?.Payload() ?? null));
+                    externalAccountBinding: externalAccount?.Payload() ?? null), _log);
         }
 
         /// <summary>
@@ -476,7 +474,7 @@ namespace PKISharp.WACS.Clients.Acme
             {
                 throw new NotSupportedException("Missing challenge url");
             }
-            challenge = await Retry(client, () => client.AnswerChallengeAsync(challenge.Url));
+            challenge = await client.Retry(() => client.AnswerChallengeAsync(challenge.Url), _log);
             var tries = 1;
             while (
                 challenge.Status == AuthorizationPending ||
@@ -488,7 +486,7 @@ namespace PKISharp.WACS.Clients.Acme
                 }
                 await Task.Delay(_settings.Acme.RetryInterval * 1000);
                 _log.Debug("Refreshing authorization ({tries}/{count})", tries, _settings.Acme.RetryCount);
-                challenge = await Retry(client, () => client.GetChallengeDetailsAsync(challenge.Url));
+                challenge = await client.Retry(() => client.GetChallengeDetailsAsync(challenge.Url), _log);
                 tries += 1;
                 if (tries > _settings.Acme.RetryCount)
                 {
@@ -510,25 +508,25 @@ namespace PKISharp.WACS.Clients.Acme
                 },
                 Value = i.Value
             });
-            return await Retry(client, () => client.CreateOrderAsync(acmeIdentifiers));
+            return await client.Retry(() => client.CreateOrderAsync(acmeIdentifiers), _log);
         }
 
         internal async Task<AcmeChallenge> GetChallengeDetails(string url)
         {
             var client = await GetClient();
-            return await Retry(client, () => client.GetChallengeDetailsAsync(url));
+            return await client.Retry(() => client.GetChallengeDetailsAsync(url), _log);
         }
 
         internal async Task<AcmeAuthorization> GetAuthorizationDetails(string url)
         {
             var client = await GetClient();
-            return await Retry(client, () => client.GetAuthorizationDetailsAsync(url));
+            return await client.Retry(() => client.GetAuthorizationDetailsAsync(url), _log);
         }
 
         internal async Task DeactivateAuthorization(string url)
         {
             var client = await GetClient();
-            await Retry(client, () => client.DeactivateAuthorizationAsync(url));
+            await client.Retry(() => client.DeactivateAuthorizationAsync(url), _log);
         }
 
         /// <summary>
@@ -551,7 +549,7 @@ namespace PKISharp.WACS.Clients.Acme
                 {
                     throw new Exception("Missing Finalize url");
                 }
-                details = await Retry(client, () => client.FinalizeOrderAsync(details, csr));
+                details = await client.Retry(() => client.FinalizeOrderAsync(details, csr), _log);
                 await WaitForOrderStatus(details, OrderProcessing, true);
             }
             return details;
@@ -597,14 +595,14 @@ namespace PKISharp.WACS.Clients.Acme
         internal async Task<AcmeOrderDetails> GetOrderDetails(string url)
         {
             var client = await GetClient();
-            return await Retry(client, () => client.GetOrderDetailsAsync(url));
+            return await client.Retry(() => client.GetOrderDetailsAsync(url), _log);
         }
 
         internal async Task ChangeContacts()
         {
             var client = await GetClient();
             var contacts = await GetContacts();
-            var account = await Retry(client, () => client.UpdateAccountAsync(contacts));
+            var account = await client.Retry(() => client.UpdateAccountAsync(contacts), _log);
             await UpdateAccount(client);
         }
 
@@ -614,7 +612,7 @@ namespace PKISharp.WACS.Clients.Acme
             {
                 throw new InvalidOperationException();
             }
-            var newDetails = await Retry(client, client.CheckAccountAsync);
+            var newDetails = await client.Retry(client.CheckAccountAsync, _log);
             if (newDetails != null)
             {
                 _account.Details = newDetails;
@@ -626,125 +624,19 @@ namespace PKISharp.WACS.Clients.Acme
         internal async Task<AcmeCertificate> GetCertificate(AcmeOrderDetails order)
         {
             var client = await GetClient();
-            return await Retry(client, () => client.GetOrderCertificateExAsync(order));
+            return await client.Retry(() => client.GetOrderCertificateExAsync(order), _log);
         }
 
         internal async Task<byte[]> GetCertificate(string url)
         {
             var client = await GetClient();
-            return await Retry(client, async () => {
-                var response = await client.GetAsync(url);
-                return await response.Content.ReadAsByteArrayAsync();
-            });
+            return await client.Retry(async () => { var response = await client.GetAsync(url); return await response.Content.ReadAsByteArrayAsync(); }, _log);
         }
 
         internal async Task<bool> RevokeCertificate(byte[] crt)
         {
             var client = await GetClient();
-            return await Retry(client, () => client.RevokeCertificateAsync(crt, Protocol.RevokeReason.Unspecified));
+            return await client.Retry(() => client.RevokeCertificateAsync(crt, Protocol.RevokeReason.Unspecified), _log);
         }
-
-        /// <summary>
-        /// According to the ACME standard, we SHOULD retry calls
-        /// if there is an invalid nonce. TODO: check for the proper 
-        /// exception feedback, now *any* failed request is retried
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="executor"></param>
-        /// <returns></returns>
-        private async Task<T> Retry<T>(AcmeProtocolClient client, Func<Task<T>> executor, int attempt = 0)
-        {
-            if (attempt == 0)
-            {
-                await _requestLock.WaitAsync();
-            }
-            try
-            {
-                return await Backoff(async () => {
-                    if (string.IsNullOrEmpty(client.NextNonce))
-                    {
-                        await GetNonce(client);
-                    }
-                    return await executor();
-                });
-            }
-            catch (AcmeProtocolException apex)
-            {
-                if (attempt < 3 && apex.ProblemType == Protocol.ProblemType.BadNonce)
-                {
-                    _log.Warning("First chance error calling into ACME server, retrying with new nonce...");
-                    await GetNonce(client);
-                    return await Retry(client, executor, attempt + 1);
-                }
-                else if (apex.ProblemType == Protocol.ProblemType.UserActionRequired)
-                {
-                    _log.Error("{detail}: {instance}", apex.ProblemDetail, apex.ProblemInstance);
-                    throw;
-                }
-                else
-                {
-                    throw;
-                }
-            }
-            finally
-            {
-                if (attempt == 0)
-                {
-                    _requestLock.Release();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Get a new nonce to use by the client
-        /// </summary>
-        /// <returns></returns>
-        internal async Task GetNonce(AcmeProtocolClient client) => await Backoff(async () => {
-            await client.GetNonceAsync();
-            return 1;
-        });
-
-        /// <summary>
-        /// Retry a call to the AcmeService up to five times, with a bigger
-        /// delay for each time that the call fails with a TooManyRequests 
-        /// response
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="executor"></param>
-        /// <param name="attempt"></param>
-        /// <returns></returns>
-        internal async Task<T> Backoff<T>(Func<Task<T>> executor, int attempt = 0)
-        {
-            try
-            {
-                return await executor();
-            }
-            catch (AcmeProtocolException ape)
-            {
-                if (ape.Response.StatusCode == HttpStatusCode.TooManyRequests)
-                {
-                    if (ape.ProblemType == Protocol.ProblemType.RateLimited)
-                    {
-                        // Do not keep retrying when rate limit is hit
-                        throw;
-                    }
-                    if (attempt == 5)
-                    {
-                        throw new Exception("Service is too busy, try again later...", ape);
-                    }
-                    var delaySeconds = (int)Math.Pow(2, attempt + 3); // 5 retries with 8 to 128 seconds delay
-                    _log.Warning("Service is busy at the moment, backing off for {n} seconds", delaySeconds);
-                    await Task.Delay(1000 * delaySeconds);
-                    return await Backoff(executor, attempt + 1);
-                }
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Prevent sending simulateous requests to the ACME service because it messes
-        /// up the nonce tracking mechanism
-        /// </summary>
-        private readonly SemaphoreSlim _requestLock = new(1, 1);
     }
 }
