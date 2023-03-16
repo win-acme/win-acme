@@ -20,15 +20,13 @@ namespace PKISharp.WACS.Clients.Acme
     {
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
-        private readonly AcmeClient _client;
         private readonly DirectoryInfo _orderPath;
         private const string _orderFileExtension = "order.json";
         private const string _orderKeyExtension = "order.keys";
 
-        public OrderManager(ILogService log, ISettingsService settings, AcmeClient client)
+        public OrderManager(ILogService log, ISettingsService settings)
         {
             _log = log;
-            _client = client;
             _settings = settings;
             _orderPath = new DirectoryInfo(Path.Combine(settings.Client.ConfigurationPath, "Orders"));
         }
@@ -42,12 +40,13 @@ namespace PKISharp.WACS.Clients.Acme
         /// <param name="renewal"></param>
         /// <param name="target"></param>
         /// <returns></returns>
-        private static string CacheKey(Order order)
+        private static string CacheKey(Order order, string accountId)
         {
             // Check if we can reuse a cached order based on currently
             // active set of parameters and shape of 
             // the target.
             var cacheKeyBuilder = new StringBuilder();
+            cacheKeyBuilder.Append(accountId);
             cacheKeyBuilder.Append(order.Target.CommonName);
             cacheKeyBuilder.Append(string.Join(',', order.Target.GetIdentifiers(true).OrderBy(x => x).Select(x => x.Value.ToLower())));
             _ = order.Target.UserCsrBytes != null ?
@@ -66,9 +65,9 @@ namespace PKISharp.WACS.Clients.Acme
         /// <param name="renewal"></param>
         /// <param name="target"></param>
         /// <returns></returns>
-        public async Task<AcmeOrderDetails?> GetOrCreate(Order order, RunLevel runLevel)
+        public async Task<AcmeOrderDetails?> GetOrCreate(Order order, AcmeClientAuthorized client, RunLevel runLevel)
         {
-            var cacheKey = CacheKey(order);
+            var cacheKey = CacheKey(order, client.Account.Details.Kid);
             if (_settings.Cache.ReuseDays > 0)
             {
                 // Above conditional not only prevents us from reading a cached
@@ -79,7 +78,7 @@ namespace PKISharp.WACS.Clients.Acme
                 {
                     order.KeyPath = Path.Combine(_orderPath.FullName, $"{cacheKey}.{_orderKeyExtension}");
                 }
-                var orderDetails = await GetFromCache(cacheKey, runLevel);
+                var orderDetails = await GetFromCache(cacheKey, client, runLevel);
                 if (orderDetails != null)
                 {
                     var keyFile = new FileInfo(order.KeyPath);
@@ -97,7 +96,7 @@ namespace PKISharp.WACS.Clients.Acme
                     }
                 }
             }
-            return await CreateOrder(cacheKey, order.Target);
+            return await CreateOrder(cacheKey, client, order.Target);
         }
 
         /// <summary>
@@ -106,7 +105,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// <param name="cacheKey"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        private async Task<AcmeOrderDetails?> GetFromCache(string cacheKey, RunLevel runLevel)
+        private async Task<AcmeOrderDetails?> GetFromCache(string cacheKey, AcmeClientAuthorized client, RunLevel runLevel)
         {
             var existingOrder = FindRecentOrder(cacheKey);
             if (existingOrder == null)
@@ -125,7 +124,7 @@ namespace PKISharp.WACS.Clients.Acme
             try
             {
                 _log.Debug("Refreshing cached order");
-                existingOrder = await RefreshOrder(existingOrder);
+                existingOrder = await RefreshOrder(existingOrder, client);
             }
             catch (Exception ex)
             {
@@ -150,14 +149,14 @@ namespace PKISharp.WACS.Clients.Acme
         /// </summary>
         /// <param name="order"></param>
         /// <returns></returns>
-        private async Task<AcmeOrderDetails> RefreshOrder(AcmeOrderDetails order)
+        private async Task<AcmeOrderDetails> RefreshOrder(AcmeOrderDetails order, AcmeClientAuthorized client)
         {
             _log.Debug("Refreshing order...");
             if (order.OrderUrl == null) 
             {
                 throw new InvalidOperationException("Missing order url");
             }
-            var update = await _client.GetOrderDetails(order.OrderUrl);
+            var update = await client.GetOrderDetails(order.OrderUrl);
             order.Payload = update.Payload;
             return order;
         }
@@ -170,7 +169,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// <param name="privateKeyFile"></param>
         /// <param name="target"></param>
         /// <returns></returns>
-        private async Task<AcmeOrderDetails?> CreateOrder(string cacheKey, Target target)
+        private async Task<AcmeOrderDetails?> CreateOrder(string cacheKey, AcmeClientAuthorized client, Target target)
         {
             try
             {
@@ -185,7 +184,7 @@ namespace PKISharp.WACS.Clients.Acme
 
                 // Create the order
                 _log.Verbose("Creating order for identifiers: {identifiers}", identifiers.Select(x => x.Value));
-                var order = await _client.CreateOrder(identifiers);
+                var order = await client.CreateOrder(identifiers);
                 if (order.Payload.Error != default)
                 {
                     _log.Error("Failed to create order {url}: {detail}", order.OrderUrl, order.Payload.Error.Detail);

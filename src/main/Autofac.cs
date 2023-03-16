@@ -10,7 +10,6 @@ using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Plugins.ValidationPlugins;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
-using System.Runtime.InteropServices.Marshalling;
 
 namespace PKISharp.WACS.Host
 {
@@ -69,14 +68,11 @@ namespace PKISharp.WACS.Host
                 _ = builder.RegisterType<LookupClientProvider>().SingleInstance();
                 _ = builder.RegisterType<CacheService>().As<ICacheService>().SingleInstance();
                 _ = builder.RegisterType<CertificatePicker>().SingleInstance();
-                _ = builder.RegisterType<CertificateService>().As<ICertificateService>().SingleInstance();
                 _ = builder.RegisterType<DueDateRandomService>().As<IDueDateService>().SingleInstance();
                 _ = builder.RegisterType<SecretServiceManager>().SingleInstance();
                 _ = builder.RegisterType<TaskSchedulerService>().SingleInstance();
                 _ = builder.RegisterType<NotificationService>().SingleInstance();
                 _ = builder.RegisterType<RenewalExecutor>().SingleInstance();
-                _ = builder.RegisterType<RenewalValidator>().SingleInstance();
-                _ = builder.RegisterType<OrderProcessor>().SingleInstance();
                 _ = builder.RegisterType<RenewalManager>().SingleInstance();
                 _ = builder.RegisterType<RenewalCreator>().SingleInstance();
                 _ = builder.RegisterType<ArgumentsInputService>().SingleInstance();

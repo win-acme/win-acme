@@ -2,8 +2,6 @@
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Context;
 using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.Base;
-using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
@@ -41,14 +39,14 @@ namespace PKISharp.WACS
         private readonly ISettingsService _settings;
         private readonly IValidationOptionsService _validationOptions;
         private readonly ExceptionHandler _exceptionHandler;
-        private readonly AcmeClient _acmeClient;
+        private readonly AcmeClientAuthorized _acmeClient;
 
         public RenewalValidator(
             IAutofacBuilder scopeBuilder,
             ISettingsService settings,
             ILogService log,
             IPluginService plugin,
-            AcmeClient acmeClient,
+            AcmeClientAuthorized acmeClient,
             IValidationOptionsService validationOptions,
             ExceptionHandler exceptionHandler)
         {
@@ -377,7 +375,7 @@ namespace PKISharp.WACS
         private static async Task<Protocol.AcmeAuthorization?> GetAuthorizationDetails(OrderContext context, string authorizationUri)
         {
             // Get authorization challenge details from server
-            var client = context.OrderScope.Resolve<AcmeClient>();
+            var client = context.OrderScope.Resolve<AcmeClientAuthorized>();
             Protocol.AcmeAuthorization? authorization;
             try
             {
@@ -403,7 +401,7 @@ namespace PKISharp.WACS
             {
                 throw new InvalidOperationException("No validation plugin configured");
             }
-            var client = context.Scope.Resolve<AcmeClient>();
+            var client = context.Scope.Resolve<AcmeClientAuthorized>();
             try
             {
                 if (context.Valid)
@@ -466,7 +464,7 @@ namespace PKISharp.WACS
                     // Now that we're going to call into PrepareChallenge, we will assume 
                     // responsibility to also call CleanUp later, which is signalled by
                     // the AcmeChallenge propery being not null
-                    context.ChallengeDetails = await client.DecodeChallengeValidation(context.Authorization, challenge);
+                    context.ChallengeDetails = client.DecodeChallengeValidation(context.Authorization, challenge);
                     context.Challenge = challenge;
                     await context.ValidationPlugin.PrepareChallenge(context);
                 }
@@ -526,7 +524,7 @@ namespace PKISharp.WACS
             try
             {
                 _log.Debug("[{identifier}] Submitting challenge answer", validationContext.Label);
-                var client = validationContext.Scope.Resolve<AcmeClient>();
+                var client = validationContext.Scope.Resolve<AcmeClientAuthorized>();
                 var updatedChallenge = await client.AnswerChallenge(validationContext.Challenge);
                 validationContext.Challenge = updatedChallenge;
                 if (updatedChallenge.Status != AcmeClient.ChallengeValid)

@@ -27,6 +27,7 @@ namespace PKISharp.WACS
         private readonly ICacheService _cacheService;
         private readonly ExceptionHandler _exceptionHandler;
         private readonly RenewalValidator _validator;
+        private readonly AcmeClientAuthorized _client;
 
         public OrderProcessor(
             IAutofacBuilder scopeBuilder,
@@ -36,7 +37,8 @@ namespace PKISharp.WACS
             ICertificateService certificateService,
             ICacheService cacheService,
             RenewalValidator validator,
-            ExceptionHandler exceptionHandler)
+            ExceptionHandler exceptionHandler, 
+            AcmeClientAuthorized client)
         {
             _validator = validator;
             _scopeBuilder = scopeBuilder;
@@ -46,6 +48,7 @@ namespace PKISharp.WACS
             _exceptionHandler = exceptionHandler;
             _certificateService = certificateService;
             _cacheService = cacheService;
+            _client = client;
         }
 
         /// <summary>
@@ -281,7 +284,7 @@ namespace PKISharp.WACS
             var orderManager = context.OrderScope.Resolve<OrderManager>();
             context.Order.KeyPath = context.Order.Renewal.CsrPluginOptions?.ReusePrivateKey == true
                 ? _cacheService.Key(context.Order).FullName : null;
-            context.Order.Details = await orderManager.GetOrCreate(context.Order, context.RunLevel);
+            context.Order.Details = await orderManager.GetOrCreate(context.Order, _client, context.RunLevel);
 
             // Sanity checks
             if (context.Order.Details == null)

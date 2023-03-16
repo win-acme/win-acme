@@ -34,7 +34,6 @@ namespace PKISharp.WACS.Clients.Acme
         {
             _log = log;
             _settings = settings;
-            _log.Verbose("Constructing protocol client for account {account}...", account.Details.Payload.Id);
             var httpClient = proxy.GetHttpClient();
             httpClient.BaseAddress = settings.BaseUri;
             _client = new AcmeProtocolClient(httpClient, usePostAsGet: _settings.Acme.PostAsGet)
@@ -238,5 +237,20 @@ namespace PKISharp.WACS.Clients.Acme
         /// <returns></returns>
         internal async Task<bool> RevokeCertificate(byte[] crt) => 
             await _client.Retry(() => _client.RevokeCertificateAsync(crt, RevokeReason.Unspecified), _log);
+
+        /// <summary>
+        /// Check account details
+        /// </summary>
+        /// <returns></returns>
+        internal async Task<AccountDetails> CheckAccount() =>
+            await _client.Retry(() => _client.CheckAccountAsync(), _log);
+
+        /// <summary>
+        /// Update contacts
+        /// </summary>
+        /// <param name="contacts"></param>
+        /// <returns></returns>
+        internal async Task<AccountDetails> UpdateAccountAsync(string[]? contacts) =>
+            await _client.Retry(() => _client.UpdateAccountAsync(contacts), _log);
     }
 }

@@ -1,10 +1,7 @@
-﻿using ACMESharp;
-using ACMESharp.Authorizations;
-using ACMESharp.Protocol;
+﻿using ACMESharp.Protocol;
 using ACMESharp.Protocol.Resources;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
-using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
 using System;
@@ -16,7 +13,6 @@ using System.Net.Mail;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using Protocol = ACMESharp.Protocol.Resources;
 
 namespace PKISharp.WACS.Clients.Acme
 {
@@ -58,7 +54,8 @@ namespace PKISharp.WACS.Clients.Acme
         private readonly ZeroSsl _zeroSsl;
         private readonly AccountArguments _accountArguments;
 
-        private AcmeProtocolClient? _client;
+        private AcmeProtocolClient? _anonymousClient;
+        private AcmeClientAuthorized? _authorizedClient;
         private readonly AccountManager _accountManager;
         private Account? _account;
         private bool _initialized = false;
@@ -79,7 +76,6 @@ namespace PKISharp.WACS.Clients.Acme
             _input = inputService;
             _proxyService = proxy;
             _accountManager = accountManager;
-            _account = accountManager.DefaultAccount;
             _zeroSsl = zeroSsl;
         }
 
@@ -94,13 +90,13 @@ namespace PKISharp.WACS.Clients.Acme
             _log.Verbose("Constructing ACME protocol client...");
             var client = new AcmeProtocolClient(httpClient, usePostAsGet: _settings.Acme.PostAsGet);
             client.Directory = await EnsureServiceDirectory(client);
+            _anonymousClient = client;
 
             // Try to load prexisting account
-            var account = _accountManager.DefaultAccount;
+            var account = _accountManager.DefaultAccount; 
             if (account != null)
             {
                 _log.Verbose("Using existing default ACME account");
-                await UseAccount(client, account);
             }
             else
             {
@@ -112,26 +108,26 @@ namespace PKISharp.WACS.Clients.Acme
                 }
                 // Save newly created account to disk
                 _accountManager.DefaultAccount = account;
-                // Start using it
-                await UseAccount(client, account);
             }
 
-            _client = client;
-            _log.Verbose("ACME client initialized");
+            // Switch to the created/selected account
+            UseAccount(account);
         }
 
         /// <summary>
-        /// Set the account to use
+        /// Start using the account
         /// </summary>
-        /// <returns></returns>
-        internal async Task UseAccount(AcmeProtocolClient client, Account account)
+        /// <param name="account"></param>
+        /// <exception cref="InvalidOperationException"></exception>
+        private void UseAccount(Account account)
         {
-            _log.Verbose("Using ACME account {id}", account.Details.Kid);
-            client.Account = null;
-            await client.ChangeAccountKeyAsync(account.Signer.JwsTool());
-            client.Account = account.Details;
-            client.NextNonce = null;
+            if (_anonymousClient == null)
+            {
+                throw new InvalidOperationException();
+            }
             _account = account;
+            _authorizedClient = new AcmeClientAuthorized(_log, _settings, _proxyService, _anonymousClient.Directory, account);
+            _log.Verbose("Using account {account}...", account.Details.Payload.Id);
         }
 
         /// <summary>
@@ -165,20 +161,20 @@ namespace PKISharp.WACS.Clients.Acme
             throw new Exception("Unable to get service directory");
         }
 
-        internal async Task<AccountDetails?> GetAccount() => (await GetClient()).Account;
+        internal async Task<AccountDetails?> GetAccount() => (await GetClient()).Account.Details;
 
-        internal async Task<AcmeProtocolClient> GetClient()
+        internal async Task<AcmeClientAuthorized> GetClient()
         {
             if (!_initialized)
             {
                 await ConfigureAcmeClient();
                 _initialized = true;
             }
-            if (_client == null)
+            if (_authorizedClient == null)
             {
-                throw new InvalidOperationException("Failed to initialize AcmeProtocolClient");
+                throw new InvalidOperationException("Failed to initialize Acme client");
             }
-            return _client;
+            return _authorizedClient;
         }
 
         /// <summary>
@@ -456,187 +452,25 @@ namespace PKISharp.WACS.Clients.Acme
             return newEmails.Select(x => $"{prefix}{x}").ToArray();
         }
 
-        internal async Task<IChallengeValidationDetails> DecodeChallengeValidation(AcmeAuthorization auth, AcmeChallenge challenge)
-        {
-            var client = await GetClient();
-            if (challenge.Type == null)
-            {
-                throw new NotSupportedException("Missing challenge type");
-            }
-            return AuthorizationDecoder.DecodeChallengeValidation(auth, challenge.Type, client.Signer);
-        }
-
-        internal async Task<AcmeChallenge> AnswerChallenge(AcmeChallenge challenge)
-        {
-            // Have to loop to wait for server to stop being pending
-            var client = await GetClient();
-            if (challenge.Url == null)
-            {
-                throw new NotSupportedException("Missing challenge url");
-            }
-            challenge = await client.Retry(() => client.AnswerChallengeAsync(challenge.Url), _log);
-            var tries = 1;
-            while (
-                challenge.Status == AuthorizationPending ||
-                challenge.Status == AuthorizationProcessing)
-            {
-                if (challenge.Url == null)
-                {
-                    throw new NotSupportedException("Missing challenge url");
-                }
-                await Task.Delay(_settings.Acme.RetryInterval * 1000);
-                _log.Debug("Refreshing authorization ({tries}/{count})", tries, _settings.Acme.RetryCount);
-                challenge = await client.Retry(() => client.GetChallengeDetailsAsync(challenge.Url), _log);
-                tries += 1;
-                if (tries > _settings.Acme.RetryCount)
-                {
-                    break;
-                }
-            }
-            return challenge;
-        }
-
-        internal async Task<AcmeOrderDetails> CreateOrder(IEnumerable<Identifier> identifiers)
-        {
-            var client = await GetClient();
-            var acmeIdentifiers = identifiers.Select(i => new AcmeIdentifier() {
-                Type = i.Type switch
-                {
-                    IdentifierType.DnsName => "dns", // rfc8555
-                    IdentifierType.IpAddress => "ip", // rfc8738
-                    _ => throw new NotImplementedException($"Identifier {i.Type} is not supported")
-                },
-                Value = i.Value
-            });
-            return await client.Retry(() => client.CreateOrderAsync(acmeIdentifiers), _log);
-        }
-
-        internal async Task<AcmeChallenge> GetChallengeDetails(string url)
-        {
-            var client = await GetClient();
-            return await client.Retry(() => client.GetChallengeDetailsAsync(url), _log);
-        }
-
-        internal async Task<AcmeAuthorization> GetAuthorizationDetails(string url)
-        {
-            var client = await GetClient();
-            return await client.Retry(() => client.GetAuthorizationDetailsAsync(url), _log);
-        }
-
-        internal async Task DeactivateAuthorization(string url)
-        {
-            var client = await GetClient();
-            await client.Retry(() => client.DeactivateAuthorizationAsync(url), _log);
-        }
-
         /// <summary>
-        /// https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.1.3
+        /// Update email address for the current account
         /// </summary>
-        /// <param name="details"></param>
-        /// <param name="csr"></param>
         /// <returns></returns>
-        internal async Task<AcmeOrderDetails> SubmitCsr(AcmeOrderDetails details, byte[] csr)
-        {
-            // First wait for the order to get "ready", meaning that all validations
-            // are complete. The program makes sure this is the case at the level of 
-            // individual authorizations, but the server might need some extra time to
-            // propagate this status at the order level.
-            var client = await GetClient();
-            await WaitForOrderStatus(details, OrderReady);
-            if (details.Payload.Status == OrderReady)
-            {
-                if (string.IsNullOrEmpty(details.Payload.Finalize))
-                {
-                    throw new Exception("Missing Finalize url");
-                }
-                details = await client.Retry(() => client.FinalizeOrderAsync(details, csr), _log);
-                await WaitForOrderStatus(details, OrderProcessing, true);
-            }
-            return details;
-        }
-
-        /// <summary>
-        /// Helper function to check/refresh order state
-        /// </summary>
-        /// <param name="details"></param>
-        /// <param name="status"></param>
-        /// <param name="negate"></param>
-        /// <returns></returns>
-        private async Task WaitForOrderStatus(AcmeOrderDetails details, string status, bool negate = false)
-        {
-            if (details.OrderUrl == null)
-            {
-                throw new InvalidOperationException();
-            }
-
-            // Wait for processing
-            _ = await GetClient();
-            var tries = 0;
-            do
-            {
-                if (tries > 0)
-                {
-                    if (tries > _settings.Acme.RetryCount)
-                    {
-                        break;
-                    }
-                    _log.Debug($"Waiting for order to get {(negate ? "NOT " : "")}{{ready}} ({{tries}}/{{count}})", status, tries, _settings.Acme.RetryCount);
-                    await Task.Delay(_settings.Acme.RetryInterval * 1000);
-                    var update = await GetOrderDetails(details.OrderUrl);
-                    details.Payload = update.Payload;
-                }
-                tries += 1;
-            } while (
-                (negate && details.Payload.Status == status) ||
-                (!negate && details.Payload.Status != status)
-            );
-        }
-
-        internal async Task<AcmeOrderDetails> GetOrderDetails(string url)
-        {
-            var client = await GetClient();
-            return await client.Retry(() => client.GetOrderDetailsAsync(url), _log);
-        }
-
+        /// <exception cref="InvalidOperationException"></exception>
         internal async Task ChangeContacts()
-        {
-            var client = await GetClient();
-            var contacts = await GetContacts();
-            var account = await client.Retry(() => client.UpdateAccountAsync(contacts), _log);
-            await UpdateAccount(client);
-        }
-
-        internal async Task UpdateAccount(AcmeProtocolClient client)
         {
             if (_account == null)
             {
                 throw new InvalidOperationException();
             }
-            var newDetails = await client.Retry(client.CheckAccountAsync, _log);
+            var client = await GetClient();
+            var contacts = await GetContacts();
+            var newDetails = await client.UpdateAccountAsync(contacts);
             if (newDetails != null)
             {
                 _account.Details = newDetails;
                 _accountManager.DefaultAccount = _account;
             }
-            await UseAccount(client, _account);
-        }
-
-        internal async Task<AcmeCertificate> GetCertificate(AcmeOrderDetails order)
-        {
-            var client = await GetClient();
-            return await client.Retry(() => client.GetOrderCertificateExAsync(order), _log);
-        }
-
-        internal async Task<byte[]> GetCertificate(string url)
-        {
-            var client = await GetClient();
-            return await client.Retry(async () => { var response = await client.GetAsync(url); return await response.Content.ReadAsByteArrayAsync(); }, _log);
-        }
-
-        internal async Task<bool> RevokeCertificate(byte[] crt)
-        {
-            var client = await GetClient();
-            return await client.Retry(() => client.RevokeCertificateAsync(crt, Protocol.RevokeReason.Unspecified), _log);
         }
     }
 }

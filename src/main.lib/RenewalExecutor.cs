@@ -1,6 +1,7 @@
 ﻿using Autofac;
 using Autofac.Core;
 using PKISharp.WACS.Clients;
+using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Context;
 using PKISharp.WACS.DomainObjects;
@@ -28,7 +29,7 @@ namespace PKISharp.WACS
         private readonly ISettingsService _settings;
         private readonly IDueDateService _dueDate;
         private readonly TaskSchedulerService _taskScheduler;
-        private readonly OrderProcessor _orderProcessor;
+        private readonly AcmeClient _acmeClient;
 
         public RenewalExecutor(
             MainArguments args,
@@ -38,7 +39,7 @@ namespace PKISharp.WACS
             ISettingsService settings,
             IDueDateService dueDate,
             TaskSchedulerService taskScheduler,
-            OrderProcessor orderProcessor,
+            AcmeClient acmeClient,
             ISharingLifetimeScope container)
         {
             _args = args;
@@ -49,7 +50,7 @@ namespace PKISharp.WACS
             _container = container;
             _dueDate = dueDate;
             _taskScheduler = taskScheduler;
-            _orderProcessor = orderProcessor;
+            _acmeClient = acmeClient;
         }
 
         /// <summary>
@@ -64,7 +65,8 @@ namespace PKISharp.WACS
             _log.Reset();
 
             // Check the initial, combined target for the renewal
-            using var es = _scopeBuilder.Execution(_container, renewal, runLevel);
+            var client = await _acmeClient.GetClient();
+            using var es = _scopeBuilder.Execution(_container, renewal, client, runLevel);
             var targetPlugin = es.Resolve<PluginBackend<ITargetPlugin, IPluginCapability, TargetPluginOptions>>();
             if (targetPlugin.Capability.State.Disabled)
             {
@@ -260,13 +262,14 @@ namespace PKISharp.WACS
             }
 
             // Get the certificates from cache or server
-            await _orderProcessor.ExecuteOrders(runnableContexts, allContexts, runLevel);
+            var orderProcessor = execute.Resolve<OrderProcessor>();
+            await orderProcessor.ExecuteOrders(runnableContexts, allContexts, runLevel);
             var result = new RenewResult
             {
                 OrderResults = runnableContexts.Select(x => x.OrderResult).ToList()
             };
             // Handle all the store/install steps
-            await _orderProcessor.ProcessOrders(runnableContexts, result);
+            await orderProcessor.ProcessOrders(runnableContexts, result);
 
             // Run the post-execution script. Note that this is different
             // from the script installation pluginService, which is handled

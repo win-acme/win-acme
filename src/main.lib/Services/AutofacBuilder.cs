@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using Microsoft.Win32;
+using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
@@ -100,14 +101,18 @@ namespace PKISharp.WACS.Services
         /// <param name="renewal"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        public ILifetimeScope Execution(ILifetimeScope main, Renewal renewal, RunLevel runLevel)
+        public ILifetimeScope Execution(ILifetimeScope main, Renewal renewal, AcmeClientAuthorized acmeClient, RunLevel runLevel)
         {
             _log.Verbose("Autofac: creating {name} scope with parent {tag}", nameof(Execution), main.Tag);
             var ret = main.BeginLifetimeScope(nameof(Execution), builder =>
             {
                 builder.Register(c => runLevel).As<RunLevel>();
                 builder.RegisterType<FindPrivateKey>().SingleInstance();
+                builder.RegisterType<OrderProcessor>().SingleInstance();
+                builder.RegisterType<RenewalValidator>().SingleInstance();
+                builder.RegisterType<CertificateService>().As<ICertificateService>().SingleInstance();
                 builder.RegisterInstance(renewal);
+                builder.RegisterInstance(acmeClient);
             });
             ret = PluginBackend<ITargetPlugin, TargetPluginOptions>(ret, renewal.TargetPluginOptions, "target");
             return ret;
