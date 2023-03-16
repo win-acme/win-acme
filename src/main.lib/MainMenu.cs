@@ -34,6 +34,7 @@ namespace PKISharp.WACS.Host
         private readonly SecretServiceManager _secretServiceManager;
         private readonly ValidationOptionsService _validationOptionsService;
         private readonly TaskSchedulerService _taskScheduler;
+        private readonly AcmeClient _acmeClient;
 
         public MainMenu(
             ISharingLifetimeScope container, 
@@ -51,6 +52,7 @@ namespace PKISharp.WACS.Host
             RenewalManager renewalManager,
             TaskSchedulerService taskSchedulerService,
             SecretServiceManager secretServiceManager,
+            AcmeClient acmeClient,
             ValidationOptionsService validationOptionsService)
         {
             // Basic services
@@ -69,6 +71,7 @@ namespace PKISharp.WACS.Host
             _arguments = argumentsParser;
             _input = inputService;
             _renewalStore = renewalStore;
+            _acmeClient = acmeClient;
             _validationOptionsService = validationOptionsService;
             _args = _arguments.GetArguments<MainArguments>() ?? new MainArguments();
         }
@@ -235,22 +238,22 @@ namespace PKISharp.WACS.Host
         /// <param name="runLevel"></param>
         private async Task UpdateAccount(RunLevel runLevel)
         {
-            var acmeClient = _container.Resolve<AcmeClient>();
-            var acmeAccount = await acmeClient.GetAccount();
-            if (acmeAccount == null)
+            var client = await _acmeClient.GetClient();
+            if (client == null)
             {
                 throw new InvalidOperationException("Unable to initialize acmeAccount");
             }
+            var accountDetails = client.Account.Details;
             _input.CreateSpace();
-            _input.Show("Account ID", acmeAccount.Value.Payload.Id ?? "-");
-            _input.Show("Account KID", acmeAccount.Value.Kid ?? "-");
-            _input.Show("Created", acmeAccount.Value.Payload.CreatedAt);
-            _input.Show("Initial IP", acmeAccount.Value.Payload.InitialIp);
-            _input.Show("Status", acmeAccount.Value.Payload.Status);
-            if (acmeAccount.Value.Payload.Contact != null &&
-                acmeAccount.Value.Payload.Contact.Length > 0)
+            _input.Show("Account ID", accountDetails.Payload.Id ?? "-");
+            _input.Show("Account KID", accountDetails.Kid ?? "-");
+            _input.Show("Created", accountDetails.Payload.CreatedAt);
+            _input.Show("Initial IP", accountDetails.Payload.InitialIp);
+            _input.Show("Status", accountDetails.Payload.Status);
+            if (accountDetails.Payload.Contact != null &&
+                accountDetails.Payload.Contact.Length > 0)
             {
-                _input.Show("Contact(s)", string.Join(", ", acmeAccount.Value.Payload.Contact));
+                _input.Show("Contact(s)", string.Join(", ", accountDetails.Payload.Contact));
             }
             else
             {
@@ -260,7 +263,7 @@ namespace PKISharp.WACS.Host
             {
                 try
                 {
-                    await acmeClient.ChangeContacts();
+                    await _acmeClient.ChangeContacts();
                     await UpdateAccount(runLevel);
                 } 
                 catch (Exception ex)

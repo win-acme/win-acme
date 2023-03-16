@@ -65,7 +65,7 @@ namespace PKISharp.WACS.Services.Legacy
             _legacyTaskScheduler.StopTaskScheduler();
 
             _log.Information("Step {x}/3: ensure ACMEv2 account", 3);
-            await _acmeClient.GetAccount();
+            await _acmeClient.GetClient();
             var listCommand = "--list";
             var renewCommand = "--renew";
             if (runLevel.HasFlag(RunLevel.Interactive))

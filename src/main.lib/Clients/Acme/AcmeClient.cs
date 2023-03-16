@@ -161,8 +161,11 @@ namespace PKISharp.WACS.Clients.Acme
             throw new Exception("Unable to get service directory");
         }
 
-        internal async Task<AccountDetails?> GetAccount() => (await GetClient()).Account.Details;
-
+        /// <summary>
+        /// Get AcmeClientAuthorized using the default account
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
         internal async Task<AcmeClientAuthorized> GetClient()
         {
             if (!_initialized)
