@@ -148,11 +148,6 @@ namespace PKISharp.WACS
                 _exceptionHandler.HandleException(message: $"Source plugin {targetPluginName} was unable to generate the certificate parameters.");
                 return;
             }
-            if (!initialTarget.IsValid(_log))
-            {
-                _exceptionHandler.HandleException(message: $"Source plugin {targetPluginName} generated invalid certificate parameters");
-                return;
-            }
             _log.Information("Source generated using plugin {name}: {target}", targetPluginName, initialTarget);
 
             // Setup the friendly name
