@@ -65,7 +65,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// <param name="renewal"></param>
         /// <param name="target"></param>
         /// <returns></returns>
-        public async Task<AcmeOrderDetails?> GetOrCreate(Order order, AcmeClientAuthorized client, RunLevel runLevel)
+        public async Task<AcmeOrderDetails?> GetOrCreate(Order order, AcmeClient client, RunLevel runLevel)
         {
             var cacheKey = CacheKey(order, client.Account.Details.Kid);
             if (_settings.Cache.ReuseDays > 0)
@@ -105,7 +105,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// <param name="cacheKey"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        private async Task<AcmeOrderDetails?> GetFromCache(string cacheKey, AcmeClientAuthorized client, RunLevel runLevel)
+        private async Task<AcmeOrderDetails?> GetFromCache(string cacheKey, AcmeClient client, RunLevel runLevel)
         {
             var existingOrder = FindRecentOrder(cacheKey);
             if (existingOrder == null)
@@ -149,7 +149,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// </summary>
         /// <param name="order"></param>
         /// <returns></returns>
-        private async Task<AcmeOrderDetails> RefreshOrder(AcmeOrderDetails order, AcmeClientAuthorized client)
+        private async Task<AcmeOrderDetails> RefreshOrder(AcmeOrderDetails order, AcmeClient client)
         {
             _log.Debug("Refreshing order...");
             if (order.OrderUrl == null) 
@@ -169,7 +169,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// <param name="privateKeyFile"></param>
         /// <param name="target"></param>
         /// <returns></returns>
-        private async Task<AcmeOrderDetails?> CreateOrder(string cacheKey, AcmeClientAuthorized client, Target target)
+        private async Task<AcmeOrderDetails?> CreateOrder(string cacheKey, AcmeClient client, Target target)
         {
             try
             {

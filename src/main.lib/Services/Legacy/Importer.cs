@@ -25,7 +25,7 @@ namespace PKISharp.WACS.Services.Legacy
         private readonly IInputService _input;
         private readonly TaskSchedulerService _currentTaskScheduler;
         private readonly LegacyTaskSchedulerService _legacyTaskScheduler;
-        private readonly AcmeClient _acmeClient;
+        private readonly AcmeClientManager _clientManager;
 
         public Importer(
             ILogService log, ILegacyRenewalService legacyRenewal,
@@ -33,7 +33,7 @@ namespace PKISharp.WACS.Services.Legacy
             IInputService input,
             LegacyTaskSchedulerService legacyTaskScheduler,
             TaskSchedulerService currentTaskScheduler,
-            AcmeClient acmeClient)
+            AcmeClientManager clientManager)
         {
             _legacyRenewal = legacyRenewal;
             _currentRenewal = currentRenewal;
@@ -42,7 +42,7 @@ namespace PKISharp.WACS.Services.Legacy
             _input = input;
             _currentTaskScheduler = currentTaskScheduler;
             _legacyTaskScheduler = legacyTaskScheduler;
-            _acmeClient = acmeClient;
+            _clientManager = clientManager;
         }
 
         public async Task Import(RunLevel runLevel)
@@ -65,7 +65,7 @@ namespace PKISharp.WACS.Services.Legacy
             _legacyTaskScheduler.StopTaskScheduler();
 
             _log.Information("Step {x}/3: ensure ACMEv2 account", 3);
-            await _acmeClient.GetClient();
+            await _clientManager.GetClient();
             var listCommand = "--list";
             var renewCommand = "--renew";
             if (runLevel.HasFlag(RunLevel.Interactive))

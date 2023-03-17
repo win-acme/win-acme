@@ -37,7 +37,7 @@ namespace PKISharp.WACS
         private readonly RenewalCreator _renewalCreator;
         private readonly ISettingsService _settings;
         private readonly IDueDateService _dueDate;
-        private readonly AcmeClient _acmeClient;
+        private readonly AcmeClientManager _clientManager;
 
         public RenewalManager(
             ArgumentsParser arguments, MainArguments args,
@@ -47,7 +47,7 @@ namespace PKISharp.WACS
             ISettingsService settings, IDueDateService dueDate,
             IAutofacBuilder autofacBuilder, ExceptionHandler exceptionHandler,
             RenewalCreator renewalCreator, RenewalExecutor renewalExecutor,
-            AcmeClient acmeClient)
+            AcmeClientManager clientManager)
         {
             _renewalStore = renewalStore;
             _args = args;
@@ -63,7 +63,7 @@ namespace PKISharp.WACS
             _cacheService = cacheService;
             _dueDate = dueDate;
             _plugin = plugin;
-            _acmeClient = acmeClient;
+            _clientManager = clientManager;
         }
 
         /// <summary>
@@ -860,7 +860,7 @@ namespace PKISharp.WACS
         {
             foreach (var renewal in renewals)
             {
-                var client = await _acmeClient.GetClient();
+                var client = await _clientManager.GetClient();
                 using var scope = _scopeBuilder.Execution(_container, renewal, client, RunLevel.Unattended); ;
                 var cs = scope.Resolve<ICertificateService>();
                 try

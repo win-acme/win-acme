@@ -101,7 +101,7 @@ namespace PKISharp.WACS.Services
         /// <param name="renewal"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        public ILifetimeScope Execution(ILifetimeScope main, Renewal renewal, AcmeClientAuthorized acmeClient, RunLevel runLevel)
+        public ILifetimeScope Execution(ILifetimeScope main, Renewal renewal, AcmeClient acmeClient, RunLevel runLevel)
         {
             _log.Verbose("Autofac: creating {name} scope with parent {tag}", nameof(Execution), main.Tag);
             var ret = main.BeginLifetimeScope(nameof(Execution), builder =>

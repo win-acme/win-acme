@@ -7,8 +7,11 @@
         [CommandLine(Description = "Accept the ACME terms of service.")]
         public bool AcceptTos { get; set; }
 
-        [CommandLine(Description = "Email address to use by ACME for renewal fail notices.")]
+        [CommandLine(Description = "Email address to link to your ACME account.")]
         public string? EmailAddress { get; set; }
+
+        [CommandLine(Description = "Name for your ACME account. A seperate registration and signer will be generated for each unique value that you provide.")]
+        public string? Account { get; set; }
 
         [CommandLine(Name = "eab-key-identifier", Description = "Key identifier to use for external account binding.")]
         public string? EabKeyIdentifier { get; set; }

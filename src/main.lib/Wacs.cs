@@ -32,7 +32,7 @@ namespace PKISharp.WACS.Host
             ExceptionHandler exceptionHandler,
             IIISClient iis,
             UpdateClient updateClient,
-            AcmeClient acmeClient,
+            AcmeClientManager acmeClient,
             ILogService logService,
             IInputService inputService,
             ISettingsService settingsService,

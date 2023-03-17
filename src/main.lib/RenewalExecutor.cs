@@ -29,7 +29,7 @@ namespace PKISharp.WACS
         private readonly ISettingsService _settings;
         private readonly IDueDateService _dueDate;
         private readonly TaskSchedulerService _taskScheduler;
-        private readonly AcmeClient _acmeClient;
+        private readonly AcmeClientManager _clientManager;
 
         public RenewalExecutor(
             MainArguments args,
@@ -39,7 +39,7 @@ namespace PKISharp.WACS
             ISettingsService settings,
             IDueDateService dueDate,
             TaskSchedulerService taskScheduler,
-            AcmeClient acmeClient,
+            AcmeClientManager clientManager,
             ISharingLifetimeScope container)
         {
             _args = args;
@@ -50,7 +50,7 @@ namespace PKISharp.WACS
             _container = container;
             _dueDate = dueDate;
             _taskScheduler = taskScheduler;
-            _acmeClient = acmeClient;
+            _clientManager = clientManager;
         }
 
         /// <summary>
@@ -65,7 +65,7 @@ namespace PKISharp.WACS
             _log.Reset();
 
             // Check the initial, combined target for the renewal
-            var client = await _acmeClient.GetClient();
+            var client = await _clientManager.GetClient();
             using var es = _scopeBuilder.Execution(_container, renewal, client, runLevel);
             var targetPlugin = es.Resolve<PluginBackend<ITargetPlugin, IPluginCapability, TargetPluginOptions>>();
             if (targetPlugin.Capability.State.Disabled)

@@ -39,14 +39,14 @@ namespace PKISharp.WACS
         private readonly ISettingsService _settings;
         private readonly IValidationOptionsService _validationOptions;
         private readonly ExceptionHandler _exceptionHandler;
-        private readonly AcmeClientAuthorized _acmeClient;
+        private readonly AcmeClient _client;
 
         public RenewalValidator(
             IAutofacBuilder scopeBuilder,
             ISettingsService settings,
             ILogService log,
             IPluginService plugin,
-            AcmeClientAuthorized acmeClient,
+            AcmeClient client,
             IValidationOptionsService validationOptions,
             ExceptionHandler exceptionHandler)
         {
@@ -55,7 +55,7 @@ namespace PKISharp.WACS
             _validationOptions = validationOptions;
             _exceptionHandler = exceptionHandler;
             _settings = settings;
-            _acmeClient = acmeClient; 
+            _client = client; 
             _plugin = plugin;
         }
 
@@ -165,7 +165,7 @@ namespace PKISharp.WACS
                         Where(a => a.Authorization.Status == AcmeClient.AuthorizationPending).
                         Select(a => { 
                             _log.Information("[{identifier}] Deactivating pending authorization", a.Label);
-                            return _acmeClient.DeactivateAuthorization(a.Uri);
+                            return _client.DeactivateAuthorization(a.Uri);
                         });
                 await Task.WhenAll(deactivateTasks);
             }
@@ -375,7 +375,7 @@ namespace PKISharp.WACS
         private static async Task<Protocol.AcmeAuthorization?> GetAuthorizationDetails(OrderContext context, string authorizationUri)
         {
             // Get authorization challenge details from server
-            var client = context.OrderScope.Resolve<AcmeClientAuthorized>();
+            var client = context.OrderScope.Resolve<AcmeClient>();
             Protocol.AcmeAuthorization? authorization;
             try
             {
@@ -401,7 +401,7 @@ namespace PKISharp.WACS
             {
                 throw new InvalidOperationException("No validation plugin configured");
             }
-            var client = context.Scope.Resolve<AcmeClientAuthorized>();
+            var client = context.Scope.Resolve<AcmeClient>();
             try
             {
                 if (context.Valid)
@@ -524,7 +524,7 @@ namespace PKISharp.WACS
             try
             {
                 _log.Debug("[{identifier}] Submitting challenge answer", validationContext.Label);
-                var client = validationContext.Scope.Resolve<AcmeClientAuthorized>();
+                var client = validationContext.Scope.Resolve<AcmeClient>();
                 var updatedChallenge = await client.AnswerChallenge(validationContext.Challenge);
                 validationContext.Challenge = updatedChallenge;
                 if (updatedChallenge.Status != AcmeClient.ChallengeValid)

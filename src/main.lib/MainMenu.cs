@@ -34,7 +34,7 @@ namespace PKISharp.WACS.Host
         private readonly SecretServiceManager _secretServiceManager;
         private readonly ValidationOptionsService _validationOptionsService;
         private readonly TaskSchedulerService _taskScheduler;
-        private readonly AcmeClient _acmeClient;
+        private readonly AcmeClientManager _clientManager;
 
         public MainMenu(
             ISharingLifetimeScope container, 
@@ -52,7 +52,7 @@ namespace PKISharp.WACS.Host
             RenewalManager renewalManager,
             TaskSchedulerService taskSchedulerService,
             SecretServiceManager secretServiceManager,
-            AcmeClient acmeClient,
+            AcmeClientManager clientManager,
             ValidationOptionsService validationOptionsService)
         {
             // Basic services
@@ -71,7 +71,7 @@ namespace PKISharp.WACS.Host
             _arguments = argumentsParser;
             _input = inputService;
             _renewalStore = renewalStore;
-            _acmeClient = acmeClient;
+            _clientManager = clientManager;
             _validationOptionsService = validationOptionsService;
             _args = _arguments.GetArguments<MainArguments>() ?? new MainArguments();
         }
@@ -238,7 +238,7 @@ namespace PKISharp.WACS.Host
         /// <param name="runLevel"></param>
         private async Task UpdateAccount(RunLevel runLevel)
         {
-            var client = await _acmeClient.GetClient();
+            var client = await _clientManager.GetClient();
             if (client == null)
             {
                 throw new InvalidOperationException("Unable to initialize acmeAccount");
@@ -263,7 +263,7 @@ namespace PKISharp.WACS.Host
             {
                 try
                 {
-                    await _acmeClient.ChangeContacts();
+                    await _clientManager.ChangeContacts();
                     await UpdateAccount(runLevel);
                 } 
                 catch (Exception ex)

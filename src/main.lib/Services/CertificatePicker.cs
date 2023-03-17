@@ -14,7 +14,7 @@ namespace PKISharp.WACS.Services
 
         public CertificatePicker(
             ILogService log,
-            AcmeClient client,
+            AcmeClientManager client,
             PemService pemService,
             ISettingsService settingsService)
         {

@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Services
         /// <param name="renewal"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        ILifetimeScope Execution(ILifetimeScope execution, Renewal renewal, AcmeClientAuthorized acmeClient, RunLevel runLevel);
+        ILifetimeScope Execution(ILifetimeScope execution, Renewal renewal, AcmeClient acmeClient, RunLevel runLevel);
         
         /// <summary>
         /// To split the target 

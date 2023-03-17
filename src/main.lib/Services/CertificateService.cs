@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Services
         private readonly IInputService _inputService;
         private readonly ILogService _log;
         private readonly ICacheService _cacheService;
-        private readonly AcmeClientAuthorized _client;
+        private readonly AcmeClient _client;
         private readonly PemService _pemService;
         private readonly CertificatePicker _picker;
         private readonly ISettingsService _settings;
@@ -28,7 +28,7 @@ namespace PKISharp.WACS.Services
         public CertificateService(
             ILogService log,
             ISettingsService settings,
-            AcmeClientAuthorized client,
+            AcmeClient client,
             PemService pemService,
             IInputService inputService,
             ICacheService cacheService,
