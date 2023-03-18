@@ -34,6 +34,7 @@ namespace PKISharp.WACS.Host
         private readonly SecretServiceManager _secretServiceManager;
         private readonly ValidationOptionsService _validationOptionsService;
         private readonly TaskSchedulerService _taskScheduler;
+        private readonly AccountManager _accountManager;
         private readonly AcmeClientManager _clientManager;
 
         public MainMenu(
@@ -52,6 +53,7 @@ namespace PKISharp.WACS.Host
             RenewalManager renewalManager,
             TaskSchedulerService taskSchedulerService,
             SecretServiceManager secretServiceManager,
+            AccountManager accountManager,
             AcmeClientManager clientManager,
             ValidationOptionsService validationOptionsService)
         {
@@ -72,6 +74,7 @@ namespace PKISharp.WACS.Host
             _input = inputService;
             _renewalStore = renewalStore;
             _clientManager = clientManager;
+            _accountManager= accountManager;
             _validationOptionsService = validationOptionsService;
             _args = _arguments.GetArguments<MainArguments>() ?? new MainArguments();
         }
@@ -137,7 +140,8 @@ namespace PKISharp.WACS.Host
                     "Test email notification", "E"),
                 Choice.Create<Func<Task>>(
                     () => UpdateAccount(RunLevel.Interactive), 
-                    "ACME account details", "A"),
+                    "ACME account details", "A",
+                    state: !_accountManager.ListAccounts().Any() ? State.DisabledState("No accounts configured yet") : State.EnabledState()),
                 Choice.Create<Func<Task>>(
                     () => Import(RunLevel.Interactive | RunLevel.Advanced), 
                     "Import scheduled renewals from WACS/LEWS 1.9.x", "I",
@@ -238,7 +242,16 @@ namespace PKISharp.WACS.Host
         /// <param name="runLevel"></param>
         private async Task UpdateAccount(RunLevel runLevel)
         {
-            var client = await _clientManager.GetClient();
+            var accounts = _accountManager.ListAccounts();
+            var account = accounts.FirstOrDefault();
+            if (accounts.Count() > 1)
+            {
+                account = await _input.ChooseRequired(
+                    "Which account do you want to update?",
+                    accounts, x => new Choice<string>(x) { Description = string.IsNullOrEmpty(x) ? "[Default]" : x, Default = string.IsNullOrEmpty(x) });
+                return;
+            }
+            var client = await _clientManager.GetClient(account);
             if (client == null)
             {
                 throw new InvalidOperationException("Unable to initialize acmeAccount");
@@ -263,7 +276,7 @@ namespace PKISharp.WACS.Host
             {
                 try
                 {
-                    await _clientManager.ChangeContacts();
+                    await _clientManager.ChangeContacts(account);
                     await UpdateAccount(runLevel);
                 } 
                 catch (Exception ex)

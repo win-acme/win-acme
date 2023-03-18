@@ -39,10 +39,8 @@ namespace PKISharp.WACS.Clients.Acme
         private readonly AccountArguments _accountArguments;
 
         private AcmeProtocolClient? _anonymousClient;
-        private AcmeClient? _authorizedClient;
+        private readonly Dictionary<string, AcmeClient> _authorizedClients = new();
         private readonly AccountManager _accountManager;
-        private Account? _account;
-        private bool _initialized = false;
 
         public AcmeClientManager(
             IInputService inputService,
@@ -64,54 +62,53 @@ namespace PKISharp.WACS.Clients.Acme
         }
 
         /// <summary>
-        /// Load the account, signer and directory
+        /// Load the directory and create AcmeProtocolClient that we will use
+        /// to setup new accounts using anonymous context (or EAB)
         /// </summary>
         /// <returns></returns>
-        internal async Task ConfigureAcmeClient()
+        internal async Task<AcmeProtocolClient> CreateAnonymousClient()
         {
             var httpClient = _proxyService.GetHttpClient();
             httpClient.BaseAddress = _settings.BaseUri;
             _log.Verbose("Constructing ACME protocol client...");
             var client = new AcmeProtocolClient(httpClient, usePostAsGet: _settings.Acme.PostAsGet);
             client.Directory = await EnsureServiceDirectory(client);
-            _anonymousClient = client;
+            return client;
+        }
+
+        /// <summary>
+        /// Load the real client that will be used for validation etc.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        internal async Task<AcmeClient> CreateAuthorizedClient(string? name = null)
+        {
+            // Create anonymous client if we need it
+            _anonymousClient ??= await CreateAnonymousClient();
 
             // Try to load prexisting account
-            var account = _accountManager.DefaultAccount; 
+            var account = _accountManager.LoadAccount(name);
             if (account != null)
             {
-                _log.Verbose("Using existing default ACME account");
+                _log.Verbose("Using existing ACME account");
             }
             else
             {
                 _log.Verbose("No account found, creating new one");
-                account = await SetupAccount(client);
+                account = await SetupAccount(_anonymousClient);
                 if (account == null)
                 {
                     throw new Exception("AcmeClient was unable to find or create an account");
                 }
                 // Save newly created account to disk
-                _accountManager.DefaultAccount = account;
+                _accountManager.StoreAccount(account, name);
             }
 
-            // Switch to the created/selected account
-            UseAccount(account);
-        }
-
-        /// <summary>
-        /// Start using the account
-        /// </summary>
-        /// <param name="account"></param>
-        /// <exception cref="InvalidOperationException"></exception>
-        private void UseAccount(Account account)
-        {
-            if (_anonymousClient == null)
-            {
-                throw new InvalidOperationException();
-            }
-            _account = account;
-            _authorizedClient = new AcmeClient(_log, _settings, _proxyService, _anonymousClient.Directory, account);
-            _log.Verbose("Using account {account}...", account.Details.Payload.Id);
+            // Create authorized account
+            var ret = new AcmeClient(_log, _settings, _proxyService, _anonymousClient.Directory, account);
+            _log.Verbose("Using account {account}...", account.Details.Kid);
+            return ret;
         }
 
         /// <summary>
@@ -150,18 +147,20 @@ namespace PKISharp.WACS.Clients.Acme
         /// </summary>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        internal async Task<AcmeClient> GetClient()
+        internal async Task<AcmeClient> GetClient(string? name = null)
         {
-            if (!_initialized)
+            var key = name ?? "";
+            if (_authorizedClients.TryGetValue(key, out var value))
             {
-                await ConfigureAcmeClient();
-                _initialized = true;
+                return value;
             }
-            if (_authorizedClient == null)
+            var ret = await CreateAuthorizedClient(name);
+            if (ret == null)
             {
                 throw new InvalidOperationException("Failed to initialize Acme client");
             }
-            return _authorizedClient;
+            _authorizedClients.Add(key, ret);
+            return ret;
         }
 
         /// <summary>
@@ -444,19 +443,15 @@ namespace PKISharp.WACS.Clients.Acme
         /// </summary>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        internal async Task ChangeContacts()
+        internal async Task ChangeContacts(string? name = null)
         {
-            if (_account == null)
-            {
-                throw new InvalidOperationException();
-            }
-            var client = await GetClient();
+            var client = await GetClient(name);
             var contacts = await GetContacts();
             var newDetails = await client.UpdateAccountAsync(contacts);
             if (newDetails != null)
             {
-                _account.Details = newDetails;
-                _accountManager.DefaultAccount = _account;
+                client.Account.Details = newDetails;
+                _accountManager.StoreAccount(client.Account, name);
             }
         }
     }
