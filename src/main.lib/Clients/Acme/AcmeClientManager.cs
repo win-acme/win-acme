@@ -107,7 +107,14 @@ namespace PKISharp.WACS.Clients.Acme
 
             // Create authorized account
             var ret = new AcmeClient(_log, _settings, _proxyService, _anonymousClient.Directory, account);
-            _log.Verbose("Using account {account}...", account.Details.Kid);
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                _log.Debug("Using named account {name}...", name);
+            }
+            else
+            {
+                _log.Debug("Using default account...", name);
+            }
             return ret;
         }
 

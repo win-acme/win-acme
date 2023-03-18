@@ -113,6 +113,11 @@ namespace PKISharp.WACS.DomainObjects
         public List<RenewResult> History { get; set; } = new List<RenewResult>();
 
         /// <summary>
+        /// Which ACME account is associated with the renewal (null = default)
+        /// </summary>
+        public string? Account { get; set; }
+
+        /// <summary>
         /// Pretty format
         /// </summary>
         /// <returns></returns>

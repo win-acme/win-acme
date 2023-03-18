@@ -31,6 +31,7 @@ namespace PKISharp.WACS
         Validation = 8,
         Store = 16,
         Installation = 32,
+        Account = 64,
         All = int.MaxValue
     }
 

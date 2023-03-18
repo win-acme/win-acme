@@ -141,7 +141,7 @@ namespace PKISharp.WACS.Host
                 Choice.Create<Func<Task>>(
                     () => UpdateAccount(RunLevel.Interactive), 
                     "ACME account details", "A",
-                    state: !_accountManager.ListAccounts().Any() ? State.DisabledState("No accounts configured yet") : State.EnabledState()),
+                    state: !_accountManager.ListAccounts().Any() ? State.DisabledState("No account(s) configured yet.") : State.EnabledState()),
                 Choice.Create<Func<Task>>(
                     () => Import(RunLevel.Interactive | RunLevel.Advanced), 
                     "Import scheduled renewals from WACS/LEWS 1.9.x", "I",
@@ -247,9 +247,13 @@ namespace PKISharp.WACS.Host
             if (accounts.Count() > 1)
             {
                 account = await _input.ChooseRequired(
-                    "Which account do you want to update?",
-                    accounts, x => new Choice<string>(x) { Description = string.IsNullOrEmpty(x) ? "[Default]" : x, Default = string.IsNullOrEmpty(x) });
-                return;
+                    "Choose ACME account to view/update",
+                    accounts,
+                    x => new Choice<string>(x)
+                    {
+                        Description = x == "" ? "Default account" : $"Named account: {x}",
+                        Default = string.Equals(x, "", StringComparison.OrdinalIgnoreCase),
+                    });
             }
             var client = await _clientManager.GetClient(account);
             if (client == null)

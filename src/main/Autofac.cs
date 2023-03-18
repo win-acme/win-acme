@@ -86,6 +86,7 @@ namespace PKISharp.WACS.Host
                 // Specials
                 _ = builder.RegisterType<HttpValidationParameters>().InstancePerLifetimeScope();
                 _ = builder.Register(c => c.Resolve<ArgumentsParser>().GetArguments<MainArguments>()!);
+                _ = builder.Register(c => c.Resolve<ArgumentsParser>().GetArguments<AccountArguments>()!);
                 _ = builder.Register(c => (ISharingLifetimeScope)c.Resolve<ILifetimeScope>()).As<ISharingLifetimeScope>().ExternallyOwned();
             });
         }

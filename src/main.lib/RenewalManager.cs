@@ -37,6 +37,7 @@ namespace PKISharp.WACS
         private readonly RenewalCreator _renewalCreator;
         private readonly ISettingsService _settings;
         private readonly IDueDateService _dueDate;
+        private readonly AccountManager _accountManager;
         private readonly AcmeClientManager _clientManager;
 
         public RenewalManager(
@@ -47,7 +48,7 @@ namespace PKISharp.WACS
             ISettingsService settings, IDueDateService dueDate,
             IAutofacBuilder autofacBuilder, ExceptionHandler exceptionHandler,
             RenewalCreator renewalCreator, RenewalExecutor renewalExecutor,
-            AcmeClientManager clientManager)
+            AcmeClientManager clientManager, AccountManager accountManager)
         {
             _renewalStore = renewalStore;
             _args = args;
@@ -64,6 +65,7 @@ namespace PKISharp.WACS
             _dueDate = dueDate;
             _plugin = plugin;
             _clientManager = clientManager;
+            _accountManager = accountManager;
         }
 
         /// <summary>
@@ -624,6 +626,7 @@ namespace PKISharp.WACS
                 Choice.Create(Steps.Validation, "Validation"),
                 Choice.Create(Steps.Store, "Store"),
                 Choice.Create(Steps.Installation, "Installation"),
+                Choice.Create(Steps.Account, "Account", state: _accountManager.ListAccounts().Count() > 1 ? State.EnabledState() : State.DisabledState("Only one account is registered.")),
                 Choice.Create(Steps.None, "Cancel")
             };
             var chosen = await _input.ChooseFromMenu("Which step do you want to edit?", options);
@@ -643,6 +646,14 @@ namespace PKISharp.WACS
                 _input.CreateSpace();
                 _input.Show("Id", renewal.Id);
                 _input.Show("File", $"{renewal.Id}.renewal.json");
+                if (string.IsNullOrWhiteSpace(renewal.Account))
+                {
+                    _input.Show("Account", "Default account");
+                } 
+                else
+                {
+                    _input.Show("Account", $"Named account: {renewal.Account}");
+                }
                 _input.Show("FriendlyName", string.IsNullOrEmpty(renewal.FriendlyName) ? $"[Auto] {renewal.LastFriendlyName}" : renewal.FriendlyName);
                 _input.Show(".pfx password", renewal.PfxPassword?.Value);
                 var expires = renewal.History.Where(x => x.Success == true).LastOrDefault()?.ExpireDate;
@@ -860,7 +871,7 @@ namespace PKISharp.WACS
         {
             foreach (var renewal in renewals)
             {
-                var client = await _clientManager.GetClient();
+                var client = await _clientManager.GetClient(renewal.Account);
                 using var scope = _scopeBuilder.Execution(_container, renewal, client, RunLevel.Unattended); ;
                 var cs = scope.Resolve<ICertificateService>();
                 try

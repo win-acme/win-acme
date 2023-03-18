@@ -65,7 +65,7 @@ namespace PKISharp.WACS
             _log.Reset();
 
             // Check the initial, combined target for the renewal
-            var client = await _clientManager.GetClient();
+            var client = await _clientManager.GetClient(renewal.Account);
             using var es = _scopeBuilder.Execution(_container, renewal, client, runLevel);
             var targetPlugin = es.Resolve<PluginBackend<ITargetPlugin, IPluginCapability, TargetPluginOptions>>();
             if (targetPlugin.Capability.State.Disabled)
