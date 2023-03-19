@@ -357,7 +357,7 @@ namespace PKISharp.WACS
                     options.Add(
                       Choice.Create(
                           host.Value,
-                          $"Select {host.Value.Count} renewals covering host {host.Key}"));
+                          $"Select {host.Value.Count} renewals covering host {host.Key.Value}"));
                 }
             }
             _input.CreateSpace();

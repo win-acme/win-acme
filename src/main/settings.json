@@ -6,7 +6,7 @@
     "VersionCheck": false
   },
   "UI": {
-    "DateFormat": "yyyy/M/d H:mm:ss",
+    "DateFormat": "yyyy/M/d",
     "PageSize": 50,
     "TextEncoding": "utf-8"
   },

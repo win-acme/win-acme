@@ -162,7 +162,7 @@ namespace PKISharp.WACS.Host
         }
 
         /// <summary>
-        /// Load renewals from 1.9.x
+        /// Load renewals from 1.9.account
         /// </summary>
         internal async Task Import(RunLevel runLevel)
         {
@@ -242,6 +242,7 @@ namespace PKISharp.WACS.Host
         /// <param name="runLevel"></param>
         private async Task UpdateAccount(RunLevel runLevel)
         {
+            var renewals = _renewalStore.Renewals;
             var accounts = _accountManager.ListAccounts();
             var account = accounts.FirstOrDefault();
             if (accounts.Count() > 1)
@@ -249,10 +250,14 @@ namespace PKISharp.WACS.Host
                 account = await _input.ChooseRequired(
                     "Choose ACME account to view/update",
                     accounts,
-                    x => new Choice<string>(x)
-                    {
-                        Description = x == "" ? "Default account" : $"Named account: {x}",
-                        Default = string.Equals(x, "", StringComparison.OrdinalIgnoreCase),
+                    account => {
+                        var count = renewals.Where(r => (r.Account ?? "") == account).Count();
+                        var label = $"({count} renewal{(count != 1 ? "s" : "")})";
+                        return new Choice<string>(account)
+                        {
+                            Description = account == "" ? $"Default account {label}" : $"Named account: {account} {label}",
+                            Default = string.Equals(account, "", StringComparison.OrdinalIgnoreCase),
+                        };
                     });
             }
             var client = await _clientManager.GetClient(account);
