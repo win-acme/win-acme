@@ -7,10 +7,10 @@ namespace PKISharp.WACS.Extensions
 {
     public static class TargetExtensions
     {
-        public static bool IsValid(this Target target, ILogService log)
+        public static bool IsValid(this Target target, ILogService log, bool validateMax = true)
         {
             var ret = target.GetIdentifiers(true);
-            if (ret.Count > Constants.MaxNames)
+            if (validateMax && ret.Count > Constants.MaxNames)
             {
                 log.Error($"Too many identifiers in a single certificate. ACME has a maximum of {Constants.MaxNames} identifiers per certificate.");
                 return false;
