@@ -172,7 +172,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 _settings.Store.CertificateStore.PrivateKeyExportable == true ||
                 #pragma warning disable CS0618 // Type or member is obsolete
                 (_settings.Store.CertificateStore.PrivateKeyExportable == null && _settings.Security.PrivateKeyExportable == true);
-
+                #pragma warning restore CS0618 // Type or member is obsolete
             var finalFlags = baseFlags;
             if (exportable)
             {

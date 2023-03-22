@@ -20,10 +20,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         public override void Show(IInputService input)
         {
             base.Show(input);
-            if (Credential != null)
-            {
-                Credential.Show(input);
-            }
+            Credential?.Show(input);
         }
     }
 }

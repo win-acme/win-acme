@@ -17,7 +17,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// </summary>
         [JsonPropertyName("PfxPasswordProtected")]
         public ProtectedString? PfxPassword { get; set; }
-        
+
         /// <summary>
         /// Show details to the user
         /// </summary>

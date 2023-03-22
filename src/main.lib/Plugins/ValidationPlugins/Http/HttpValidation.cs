@@ -230,7 +230,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <returns></returns>
         protected virtual string CombinePath(string root, string path)
         {
-            if (root == null) { root = string.Empty; }
+            root ??= string.Empty;
             var expandedRoot = Environment.ExpandEnvironmentVariables(root);
             var trim = new[] { '/', '\\' };
             return $"{expandedRoot.TrimEnd(trim)}{PathSeparator}{path.TrimStart(trim).Replace('/', PathSeparator)}";
@@ -305,7 +305,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                     {
                         _log.Debug("Deleting files");
                         await DeleteFile(file);
-                        var folder = file.Substring(0, file.LastIndexOf(PathSeparator));
+                        var folder = file[..file.LastIndexOf(PathSeparator)];
                         if (!folders.Contains(folder))
                         {
                             folders.Add(folder);
@@ -321,7 +321,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                                 var idx = folder.LastIndexOf(PathSeparator);
                                 if (idx >= 0)
                                 {
-                                    var parent = folder.Substring(0, folder.LastIndexOf(PathSeparator));
+                                    var parent = folder[..folder.LastIndexOf(PathSeparator)];
                                     await DeleteFolderIfEmpty(parent);
                                 }
                             }

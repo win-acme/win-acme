@@ -45,8 +45,10 @@ namespace PKISharp.WACS.Plugins.SecretPlugins
             _secrets = new List<CredentialEntry>();
             if (_file.Exists)
             {
-                var options = new JsonSerializerOptions();
-                options.PropertyNameCaseInsensitive = true;
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
                 options.Converters.Add(new ProtectedStringConverter(_log, _settings));
                 var parsed = JsonSerializer.Deserialize(File.ReadAllText(_file.FullName), _wacsJson.ListCredentialEntry);
                 if (parsed == null)

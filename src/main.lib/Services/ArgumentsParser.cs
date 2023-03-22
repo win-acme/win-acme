@@ -139,7 +139,7 @@ namespace PKISharp.WACS.Configuration
         internal IEnumerable<string> SecretArguments => _arguments.Where(x => x.Secret).Select(x => x.ArgumentName);
 
         /// <summary>
-        /// Show current command line
+        /// List current command line
         /// </summary>
         internal void ShowCommandLine()
         {
@@ -177,7 +177,7 @@ namespace PKISharp.WACS.Configuration
         }
 
         /// <summary>
-        /// Show command line arguments for the help function
+        /// List command line arguments for the help function
         /// </summary>
         internal void ShowArguments()
         {

@@ -32,10 +32,7 @@ namespace PKISharp.WACS.Services
             }
             finally
             {
-                if (user != null)
-                {
-                    user.Dispose();
-                }
+                user?.Dispose();
             }
             return isAdmin;
         }

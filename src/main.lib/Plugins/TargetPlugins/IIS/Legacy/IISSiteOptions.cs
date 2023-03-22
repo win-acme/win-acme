@@ -19,13 +19,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         public List<string>? ExcludeBindings {
             get => null;
-            set
-            {
-                if (ExcludeHosts == null)
-                {
-                    ExcludeHosts = value;
-                }
-            }
+            set => ExcludeHosts ??= value;
         }
     }
 }

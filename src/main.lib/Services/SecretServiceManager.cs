@@ -335,7 +335,7 @@ namespace PKISharp.WACS.Services
         }
 
         /// <summary>
-        /// Show secret on screen
+        /// List secret on screen
         /// </summary>
         /// <param name="key"></param>
         /// <returns></returns>
