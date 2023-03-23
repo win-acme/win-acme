@@ -74,9 +74,6 @@ internal class InfomaniakClient
         }
         _log.Information($"Infomaniak created TXT Record with ID: {id}");
 
-        // Record take 2-3 seconds to be accessible over internet
-        await Task.Delay(5_000);
-
         return id;
     }
 

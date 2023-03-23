@@ -54,7 +54,7 @@ internal class InfomaniakDnsValidation : DnsValidation<InfomaniakDnsValidation>
             var domainId = await _client.GetDomainId(domain);
             if (domainId == 0)
             {
-                throw new InvalidDataException("Linode did not return a valid domain id.");
+                throw new InvalidDataException("Infomaniak did not return a valid domain id.");
             }
             _ = _domainIds.TryAdd(record.Authority.Domain, domainId);
 
@@ -62,7 +62,7 @@ internal class InfomaniakDnsValidation : DnsValidation<InfomaniakDnsValidation>
             var recordId = await _client.CreateRecord(domainId, recordName, record.Value);
             if (recordId == 0)
             {
-                throw new InvalidDataException("Linode did not return a valid domain record id.");
+                throw new InvalidDataException("Infomaniak did not return a valid domain record id.");
             }
             _ = _recordIds.AddOrUpdate(
                 domainId,
