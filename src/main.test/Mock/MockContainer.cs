@@ -47,6 +47,8 @@ namespace PKISharp.WACS.UnitTests.Mock
             _ = builder.RegisterType<Services.ProxyService>().As<Real.IProxyService>().SingleInstance();
             _ = builder.RegisterType<Real.PasswordGenerator>().SingleInstance();
             _ = builder.RegisterType<RenewalCreator>().SingleInstance();
+            _ = builder.RegisterType<RenewalDescriber>().SingleInstance();
+            _ = builder.RegisterType<RenewalRevoker>().SingleInstance();
             _ = builder.RegisterType<Real.DomainParseService>().SingleInstance();
             _ = builder.RegisterType<Mock.Clients.MockIISClient>().As<IIISClient>().SingleInstance();
             _ = builder.RegisterType<IISHelper>().SingleInstance();
