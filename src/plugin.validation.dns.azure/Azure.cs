@@ -1,5 +1,4 @@
 ﻿using Azure;
-using Azure.Core;
 using Azure.ResourceManager;
 using Azure.ResourceManager.Dns;
 using Azure.ResourceManager.Dns.Models;
@@ -77,14 +76,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
             if (!_recordSets[zone].ContainsKey(relativeKey))
             {
-                var currentRecords = zone.GetDnsTxtRecords().FirstOrDefault(x => x.Data.Name == relativeKey);
-                var currentRecord = currentRecords?.Data;
-                currentRecord ??= new DnsTxtRecordData() { TtlInSeconds = 0 };
-                _recordSets[zone].Add(relativeKey, currentRecord);
+                var currentRecords = await zone.GetDnsTxtRecords().GetAsync(relativeKey);
+                _recordSets[zone].Add(relativeKey, currentRecords.Value.Data);
             }
-            var txtRecord = new DnsTxtRecordInfo();
-            txtRecord.Values.Add(record.Value);
-            _recordSets[zone][relativeKey].DnsTxtRecords.Add(txtRecord);
+            if (!_recordSets[zone][relativeKey].DnsTxtRecords.Any(x => x.Values.Contains(record.Value)))
+            {
+                var txtRecord = new DnsTxtRecordInfo();
+                txtRecord.Values.Add(record.Value);
+                _recordSets[zone][relativeKey].DnsTxtRecords.Add(txtRecord);
+            }
             return true;
         }
 
@@ -147,10 +147,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 var txtRecordCollection = zone.GetDnsTxtRecords();
                 if (!txtRecords.DnsTxtRecords.Any())
                 {
-                    var existing = txtRecordCollection.FirstOrDefault(x => x.Data.Name == domain);
+                    var existing = await txtRecordCollection.GetAsync(domain);
                     if (existing != null)
                     {
-                        _ = await existing.DeleteAsync(WaitUntil.Started);
+                        _ = await existing.Value.DeleteAsync(WaitUntil.Started);
                     }
                 }
                 else
@@ -188,7 +188,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
             var subscription = _options.SubscriptionId == null
                 ? await Client.GetDefaultSubscriptionAsync()
-                : Client.GetSubscriptions().FirstOrDefault(x => x.Id.SubscriptionId == _options.SubscriptionId);
+                : await Client.GetSubscriptions().GetAsync(_options.SubscriptionId);
             if (subscription == null)
             {
                 throw new Exception($"Unable to find subscription {_options.SubscriptionId}");
@@ -217,8 +217,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             if (_hostedZones == null)
             {
                 var zones = new List<DnsZoneResource>();
-                var response = resourceGroup.GetDnsZones();
-                zones.AddRange(response);
+                var response = resourceGroup.GetDnsZones().GetAllAsync();
+                await foreach (var zone in response)
+                {
+                    zones.Add(zone);
+                }
                 _log.Debug("Found {count} hosted zones in Azure Resource Group {rg}", zones.Count, _options.ResourceGroupName);
                 _hostedZones = zones;
             }
