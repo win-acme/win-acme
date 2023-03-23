@@ -87,9 +87,9 @@ namespace PKISharp.WACS.Services
             /// <returns></returns>
             protected override HttpResponseMessage Send(HttpRequestMessage request, CancellationToken cancellationToken) 
             {
-                PreSend(request, cancellationToken).RunSynchronously();
+                PreSend(request, cancellationToken).Wait(cancellationToken);
                 var response = base.Send(request, cancellationToken);
-                PostSend(response, cancellationToken).RunSynchronously();
+                PostSend(response, cancellationToken).Wait(cancellationToken);
                 return response;
             }
 
