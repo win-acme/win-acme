@@ -341,7 +341,7 @@ namespace PKISharp.WACS
         /// <param name="context"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        private async Task SerialValidation(IList<ValidationContextParameters> parameters, ILifetimeScope validationScope, bool breakOnError)
+        private async Task SerialValidation(IList<ValidationContextParameters> parameters, ILifetimeScope globalScope, bool breakOnError)
         {
             foreach (var parameter in parameters)
             {
@@ -353,8 +353,19 @@ namespace PKISharp.WACS
                     _log.Verbose("Skip authorization because the order has already failed");
                     continue;
                 }
+
+                // For serial mode we *MUST* create a seperate DI scope 
+                // for each identifier if the plugin is not capable/aware
+                // of any parallel operation, because it might not properly
+                // maintain its internal state for multiple uses. 
+                var validationScope = globalScope;
+                var capability = globalScope.Resolve<IValidationPlugin>();
+                if (!capability.Parallelism.HasFlag(ParallelOperations.Reuse))
+                {
+                    validationScope = _scopeBuilder.PluginBackend<IValidationPlugin, IValidationPluginCapability, ValidationPluginOptions>(parameter.OrderContext.OrderScope, parameter.Options);
+                }
                 await ParallelValidation(
-                    ParallelOperations.None, 
+                    ParallelOperations.None,
                     validationScope, 
                     new List<ValidationContextParameters> { parameter }, 
                     parameter.OrderContext.RunLevel);

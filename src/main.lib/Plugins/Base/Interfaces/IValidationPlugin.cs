@@ -38,8 +38,26 @@ namespace PKISharp.WACS.Plugins.Interfaces
     [Flags]
     public enum ParallelOperations
     {
+        /// <summary>
+        /// Nothing can be done in parallel
+        /// </summary>
         None = 0,
+
+        /// <summary>
+        /// Prepare for multiple challenge answers in parallel
+        /// </summary>
         Prepare = 1,
-        Answer = 2
+
+        /// <summary>
+        /// Answer multiple challenges in parallel 
+        /// </summary>
+        Answer = 2,
+
+        /// <summary>
+        /// Reuse a single plugin instance for multiple *serial* validations.
+        /// Plugin should properly maintain internal state during multiple
+        /// prepare/answer/cleanup cycles.
+        /// </summary>
+        Reuse = 4
     }
 }

@@ -6,7 +6,6 @@ using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -301,10 +300,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 if (_path != null)
                 {
                     var folders = new List<string>();
-                    foreach (var file in _filesWritten)
+                    var written = new List<string>(_filesWritten);
+                    foreach (var file in written)
                     {
                         _log.Debug("Deleting files");
                         await DeleteFile(file);
+                        _filesWritten.Remove(file);
                         var folder = file[..file.LastIndexOf(PathSeparator)];
                         if (!folders.Contains(folder))
                         {
