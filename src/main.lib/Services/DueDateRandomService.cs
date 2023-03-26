@@ -11,39 +11,63 @@ namespace PKISharp.WACS.Services
 
         public DueDateRandomService(
             ISettingsService settings,
-            ICacheService cacheService,
             ILogService logService,
             IInputService input) :
-            base(settings, cacheService, logService) => _input = input;
-
-        public override bool ShouldRun(Renewal renewal) => true;
+            base(settings, logService) => _input = input;
 
         public override bool ShouldRun(OrderContext order)
         {
-            // Run any in nay case if a difference in source is detected.
-            var previous = _cacheService.CachedInfo(order.Order);
-            if (previous == null)
+            // Should always run, should not even ask the IDueDateService
+            if (order.CachedCertificate == null)
             {
-                _logService.Verbose("{name}: no cached information found", order.OrderName);
-                if (!order.Renewal.New)
-                {
-                    _logService.Information(LogType.All, "Renewal {renewal} running prematurely due to source change in order {order}", order.Renewal.LastFriendlyName, order.OrderName);
-                }
-                return true;
-            } 
-            else
-            {
-                _logService.Verbose("{name}: previous thumbprint {thumbprint}", order.OrderName, previous.Certificate.Thumbprint);
-                _logService.Verbose("{name}: previous expires {thumbprint}", order.OrderName, _input.FormatDate(previous.Certificate.NotAfter));
+                throw new InvalidOperationException();
             }
+
+            // If RenewalInfo is unavailable, disabled or invalid,
+            // fall back to client side logic based on certificate
+            // validity and fixed nr. of days setting.
+            if (_settings.ScheduledTask.RenewalDisableServerSchedule == true ||
+                order.RenewalInfo == null || 
+                order.RenewalInfo.SuggestedWindow.Start == null ||
+                order.RenewalInfo.SuggestedWindow.End == null)
+            {
+                _log.Verbose("Using client side renewal schedule");
+                return ShouldRunClient(order, order.CachedCertificate);
+            }
+
+            // Default: use server side schedule
+            _log.Verbose("Using server side renewal schedule");
+            if (!string.IsNullOrWhiteSpace(order.RenewalInfo.ExplanationUrl))
+            {
+                _log.Warning("Renewal schedule modified: {url}", order.RenewalInfo.ExplanationUrl);
+            }
+
+            // Do no reason about what the values should be, simply
+            // apply the ones provided by the server
+            return ShouldRunCommon
+                (order.RenewalInfo.SuggestedWindow.Start.Value,
+                order.RenewalInfo.SuggestedWindow.End.Value,
+                order.OrderName);
+        }
+
+        /// <summary>
+        /// Should run according to client side available logic,
+        /// i.e. renewal history, issue date, expire date
+        /// </summary>
+        /// <param name="order"></param>
+        /// <returns></returns>
+        private bool ShouldRunClient(OrderContext order, ICertificateInfo previous)
+        {
+            _log.Verbose("{name}: previous thumbprint {thumbprint}", order.OrderName, previous.Certificate.Thumbprint);
+            _log.Verbose("{name}: previous expires {thumbprint}", order.OrderName, _input.FormatDate(previous.Certificate.NotAfter));
 
             // Check if the certificate was actually installed
             // succesfully before we decided to use it as a 
             // reference point.
             var latestDueDate = DateTime.Now;
             var history = order.Renewal.History.
-                Where(x => x.OrderResults?.Any(o => 
-                o.Success == true && 
+                Where(x => x.OrderResults?.Any(o =>
+                o.Success == true &&
                 o.Thumbprint == previous.Certificate.Thumbprint) ?? false);
             if (history.Any())
             {
@@ -54,18 +78,32 @@ namespace PKISharp.WACS.Services
                 latestDueDate = new DateTime(Math.Min(
                     previous.Certificate.NotBefore.AddDays(_settings.ScheduledTask.RenewalDays).Ticks,
                     previous.Certificate.NotAfter.AddDays(-1 * _settings.ScheduledTask.RenewalMinimumValidDays ?? DefaultMinValidDays).Ticks));
-            } 
+            }
             else
             {
-                _logService.Verbose("{name}: no historic success found", order.OrderName);
+                _log.Verbose("{name}: no historic success found", order.OrderName);
             }
 
             // Randomize over the course of 10 days
             var earliestDueDate = latestDueDate.AddDays((_settings.ScheduledTask.RenewalDaysRange ?? 0) * -1);
-            _logService.Verbose("{name}: latest due date {latestDueDate}", order.OrderName, _input.FormatDate(latestDueDate));
-            _logService.Verbose("{name}: earliest due date {earliestDueDate}", order.OrderName, _input.FormatDate(earliestDueDate));
+            return ShouldRunCommon(earliestDueDate, latestDueDate, order.OrderName);
+        }
+
+        /// <summary>
+        /// Common trigger of renewal between start and end 
+        /// </summary>
+        /// <param name="earliestDueDate"></param>
+        /// <param name="latestDueDate"></param>
+        /// <param name="orderName"></param>
+        /// <returns></returns>
+        private bool ShouldRunCommon(DateTime earliestDueDate, DateTime latestDueDate, string orderName)
+        {
+            _log.Verbose("{name}: latest due date {latestDueDate}", orderName, _input.FormatDate(latestDueDate));
+            _log.Verbose("{name}: earliest due date {earliestDueDate}", orderName, _input.FormatDate(earliestDueDate));
+
             if (earliestDueDate > DateTime.Now)
             {
+                // No due yet
                 return false;
             }
 
@@ -79,12 +117,12 @@ namespace PKISharp.WACS.Services
             var daysLeft = (latestDueDate - DateTime.Now).TotalDays;
             if (daysLeft <= 1)
             {
-                _logService.Verbose("{name}: less than a day left", order.OrderName);
+                _log.Verbose("{name}: less than a day left", orderName);
                 return true;
             }
             if (Random.Shared.NextDouble() < (1 / daysLeft))
             {
-                _logService.Verbose("{name}: randomly selected", order.OrderName);
+                _log.Verbose("{name}: randomly selected", orderName);
                 return true;
             }
             return false;

@@ -2,6 +2,9 @@
 using ACMESharp.Authorizations;
 using ACMESharp.Protocol;
 using ACMESharp.Protocol.Resources;
+using Org.BouncyCastle.Asn1.Nist;
+using Org.BouncyCastle.Ocsp;
+using Org.BouncyCastle.X509;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
 using System;
@@ -253,6 +256,26 @@ namespace PKISharp.WACS.Clients.Acme
         /// <returns></returns>
         internal async Task<bool> RevokeCertificate(byte[] crt) => 
             await _client.Retry(() => _client.RevokeCertificateAsync(crt, RevokeReason.Unspecified), _log);
+
+        /// <summary>
+        /// Get renewal info for a certificate
+        /// </summary>
+        /// <param name="crt"></param>
+        /// <returns></returns>
+        internal async Task<AcmeRenewalInfo?> GetRenewalInfo(ICertificateInfo certificate)
+        {
+            // Try to get renewalInfo from the server
+            if (string.IsNullOrWhiteSpace(_client.Directory.RenewalInfo))
+            {
+                return null;
+            }
+            var bouncyIssuer = new X509CertificateParser().ReadCertificate(certificate.Chain.First().GetRawCertData());
+            var bouncyCert = new X509CertificateParser().ReadCertificate(certificate.Certificate.GetRawCertData());
+            var certificateId = new CertificateID(NistObjectIdentifiers.IdSha256.Id, bouncyIssuer, bouncyCert.SerialNumber);
+            var renewalId = certificateId.ToAsn1Object().GetEncoded();
+            return await _client.Retry(() => _client.GetRenewalInfo(renewalId), _log);
+        }
+
 
         /// <summary>
         /// Check account details

@@ -102,6 +102,16 @@ namespace PKISharp.WACS
                 }
             }
 
+            // Logging
+            if (!runLevel.HasFlag(RunLevel.Force) && !renewal.Updated)
+            {
+                _log.Verbose("Checking {renewal}", renewal.LastFriendlyName);
+            }
+            else if (runLevel.HasFlag(RunLevel.Force))
+            {
+                _log.Information(LogType.All, "Force renewing {renewal}", renewal.LastFriendlyName);
+            }
+
             // Handle the orders
             var result = await HandleOrders(es, renewal, orders, runLevel);
 
@@ -119,7 +129,7 @@ namespace PKISharp.WACS
         /// <param name="result"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        internal async Task ManageTaskScheduler(Renewal renewal, RenewResult result, RunLevel runLevel)
+        private async Task ManageTaskScheduler(Renewal renewal, RenewResult result, RunLevel runLevel)
         {
             // Configure task scheduler
             var setupTaskScheduler = _args.SetupTaskScheduler;
@@ -147,38 +157,11 @@ namespace PKISharp.WACS
         }
 
         /// <summary>
-        /// Test if a renewal is needed
-        /// </summary>
-        /// <param name="renewal"></param>
-        /// <param name="runLevel"></param>
-        /// <returns></returns>
-        internal bool ShouldRunRenewal(Renewal renewal, RunLevel runLevel)
-        {
-            if (renewal.New)
-            {
-                return true;
-            }
-            if (!runLevel.HasFlag(RunLevel.Force) && !renewal.Updated)
-            {
-                _log.Verbose("Checking {renewal}", renewal.LastFriendlyName);
-                if (!_dueDate.ShouldRun(renewal))
-                {
-                    return false;
-                }
-            }
-            else if (runLevel.HasFlag(RunLevel.Force))
-            {
-                _log.Information(LogType.All, "Force renewing {renewal}", renewal.LastFriendlyName);
-            }
-            return true;
-        }
-
-        /// <summary>
         /// Return abort result
         /// </summary>
         /// <param name="renewal"></param>
         /// <returns></returns>
-        internal RenewResult Abort(Renewal renewal)
+        private RenewResult Abort(Renewal renewal)
         {
             var dueDate = _dueDate.DueDate(renewal);
             if (dueDate != null)
@@ -198,28 +181,18 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private async Task<RenewResult> HandleOrders(ILifetimeScope execute, Renewal renewal, List<Order> orders, RunLevel runLevel)
         {
+            // Get the certificates from cache or server
+            var orderProcessor = execute.Resolve<OrderProcessor>();
+
             // Build context
             var orderContexts = orders.Select(order => new OrderContext(_scopeBuilder.Order(execute, order), order, runLevel)).ToList();
-
-            // Check if renewal is needed at the root level
-            var mainDue = ShouldRunRenewal(renewal, runLevel);
+            await orderProcessor.PrepareOrders(orderContexts);
 
             // Check individual orders
             foreach (var o in orderContexts)
             {
-                o.ShouldRun = runLevel.HasFlag(RunLevel.Force) || _dueDate.ShouldRun(o);
+                o.ShouldRun = o.ShouldRun || runLevel.HasFlag(RunLevel.Force) || _dueDate.ShouldRun(o);
                 _log.Verbose("Order {name} should run: {run}", o.OrderName, o.ShouldRun);
-            }
-
-            if (!mainDue)
-            {
-                // If renewal is not needed at the root level
-                // it may be needed at the order level due to
-                // change in target. Here we check this.
-                if (!orderContexts.Any(x => x.ShouldRun))
-                {
-                    return Abort(renewal);
-                }
             }
 
             // Only process orders that are due. In the normal
@@ -260,10 +233,7 @@ namespace PKISharp.WACS
             {
                 await scriptClient.RunScript(preScript, $"{renewal.Id}");
             }
-
-            // Get the certificates from cache or server
-            var orderProcessor = execute.Resolve<OrderProcessor>();
-            await orderProcessor.ExecuteOrders(runnableContexts, allContexts, runLevel);
+            await orderProcessor.ExecuteOrders(runnableContexts, runLevel);
             var result = new RenewResult
             {
                 OrderResults = runnableContexts.Select(x => x.OrderResult).ToList()

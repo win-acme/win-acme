@@ -38,6 +38,7 @@
     "RenewalDays": 55,
     "RenewalDaysRange": 0,
     "RenewalMinimumValidDays": null,
+    "RenewalDisableServerSchedule": false,
     "RandomDelay": "04:00:00",
     "StartBoundary": "09:00:00",
     "ExecutionTimeLimit": "02:00:00"

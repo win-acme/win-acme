@@ -54,7 +54,7 @@ namespace TransIp.Library
             var request = new AuthenticationRequest()
             {
                 Login = _login,
-                Nonce = Guid.NewGuid().ToString().Substring(0, 32),
+                Nonce = Guid.NewGuid().ToString()[..32],
                 ExpirationTime = "30 minutes",
                 GlobalKey = true,
                 ReadOnly = false
@@ -76,17 +76,16 @@ namespace TransIp.Library
             return Convert.ToBase64String(encrypted);
         }
 
-        private byte[] Digest(string body)
+        private static byte[] Digest(string body)
         {
             var prefix = new[]
-			{
-				0x30, 0x51, 0x30, 0x0d, 0x06, 0x09,
-				0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
-				0x04, 0x02, 0x03, 0x05, 0x00, 0x04, 0x40
-			};
-			var hashAlg = SHA512.Create();
-			var hash = hashAlg.ComputeHash(Encoding.ASCII.GetBytes(body));
-			return prefix.Select(x => (byte)x).Concat(hash).ToArray();
+            {
+                0x30, 0x51, 0x30, 0x0d, 0x06, 0x09,
+                0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+                0x04, 0x02, 0x03, 0x05, 0x00, 0x04, 0x40
+            };
+            var hash = SHA512.HashData(Encoding.ASCII.GetBytes(body));
+            return prefix.Select(x => (byte)x).Concat(hash).ToArray();
         }
 
         private byte[] Encrypt(byte[] digest)
@@ -101,7 +100,7 @@ namespace TransIp.Library
             if (string.IsNullOrWhiteSpace(key)) {
                 return null;
             }
-            if (!key.Contains("\n"))
+            if (!key.Contains('\n'))
             {
                 var innerKey = Regex.Match(key, "(-----.+-----)(.+)?(-----.+-----)", RegexOptions.Multiline);
                 if (innerKey.Success)

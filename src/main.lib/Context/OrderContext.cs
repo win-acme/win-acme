@@ -1,6 +1,6 @@
-﻿using Autofac;
+﻿using ACMESharp.Protocol.Resources;
+using Autofac;
 using PKISharp.WACS.DomainObjects;
-using System;
 using System.Diagnostics;
 
 namespace PKISharp.WACS.Context
@@ -18,16 +18,37 @@ namespace PKISharp.WACS.Context
         public OrderResult OrderResult { get; private set; }
         public Target Target => Order.Target;
         public Renewal Renewal => Order.Renewal;
-        public CertificateInfoCache? PreviousCertificate { get; set; }
-        public ICertificateInfo? NewCertificate { get; set; }
         public string OrderName => Order.FriendlyNamePart ?? DefaultOrderName;
         public bool ShouldRun { get; set; }
+
+        /// <summary>
+        /// Previously issued certificate in the sequence, regardless of shape and validity
+        /// </summary>
+        public CertificateInfoCache? PreviousCertificate { get; set; }
+
+        /// <summary>
+        /// Matching cached certificate by shape, regardless of validity
+        /// </summary>
+        public CertificateInfoCache? CachedCertificate { get; set; }
+
+        /// <summary>
+        /// Server side renewal info for the CachedCertificate
+        /// </summary>
+        public AcmeRenewalInfo? RenewalInfo { get; set; }
+
+        /// <summary>
+        /// Actually usable certificate, either read from cache (while valid for reuse) 
+        /// or from server, to be freshly issued
+        /// </summary>
+        public ICertificateInfo? NewCertificate { get; set; }
+
         public OrderContext(ILifetimeScope orderScope, Order order, RunLevel runLevel)
         {
             OrderScope = orderScope;
             Order = order;
             RunLevel = runLevel;
             OrderResult = new OrderResult(OrderName);
+            ShouldRun = order.Renewal.New;
         }
     }
 }

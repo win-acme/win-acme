@@ -235,6 +235,13 @@ namespace PKISharp.WACS.Configuration.Settings
         public int? RenewalDaysRange { get; set; }
 
         /// <summary>
+        /// By default we use ARI to manage renewal period (if available
+        /// on the endpoint). This switch allows users to disable it.
+        /// https://datatracker.ietf.org/doc/draft-ietf-acme-ari/
+        /// </summary>
+        public bool? RenewalDisableServerSchedule { get; set; }
+
+        /// <summary>
         /// Configures random time to wait for starting 
         /// the scheduled task.
         /// </summary>

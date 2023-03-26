@@ -22,14 +22,6 @@ namespace PKISharp.WACS.Services
         public bool IsDue(Renewal renewal);
 
         /// <summary>
-        /// Should the renewal run?
-        /// This influences the execution.
-        /// </summary>
-        /// <param name="renewal"></param>
-        /// <returns></returns>
-        public bool ShouldRun(Renewal renewal);
-
-        /// <summary>
         /// Is the order currently due?
         /// </summary>
         /// <param name="renewal"></param>

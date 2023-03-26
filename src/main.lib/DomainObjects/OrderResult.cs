@@ -8,6 +8,10 @@ namespace PKISharp.WACS.DomainObjects
     {
         public DateTime? ExpireDate { get; set; }
 
+        public DateTime? SuggestedRenewStart { get; set; }
+
+        public DateTime? SuggestedRenewEnd { get; set; }
+
         public string Name { get; private set; }
 
         public bool? Success { get; set; }
