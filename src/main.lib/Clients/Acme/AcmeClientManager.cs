@@ -123,7 +123,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// </summary>
         /// <param name="client"></param>
         /// <returns></returns>
-        internal async Task<ServiceDirectory> EnsureServiceDirectory(AcmeProtocolClient client)
+        private async Task<ServiceDirectory> EnsureServiceDirectory(AcmeProtocolClient client)
         {
             ServiceDirectory? directory;
             try
@@ -161,11 +161,7 @@ namespace PKISharp.WACS.Clients.Acme
             {
                 return value;
             }
-            var ret = await CreateAuthorizedClient(name);
-            if (ret == null)
-            {
-                throw new InvalidOperationException("Failed to initialize Acme client");
-            }
+            var ret = await CreateAuthorizedClient(name) ?? throw new InvalidOperationException("Failed to initialize Acme client");
             _authorizedClients.Add(key, ret);
             return ret;
         }

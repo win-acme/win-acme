@@ -260,11 +260,7 @@ namespace PKISharp.WACS.Host
                         };
                     });
             }
-            var client = await _clientManager.GetClient(account);
-            if (client == null)
-            {
-                throw new InvalidOperationException("Unable to initialize acmeAccount");
-            }
+            var client = await _clientManager.GetClient(account) ?? throw new InvalidOperationException("Unable to initialize acmeAccount");
             var accountDetails = client.Account.Details;
             _input.CreateSpace();
             _input.Show("Account ID", accountDetails.Payload.Id ?? "-");

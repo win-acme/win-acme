@@ -137,11 +137,7 @@ namespace PKISharp.WACS
             var plugin = validationScope.Resolve<IValidationPlugin>();
             var contexts = authorizations.Select(context =>
             {
-                var targetPart = context.Order.Target.Parts.FirstOrDefault(p => p.Identifiers.Any(i => i == Identifier.Parse(context.Authorization).Unicode(true)));
-                if (targetPart == null)
-                {
-                    throw new InvalidOperationException("Authorisation found that doesn't match target");
-                }
+                var targetPart = context.Order.Target.Parts.FirstOrDefault(p => p.Identifiers.Any(i => i == Identifier.Parse(context.Authorization).Unicode(true))) ?? throw new InvalidOperationException("Authorisation found that doesn't match target");
                 var pluginMeta = _plugin.GetPlugin(pluginOptions);
                 return new ValidationContextParameters(context, targetPart, pluginOptions, pluginMeta);
             }).ToList();

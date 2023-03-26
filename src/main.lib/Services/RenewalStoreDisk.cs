@@ -63,11 +63,7 @@ namespace PKISharp.WACS.Services
                     try
                     {
                         var text = File.ReadAllText(rj.FullName);
-                        var result = JsonSerializer.Deserialize(text, _wacsJson.Renewal);
-                        if (result == null)
-                        {
-                            throw new Exception("result is empty");
-                        }
+                        var result = JsonSerializer.Deserialize(text, _wacsJson.Renewal) ?? throw new Exception("result is empty");
                         if (result.Id != rj.Name.Replace(postFix, ""))
                         {
                             throw new Exception($"mismatch between filename and id {result.Id}");
@@ -96,10 +92,7 @@ namespace PKISharp.WACS.Services
                         {
                             result.LastFriendlyName = result.FriendlyName;
                         }
-                        if (result.History == null)
-                        {
-                            result.History = new List<RenewResult>();
-                        }
+                        result.History ??= new List<RenewResult>();
                         list.Add(result);
                     }
                     catch (Exception ex)
