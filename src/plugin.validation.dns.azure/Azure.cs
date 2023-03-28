@@ -76,8 +76,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
             if (!_recordSets[zone].ContainsKey(relativeKey))
             {
-                var currentRecords = await zone.GetDnsTxtRecords().GetAsync(relativeKey);
-                _recordSets[zone].Add(relativeKey, currentRecords.Value.Data);
+                try
+                {
+                    var existing = await zone.GetDnsTxtRecords().GetAsync(relativeKey);
+                    _recordSets[zone].Add(relativeKey, existing.Value.Data);
+                } 
+                catch
+                {
+                    _recordSets[zone].Add(relativeKey, new DnsTxtRecordData());
+                }
             }
             if (!_recordSets[zone][relativeKey].DnsTxtRecords.Any(x => x.Values.Contains(record.Value)))
             {
