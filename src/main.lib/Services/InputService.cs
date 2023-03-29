@@ -262,7 +262,7 @@ namespace PKISharp.WACS.Services
 
         // Replaces the characters of the typed in password with asterisks
         // More info: http://rajeshbailwal.blogspot.com/2012/03/password-in-c-console-application.html
-        public async Task<string?> ReadPassword(string what)
+        public Task<string?> ReadPassword(string what)
         {
             Validate(what);
             CreateSpace();
@@ -312,11 +312,11 @@ namespace PKISharp.WACS.Services
             var ret = password.ToString();
             if (string.IsNullOrEmpty(ret))
             {
-                return null;
+                return Task.FromResult<string?>(default);
             }
             else
             {
-                return ret;
+                return Task.FromResult<string?>(ret);
             }
         }
 
