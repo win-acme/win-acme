@@ -249,7 +249,18 @@ namespace PKISharp.WACS
                 if (context.PreviousCertificate != null &&
                     context.NewCertificate.Certificate.Thumbprint != context.PreviousCertificate.Certificate.Thumbprint)
                 {
+                    // Delete the previous certificate from the store(s)
                     await HandleStoreRemove(context, context.PreviousCertificate, storeContexts);
+
+                    // Tell the server that we stopped caring about the previous certificate
+                    try
+                    {
+                        await _client.UpdateRenewalInfo(context.PreviousCertificate);
+                    } 
+                    catch
+                    {
+                        //_log.Debug("UpdateRenewalInfo failed: {message}", ex.Message);
+                    }
                 }
             }
             catch (Exception ex)

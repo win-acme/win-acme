@@ -269,13 +269,30 @@ namespace PKISharp.WACS.Clients.Acme
             {
                 return null;
             }
-            var bouncyIssuer = new X509CertificateParser().ReadCertificate(certificate.Chain.First().GetRawCertData());
-            var bouncyCert = new X509CertificateParser().ReadCertificate(certificate.Certificate.GetRawCertData());
-            var certificateId = new CertificateID(NistObjectIdentifiers.IdSha256.Id, bouncyIssuer, bouncyCert.SerialNumber);
-            var renewalId = certificateId.ToAsn1Object().GetEncoded();
-            return await _client.Retry(() => _client.GetRenewalInfo(renewalId), _log);
+            return await _client.Retry(() => _client.GetRenewalInfo(CertificateId(certificate)), _log);
         }
 
+        /// <summary>
+        /// Tell the server that we stopped caring about a certificate
+        /// </summary>
+        /// <param name="crt"></param>
+        /// <returns></returns>
+        internal async Task UpdateRenewalInfo(ICertificateInfo certificate)
+        {
+            if (string.IsNullOrWhiteSpace(_client.Directory.RenewalInfo))
+            {
+                return;
+            }
+            _ = await _client.Retry(() => _client.UpdateRenewalInfo(CertificateId(certificate)), _log);
+        }
+
+        private static byte[] CertificateId(ICertificateInfo certificate)
+        {
+            var bouncyCert = new X509CertificateParser().ReadCertificate(certificate.Certificate.GetRawCertData());
+            var bouncyIssuer = new X509CertificateParser().ReadCertificate(certificate.Chain.First().GetRawCertData());
+            var certificateId = new CertificateID(NistObjectIdentifiers.IdSha256.Id, bouncyIssuer, bouncyCert.SerialNumber);
+            return certificateId.ToAsn1Object().GetDerEncoded();
+        }
 
         /// <summary>
         /// Check account details
