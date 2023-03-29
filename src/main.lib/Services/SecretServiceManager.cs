@@ -70,14 +70,20 @@ namespace PKISharp.WACS.Services
                 options.Add(Choice.Create<Func<Task<string?>>>(
                         () => FindSecret(),
                         description: "Search in vault"));
-                if (!string.IsNullOrWhiteSpace(@default))
+                if (@default != null)
                 {
+                    var description = "Default from settings.json";
+                    if (string.IsNullOrWhiteSpace(@default))
+                    {
+                        description += " (currently empty!)";
+                    }
                     options.Add(Choice.Create<Func<Task<string?>>>(
                         () => { 
-                            stop = true; 
+                            stop = true;
                             return Task.FromResult<string?>(@default); 
                         },
-                        description: "Default"));
+                        @default: true,
+                        description: description));
                 }
 
                 // Handle undefined input as direct password

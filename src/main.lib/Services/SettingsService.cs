@@ -60,7 +60,7 @@ namespace PKISharp.WACS.Services
             try
             {
                 using var fs = useFile.OpenRead();
-                var newSettings = JsonSerializer.Deserialize(fs, SettingsJson.Default.Settings);
+                var newSettings = JsonSerializer.Deserialize(fs, SettingsJson.Insensitive.Settings);
                 if (newSettings != null)
                 {
                     _settings = newSettings;
@@ -69,7 +69,7 @@ namespace PKISharp.WACS.Services
                 // This code specifically deals with backwards compatibility 
                 // so it is allowed to use obsolete properties
 #pragma warning disable CS0618
-                static string? Fallback(string? x, string? y) => string.IsNullOrWhiteSpace(x) ? y : x;
+                static string? Fallback(string? x, string? y) => x ?? y;
                 Source.DefaultSource = Fallback(Source.DefaultSource, Target.DefaultTarget);
                 Store.PemFiles.DefaultPath = Fallback(Store.PemFiles.DefaultPath, Store.DefaultPemFilesPath);
                 Store.CentralSsl.DefaultPath = Fallback(Store.CentralSsl.DefaultPath, Store.DefaultCentralSslStore);

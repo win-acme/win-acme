@@ -1,11 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Configuration.Settings
 {
     [JsonSerializable(typeof(Settings))]
-    internal partial class SettingsJson : JsonSerializerContext {}
+    internal partial class SettingsJson : JsonSerializerContext 
+    {
+        public static SettingsJson Insensitive => new(new JsonSerializerOptions() { 
+            PropertyNameCaseInsensitive = true,
+            AllowTrailingCommas = true,
+            ReadCommentHandling = JsonCommentHandling.Skip,
+            DefaultIgnoreCondition = JsonIgnoreCondition.Never
+        });
+    }
 
     /// <summary>
     /// All settings

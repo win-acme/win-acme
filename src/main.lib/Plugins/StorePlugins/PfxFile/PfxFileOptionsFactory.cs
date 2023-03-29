@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         private ArgumentResult<ProtectedString?> Password => _arguments.
             GetProtectedString<PfxFileArguments>(args => args.PfxPassword, true).
-            WithDefault(PfxFile.DefaultPassword(_settings).Protect()).
+            WithDefault(PfxFile.DefaultPassword(_settings).Protect(true)).
             DefaultAsNull();
 
         private ArgumentResult<string?> Path => _arguments.

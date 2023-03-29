@@ -26,7 +26,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         private ArgumentResult<ProtectedString?> Password => _arguments.
             GetProtectedString<PemFilesArguments>(args => args.PemPassword, true).
-            WithDefault(_settings.Store.PemFiles.DefaultPassword.Protect()).
+            WithDefault(_settings.Store.PemFiles.DefaultPassword.Protect(true)).
             DefaultAsNull();
 
         private ArgumentResult<string?> Path => _arguments.
