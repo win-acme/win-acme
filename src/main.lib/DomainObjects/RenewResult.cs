@@ -74,7 +74,7 @@ namespace PKISharp.WACS.DomainObjects
         }
 
         [JsonPropertyName("Thumbprints")]
-        private List<string>? ThumbprintsJson { get; set; }
+        public List<string>? ThumbprintsJson { get; set; }
 
         [JsonIgnore]
         public List<string> Thumbprints
