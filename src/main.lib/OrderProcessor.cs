@@ -1,4 +1,5 @@
-﻿using Autofac;
+﻿using ACMESharp.Protocol.Resources;
+using Autofac;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Context;
@@ -27,6 +28,7 @@ namespace PKISharp.WACS
         private readonly ICacheService _cacheService;
         private readonly ExceptionHandler _exceptionHandler;
         private readonly RenewalValidator _validator;
+        private readonly DueDateRuntimeService _dueDate;
         private readonly AcmeClient _client;
 
         public OrderProcessor(
@@ -37,6 +39,7 @@ namespace PKISharp.WACS
             ICertificateService certificateService,
             ICacheService cacheService,
             RenewalValidator validator,
+            DueDateRuntimeService dueDate,
             ExceptionHandler exceptionHandler, 
             AcmeClient clientManager)
         {
@@ -46,6 +49,7 @@ namespace PKISharp.WACS
             _input = input;
             _settings = settings;
             _exceptionHandler = exceptionHandler;
+            _dueDate = dueDate; 
             _certificateService = certificateService;
             _cacheService = cacheService;
             _client = clientManager;
@@ -86,7 +90,14 @@ namespace PKISharp.WACS
                 order.CachedCertificate = _cacheService.CachedInfo(order.Order);
                 if (order.CachedCertificate != null)
                 {
-                    order.RenewalInfo = await _client.GetRenewalInfo(order.CachedCertificate);
+                    try
+                    {
+                        order.RenewalInfo = await _client.GetRenewalInfo(order.CachedCertificate);
+                    } 
+                    catch (Exception ex)
+                    {
+                        _log.Error(ex, "Error getting renewal information from server");
+                    }
                 } 
                 else 
                 {
@@ -203,6 +214,26 @@ namespace PKISharp.WACS
                     // after one fails to do that
                     break;
                 }
+
+                // Store dynamically calculated due date in renewal result
+                var renewalInfo = default(AcmeRenewalInfo);
+                try
+                {
+                    renewalInfo = await _client.GetRenewalInfo(order.NewCertificate);
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Error getting renewal information from server");
+                }
+                var dueDate = _dueDate.ComputeDueDate(order.NewCertificate.Certificate, renewalInfo);
+                
+                // Only store in history if the server actually wants it
+                // to happen earlier than what we are currently calculating
+                // based on our own settings
+                if (dueDate.Source?.Contains("ri") ?? false)
+                {
+                    orderResult.DueDate = dueDate;
+                }
             }
         }
 
@@ -257,9 +288,10 @@ namespace PKISharp.WACS
                     {
                         await _client.UpdateRenewalInfo(context.PreviousCertificate);
                     } 
-                    catch
+                    catch (Exception _)
                     {
-                        //_log.Debug("UpdateRenewalInfo failed: {message}", ex.Message);
+                        // Always fails due to Boulder bug
+                        //_log.Error(ex, "UpdateRenewalInfo failed");
                     }
                 }
             }

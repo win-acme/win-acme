@@ -170,7 +170,7 @@ namespace PKISharp.WACS
             if (dueDate != null)
             {
                 // For sure now that we don't need to run so abort this execution
-                _log.Information("Renewal {renewal} is due after {date}", renewal.LastFriendlyName, _input.FormatDate(dueDate.Value));
+                _log.Information("Renewal {renewal} is due after {date}", renewal.LastFriendlyName, _input.FormatDate(dueDate.Start));
             }
             return new RenewResult() { Abort = true };
         }

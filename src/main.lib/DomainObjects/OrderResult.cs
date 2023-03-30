@@ -1,20 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.DomainObjects
 {
+    [DebuggerDisplay("{Name}")]
     public class OrderResult
     {
         public DateTime? ExpireDate { get; set; }
 
-        public DateTime? SuggestedRenewStart { get; set; }
-
-        public DateTime? SuggestedRenewEnd { get; set; }
+        public DueDate? DueDate { get; set; }
 
         public string Name { get; private set; }
 
         public bool? Success { get; set; }
+
+        public bool? Missing { get; set; }
 
         public string? Thumbprint { get; set; }
 

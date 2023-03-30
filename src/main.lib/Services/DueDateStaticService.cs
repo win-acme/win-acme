@@ -1,5 +1,6 @@
 ﻿using PKISharp.WACS.DomainObjects;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace PKISharp.WACS.Services
@@ -8,51 +9,71 @@ namespace PKISharp.WACS.Services
     {
         internal const int DefaultMinValidDays = 7;
         protected readonly ISettingsService _settings;
-        protected readonly ILogService _log;
+        internal readonly DueDateRuntimeService _runtime;
 
         public DueDateStaticService(
-            ISettingsService settings,
-            ILogService logService)
+            DueDateRuntimeService runtime,
+            ISettingsService settings)
         {
             _settings = settings;
-            _log = logService;
+            _runtime = runtime;
         }
 
-        public DateTime? DueDate(Renewal renewal)
+        public DueDate? DueDate(Renewal renewal)
         {
-            var lastSuccess = renewal.History.LastOrDefault(x => x.Success == true);
-            if (lastSuccess != null)
+            // Get most recent expire date for each order
+            var expireMapping = new Dictionary<string, DueDate?>();
+            foreach (var history in renewal.History.OrderBy(h => h.Date))
             {
-                var firstOccurance = renewal.History.First(x => x.ThumbprintSummary == lastSuccess.ThumbprintSummary);
-                var defaultDueDate = firstOccurance.
-                    Date.
-                    AddDays(_settings.ScheduledTask.RenewalDays).
-                    ToLocalTime();
-                if (lastSuccess.ExpireDate == null)
-                {
-                    return defaultDueDate;
-                }
-                var minDays = _settings.ScheduledTask.RenewalMinimumValidDays ?? DefaultMinValidDays;
-                var expireBasedDueDate = lastSuccess.
-                    ExpireDate.
-                    Value.
-                    AddDays(minDays * -1).
-                    ToLocalTime();
+                var orderResults = history.OrderResults ??
+                new List<OrderResult> {
+                    new OrderResult("Main") {
+                        Success = history.Success,
+                        ExpireDate = history.ExpireDate,
+                        Thumbprint = history.Thumbprints.FirstOrDefault()
+                    }
+                };
 
-                return expireBasedDueDate < defaultDueDate ?
-                    expireBasedDueDate :
-                    defaultDueDate;
+                foreach (var orderResult in orderResults)
+                {
+                    var key = orderResult.Name.ToLower();
+                    if (!expireMapping.ContainsKey(key))
+                    {
+                        expireMapping.Add(key, null);
+                    }
+                    if (orderResult.Success == true)
+                    {
+                        expireMapping[key] = 
+                            orderResult.DueDate ?? 
+                            new DueDate() { 
+                                Start = history.Date, 
+                                End = history.ExpireDate ?? history.Date.AddYears(1) 
+                            };
+                    }
+                    if (orderResult.Missing == true)
+                    {
+                        expireMapping[key] = null;
+                    }
+                }
             }
-            else
+
+            var last = expireMapping.
+                Where(x => x.Value != null).
+                OrderBy(x => x.Value?.End).
+                FirstOrDefault().
+                Value;
+
+            if (last == null)
             {
                 return null;
             }
+            return _runtime.ComputeDueDate(last);
         }
 
         public virtual bool IsDue(Renewal renewal)
         {
             var dueDate = DueDate(renewal);
-            return dueDate == null || dueDate < DateTime.Now;
+            return dueDate == null || dueDate.Start < DateTime.Now;
         }
     }
 }

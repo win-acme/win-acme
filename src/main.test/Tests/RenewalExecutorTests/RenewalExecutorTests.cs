@@ -1,6 +1,7 @@
 ﻿using Autofac;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Services;
 using PKISharp.WACS.UnitTests.Mock;
 using System;
 using System.Collections.Generic;
@@ -14,9 +15,8 @@ namespace PKISharp.WACS.UnitTests.Tests.RenewalTests
         {
             renewal.LastFriendlyName = "UnitTest";
             var container = new MockContainer().TestScope();
-            var renewalExecutor = container.Resolve<RenewalExecutor>();
-            //renewalExecutor.ShouldRunRenewal(renewal, runLevel);
-            Assert.AreEqual(outcome, outcome);
+            var dueDate = container.Resolve<DueDateStaticService>();
+            Assert.AreEqual(outcome, dueDate.IsDue(renewal));
         }
 
         [TestMethod]
@@ -81,20 +81,49 @@ namespace PKISharp.WACS.UnitTests.Tests.RenewalTests
         }
 
         [TestMethod]
-        public void ForceRenewal()
+        public void MissingOrder()
         {
             ShouldRun(
                 new Renewal()
                 {
                     History = new List<RenewResult>() {
                         new RenewResult() {
+                            Date = new DateTime(2022,1,1),
+                            Success = true,
+                            OrderResults = new List<OrderResult>()
+                            {
+                                new OrderResult("strange")
+                                {
+                                    Success = true,
+                                    ExpireDate = new DateTime(2023,1,1)
+                                },
+                                new OrderResult("normal")
+                                {
+                                    Success = true,
+                                    ExpireDate = new DateTime(2023,1,1)
+                                }
+                            }
+                        },
+                        new RenewResult() {
                             Date = DateTime.Now.AddDays(-3),
-                            Success = true
+                            Success = true,
+                            OrderResults = new List<OrderResult>()
+                            {
+                                new OrderResult("strange")
+                                {
+                                    Missing = true
+                                },
+                                new OrderResult("normal")
+                                {
+                                    Success = true,
+                                    ExpireDate = DateTime.Now.AddDays(20)
+                                }
+                            }
                         }
                     }
                 },
-                RunLevel.Force,
-                true);
+                RunLevel.Simple,
+                false);
         }
 
     }

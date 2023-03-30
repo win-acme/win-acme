@@ -1,11 +1,13 @@
-﻿using PKISharp.WACS.Context;
+﻿using ACMESharp.Protocol.Resources;
+using PKISharp.WACS.Context;
 using PKISharp.WACS.DomainObjects;
 using System;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 
 namespace PKISharp.WACS.Services
 {
-    internal class DueDateRuntimeService
+    public class DueDateRuntimeService
     {
         private readonly IInputService _input;
         private readonly ISettingsService _settings;
@@ -21,76 +23,129 @@ namespace PKISharp.WACS.Services
             _input = input;
         }
 
-        public bool ShouldRun(OrderContext order)
-        {
-            // Should always run, should not even ask the IDueDateService
-            if (order.CachedCertificate == null)
-            {
-                throw new InvalidOperationException();
-            }
-
-            // If RenewalInfo is unavailable, disabled or invalid,
-            // fall back to client side logic based on certificate
-            // validity and fixed nr. of days setting.
-            if (_settings.ScheduledTask.RenewalDisableServerSchedule == true ||
-                order.RenewalInfo == null || 
-                order.RenewalInfo.SuggestedWindow.Start == null ||
-                order.RenewalInfo.SuggestedWindow.End == null)
-            {
-                _log.Verbose("Using client side renewal schedule");
-                return ShouldRunClient(order, order.CachedCertificate);
-            }
-
-            // Default: use server side schedule
-            _log.Verbose("Using server side renewal schedule");
-            if (!string.IsNullOrWhiteSpace(order.RenewalInfo.ExplanationUrl))
-            {
-                _log.Warning("Renewal schedule modified: {url}", order.RenewalInfo.ExplanationUrl);
-            }
-
-            // Do no reason about what the values should be, simply
-            // apply the ones provided by the server
-            return ShouldRunCommon(
-                order.RenewalInfo.SuggestedWindow.Start.Value,
-                order.RenewalInfo.SuggestedWindow.End.Value,
-                order.OrderName);
-        }
-
         /// <summary>
-        /// Should run according to client side available logic,
-        /// i.e. renewal history, issue date, expire date
+        /// Test if the order should run based on static or dynamic information
         /// </summary>
         /// <param name="order"></param>
         /// <returns></returns>
-        private bool ShouldRunClient(OrderContext order, ICertificateInfo previous)
+        /// <exception cref="InvalidOperationException"></exception>
+        public bool ShouldRun(OrderContext order)
         {
-            _log.Verbose("{name}: previous thumbprint {thumbprint}", order.OrderName, previous.Certificate.Thumbprint);
-            _log.Verbose("{name}: previous expires {thumbprint}", order.OrderName, _input.FormatDate(previous.Certificate.NotAfter));
-
-            // Check if the certificate was actually installed
-            // succesfully before we decided to use it as a 
-            // reference point.
-            var latestDueDate = DateTime.Now;
-            var history = order.Renewal.History.
-                Where(x => x.OrderResults?.Any(o =>
-                o.Success == true &&
-                o.Thumbprint == previous.Certificate.Thumbprint) ?? false);
-            if (history.Any())
+            var previous = order.CachedCertificate?.Certificate;
+            if (previous != null)
             {
-                // Latest date determined by the certificate validity
-                // because we've established (through the history) that 
-                // this certificate was succesfully stored and installed
-                // at least once.
-                latestDueDate = new DateTime(Math.Min(
-                    previous.Certificate.NotBefore.AddDays(_settings.ScheduledTask.RenewalDays).Ticks,
-                    previous.Certificate.NotAfter.AddDays(-1 * _settings.ScheduledTask.RenewalMinimumValidDays ?? DueDateStaticService.DefaultMinValidDays).Ticks));
+                _log.Verbose("{name}: previous thumbprint {thumbprint}", order.OrderName, previous.Thumbprint);
+                _log.Verbose("{name}: previous expires {thumbprint}", order.OrderName, _input.FormatDate(previous.NotAfter));
+
+                // Check if the certificate was actually installed
+                // succesfully before we decided to use it as a 
+                // reference point.
+                var history = order.Renewal.History.
+                    Where(x => x.OrderResults?.Any(o =>
+                    o.Success == true &&
+                    o.Thumbprint == previous.Thumbprint) ?? false);
+                if (!history.Any())
+                {
+                    // Latest date determined by the certificate validity
+                    // because we've established (through the history) that 
+                    // this certificate was succesfully stored and installed
+                    // at least once.
+                    _log.Verbose("{name}: no historic success found", order.OrderName);
+                    previous = null;
+                }
             }
+          
+            var range = ComputeDueDate(previous, order.RenewalInfo);
+            if (range.Source?.Contains("ri") ?? false)
+            {
+                _log.Verbose("Using server side renewal schedule");
+                if (!string.IsNullOrWhiteSpace(order.RenewalInfo?.ExplanationUrl)) 
+                {
+                    _log.Warning("Schedule modified due to incident: {url}", order.RenewalInfo?.ExplanationUrl);
+                }
+            } 
             else
             {
-                _log.Verbose("{name}: no historic success found", order.OrderName);
+                _log.Verbose("Using client side renewal schedule");
             }
 
-            return ShouldRunCommon(latestDueDate, latestDueDate, order.OrderName);
+            return ShouldRunCommon(range, order.OrderName);
+        }
+
+        /// <summary>
+        /// Get renewal date range based on a certificate
+        /// </summary>
+        /// <param name="certificate"></param>
+        /// <returns></returns>
+        public DueDate ComputeDueDate(X509Certificate2? certificate, AcmeRenewalInfo? renewalInfo) => 
+            ComputeDueDate(certificate?.NotBefore ?? DateTime.Now, certificate?.NotAfter ?? DateTime.Now, renewalInfo);
+
+        /// <summary>
+        /// Get renewal date range based on a certificate
+        /// </summary>
+        /// <param name="certificate"></param>
+        /// <returns></returns>
+        public DueDate ComputeDueDate(DueDate input) => ComputeDueDate(input.Start, input.End, null);
+
+
+        /// <summary>
+        /// Get renewal date range based on a static input
+        /// </summary>
+        /// <param name="certificate"></param>
+        /// <returns></returns>
+        public DueDate ComputeDueDate(DateTime validFrom, DateTime validUntil, AcmeRenewalInfo? renewalInfo = null)
+        {
+            // Basic rule for End: NotBefore + RenewalDays
+            var end = validFrom.AddDays(_settings.ScheduledTask.RenewalDays);
+            var endSource = "rd";
+
+            // Guard rail #1: certificate should at least be valid for RenewalMinimumValidDays
+            var endMinValid = validUntil.AddDays(-1 * _settings.ScheduledTask.RenewalMinimumValidDays ?? DueDateStaticService.DefaultMinValidDays);
+            if (endMinValid < end)
+            {
+                end = endMinValid;
+                endSource = "mv";
+            }
+
+            // Guard rail #2: server might feel the renewal should happen even earlier,
+            // for example during a security incident.
+            if (_settings.ScheduledTask.RenewalDisableServerSchedule != true && 
+                renewalInfo != null && 
+                renewalInfo.SuggestedWindow.End != null &&
+                renewalInfo.SuggestedWindow.End.Value < end)
+            {
+                end = renewalInfo.SuggestedWindow.End.Value;
+                endSource = "ri";
+            }
+
+            // Basic rule for End: Start - RenewalDaysRange
+            var start = end.AddDays((_settings.ScheduledTask.RenewalDaysRange ?? 0) * -1);
+            var startSource = "rd";
+
+            // Guard rail #3: server might feel the renewal should happen even earlier,
+            // for example during a security incident.
+            if (_settings.ScheduledTask.RenewalDisableServerSchedule != true &&
+                renewalInfo != null &&
+                renewalInfo.SuggestedWindow.Start != null &&
+                renewalInfo.SuggestedWindow.Start.Value < start)
+            {
+                start = renewalInfo.SuggestedWindow.Start.Value;
+                startSource = "ri";
+            }
+
+            // Guard rail #4: start should not be after end.
+            if (start > end)
+            {
+                start = end;
+                startSource = endSource;
+            }
+
+            // Store dates and their sources
+            return new DueDate() { 
+                Start = start, 
+                End = end, 
+                Source = $"{startSource}-{endSource}" 
+            };
         }
 
         /// <summary>
@@ -100,15 +155,15 @@ namespace PKISharp.WACS.Services
         /// <param name="latestDueDate"></param>
         /// <param name="orderName"></param>
         /// <returns></returns>
-        private bool ShouldRunCommon(DateTime earliestDueDate, DateTime latestDueDate, string orderName)
+        private bool ShouldRunCommon(DueDate dueDate, string orderName)
         {
-            // The RenewalDaysRange setting expands even the server suggested window
-            earliestDueDate = new DateTime(Math.Min(earliestDueDate.Ticks, latestDueDate.AddDays((_settings.ScheduledTask.RenewalDaysRange ?? 0) * -1).Ticks));
-
+            var now = DateTime.Now;
+            var latestDueDate = dueDate.End;
+            var earliestDueDate = dueDate.Start;
             _log.Verbose("{name}: latest due date {latestDueDate}", orderName, _input.FormatDate(latestDueDate));
             _log.Verbose("{name}: earliest due date {earliestDueDate}", orderName, _input.FormatDate(earliestDueDate));
 
-            if (earliestDueDate > DateTime.Now)
+            if (earliestDueDate > now)
             {
                 // No due yet
                 return false;
@@ -121,7 +176,7 @@ namespace PKISharp.WACS.Services
             // of running on each day is the same.
 
             // How many days are romaining within this range?
-            var daysLeft = (latestDueDate - DateTime.Now).TotalDays;
+            var daysLeft = (latestDueDate - now).TotalDays;
             if (daysLeft <= 1)
             {
                 _log.Verbose("{name}: less than a day left", orderName);

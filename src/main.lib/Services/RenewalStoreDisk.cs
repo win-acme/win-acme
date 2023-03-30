@@ -100,7 +100,7 @@ namespace PKISharp.WACS.Services
                         _log.Error("Unable to read renewal {renewal}: {reason}", rj.Name, ex.Message);
                     }
                 }
-                _renewalsCache = list.OrderBy(_dueDate.DueDate).ToList();
+                _renewalsCache = list.OrderBy(x => _dueDate.DueDate(x)?.Start).ToList();
             }
             return _renewalsCache;
         }
@@ -156,7 +156,7 @@ namespace PKISharp.WACS.Services
                     renewal.Updated = false;
                 }
             });
-            _renewalsCache = list.Where(x => !x.Deleted).OrderBy(_dueDate.DueDate).ToList();
+            _renewalsCache = list.Where(x => !x.Deleted).OrderBy(x => _dueDate.DueDate(x)?.Start).ToList();
         }
 
         /// <summary>

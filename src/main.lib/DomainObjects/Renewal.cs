@@ -133,17 +133,39 @@ namespace PKISharp.WACS.DomainObjects
             var errors = History.AsEnumerable().Reverse().TakeWhile(x => x.Success == false);
             var ret = $"{LastFriendlyName} - renewed {success} time{(success != 1 ? "s" : "")}";
 
-            if (dueDateService != null)
+            var format = (DateTime date) =>
             {
-                var due = dueDateService.IsDue(this);
-                var dueDate = dueDateService.DueDate(this);
-                if (inputService == null)
+                if (inputService != null)
                 {
-                    ret += due ? ", due now" : dueDate == null ? "" : $", due after {dueDate}";
+                    return inputService.FormatDate(date);
                 }
                 else
                 {
-                    ret += due ? ", due now" : dueDate == null ? "" : $", due after {inputService.FormatDate(dueDate.Value)}";
+                    return date.ToShortDateString();
+                }
+            };
+
+            if (dueDateService != null)
+            {
+                var due = dueDateService.IsDue(this);
+                if (!due)
+                {
+                    var dueDate = dueDateService.DueDate(this);
+                    if (dueDate != null)
+                    {
+                        if (dueDate.Start != dueDate.End) 
+                        {
+                            ret += $", due between {format(dueDate.Start)} and {format(dueDate.End)}";
+                        }
+                        else
+                        {
+                            ret += $", due after {format(dueDate.Start)}";
+                        }
+                    }
+                } 
+                else
+                {
+                    ret += ", due now";
                 }
             }
             if (errors.Any())

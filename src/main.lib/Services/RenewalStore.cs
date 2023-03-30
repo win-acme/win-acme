@@ -67,7 +67,7 @@ namespace PKISharp.WACS.Services
                 var date = _dueDateService.DueDate(renewal);
                 if (date != null)
                 {
-                    _log.Information(LogType.All, "Next renewal due at {date}", _inputService.FormatDate(date.Value));
+                    _log.Information(LogType.All, "Next renewal due after {date}", _inputService.FormatDate(date.Start));
                 }
             }
             renewal.Updated = true;

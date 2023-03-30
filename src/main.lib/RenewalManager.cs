@@ -647,7 +647,15 @@ namespace PKISharp.WACS
                 } 
                 else
                 {
-                    _input.Show("Renewal due", _input.FormatDate(dueDate.Value));
+                    if (dueDate.Start != dueDate.End)
+                    {
+                        _input.Show("Renewal due start", _input.FormatDate(dueDate.Start));
+                        _input.Show("Renewal due end", _input.FormatDate(dueDate.End));
+                    }
+                    else
+                    {
+                        _input.Show("Renewal due", _input.FormatDate(dueDate.End));
+                    }
                 }
                 _input.Show("Renewed", $"{renewal.History.Where(x => x.Success == true).Count()} times");
                 _input.Show("Command", _renewalDescriber.Describe(renewal));
