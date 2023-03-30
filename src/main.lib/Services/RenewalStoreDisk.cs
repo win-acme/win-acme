@@ -13,12 +13,12 @@ namespace PKISharp.WACS.Services
     {
         private readonly WacsJson _wacsJson;
         private readonly ISettingsService _settings;
-        private readonly IDueDateService _dueDate;
+        private readonly DueDateStaticService _dueDate;
         private readonly ILogService _log;
 
         public RenewalStoreDisk(
             ISettingsService settings,
-            IDueDateService dueDate,
+            DueDateStaticService dueDate,
             ILogService log,
             WacsJson wacsJson) : base()
         {

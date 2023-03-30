@@ -27,7 +27,8 @@ namespace PKISharp.WACS
         private readonly ILogService _log;
         private readonly IInputService _input;
         private readonly ISettingsService _settings;
-        private readonly IDueDateService _dueDate;
+        private readonly DueDateStaticService _dueDateStatic;
+        private readonly DueDateRuntimeService _dueDateRuntime;
         private readonly TaskSchedulerService _taskScheduler;
         private readonly AcmeClientManager _clientManager;
 
@@ -37,7 +38,8 @@ namespace PKISharp.WACS
             ILogService log,
             IInputService input,
             ISettingsService settings,
-            IDueDateService dueDate,
+            DueDateStaticService dueDateStatic,
+            DueDateRuntimeService dueDateRuntime,
             TaskSchedulerService taskScheduler,
             AcmeClientManager clientManager,
             ISharingLifetimeScope container)
@@ -48,7 +50,8 @@ namespace PKISharp.WACS
             _input = input;
             _settings = settings;
             _container = container;
-            _dueDate = dueDate;
+            _dueDateStatic = dueDateStatic;
+            _dueDateRuntime = dueDateRuntime;
             _taskScheduler = taskScheduler;
             _clientManager = clientManager;
         }
@@ -163,7 +166,7 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private RenewResult Abort(Renewal renewal)
         {
-            var dueDate = _dueDate.DueDate(renewal);
+            var dueDate = _dueDateStatic.DueDate(renewal);
             if (dueDate != null)
             {
                 // For sure now that we don't need to run so abort this execution
@@ -191,7 +194,7 @@ namespace PKISharp.WACS
             // Check individual orders
             foreach (var o in orderContexts)
             {
-                o.ShouldRun = o.ShouldRun || runLevel.HasFlag(RunLevel.Force) || _dueDate.ShouldRun(o);
+                o.ShouldRun = o.ShouldRun || runLevel.HasFlag(RunLevel.Force) || _dueDateRuntime.ShouldRun(o);
                 _log.Verbose("Order {name} should run: {run}", o.OrderName, o.ShouldRun);
             }
 

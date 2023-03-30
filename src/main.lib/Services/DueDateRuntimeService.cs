@@ -5,17 +5,23 @@ using System.Linq;
 
 namespace PKISharp.WACS.Services
 {
-    internal class DueDateRandomService : DueDateStaticService
+    internal class DueDateRuntimeService
     {
         private readonly IInputService _input;
+        private readonly ISettingsService _settings;
+        private readonly ILogService _log;
 
-        public DueDateRandomService(
+        public DueDateRuntimeService(
             ISettingsService settings,
             ILogService logService,
-            IInputService input) :
-            base(settings, logService) => _input = input;
+            IInputService input)
+        {
+            _log = logService;
+            _settings = settings;
+            _input = input;
+        }
 
-        public override bool ShouldRun(OrderContext order)
+        public bool ShouldRun(OrderContext order)
         {
             // Should always run, should not even ask the IDueDateService
             if (order.CachedCertificate == null)
@@ -44,8 +50,8 @@ namespace PKISharp.WACS.Services
 
             // Do no reason about what the values should be, simply
             // apply the ones provided by the server
-            return ShouldRunCommon
-                (order.RenewalInfo.SuggestedWindow.Start.Value,
+            return ShouldRunCommon(
+                order.RenewalInfo.SuggestedWindow.Start.Value,
                 order.RenewalInfo.SuggestedWindow.End.Value,
                 order.OrderName);
         }
@@ -77,16 +83,14 @@ namespace PKISharp.WACS.Services
                 // at least once.
                 latestDueDate = new DateTime(Math.Min(
                     previous.Certificate.NotBefore.AddDays(_settings.ScheduledTask.RenewalDays).Ticks,
-                    previous.Certificate.NotAfter.AddDays(-1 * _settings.ScheduledTask.RenewalMinimumValidDays ?? DefaultMinValidDays).Ticks));
+                    previous.Certificate.NotAfter.AddDays(-1 * _settings.ScheduledTask.RenewalMinimumValidDays ?? DueDateStaticService.DefaultMinValidDays).Ticks));
             }
             else
             {
                 _log.Verbose("{name}: no historic success found", order.OrderName);
             }
 
-            // Randomize over the course of 10 days
-            var earliestDueDate = latestDueDate.AddDays((_settings.ScheduledTask.RenewalDaysRange ?? 0) * -1);
-            return ShouldRunCommon(earliestDueDate, latestDueDate, order.OrderName);
+            return ShouldRunCommon(latestDueDate, latestDueDate, order.OrderName);
         }
 
         /// <summary>
@@ -98,6 +102,9 @@ namespace PKISharp.WACS.Services
         /// <returns></returns>
         private bool ShouldRunCommon(DateTime earliestDueDate, DateTime latestDueDate, string orderName)
         {
+            // The RenewalDaysRange setting expands even the server suggested window
+            earliestDueDate = new DateTime(Math.Min(earliestDueDate.Ticks, latestDueDate.AddDays((_settings.ScheduledTask.RenewalDaysRange ?? 0) * -1).Ticks));
+
             _log.Verbose("{name}: latest due date {latestDueDate}", orderName, _input.FormatDate(latestDueDate));
             _log.Verbose("{name}: earliest due date {earliestDueDate}", orderName, _input.FormatDate(earliestDueDate));
 

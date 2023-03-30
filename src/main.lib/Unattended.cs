@@ -15,7 +15,7 @@ namespace PKISharp.WACS
         private readonly IRenewalStore _renewalStore;
         private readonly ICacheService _cacheService;
         private readonly MainArguments _args;
-        private readonly IDueDateService _dueDate;
+        private readonly DueDateStaticService _dueDate;
         private readonly RenewalRevoker _renewalRevoker;
 
         public Unattended(  
@@ -24,7 +24,7 @@ namespace PKISharp.WACS
             ICacheService cacheService, 
             IInputService input, 
             ILogService log,
-            IDueDateService dueDate,
+            DueDateStaticService dueDate,
             RenewalRevoker renewalRevoker)
         {
             _renewalStore = renewalStore;

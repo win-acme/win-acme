@@ -18,7 +18,7 @@ namespace PKISharp.WACS.Host
     internal class MainMenu
     {
         private readonly IAutofacBuilder _scopeBuilder;
-        private readonly IDueDateService _dueDateService;
+        private readonly DueDateStaticService _dueDateService;
         private readonly IInputService _input;
         private readonly ISharingLifetimeScope _container;
         private readonly ILogService _log;
@@ -45,7 +45,7 @@ namespace PKISharp.WACS.Host
             IInputService inputService,
             ISettingsService settingsService,
             IUserRoleService userRoleService,
-            IDueDateService dueDateService,
+            DueDateStaticService dueDateService,
             IRenewalStore renewalStore,
             ArgumentsParser argumentsParser,
             AdminService adminService,

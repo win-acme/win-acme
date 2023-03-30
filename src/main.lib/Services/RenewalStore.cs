@@ -16,7 +16,7 @@ namespace PKISharp.WACS.Services
         internal ISettingsService _settings;
         internal ILogService _log;
         internal IInputService _inputService;
-        internal IDueDateService _dueDateService;
+        internal DueDateStaticService _dueDateService;
         internal IRenewalStoreBackend _backend;
 
         public RenewalStore(
@@ -24,7 +24,7 @@ namespace PKISharp.WACS.Services
             ISettingsService settings,
             ILogService log,
             IInputService input,
-            IDueDateService dueDateService)
+            DueDateStaticService dueDateService)
         {
             _backend = backend;
             _log = log;

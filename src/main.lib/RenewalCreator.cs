@@ -31,7 +31,7 @@ namespace PKISharp.WACS
         private readonly IPluginService _plugin;
         private readonly ISharingLifetimeScope _container;
         private readonly IAutofacBuilder _scopeBuilder;
-        private readonly IDueDateService _dueDate;
+        private readonly DueDateStaticService _dueDate;
         private readonly ExceptionHandler _exceptionHandler;
         private readonly RenewalExecutor _renewalExecution;
         private readonly IValidationOptionsService _validation;
@@ -44,7 +44,7 @@ namespace PKISharp.WACS
             IInputService input, ILogService log,
             IPluginService plugin, IAutofacBuilder autofacBuilder,
             IValidationOptionsService validationOptions, AccountManager accountManager,
-            NotificationService notification, IDueDateService dueDateService,
+            NotificationService notification, DueDateStaticService dueDateService,
             ExceptionHandler exceptionHandler, RenewalExecutor renewalExecutor)
         {
             _renewalStore = renewalStore;

@@ -35,7 +35,7 @@ namespace PKISharp.WACS
         private readonly RenewalDescriber _renewalDescriber;
         private readonly RenewalRevoker _renewalRevoker;
         private readonly ISettingsService _settings;
-        private readonly IDueDateService _dueDate;
+        private readonly DueDateStaticService _dueDate;
         private readonly AccountManager _accountManager;
 
         public RenewalManager(
@@ -43,7 +43,7 @@ namespace PKISharp.WACS
             IRenewalStore renewalStore, ISharingLifetimeScope container,
             ICacheService cacheService, IPluginService plugin,
             IInputService input, ILogService log,
-            ISettingsService settings, IDueDateService dueDate,
+            ISettingsService settings, DueDateStaticService dueDate,
             IAutofacBuilder autofacBuilder, ExceptionHandler exceptionHandler,
             RenewalCreator renewalCreator, RenewalExecutor renewalExecutor,
             AccountManager accountManager, RenewalDescriber renewalDescriber, 

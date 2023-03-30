@@ -1,13 +1,12 @@
-﻿using PKISharp.WACS.Context;
-using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.DomainObjects;
 using System;
 using System.Linq;
 
 namespace PKISharp.WACS.Services
 {
-    internal class DueDateStaticService : IDueDateService
+    public class DueDateStaticService
     {
-        protected const int DefaultMinValidDays = 7;
+        internal const int DefaultMinValidDays = 7;
         protected readonly ISettingsService _settings;
         protected readonly ILogService _log;
 
@@ -54,21 +53,6 @@ namespace PKISharp.WACS.Services
         {
             var dueDate = DueDate(renewal);
             return dueDate == null || dueDate < DateTime.Now;
-        }
-
-        public virtual bool ShouldRun(OrderContext order)
-        {
-            var renewalDue = IsDue(order.Renewal);
-            if (renewalDue)
-            {
-                return true;
-            }
-            if (order.CachedCertificate == null)
-            {
-                _log.Information(LogType.All, "Renewal {renewal} running prematurely due to source change in order {order}", order.Renewal.LastFriendlyName, order.OrderName);
-                return true;
-            }
-            return false;
         }
     }
 }
