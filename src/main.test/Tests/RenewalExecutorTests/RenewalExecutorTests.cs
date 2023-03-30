@@ -126,5 +126,110 @@ namespace PKISharp.WACS.UnitTests.Tests.RenewalTests
                 false);
         }
 
+        [TestMethod]
+        public void UnmissingOrder()
+        {
+            ShouldRun(
+                new Renewal()
+                {
+                    History = new List<RenewResult>() {
+                        new RenewResult() {
+                            Date = new DateTime(2022,1,1),
+                            Success = true,
+                            OrderResults = new List<OrderResult>()
+                            {
+                                new OrderResult("strange")
+                                {
+                                    Success = true,
+                                    ExpireDate = new DateTime(2023,1,1)
+                                },
+                                new OrderResult("normal")
+                                {
+                                    Success = true,
+                                    ExpireDate = new DateTime(2023,1,1)
+                                }
+                            }
+                        },
+                        new RenewResult() {
+                            Date = DateTime.Now.AddDays(-3),
+                            Success = true,
+                            OrderResults = new List<OrderResult>()
+                            {
+                                new OrderResult("normal")
+                                {
+                                    Success = true,
+                                    ExpireDate = DateTime.Now.AddDays(20)
+                                }
+                            }
+                        }
+                    }
+                },
+                RunLevel.Simple,
+                true);
+        }
+
+        [TestMethod]
+        public void ReturnedOrder()
+        {
+            ShouldRun(
+                new Renewal()
+                {
+                    History = new List<RenewResult>() {
+                        new RenewResult() {
+                            Date = new DateTime(2021,1,1),
+                            Success = true,
+                            OrderResults = new List<OrderResult>()
+                            {
+                                new OrderResult("strange")
+                                {
+                                    Success = true,
+                                    ExpireDate = new DateTime(2022,1,1)
+                                },
+                                new OrderResult("normal")
+                                {
+                                    Success = true,
+                                    ExpireDate = new DateTime(2022,1,1)
+                                }
+                            }
+                        },
+                        new RenewResult() {
+                            Date = new DateTime(2022,2,1),
+                            Success = true,
+                            OrderResults = new List<OrderResult>()
+                            {
+                                new OrderResult("strange")
+                                {
+                                    Missing = true
+                                },
+                                new OrderResult("normal")
+                                {
+                                    Success = true,
+                                    ExpireDate = new DateTime(2022,2,1)
+                                }
+                            }
+                        },
+                        new RenewResult() {
+                            Date = new DateTime(2023,2,1),
+                            Success = true,
+                            OrderResults = new List<OrderResult>()
+                            {
+                                new OrderResult("strange")
+                                {
+                                    Success = true,
+                                    ExpireDate = new DateTime(2023,2,28)
+                                },
+                                new OrderResult("normal")
+                                {
+                                    Success = true,
+                                    ExpireDate = new DateTime(2023,2,28)
+                                }
+                            }
+                        }
+                    }
+                },
+                RunLevel.Simple,
+                true);
+        }
+
     }
 }
