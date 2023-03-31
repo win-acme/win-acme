@@ -34,8 +34,8 @@ namespace PKISharp.WACS.Services
             var previous = order.CachedCertificate?.Certificate;
             if (previous != null)
             {
-                _log.Verbose("{name}: previous thumbprint {thumbprint}", order.OrderName, previous.Thumbprint);
-                _log.Verbose("{name}: previous expires {thumbprint}", order.OrderName, _input.FormatDate(previous.NotAfter));
+                _log.Verbose("{name}: previous thumbprint {thumbprint}", order.OrderFriendlyName, previous.Thumbprint);
+                _log.Verbose("{name}: previous expires {thumbprint}", order.OrderFriendlyName, _input.FormatDate(previous.NotAfter));
 
                 // Check if the certificate was actually installed
                 // succesfully before we decided to use it as a 
@@ -50,7 +50,7 @@ namespace PKISharp.WACS.Services
                     // because we've established (through the history) that 
                     // this certificate was succesfully stored and installed
                     // at least once.
-                    _log.Verbose("{name}: no historic success found", order.OrderName);
+                    _log.Verbose("{name}: no historic success found", order.OrderFriendlyName);
                     previous = null;
                 }
             }
@@ -69,7 +69,7 @@ namespace PKISharp.WACS.Services
                 _log.Verbose("Using client side renewal schedule");
             }
 
-            return ShouldRunCommon(range, order.OrderName);
+            return ShouldRunCommon(range, order.OrderFriendlyName);
         }
 
         /// <summary>

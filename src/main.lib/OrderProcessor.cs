@@ -107,7 +107,7 @@ namespace PKISharp.WACS
                     order.ShouldRun = true;
                     if (!order.Renewal.New)
                     {
-                        _log.Information(LogType.All, "Renewal {renewal} running prematurely due to source change in order {order}", order.Renewal.LastFriendlyName, order.OrderName);
+                        _log.Information(LogType.All, "Renewal {renewal} running prematurely due to source change in order {order}", order.Renewal.LastFriendlyName, order.OrderFriendlyName);
                     }
                 }
             }
@@ -155,7 +155,7 @@ namespace PKISharp.WACS
                     _log.Verbose("Order {n}/{m} ({friendly}): error {error}",
                          context.IndexOf(order) + 1,
                          context.Count,
-                         order.OrderName,
+                         order.OrderFriendlyName,
                          order.OrderResult.ErrorMessages?.FirstOrDefault() ?? "unknown");
                 }
                 else if (order.NewCertificate == null)
@@ -163,7 +163,7 @@ namespace PKISharp.WACS
                     _log.Verbose("Order {n}/{m} ({friendly}): processing...",
                          context.IndexOf(order) + 1,
                          context.Count,
-                         order.OrderName);
+                         order.OrderFriendlyName);
                     order.NewCertificate = await GetFromServer(order);
                 }
                 else
@@ -171,7 +171,7 @@ namespace PKISharp.WACS
                     _log.Verbose("Order {n}/{m} ({friendly}): handle from cache",
                          context.IndexOf(order) + 1,
                          context.Count,
-                         order.OrderName);
+                         order.OrderFriendlyName);
                 }
             }));
         }
@@ -189,7 +189,7 @@ namespace PKISharp.WACS
                 _log.Verbose("Processing order {n}/{m}: {friendly}",
                    orderContexts.IndexOf(order) + 1,
                    orderContexts.Count,
-                   order.OrderName);
+                   order.OrderFriendlyName);
 
                 var orderResult = order.OrderResult;
                 if (order.NewCertificate == null)
@@ -255,7 +255,7 @@ namespace PKISharp.WACS
                 // Early escape for testing validation only
                 if (context.Renewal.New &&
                     context.RunLevel.HasFlag(RunLevel.Test) &&
-                    !await _input.PromptYesNo($"[--test] Store and install the certificate for order {context.OrderName}?", true))
+                    !await _input.PromptYesNo($"[--test] Store and install the certificate for order {context.OrderFriendlyName}?", true))
                 {
                     return true;
                 }
@@ -350,7 +350,7 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private async Task CreateOrder(OrderContext context)
         {
-            _log.Verbose("Obtain order details for {order}", context.OrderName);
+            _log.Verbose("Obtain order details for {order}", context.OrderFriendlyName);
 
             // Place the order
             var orderManager = context.OrderScope.Resolve<OrderManager>();
@@ -541,6 +541,27 @@ namespace PKISharp.WACS
                 return false;
             }
             return true;
+        }
+
+        /// <summary>
+        /// Handle missing orders
+        /// </summary>
+        /// <param name="missingOrders"></param>
+        /// <returns></returns>
+        internal async Task HandleMissing(Renewal renewal, IEnumerable<string> missingOrders)
+        {
+            foreach (var missing in missingOrders)
+            {
+                var cert = _cacheService.
+                    CachedInfos(renewal).
+                    Where(c => c.CacheFile.Name.Contains($"-{missing}-")).
+                    OrderByDescending(x => x.Certificate.NotBefore).
+                    FirstOrDefault();
+                if (cert != null)
+                {
+                    await _client.UpdateRenewalInfo(cert);
+                }
+            }
         }
     }
 }

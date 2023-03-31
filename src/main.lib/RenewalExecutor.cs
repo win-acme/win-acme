@@ -164,7 +164,7 @@ namespace PKISharp.WACS
         /// </summary>
         /// <param name="renewal"></param>
         /// <returns></returns>
-        private RenewResult Abort(Renewal renewal)
+        private RenewResult Abort(Renewal renewal, RenewResult result)
         {
             var dueDate = _dueDateStatic.DueDate(renewal);
             if (dueDate != null)
@@ -172,7 +172,8 @@ namespace PKISharp.WACS
                 // For sure now that we don't need to run so abort this execution
                 _log.Information("Renewal {renewal} is due after {date}", renewal.LastFriendlyName, _input.FormatDate(dueDate.Start));
             }
-            return new RenewResult() { Abort = true };
+            result.Abort = true;
+            return result;
         }
 
         /// <summary>
@@ -184,6 +185,9 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private async Task<RenewResult> HandleOrders(ILifetimeScope execute, Renewal renewal, List<Order> orders, RunLevel runLevel)
         {
+            // Return value
+            var result = new RenewResult() { OrderResults = new List<OrderResult>() };
+
             // Get the certificates from cache or server
             var orderProcessor = execute.Resolve<OrderProcessor>();
 
@@ -195,14 +199,27 @@ namespace PKISharp.WACS
             foreach (var o in orderContexts)
             {
                 o.ShouldRun = o.ShouldRun || runLevel.HasFlag(RunLevel.Force) || _dueDateRuntime.ShouldRun(o);
-                _log.Verbose("Order {name} should run: {run}", o.OrderName, o.ShouldRun);
+                _log.Verbose("Order {name} should run: {run}", o.OrderFriendlyName, o.ShouldRun);
             }
 
-            // Only process orders that are due. In the normal
-            // case when using static due dates this will be all 
-            // the orders. But when using the random due dates,
-            // this could only be a part of them.
-            var allContexts = orderContexts;
+            // Check missing orders
+            var previousOrders = _dueDateStatic.CurrentOrders(renewal);
+            var missingOrders = previousOrders.Where(x => !orderContexts.Any(c => c.OrderCacheKey == x));
+            if (missingOrders.Any())
+            {
+                foreach (var order in missingOrders)
+                {
+                    // This order was previously included in the set
+                    // but has now disappeared, i.e. because bindings
+                    // in IIS have changed or a new CSR was placed.
+                    // We will note this in the renewal history, so that
+                    // we won't take them into account anymore in the
+                    // DueDateStaticService.
+                    result.OrderResults.Add(new OrderResult(order) { Missing = true });
+                }
+            }
+
+            // Only process orders that are due. 
             var runnableContexts = orderContexts;
             if (!runLevel.HasFlag(RunLevel.NoCache) && !renewal.New && !renewal.Updated)
             {
@@ -211,8 +228,12 @@ namespace PKISharp.WACS
             if (!runnableContexts.Any())
             {
                 _log.Debug("None of the orders are currently due to run");
-                return Abort(renewal);
+                return Abort(renewal, result);
             }
+
+            // Store results
+            result.OrderResults.AddRange(runnableContexts.Select(x => x.OrderResult));
+
             if (!renewal.New && !runLevel.HasFlag(RunLevel.Force))
             {
                 _log.Information(LogType.All, "Renewing {renewal}", renewal.LastFriendlyName);
@@ -237,10 +258,8 @@ namespace PKISharp.WACS
                 await scriptClient.RunScript(preScript, $"{renewal.Id}");
             }
             await orderProcessor.ExecuteOrders(runnableContexts, runLevel);
-            var result = new RenewResult
-            {
-                OrderResults = runnableContexts.Select(x => x.OrderResult).ToList()
-            };
+
+
             // Handle all the store/install steps
             await orderProcessor.ProcessOrders(runnableContexts, result);
 
@@ -253,6 +272,9 @@ namespace PKISharp.WACS
             {
                 await scriptClient.RunScript(postScript, $"{renewal.Id}");
             }
+
+            // Handle missing order (update ARI and clear cache)
+            await orderProcessor.HandleMissing(renewal, missingOrders);
 
             // Return final result
             result.Success = runnableContexts.All(o => o.OrderResult.Success == true);

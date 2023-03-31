@@ -108,7 +108,7 @@ namespace PKISharp.WACS
                 }
                 var choices = displayRenewals.Select(x => Choice.Create<Renewal?>(x,
                                   description: x.ToString(_dueDate, _input),
-                                  color: x.History.LastOrDefault()?.Success ?? false ?
+                                  color: x.History.LastOrDefault()?.Success ?? true ?
                                           _dueDate.IsDue(x) ?
                                               ConsoleColor.DarkYellow :
                                               ConsoleColor.Green :
@@ -545,9 +545,12 @@ namespace PKISharp.WACS
             try
             {
                 var result = await _renewalExecutor.HandleRenewal(renewal, runLevel);
-                if (!result.Abort)
+                if (result.OrderResults!.Any())
                 {
                     _renewalStore.Save(renewal, result);
+                }
+                if (!result.Abort)
+                {
                     if (result.Success == true)
                     {
                         await notification.NotifySuccess(renewal, _log.Lines);
@@ -558,11 +561,8 @@ namespace PKISharp.WACS
                         await notification.NotifyFailure(runLevel, renewal, result, _log.Lines);
                         return false;
                     }
-                } 
-                else
-                {
-                    return null;
                 }
+                return null;
             }
             catch (Exception ex)
             {

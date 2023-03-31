@@ -18,7 +18,8 @@ namespace PKISharp.WACS.Context
         public OrderResult OrderResult { get; private set; }
         public Target Target => Order.Target;
         public Renewal Renewal => Order.Renewal;
-        public string OrderName => Order.FriendlyNamePart ?? DefaultOrderName;
+        public string OrderFriendlyName => Order.FriendlyNamePart ?? DefaultOrderName;
+        public string OrderCacheKey => Order.CacheKeyPart ?? "main";
         public bool ShouldRun { get; set; }
 
         /// <summary>
@@ -47,7 +48,7 @@ namespace PKISharp.WACS.Context
             OrderScope = orderScope;
             Order = order;
             RunLevel = runLevel;
-            OrderResult = new OrderResult(OrderName);
+            OrderResult = new OrderResult(OrderCacheKey);
             ShouldRun = order.Renewal.New;
         }
     }

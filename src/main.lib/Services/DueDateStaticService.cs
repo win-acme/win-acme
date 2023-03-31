@@ -21,43 +21,7 @@ namespace PKISharp.WACS.Services
 
         public DueDate? DueDate(Renewal renewal)
         {
-            // Get most recent expire date for each order
-            var expireMapping = new Dictionary<string, DueDate?>();
-            foreach (var history in renewal.History.OrderBy(h => h.Date))
-            {
-                var orderResults = history.OrderResults ??
-                new List<OrderResult> {
-                    new OrderResult("Main") {
-                        Success = history.Success,
-                        ExpireDate = history.ExpireDate,
-                        Thumbprint = history.Thumbprints.FirstOrDefault()
-                    }
-                };
-
-                foreach (var orderResult in orderResults)
-                {
-                    var key = orderResult.Name.ToLower();
-                    if (!expireMapping.ContainsKey(key))
-                    {
-                        expireMapping.Add(key, null);
-                    }
-                    if (orderResult.Success == true)
-                    {
-                        expireMapping[key] = 
-                            orderResult.DueDate ?? 
-                            new DueDate() { 
-                                Start = history.Date, 
-                                End = history.ExpireDate ?? history.Date.AddYears(1) 
-                            };
-                    }
-                    if (orderResult.Missing == true)
-                    {
-                        expireMapping[key] = null;
-                    }
-                }
-            }
-
-            var last = expireMapping.
+            var last = Mapping(renewal).
                 Where(x => x.Value != null).
                 OrderBy(x => x.Value?.End).
                 FirstOrDefault().
@@ -75,5 +39,52 @@ namespace PKISharp.WACS.Services
             var dueDate = DueDate(renewal);
             return dueDate == null || dueDate.Start < DateTime.Now;
         }
+
+        private Dictionary<string, DueDate?> Mapping(Renewal renewal)
+        {
+            // Get most recent expire date for each order
+            var expireMapping = new Dictionary<string, DueDate?>();
+            foreach (var history in renewal.History.OrderBy(h => h.Date))
+            {
+                var orderResults = history.OrderResults ??
+                new List<OrderResult> {
+                    new OrderResult("main") {
+                        Success = history.Success,
+                        ExpireDate = history.ExpireDate,
+                        Thumbprint = history.Thumbprints.FirstOrDefault()
+                    }
+                };
+
+                foreach (var orderResult in orderResults)
+                {
+                    var key = orderResult.Name.ToLower();
+                    if (!expireMapping.ContainsKey(key))
+                    {
+                        expireMapping.Add(key, null);
+                    }
+                    if (orderResult.Success == true)
+                    {
+                        expireMapping[key] =
+                            orderResult.DueDate ??
+                            new DueDate()
+                            {
+                                Start = history.Date,
+                                End = history.ExpireDate ?? history.Date.AddYears(1)
+                            };
+                    }
+                    if (orderResult.Missing == true)
+                    {
+                        expireMapping[key] = null;
+                    }
+                }
+            }
+            return expireMapping;
+        }
+
+        public List<string> CurrentOrders(Renewal renewal) =>
+            Mapping(renewal).
+            Where(x => x.Value != null).
+            Select(x => x.Key).
+            ToList();
     }
 }
