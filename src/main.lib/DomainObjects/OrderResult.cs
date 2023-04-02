@@ -18,6 +18,8 @@ namespace PKISharp.WACS.DomainObjects
 
         public bool? Missing { get; set; }
 
+        public bool? Revoked { get; set; }
+
         public string? Thumbprint { get; set; }
 
         public OrderResult AddErrorMessage(string? value, bool fatal = true)

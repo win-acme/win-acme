@@ -51,7 +51,7 @@ namespace PKISharp.WACS.DomainObjects
         /// the renewal that was run
         /// </summary>
         [JsonIgnore]
-        public List<OrderResult>? OrderResults
+        public List<OrderResult> OrderResults
         {
             get
             {
@@ -65,10 +65,16 @@ namespace PKISharp.WACS.DomainObjects
                         new OrderResult("legacy")
                         {
                             Thumbprint = x,
+                            ExpireDate = _expireDate.GetValueOrDefault(),
                             Success = Success
                         }).ToList();
                 }
-                return null;
+                return new List<OrderResult> {
+                    new OrderResult("main") {
+                        Success = Success,
+                        ExpireDate = _expireDate.GetValueOrDefault(),
+                    }
+                }; 
             }
             set => OrderResultsJson = value;
         }
@@ -119,7 +125,7 @@ namespace PKISharp.WACS.DomainObjects
 
         public override string ToString() => $"{Date} " +
             $"- {(Success == true ? "Success" : "Error")}" +
-            $"{(Thumbprints.Count == 0 ? "" : $" - Thumbprint {string.Join(", ", Thumbprints)}")}" +
+            $"{((OrderResults?.Count ?? 0) == 0 ? "" : $" - Orders {string.Join(", ", OrderResults!.Select(x => x.Name))}")}" +
             $"{((ErrorMessages?.Count ?? 0) == 0 ? "" : $" - {string.Join(", ", ErrorMessages!.Select(x => x.ReplaceNewLines()))}")}";
     }
 }

@@ -54,6 +54,12 @@ namespace PKISharp.WACS.Services
                     previous = null;
                 }
             }
+
+            // Always run if the cached certificate is unusable
+            if (previous == null)
+            {
+                return true;
+            }
           
             var range = ComputeDueDate(previous, order.RenewalInfo);
             if (range.Source?.Contains("ri") ?? false)
@@ -77,8 +83,8 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="certificate"></param>
         /// <returns></returns>
-        public DueDate ComputeDueDate(X509Certificate2? certificate, AcmeRenewalInfo? renewalInfo) => 
-            ComputeDueDate(certificate?.NotBefore ?? DateTime.Now, certificate?.NotAfter ?? DateTime.Now, renewalInfo);
+        public DueDate ComputeDueDate(X509Certificate2 certificate, AcmeRenewalInfo? renewalInfo) => 
+            ComputeDueDate(certificate.NotBefore, certificate.NotAfter, renewalInfo);
 
         /// <summary>
         /// Get renewal date range based on a certificate

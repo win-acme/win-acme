@@ -136,7 +136,7 @@ namespace PKISharp.WACS.Host
                     }
                     else if (_args.Cancel)
                     {
-                        _unattended.Cancel();
+                        await _unattended.Cancel();
                         await CloseDefault();
                     }
                     else if (_args.Revoke)

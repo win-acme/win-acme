@@ -8,30 +8,28 @@ namespace PKISharp.WACS.Services
     public class DueDateStaticService
     {
         internal const int DefaultMinValidDays = 7;
-        protected readonly ISettingsService _settings;
-        internal readonly DueDateRuntimeService _runtime;
+        private readonly ILogService _log;
+        private readonly DueDateRuntimeService _runtime;
 
         public DueDateStaticService(
             DueDateRuntimeService runtime,
-            ISettingsService settings)
+            ILogService logService)
         {
-            _settings = settings;
             _runtime = runtime;
+            _log = logService;
         }
 
         public DueDate? DueDate(Renewal renewal)
         {
-            var last = Mapping(renewal).
-                Where(x => x.Value != null).
-                OrderBy(x => x.Value?.End).
-                FirstOrDefault().
-                Value;
-
-            if (last == null)
+            var currentOrders = CurrentOrders(renewal);
+            if (currentOrders.Any(x => x.Revoked))
             {
                 return null;
             }
-            return _runtime.ComputeDueDate(last);
+            return currentOrders.
+                OrderBy(x => x.DueDate.Start).
+                FirstOrDefault()?.
+                DueDate;
         }
 
         public virtual bool IsDue(Renewal renewal)
@@ -40,51 +38,78 @@ namespace PKISharp.WACS.Services
             return dueDate == null || dueDate.Start < DateTime.Now;
         }
 
-        private Dictionary<string, DueDate?> Mapping(Renewal renewal)
+        private List<StaticOrderInfo> Mapping(Renewal renewal)
         {
             // Get most recent expire date for each order
-            var expireMapping = new Dictionary<string, DueDate?>();
+            var expireMapping = new Dictionary<string, StaticOrderInfo>();
             foreach (var history in renewal.History.OrderBy(h => h.Date))
             {
-                var orderResults = history.OrderResults ??
-                new List<OrderResult> {
-                    new OrderResult("main") {
-                        Success = history.Success,
-                        ExpireDate = history.ExpireDate,
-                        Thumbprint = history.Thumbprints.FirstOrDefault()
-                    }
-                };
-
-                foreach (var orderResult in orderResults)
+                try
                 {
-                    var key = orderResult.Name.ToLower();
-                    if (!expireMapping.ContainsKey(key))
+                    var orderResults = history.OrderResults;
+                    foreach (var orderResult in orderResults)
                     {
-                        expireMapping.Add(key, null);
-                    }
-                    if (orderResult.Success == true)
-                    {
-                        expireMapping[key] =
-                            orderResult.DueDate ??
-                            new DueDate()
+                        var key = orderResult.Name.ToLower();
+                        var dueDate = orderResult.DueDate ??
+                            _runtime.ComputeDueDate(new DueDate()
                             {
                                 Start = history.Date,
                                 End = history.ExpireDate ?? history.Date.AddYears(1)
-                            };
+                            });
+
+                        var info = default(StaticOrderInfo);
+                        if (!expireMapping.ContainsKey(key))
+                        {
+                            info = new StaticOrderInfo(key, dueDate);
+                            expireMapping.Add(key, info);
+                        }
+                        else
+                        {
+                            info = expireMapping[key];
+                            info.DueDate = dueDate;
+                        }
+                        if (orderResult.Success == true)
+                        {
+                            info.LastRenewal = history.Date;
+                            info.RenewCount += 1;
+                            info.LastThumbprint = orderResult.Thumbprint;
+                        }
+                        info.Missing = orderResult.Missing == true;
+                        info.Revoked = orderResult.Revoked == true;
                     }
-                    if (orderResult.Missing == true)
-                    {
-                        expireMapping[key] = null;
-                    }
+                } 
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Error reading history for {renewal}: {ex}", renewal.Id, ex.Message);
                 }
             }
-            return expireMapping;
+            return expireMapping.Values.ToList();
         }
 
-        public List<string> CurrentOrders(Renewal renewal) =>
+        public List<StaticOrderInfo> CurrentOrders(Renewal renewal) =>
             Mapping(renewal).
-            Where(x => x.Value != null).
-            Select(x => x.Key).
+            Where(x => !x.Missing).
             ToList();
+    }
+
+    /// <summary>
+    /// Information about a sub-order derived 
+    /// and summarized from history entries
+    /// </summary>
+    public class StaticOrderInfo
+    {
+        public StaticOrderInfo(string key, DueDate dueDate)
+        {
+            Key = key;
+            DueDate = dueDate;
+        }
+
+        public string Key { get; set; }
+        public bool Missing { get; set; }
+        public bool Revoked { get; set; }
+        public DateTime? LastRenewal { get; set; }
+        public string? LastThumbprint { get; set; }
+        public int RenewCount { get; set; }
+        public DueDate DueDate { get; set; }
     }
 }

@@ -305,5 +305,16 @@ namespace PKISharp.WACS.Clients.Acme
                 File.WriteAllText(f.FullName, x.DiskValue(_settings.Security.EncryptConfig));
             }
         }
+
+        /// <summary>
+        /// Delete all orders from cache
+        /// </summary>
+        internal void ClearCache()
+        {
+            foreach (var f in _orderPath.EnumerateFiles($"*.*"))
+            {
+                f.Delete();
+            }
+        }
     }
 }

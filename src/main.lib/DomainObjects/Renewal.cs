@@ -131,8 +131,12 @@ namespace PKISharp.WACS.DomainObjects
         {
             var success = History.FindAll(x => x.Success == true).Count;
             var errors = History.AsEnumerable().Reverse().TakeWhile(x => x.Success == false);
-            var ret = $"{LastFriendlyName} - renewed {success} time{(success != 1 ? "s" : "")}";
-
+            var ret = $"{LastFriendlyName} - {success} renewal{(success != 1 ? "s" : "")}";
+            var orders = dueDateService?.CurrentOrders(this).Count ?? 0;
+            if (orders > 1)
+            {
+                ret += $", {orders} orders";
+            }
             var format = (DateTime date) =>
             {
                 if (inputService != null)
@@ -155,11 +159,11 @@ namespace PKISharp.WACS.DomainObjects
                     {
                         if (dueDate.Start != dueDate.End) 
                         {
-                            ret += $", due between {format(dueDate.Start)} and {format(dueDate.End)}";
+                            ret += $", due {format(dueDate.Start)} ~ {format(dueDate.End)}";
                         }
                         else
                         {
-                            ret += $", due after {format(dueDate.Start)}";
+                            ret += $", due {format(dueDate.Start)}";
                         }
                     }
                 } 

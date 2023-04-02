@@ -310,7 +310,7 @@ namespace PKISharp.WACS
                 }
             }
 
-            // Choose under which account the plugin should run
+            // Choose under which account the renewals should run
             if (steps.HasFlag(Steps.Account))
             {
                 tempRenewal.Account = await SetupAccount(runLevel);

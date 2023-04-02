@@ -8,6 +8,7 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Services
@@ -19,6 +20,7 @@ namespace PKISharp.WACS.Services
     /// </summary>
     internal class CacheService : ICacheService
     {
+        private const string KeysPostfix = ".keys";
         private const string CsrPostFix = "-csr.pem";
         private const string PfxPostFix = "-temp.pfx";
         private const string PfxPostFixLegacy = "-cache.pfx";
@@ -119,11 +121,31 @@ namespace PKISharp.WACS.Services
             ClearCache($"{renewal.Id}*");
 
         /// <summary>
+        /// Delete all files related to an order in the renewal
+        /// </summary>
+        /// <param name="renewal"></param>
+        /// <param name="order"></param>
+        void ICacheService.Delete(Renewal renewal, string order) =>
+            ClearCache($"{renewal.Id}-{order}-*");
+
+        /// <summary>
+        /// Called on revoke to delete the private key,
+        /// so that it's regenerated even when the --reuse-privatekey
+        /// parameter is used.
+        /// </summary>
+        /// <param name="renewal"></param>
+        void ICacheService.Revoke(Renewal renewal)
+        {
+            ClearCache($"{renewal.Id}{KeysPostfix}");
+            ClearCache($"{renewal.Id}-*{KeysPostfix}");
+        }
+
+        /// <summary>
         /// Encrypt or decrypt the cached private keys
         /// </summary>
         public void Encrypt()
         {
-            foreach (var f in _cache.EnumerateFiles($"*.keys"))
+            foreach (var f in _cache.EnumerateFiles($"*{KeysPostfix}"))
             {
                 var x = new ProtectedString(File.ReadAllText(f.FullName), _log);
                 _log.Information("Rewriting {x}", f.Name);
@@ -219,18 +241,6 @@ namespace PKISharp.WACS.Services
                 }
             }
             return ret;
-        }
-
-        /// <summary>
-        /// All cached certificates for a specific order within a specific renewal
-        /// </summary>
-        /// <param name="renewal"></param>
-        /// <param name="order"></param>
-        /// <returns></returns>
-        public IEnumerable<CertificateInfoCache> CachedInfos(Renewal renewal, Order order)
-        {
-            var ret = CachedInfos(renewal);
-            return ret.Where(r => r.CacheFile.Name.Contains($"-{order.CacheKeyPart ?? "main"}-")).ToList();
         }
 
         /// <summary>
@@ -336,11 +346,11 @@ namespace PKISharp.WACS.Services
         public FileInfo Key(Order order)
         {
             // Backwards compatible with existing keys, which are not split per order yet.
-            var keyFile = new FileInfo(GetPath(order.Renewal, $".keys"));
+            var keyFile = new FileInfo(GetPath(order.Renewal, KeysPostfix));
             var cacheKeyVersion = 1;
             while (!keyFile.Exists && cacheKeyVersion <= MaxCacheKeyVersion)
             {
-                keyFile = new FileInfo(GetPath(order.Renewal, $"-{CacheKey(order, cacheKeyVersion)}.keys"));
+                keyFile = new FileInfo(GetPath(order.Renewal, $"-{CacheKey(order, cacheKeyVersion)}{KeysPostfix}"));
                 cacheKeyVersion++;
             }
             return keyFile;
@@ -402,6 +412,40 @@ namespace PKISharp.WACS.Services
                 pfxPath.Directory?.FullName,
                 _settings.Cache.ReuseDays);
             return FromCache(pfxPath, order.Renewal.PfxPassword?.Value);
+        }
+
+        /// <summary>
+        /// Get certificate for a specific order
+        /// </summary>
+        /// <param name="renewal"></param>
+        /// <param name="order"></param>
+        /// <returns></returns>
+        public CertificateInfoCache? PreviousInfo(Renewal renewal, string order)
+        {
+            var allInfos = CachedInfos(renewal).
+                OrderByDescending(x => x.Certificate.NotBefore).
+                ToList();
+            var ret = allInfos.
+                Where(c => c.CacheFile.Name.Contains($"-{order}-")).
+                FirstOrDefault();
+            if (ret != null)
+            {
+                return ret;
+            }
+
+            // Fallback to previous cache without ordername
+            ret = allInfos.
+                Where(c => Regex.IsMatch(c.CacheFile.Name[renewal.Id.Length..], "^-[a-f0-9]+" + Regex.Escape(PfxPostFix))).
+                FirstOrDefault();
+            if (ret != null)
+            {
+                return ret;
+            }
+
+            // Fallback to extreme legacy
+            return allInfos.
+                Where(c => c.CacheFile.FullName == GetPath(renewal, PfxPostFixLegacy)).
+                FirstOrDefault();
         }
     }
 }

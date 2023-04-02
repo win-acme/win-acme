@@ -13,7 +13,6 @@ namespace PKISharp.WACS
         private readonly IInputService _input;
         private readonly ILogService _log;
         private readonly IRenewalStore _renewalStore;
-        private readonly ICacheService _cacheService;
         private readonly MainArguments _args;
         private readonly DueDateStaticService _dueDate;
         private readonly RenewalRevoker _renewalRevoker;
@@ -21,7 +20,6 @@ namespace PKISharp.WACS
         public Unattended(  
             MainArguments args,
             IRenewalStore renewalStore, 
-            ICacheService cacheService, 
             IInputService input, 
             ILogService log,
             DueDateStaticService dueDate,
@@ -31,7 +29,6 @@ namespace PKISharp.WACS
             _args = args;
             _input = input;
             _log = log;
-            _cacheService = cacheService;
             _dueDate = dueDate;
             _renewalRevoker = renewalRevoker;
         }
@@ -56,14 +53,10 @@ namespace PKISharp.WACS
         /// Cancel certificate from the command line
         /// </summary>
         /// <returns></returns>
-        internal void Cancel()
+        internal async Task Cancel()
         {
             var targets = FilterRenewalsByCommandLine("cancel");
-            foreach (var t in targets)
-            {
-                _renewalStore.Cancel(t);
-                _cacheService.Delete(t);
-            }
+            await _renewalRevoker.CancelRenewals(targets);
         }
 
         /// <summary>

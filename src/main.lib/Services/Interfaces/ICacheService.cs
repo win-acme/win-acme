@@ -10,13 +10,15 @@ namespace PKISharp.WACS.Services
         FileInfo Key(Order order);
 
         void Delete(Renewal renewal);
-        
+        void Delete(Renewal renewal, string order);
+
         Task StoreCsr(Order order, string csr);
         Task<ICertificateInfo> StorePfx(Order order, CertificateOption option);
 
         CertificateInfoCache? CachedInfo(Order order);
-        IEnumerable<CertificateInfoCache> CachedInfos(Renewal renewal);
-        IEnumerable<CertificateInfoCache> CachedInfos(Renewal renewal, Order order);
+        CertificateInfoCache? PreviousInfo(Renewal renewal, string order);
+
         void Encrypt();
+        void Revoke(Renewal renewal);
     }
 }

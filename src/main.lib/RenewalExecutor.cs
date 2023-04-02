@@ -192,8 +192,9 @@ namespace PKISharp.WACS
             var orderProcessor = execute.Resolve<OrderProcessor>();
 
             // Build context
+            var previousOrders = _dueDateStatic.CurrentOrders(renewal);
             var orderContexts = orders.Select(order => new OrderContext(_scopeBuilder.Order(execute, order), order, runLevel)).ToList();
-            await orderProcessor.PrepareOrders(orderContexts);
+            await orderProcessor.PrepareOrders(orderContexts, previousOrders);
 
             // Check individual orders
             foreach (var o in orderContexts)
@@ -203,8 +204,7 @@ namespace PKISharp.WACS
             }
 
             // Check missing orders
-            var previousOrders = _dueDateStatic.CurrentOrders(renewal);
-            var missingOrders = previousOrders.Where(x => !orderContexts.Any(c => c.OrderCacheKey == x));
+            var missingOrders = previousOrders.Where(x => !orderContexts.Any(c => c.OrderCacheKey == x.Key));
             if (missingOrders.Any())
             {
                 foreach (var order in missingOrders)
@@ -215,7 +215,7 @@ namespace PKISharp.WACS
                     // We will note this in the renewal history, so that
                     // we won't take them into account anymore in the
                     // DueDateStaticService.
-                    result.OrderResults.Add(new OrderResult(order) { Missing = true });
+                    result.OrderResults.Add(new OrderResult(order.Key) { Missing = true });
                 }
             }
 
@@ -274,7 +274,7 @@ namespace PKISharp.WACS
             }
 
             // Handle missing order (update ARI and clear cache)
-            await orderProcessor.HandleMissing(renewal, missingOrders);
+            await orderProcessor.HandleMissing(renewal, missingOrders.Select(m => m.Key));
 
             // Return final result
             result.Success = runnableContexts.All(o => o.OrderResult.Success == true);

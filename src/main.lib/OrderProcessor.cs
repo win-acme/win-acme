@@ -60,7 +60,7 @@ namespace PKISharp.WACS
         /// </summary>
         /// <param name="orderContexts"></param>
         /// <returns></returns>
-        internal async Task PrepareOrders(List<OrderContext> orderContexts)
+        internal async Task PrepareOrders(List<OrderContext> orderContexts, List<StaticOrderInfo> orderInfos)
         {
             foreach (var order in orderContexts)
             {
@@ -68,22 +68,24 @@ namespace PKISharp.WACS
                 // sub order regardless of the fact that it may have another
                 // shape (e.g. different SAN names or common name etc.). This
                 // means we cannot use the cache key for it.
-                order.PreviousCertificate = _cacheService.
-                    CachedInfos(order.Renewal, order.Order).
-                    OrderByDescending(x => x.Certificate.NotBefore).
-                    FirstOrDefault();
-
-                // Fallback to legacy cache file name without
-                // order name part
-                order.PreviousCertificate ??= _cacheService.
-                       CachedInfos(order.Renewal).
-                       Where(c => !orderContexts.Any(o => c.CacheFile.Name.Contains($"-{o.Order.CacheKeyPart ?? "main"}-"))).
-                       OrderByDescending(x => x.Certificate.NotBefore).
-                       FirstOrDefault();
-
+                order.PreviousCertificate = _cacheService.PreviousInfo(order.Renewal, order.OrderCacheKey);
                 if (order.PreviousCertificate != null)
                 {
                     _log.Debug("Previous certificate found at {fi}", order.PreviousCertificate.CacheFile.FullName);
+                }
+
+                var orderInfo = orderInfos.Where(x => x.Key == order.OrderCacheKey).FirstOrDefault();
+                if (orderInfo != null)
+                {
+                    if (orderInfo.Revoked)
+                    {
+                        // Never seen this exact shape of certificate yet, we should always run
+                        // either because it's a new one, or because it's an order that has changed
+                        // shape due to a dynamic source plugin.
+                        order.ShouldRun = true;
+                        _log.Information(LogType.All, "Order {order} must renew because its certificate was revoked", order.OrderFriendlyName);
+                        continue;
+                    }
                 }
 
                 // Match using exact cache key
@@ -107,7 +109,7 @@ namespace PKISharp.WACS
                     order.ShouldRun = true;
                     if (!order.Renewal.New)
                     {
-                        _log.Information(LogType.All, "Renewal {renewal} running prematurely due to source change in order {order}", order.Renewal.LastFriendlyName, order.OrderFriendlyName);
+                        _log.Information(LogType.All, "Source change in order {order} detected", order.OrderFriendlyName);
                     }
                 }
             }
@@ -288,10 +290,9 @@ namespace PKISharp.WACS
                     {
                         await _client.UpdateRenewalInfo(context.PreviousCertificate);
                     } 
-                    catch (Exception _)
+                    catch (Exception ex)
                     {
-                        // Always fails due to Boulder bug
-                        //_log.Error(ex, "UpdateRenewalInfo failed");
+                        _log.Warning("Error updating renewal info: {ex}", ex.Message);
                     }
                 }
             }
@@ -552,15 +553,19 @@ namespace PKISharp.WACS
         {
             foreach (var missing in missingOrders)
             {
-                var cert = _cacheService.
-                    CachedInfos(renewal).
-                    Where(c => c.CacheFile.Name.Contains($"-{missing}-")).
-                    OrderByDescending(x => x.Certificate.NotBefore).
-                    FirstOrDefault();
-                if (cert != null)
+                var lastCert = _cacheService.PreviousInfo(renewal, missing);
+                if (lastCert != null)
                 {
-                    await _client.UpdateRenewalInfo(cert);
+                    try
+                    {
+                        await _client.UpdateRenewalInfo(lastCert);
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Warning("Error updating renewalInfo for {missing}: {ex}", missing, ex.Message);
+                    }
                 }
+                _cacheService.Delete(renewal, missing);
             }
         }
     }
