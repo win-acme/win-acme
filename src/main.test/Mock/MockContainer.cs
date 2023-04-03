@@ -29,6 +29,7 @@ namespace PKISharp.WACS.UnitTests.Mock
             _ = builder.RegisterType<Real.SecretServiceManager>();
             _ = builder.RegisterType<SecretService>().As<SecretService>().As<Real.ISecretService>().SingleInstance();
             _ = builder.RegisterType<AccountManager>();
+            _ = builder.RegisterType<OrderManager>();
             _ = builder.RegisterType<ZeroSsl>();
             WacsJson.Configure(builder);
             _ = builder.RegisterInstance(log).As<Real.ILogService>();
@@ -49,7 +50,7 @@ namespace PKISharp.WACS.UnitTests.Mock
             _ = builder.RegisterType<Real.PasswordGenerator>().SingleInstance();
             _ = builder.RegisterType<RenewalCreator>().SingleInstance();
             _ = builder.RegisterType<RenewalDescriber>().SingleInstance();
-            _ = builder.RegisterType<RenewalRevoker>().SingleInstance();
+            _ = builder.RegisterType<MockRenewalRevoker>().As<Real.IRenewalRevoker>().SingleInstance();
             _ = builder.RegisterType<Real.DomainParseService>().SingleInstance();
             _ = builder.RegisterType<Mock.Clients.MockIISClient>().As<IIISClient>().SingleInstance();
             _ = builder.RegisterType<IISHelper>().SingleInstance();

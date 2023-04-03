@@ -49,33 +49,40 @@ namespace PKISharp.WACS.Services
                     var orderResults = history.OrderResults;
                     foreach (var orderResult in orderResults)
                     {
+                        var info = default(StaticOrderInfo);
                         var key = orderResult.Name.ToLower();
                         var dueDate = orderResult.DueDate ??
-                            _runtime.ComputeDueDate(new DueDate()
-                            {
-                                Start = history.Date,
-                                End = history.ExpireDate ?? history.Date.AddYears(1)
-                            });
+                                _runtime.ComputeDueDate(new DueDate()
+                                {
+                                    Start = history.Date,
+                                    End = history.ExpireDate ?? history.Date.AddYears(1)
+                                });
 
-                        var info = default(StaticOrderInfo);
-                        if (!expireMapping.ContainsKey(key))
+                        if (orderResult.Success != false)
                         {
-                            info = new StaticOrderInfo(key, dueDate);
-                            expireMapping.Add(key, info);
+                            if (!expireMapping.ContainsKey(key))
+                            {
+                                info = new StaticOrderInfo(key, dueDate);
+                                expireMapping.Add(key, info);
+                            }
+                            else
+                            {
+                                info = expireMapping[key];
+                                info.DueDate = dueDate;
+                            }
+                            if (orderResult.Success == true)
+                            {
+                                info.LastRenewal = history.Date;
+                                info.RenewCount += 1;
+                                info.LastThumbprint = orderResult.Thumbprint;
+                            }
                         }
-                        else
+                        if (info != null)
                         {
-                            info = expireMapping[key];
-                            info.DueDate = dueDate;
+                            info.Missing = orderResult.Missing == true;
+                            info.Revoked = orderResult.Revoked == true;
                         }
-                        if (orderResult.Success == true)
-                        {
-                            info.LastRenewal = history.Date;
-                            info.RenewCount += 1;
-                            info.LastThumbprint = orderResult.Thumbprint;
-                        }
-                        info.Missing = orderResult.Missing == true;
-                        info.Revoked = orderResult.Revoked == true;
+
                     }
                 } 
                 catch (Exception ex)

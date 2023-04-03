@@ -55,26 +55,32 @@ namespace PKISharp.WACS.DomainObjects
         {
             get
             {
-                if (OrderResultsJson != null)
+                var ret = OrderResultsJson;
+                if (ret == null)
                 {
-                    return OrderResultsJson;
-                }
-                else if (ThumbprintsJson != null)
-                {
-                    return ThumbprintsJson.Select(x =>
-                        new OrderResult("legacy")
+                    ret = new List<OrderResult>();
+                    if (ThumbprintsJson != null && ThumbprintsJson.Any())
+                    {
+                        foreach (var thumb in ThumbprintsJson)
                         {
-                            Thumbprint = x,
-                            ExpireDate = _expireDate.GetValueOrDefault(),
-                            Success = Success
-                        }).ToList();
-                }
-                return new List<OrderResult> {
-                    new OrderResult("main") {
-                        Success = Success,
-                        ExpireDate = _expireDate.GetValueOrDefault(),
+                            ret.Add(new OrderResult(!ret.Any() ? "main" : "legacy")
+                            {
+                                Thumbprint = thumb,
+                                ExpireDate = _expireDate,
+                                Success = Success
+                            });
+                        }
                     }
-                }; 
+                    else
+                    {
+                        ret.Add(new OrderResult("main")
+                        {
+                            Success = Success,
+                            ExpireDate = _expireDate,
+                        });
+                    }
+                }
+                return ret;
             }
             set => OrderResultsJson = value;
         }

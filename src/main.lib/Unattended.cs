@@ -15,7 +15,7 @@ namespace PKISharp.WACS
         private readonly IRenewalStore _renewalStore;
         private readonly MainArguments _args;
         private readonly DueDateStaticService _dueDate;
-        private readonly RenewalRevoker _renewalRevoker;
+        private readonly IRenewalRevoker _renewalRevoker;
 
         public Unattended(  
             MainArguments args,
@@ -23,7 +23,7 @@ namespace PKISharp.WACS
             IInputService input, 
             ILogService log,
             DueDateStaticService dueDate,
-            RenewalRevoker renewalRevoker)
+            IRenewalRevoker renewalRevoker)
         {
             _renewalStore = renewalStore;
             _args = args;

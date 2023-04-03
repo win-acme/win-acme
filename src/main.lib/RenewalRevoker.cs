@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS
 {
-    internal class RenewalRevoker
+    internal class RenewalRevoker : IRenewalRevoker
     {
         private readonly ExceptionHandler _exceptionHandler;
         private readonly AcmeClientManager _clientManager;
@@ -42,7 +42,7 @@ namespace PKISharp.WACS
         /// </summary>
         /// <param name="renewals"></param>
         /// <returns></returns>
-        internal async Task RevokeCertificates(IEnumerable<Renewal> renewals)
+        public async Task RevokeCertificates(IEnumerable<Renewal> renewals)
         {
             foreach (var renewal in renewals)
             {
@@ -105,7 +105,7 @@ namespace PKISharp.WACS
         /// </summary>
         /// <param name="renewals"></param>
         /// <returns></returns>
-        internal async Task CancelRenewals(IEnumerable<Renewal> renewals)
+        public async Task CancelRenewals(IEnumerable<Renewal> renewals)
         {
             foreach (var renewal in renewals)
             {

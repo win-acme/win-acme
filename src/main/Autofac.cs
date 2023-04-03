@@ -77,7 +77,7 @@ namespace PKISharp.WACS.Host
                 _ = builder.RegisterType<RenewalManager>().SingleInstance();
                 _ = builder.RegisterType<RenewalCreator>().SingleInstance();
                 _ = builder.RegisterType<RenewalDescriber>().SingleInstance();
-                _ = builder.RegisterType<RenewalRevoker>().SingleInstance();
+                _ = builder.RegisterType<RenewalRevoker>().As<IRenewalRevoker>().SingleInstance();
                 _ = builder.RegisterType<Unattended>().SingleInstance();
                 _ = builder.RegisterType<ArgumentsInputService>().SingleInstance();
                 _ = builder.RegisterType<MainMenu>().SingleInstance();

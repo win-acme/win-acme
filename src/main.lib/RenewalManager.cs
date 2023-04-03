@@ -22,7 +22,6 @@ namespace PKISharp.WACS
     {
         private readonly IInputService _input;
         private readonly ILogService _log;
-        private readonly IPluginService _plugin;
         private readonly IRenewalStore _renewalStore;
         private readonly ArgumentsParser _arguments;
         private readonly MainArguments _args;
@@ -32,7 +31,7 @@ namespace PKISharp.WACS
         private readonly RenewalExecutor _renewalExecutor;
         private readonly RenewalCreator _renewalCreator;
         private readonly RenewalDescriber _renewalDescriber;
-        private readonly RenewalRevoker _renewalRevoker;
+        private readonly IRenewalRevoker _renewalRevoker;
         private readonly ISettingsService _settings;
         private readonly DueDateStaticService _dueDate;
         private readonly AccountManager _accountManager;
@@ -40,12 +39,12 @@ namespace PKISharp.WACS
         public RenewalManager(
             ArgumentsParser arguments, MainArguments args,
             IRenewalStore renewalStore, ISharingLifetimeScope container,
-            IPluginService plugin, IInputService input, ILogService log,
+            IInputService input, ILogService log,
             ISettingsService settings, DueDateStaticService dueDate,
             IAutofacBuilder autofacBuilder, ExceptionHandler exceptionHandler,
             RenewalCreator renewalCreator, RenewalExecutor renewalExecutor,
             AccountManager accountManager, RenewalDescriber renewalDescriber, 
-            RenewalRevoker renewalRevoker)
+            IRenewalRevoker renewalRevoker)
         {
             _renewalStore = renewalStore;
             _args = args;
@@ -59,7 +58,6 @@ namespace PKISharp.WACS
             _renewalExecutor = renewalExecutor;
             _renewalCreator = renewalCreator;
             _dueDate = dueDate;
-            _plugin = plugin;
             _accountManager = accountManager;
             _renewalDescriber = renewalDescriber;
             _renewalRevoker = renewalRevoker;
