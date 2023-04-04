@@ -81,6 +81,24 @@ namespace PKISharp.WACS.UnitTests.Tests.RenewalTests
         }
 
         [TestMethod]
+        public void LegacyRenewal()
+        {
+            ShouldRun(
+                new Renewal()
+                {
+                    History = new List<RenewResult>() {
+                        new RenewResult() {
+                            Date = DateTime.Now.AddDays(-3),
+                            Success = true,
+                            ThumbprintsJson = new List<string> {"bla"}
+                        }
+                    }
+                },
+                RunLevel.Simple,
+                false);
+        }
+
+        [TestMethod]
         public void MissingOrder()
         {
             ShouldRun(
