@@ -16,7 +16,7 @@
   <ItemGroup>
     <PackageReference Include="Azure.Identity" Version="1.8.2" />
     <PackageReference Include="Azure.ResourceManager.KeyVault" Version="1.1.0" />
-    <PackageReference Include="Azure.Security.KeyVault.Certificates" Version="4.5.0" />
+    <PackageReference Include="Azure.Security.KeyVault.Certificates" Version="4.5.1" />
   </ItemGroup>
 
   <ItemGroup>
