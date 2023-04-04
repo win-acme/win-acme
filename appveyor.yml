@@ -37,6 +37,7 @@ build_script:
   - cmd: dotnet publish ./src/plugin.validation.dns.dreamhost/wacs.validation.dns.dreamhost.csproj -c Release
   - cmd: dotnet publish ./src/plugin.validation.dns.godaddy/wacs.validation.dns.godaddy.csproj -c Release
   - cmd: dotnet publish ./src/plugin.validation.dns.googledns/wacs.validation.dns.googledns.csproj -c Release
+  - cmd: dotnet publish ./src/plugin.validation.dns.infomaniac/wacs.validation.dns.infomaniac.csproj -c Release
   - cmd: dotnet publish ./src/plugin.validation.dns.linode/wacs.validation.dns.linode.csproj -c Release
   - cmd: dotnet publish ./src/plugin.validation.dns.luadns/wacs.validation.dns.luadns.csproj -c Release
   - cmd: dotnet publish ./src/plugin.validation.dns.ns1/wacs.validation.dns.ns1.csproj -c Release

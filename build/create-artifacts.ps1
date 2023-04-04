@@ -167,6 +167,10 @@ PluginRelease plugin.validation.dns.googledns @(
 	"Google.Apis.Dns.v1.dll",
 	"PKISharp.WACS.Plugins.ValidationPlugins.GoogleDns.dll"
 )
+PluginRelease plugin.validation.dns.infomaniak @(
+	"PKISharp.WACS.Plugins.ValidationPlugins.InfoManiak.dll",
+	"Newtonsoft.Json.dll"
+)
 PluginRelease plugin.validation.dns.linode @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.Linode.dll",
 	"Newtonsoft.Json.dll"
