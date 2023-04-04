@@ -1,4 +1,5 @@
 ﻿using Autofac.Core;
+using Fclp.Internals.Extensions;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
@@ -135,9 +136,13 @@ namespace PKISharp.WACS
             {
                 addArgs(so);
             }
-            if (renewal.FriendlyName != null)
+            if (!string.IsNullOrWhiteSpace(renewal.FriendlyName))
             {
                 args.Add("friendlyname", renewal.FriendlyName);
+            }
+            if (!string.IsNullOrWhiteSpace(renewal.Account))
+            {
+                args.Add("account", renewal.Account);
             }
             return "wacs.exe " + string.Join(" ", args.Select(a => $"--{a.Key.ToLower()} {a.Value}".Trim()));
         }
