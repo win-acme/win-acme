@@ -1,4 +1,5 @@
-﻿using Autofac;
+﻿using ACMESharp.Protocol.Resources;
+using Autofac;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Context;
@@ -27,6 +28,8 @@ namespace PKISharp.WACS
         private readonly ICacheService _cacheService;
         private readonly ExceptionHandler _exceptionHandler;
         private readonly RenewalValidator _validator;
+        private readonly DueDateRuntimeService _dueDate;
+        private readonly AcmeClient _client;
 
         public OrderProcessor(
             IAutofacBuilder scopeBuilder,
@@ -36,7 +39,9 @@ namespace PKISharp.WACS
             ICertificateService certificateService,
             ICacheService cacheService,
             RenewalValidator validator,
-            ExceptionHandler exceptionHandler)
+            DueDateRuntimeService dueDate,
+            ExceptionHandler exceptionHandler, 
+            AcmeClient clientManager)
         {
             _validator = validator;
             _scopeBuilder = scopeBuilder;
@@ -44,42 +49,82 @@ namespace PKISharp.WACS
             _input = input;
             _settings = settings;
             _exceptionHandler = exceptionHandler;
+            _dueDate = dueDate; 
             _certificateService = certificateService;
             _cacheService = cacheService;
+            _client = clientManager;
         }
 
         /// <summary>
-        /// Get the certificates, if not from cache then from the server
+        /// Get metadata about the previous certificate and 
         /// </summary>
-        /// <param name="runnableContexts"></param>
-        /// <param name="runLevel"></param>
+        /// <param name="orderContexts"></param>
         /// <returns></returns>
-        public async Task ExecuteOrders(List<OrderContext> runnableContexts, List<OrderContext> allContexts, RunLevel runLevel)
+        internal async Task PrepareOrders(List<OrderContext> orderContexts, List<StaticOrderInfo> orderInfos)
         {
-            foreach (var order in runnableContexts)
+            foreach (var order in orderContexts)
             {
                 // Get the previously issued certificates in this renewal
                 // sub order regardless of the fact that it may have another
                 // shape (e.g. different SAN names or common name etc.). This
                 // means we cannot use the cache key for it.
-                order.PreviousCertificate = _cacheService.
-                    CachedInfos(order.Renewal, order.Order).
-                    OrderByDescending(x => x.Certificate.NotBefore).
-                    FirstOrDefault();
-
-                // Fallback to legacy cache file name without
-                // order name part
-                order.PreviousCertificate ??= _cacheService.
-                       CachedInfos(order.Renewal).
-                       Where(c => !allContexts.Any(o => c.CacheFile.Name.Contains($"-{o.Order.CacheKeyPart ?? "main"}-"))).
-                       OrderByDescending(x => x.Certificate.NotBefore).
-                       FirstOrDefault();
-
+                order.PreviousCertificate = _cacheService.PreviousInfo(order.Renewal, order.OrderCacheKey);
                 if (order.PreviousCertificate != null)
                 {
                     _log.Debug("Previous certificate found at {fi}", order.PreviousCertificate.CacheFile.FullName);
                 }
 
+                var orderInfo = orderInfos.Where(x => x.Key == order.OrderCacheKey).FirstOrDefault();
+                if (orderInfo != null)
+                {
+                    if (orderInfo.Revoked)
+                    {
+                        // Never seen this exact shape of certificate yet, we should always run
+                        // either because it's a new one, or because it's an order that has changed
+                        // shape due to a dynamic source plugin.
+                        order.ShouldRun = true;
+                        _log.Information(LogType.All, "Order {order} must renew because its certificate was revoked", order.OrderFriendlyName);
+                        continue;
+                    }
+                }
+
+                // Match using exact cache key
+                order.CachedCertificate = _cacheService.CachedInfo(order.Order);
+                if (order.CachedCertificate != null)
+                {
+                    try
+                    {
+                        order.RenewalInfo = await _client.GetRenewalInfo(order.CachedCertificate);
+                    } 
+                    catch (Exception ex)
+                    {
+                        _log.Error(ex, "Error getting renewal information from server");
+                    }
+                } 
+                else 
+                {
+                    // Never seen this exact shape of certificate yet, we should always run
+                    // either because it's a new one, or because it's an order that has changed
+                    // shape due to a dynamic source plugin.
+                    order.ShouldRun = true;
+                    if (!order.Renewal.New)
+                    {
+                        _log.Information(LogType.All, "Source change in order {order} detected", order.OrderFriendlyName);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Get the certificates, if not from cache then from the server
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="runLevel"></param>
+        /// <returns></returns>
+        public async Task ExecuteOrders(List<OrderContext> context, RunLevel runLevel)
+        {
+            foreach (var order in context)
+            {
                 // Get the existing certificate matching the order description
                 // this may turn out to be null even if we have found a previous
                 // certificate.
@@ -93,7 +138,7 @@ namespace PKISharp.WACS
 
             // Group validations of multiple order together
             // as to maximize the potential gains in parallelization
-            var fromServer = runnableContexts.Where(x => x.NewCertificate == null).ToList();
+            var fromServer = context.Where(x => x.NewCertificate == null).ToList();
             foreach (var order in fromServer)
             {
                 await CreateOrder(order);
@@ -105,30 +150,30 @@ namespace PKISharp.WACS
             await _validator.ValidateOrders(validationRequired, runLevel);
 
             // Download all the orders in parallel
-            await Task.WhenAll(runnableContexts.Select(async order =>
+            await Task.WhenAll(context.Select(async order =>
             {
                 if (order.OrderResult.Success == false)
                 {
                     _log.Verbose("Order {n}/{m} ({friendly}): error {error}",
-                         runnableContexts.IndexOf(order) + 1,
-                         runnableContexts.Count,
-                         order.OrderName,
+                         context.IndexOf(order) + 1,
+                         context.Count,
+                         order.OrderFriendlyName,
                          order.OrderResult.ErrorMessages?.FirstOrDefault() ?? "unknown");
                 }
                 else if (order.NewCertificate == null)
                 {
                     _log.Verbose("Order {n}/{m} ({friendly}): processing...",
-                         runnableContexts.IndexOf(order) + 1,
-                         runnableContexts.Count,
-                         order.OrderName);
+                         context.IndexOf(order) + 1,
+                         context.Count,
+                         order.OrderFriendlyName);
                     order.NewCertificate = await GetFromServer(order);
                 }
                 else
                 {
                     _log.Verbose("Order {n}/{m} ({friendly}): handle from cache",
-                         runnableContexts.IndexOf(order) + 1,
-                         runnableContexts.Count,
-                         order.OrderName);
+                         context.IndexOf(order) + 1,
+                         context.Count,
+                         order.OrderFriendlyName);
                 }
             }));
         }
@@ -146,7 +191,7 @@ namespace PKISharp.WACS
                 _log.Verbose("Processing order {n}/{m}: {friendly}",
                    orderContexts.IndexOf(order) + 1,
                    orderContexts.Count,
-                   order.OrderName);
+                   order.OrderFriendlyName);
 
                 var orderResult = order.OrderResult;
                 if (order.NewCertificate == null)
@@ -171,6 +216,26 @@ namespace PKISharp.WACS
                     // after one fails to do that
                     break;
                 }
+
+                // Store dynamically calculated due date in renewal result
+                var renewalInfo = default(AcmeRenewalInfo);
+                try
+                {
+                    renewalInfo = await _client.GetRenewalInfo(order.NewCertificate);
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Error getting renewal information from server");
+                }
+                var dueDate = _dueDate.ComputeDueDate(order.NewCertificate.Certificate, renewalInfo);
+                
+                // Only store in history if the server actually wants it
+                // to happen earlier than what we are currently calculating
+                // based on our own settings
+                if (dueDate.Source?.Contains("ri") ?? false)
+                {
+                    orderResult.DueDate = dueDate;
+                }
             }
         }
 
@@ -192,7 +257,7 @@ namespace PKISharp.WACS
                 // Early escape for testing validation only
                 if (context.Renewal.New &&
                     context.RunLevel.HasFlag(RunLevel.Test) &&
-                    !await _input.PromptYesNo($"[--test] Store and install the certificate for order {context.OrderName}?", true))
+                    !await _input.PromptYesNo($"[--test] Store and install the certificate for order {context.OrderFriendlyName}?", true))
                 {
                     return true;
                 }
@@ -217,7 +282,18 @@ namespace PKISharp.WACS
                 if (context.PreviousCertificate != null &&
                     context.NewCertificate.Certificate.Thumbprint != context.PreviousCertificate.Certificate.Thumbprint)
                 {
+                    // Delete the previous certificate from the store(s)
                     await HandleStoreRemove(context, context.PreviousCertificate, storeContexts);
+
+                    // Tell the server that we stopped caring about the previous certificate
+                    try
+                    {
+                        await _client.UpdateRenewalInfo(context.PreviousCertificate);
+                    } 
+                    catch (Exception ex)
+                    {
+                        _log.Warning("Error updating renewal info: {ex}", ex.Message);
+                    }
                 }
             }
             catch (Exception ex)
@@ -236,7 +312,7 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private CertificateInfoCache? GetFromCache(OrderContext context, RunLevel runLevel)
         {
-            var cachedCertificate = _cacheService.CachedInfo(context.Order);
+            var cachedCertificate = context.CachedCertificate;
             if (cachedCertificate == null)
             {
                 return null;
@@ -275,13 +351,13 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private async Task CreateOrder(OrderContext context)
         {
-            _log.Verbose("Obtain order details for {order}", context.OrderName);
+            _log.Verbose("Obtain order details for {order}", context.OrderFriendlyName);
 
             // Place the order
             var orderManager = context.OrderScope.Resolve<OrderManager>();
             context.Order.KeyPath = context.Order.Renewal.CsrPluginOptions?.ReusePrivateKey == true
                 ? _cacheService.Key(context.Order).FullName : null;
-            context.Order.Details = await orderManager.GetOrCreate(context.Order, context.RunLevel);
+            context.Order.Details = await orderManager.GetOrCreate(context.Order, _client, context.RunLevel);
 
             // Sanity checks
             if (context.Order.Details == null)
@@ -466,6 +542,31 @@ namespace PKISharp.WACS
                 return false;
             }
             return true;
+        }
+
+        /// <summary>
+        /// Handle missing orders
+        /// </summary>
+        /// <param name="missingOrders"></param>
+        /// <returns></returns>
+        internal async Task HandleMissing(Renewal renewal, IEnumerable<string> missingOrders)
+        {
+            foreach (var missing in missingOrders)
+            {
+                var lastCert = _cacheService.PreviousInfo(renewal, missing);
+                if (lastCert != null)
+                {
+                    try
+                    {
+                        await _client.UpdateRenewalInfo(lastCert);
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Warning("Error updating renewalInfo for {missing}: {ex}", missing, ex.Message);
+                    }
+                }
+                _cacheService.Delete(renewal, missing);
+            }
         }
     }
 }

@@ -17,12 +17,13 @@ namespace PKISharp.WACS.Host
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
         private readonly AdminService _adminService;
-        private readonly AcmeClient _acmeClient;
+        private readonly NetworkCheckService _networkCheck;
         private readonly UpdateClient _updateClient;
         private readonly ArgumentsParser _arguments;
         private readonly ExceptionHandler _exceptionHandler;
         private readonly MainArguments _args;
         private readonly RenewalManager _renewalManager;
+        private readonly Unattended _unattended;
         private readonly RenewalCreator _renewalCreator;
         private readonly TaskSchedulerService _taskScheduler;
         private readonly VersionService _versionService;
@@ -32,7 +33,6 @@ namespace PKISharp.WACS.Host
             ExceptionHandler exceptionHandler,
             IIISClient iis,
             UpdateClient updateClient,
-            AcmeClient acmeClient,
             ILogService logService,
             IInputService inputService,
             ISettingsService settingsService,
@@ -40,7 +40,9 @@ namespace PKISharp.WACS.Host
             ArgumentsParser argumentsParser,
             AdminService adminService,
             RenewalCreator renewalCreator,
+            NetworkCheckService networkCheck,
             RenewalManager renewalManager,
+            Unattended unattended,
             TaskSchedulerService taskSchedulerService,
             MainMenu mainMenu)
         {
@@ -48,8 +50,8 @@ namespace PKISharp.WACS.Host
             _exceptionHandler = exceptionHandler;
             _log = logService;
             _settings = settingsService;
-            _acmeClient = acmeClient;
             _updateClient = updateClient;
+            _networkCheck = networkCheck;
             _adminService = adminService;
             _taskScheduler = taskSchedulerService;
             _renewalCreator = renewalCreator; 
@@ -57,6 +59,7 @@ namespace PKISharp.WACS.Host
             _arguments = argumentsParser;
             _input = inputService;
             _versionService = versionService;
+            _unattended = unattended;
             _mainMenu = mainMenu;
             _iis = iis;
 
@@ -92,7 +95,7 @@ namespace PKISharp.WACS.Host
                 return -1;
             }
 
-            // Show informational message and start-up diagnostics
+            // List informational message and start-up diagnostics
             await ShowBanner();
 
             // Version display
@@ -128,17 +131,17 @@ namespace PKISharp.WACS.Host
                     }
                     else if (_args.List)
                     {
-                        await _renewalManager.ShowRenewalsUnattended();
+                        await _unattended.List();
                         await CloseDefault();
                     }
                     else if (_args.Cancel)
                     {
-                        _renewalManager.CancelRenewalsUnattended();
+                        await _unattended.Cancel();
                         await CloseDefault();
                     }
                     else if (_args.Revoke)
                     {
-                        await _renewalManager.RevokeCertificatesUnattended();
+                        await _unattended.Revoke();
                         await CloseDefault();
                     }
                     else if (_args.Renew)
@@ -218,7 +221,7 @@ namespace PKISharp.WACS.Host
             }
 
             _log.Information("Connecting to {ACME}...", _settings.BaseUri);
-            await _acmeClient.CheckNetwork().ConfigureAwait(false);
+            await _networkCheck.CheckNetwork().ConfigureAwait(false);
 
             if (_adminService.IsAdmin)
             {

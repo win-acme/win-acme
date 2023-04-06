@@ -2,8 +2,6 @@
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Context;
 using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.Base;
-using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
@@ -41,14 +39,14 @@ namespace PKISharp.WACS
         private readonly ISettingsService _settings;
         private readonly IValidationOptionsService _validationOptions;
         private readonly ExceptionHandler _exceptionHandler;
-        private readonly AcmeClient _acmeClient;
+        private readonly AcmeClient _client;
 
         public RenewalValidator(
             IAutofacBuilder scopeBuilder,
             ISettingsService settings,
             ILogService log,
             IPluginService plugin,
-            AcmeClient acmeClient,
+            AcmeClient client,
             IValidationOptionsService validationOptions,
             ExceptionHandler exceptionHandler)
         {
@@ -57,7 +55,7 @@ namespace PKISharp.WACS
             _validationOptions = validationOptions;
             _exceptionHandler = exceptionHandler;
             _settings = settings;
-            _acmeClient = acmeClient; 
+            _client = client; 
             _plugin = plugin;
         }
 
@@ -139,11 +137,7 @@ namespace PKISharp.WACS
             var plugin = validationScope.Resolve<IValidationPlugin>();
             var contexts = authorizations.Select(context =>
             {
-                var targetPart = context.Order.Target.Parts.FirstOrDefault(p => p.Identifiers.Any(i => i == Identifier.Parse(context.Authorization).Unicode(true)));
-                if (targetPart == null)
-                {
-                    throw new InvalidOperationException("Authorisation found that doesn't match target");
-                }
+                var targetPart = context.Order.Target.Parts.FirstOrDefault(p => p.Identifiers.Any(i => i == Identifier.Parse(context.Authorization).Unicode(true))) ?? throw new InvalidOperationException("Authorisation found that doesn't match target");
                 var pluginMeta = _plugin.GetPlugin(pluginOptions);
                 return new ValidationContextParameters(context, targetPart, pluginOptions, pluginMeta);
             }).ToList();
@@ -167,7 +161,7 @@ namespace PKISharp.WACS
                         Where(a => a.Authorization.Status == AcmeClient.AuthorizationPending).
                         Select(a => { 
                             _log.Information("[{identifier}] Deactivating pending authorization", a.Label);
-                            return _acmeClient.DeactivateAuthorization(a.Uri);
+                            return _client.DeactivateAuthorization(a.Uri);
                         });
                 await Task.WhenAll(deactivateTasks);
             }
@@ -343,7 +337,7 @@ namespace PKISharp.WACS
         /// <param name="context"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        private async Task SerialValidation(IList<ValidationContextParameters> parameters, ILifetimeScope validationScope, bool breakOnError)
+        private async Task SerialValidation(IList<ValidationContextParameters> parameters, ILifetimeScope globalScope, bool breakOnError)
         {
             foreach (var parameter in parameters)
             {
@@ -355,8 +349,19 @@ namespace PKISharp.WACS
                     _log.Verbose("Skip authorization because the order has already failed");
                     continue;
                 }
+
+                // For serial mode we *MUST* create a seperate DI scope 
+                // for each identifier if the plugin is not capable/aware
+                // of any parallel operation, because it might not properly
+                // maintain its internal state for multiple uses. 
+                var validationScope = globalScope;
+                var capability = globalScope.Resolve<IValidationPlugin>();
+                if (!capability.Parallelism.HasFlag(ParallelOperations.Reuse))
+                {
+                    validationScope = _scopeBuilder.PluginBackend<IValidationPlugin, IValidationPluginCapability, ValidationPluginOptions>(parameter.OrderContext.OrderScope, parameter.Options);
+                }
                 await ParallelValidation(
-                    ParallelOperations.None, 
+                    ParallelOperations.None,
                     validationScope, 
                     new List<ValidationContextParameters> { parameter }, 
                     parameter.OrderContext.RunLevel);
@@ -466,7 +471,7 @@ namespace PKISharp.WACS
                     // Now that we're going to call into PrepareChallenge, we will assume 
                     // responsibility to also call CleanUp later, which is signalled by
                     // the AcmeChallenge propery being not null
-                    context.ChallengeDetails = await client.DecodeChallengeValidation(context.Authorization, challenge);
+                    context.ChallengeDetails = client.DecodeChallengeValidation(context.Authorization, challenge);
                     context.Challenge = challenge;
                     await context.ValidationPlugin.PrepareChallenge(context);
                 }

@@ -1,79 +1,122 @@
-﻿using PKISharp.WACS.Context;
-using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.DomainObjects;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace PKISharp.WACS.Services
 {
-    internal class DueDateStaticService : IDueDateService
+    public class DueDateStaticService
     {
-        protected const int DefaultMinValidDays = 7;
-        protected readonly ISettingsService _settings;
-        protected readonly ICacheService _cacheService;
-        protected readonly ILogService _logService;
+        internal const int DefaultMinValidDays = 7;
+        private readonly ILogService _log;
+        private readonly DueDateRuntimeService _runtime;
 
         public DueDateStaticService(
-            ISettingsService settings,
-            ICacheService cacheService,
+            DueDateRuntimeService runtime,
             ILogService logService)
         {
-            _settings = settings;
-            _cacheService = cacheService;
-            _logService = logService;
+            _runtime = runtime;
+            _log = logService;
         }
 
-        public DateTime? DueDate(Renewal renewal)
+        public DueDate? DueDate(Renewal renewal)
         {
-            var lastSuccess = renewal.History.LastOrDefault(x => x.Success == true);
-            if (lastSuccess != null)
-            {
-                var firstOccurance = renewal.History.First(x => x.ThumbprintSummary == lastSuccess.ThumbprintSummary);
-                var defaultDueDate = firstOccurance.
-                    Date.
-                    AddDays(_settings.ScheduledTask.RenewalDays).
-                    ToLocalTime();
-                if (lastSuccess.ExpireDate == null)
-                {
-                    return defaultDueDate;
-                }
-                var minDays = _settings.ScheduledTask.RenewalMinimumValidDays ?? DefaultMinValidDays;
-                var expireBasedDueDate = lastSuccess.
-                    ExpireDate.
-                    Value.
-                    AddDays(minDays * -1).
-                    ToLocalTime();
-
-                return expireBasedDueDate < defaultDueDate ?
-                    expireBasedDueDate :
-                    defaultDueDate;
-            }
-            else
+            var currentOrders = CurrentOrders(renewal);
+            if (currentOrders.Any(x => x.Revoked))
             {
                 return null;
             }
+            return currentOrders.
+                OrderBy(x => x.DueDate.Start).
+                FirstOrDefault()?.
+                DueDate;
         }
-
-        public virtual bool ShouldRun(Renewal renewal) => IsDue(renewal);
 
         public virtual bool IsDue(Renewal renewal)
         {
             var dueDate = DueDate(renewal);
-            return dueDate == null || dueDate < DateTime.Now;
+            return dueDate == null || dueDate.Start < DateTime.Now;
         }
 
-        public virtual bool ShouldRun(OrderContext order)
+        private List<StaticOrderInfo> Mapping(Renewal renewal)
         {
-            var renewalDue = IsDue(order.Renewal);
-            if (renewalDue)
+            // Get most recent expire date for each order
+            var expireMapping = new Dictionary<string, StaticOrderInfo>();
+            foreach (var history in renewal.History.OrderBy(h => h.Date))
             {
-                return true;
+                try
+                {
+                    var orderResults = history.OrderResults;
+                    foreach (var orderResult in orderResults)
+                    {
+                        var info = default(StaticOrderInfo);
+                        var key = orderResult.Name.ToLower();
+                        var dueDate = orderResult.DueDate ??
+                                _runtime.ComputeDueDate(new DueDate()
+                                {
+                                    Start = history.Date,
+                                    End = history.ExpireDate ?? history.Date.AddYears(1)
+                                });
+
+                        if (orderResult.Success != false)
+                        {
+                            if (!expireMapping.ContainsKey(key))
+                            {
+                                info = new StaticOrderInfo(key, dueDate);
+                                expireMapping.Add(key, info);
+                            }
+                            else
+                            {
+                                info = expireMapping[key];
+                                info.DueDate = dueDate;
+                            }
+                            if (orderResult.Success == true)
+                            {
+                                info.LastRenewal = history.Date;
+                                info.RenewCount += 1;
+                                info.LastThumbprint = orderResult.Thumbprint;
+                            }
+                        }
+                        if (info != null)
+                        {
+                            info.Missing = orderResult.Missing == true;
+                            info.Revoked = orderResult.Revoked == true;
+                        }
+
+                    }
+                } 
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Error reading history for {renewal}: {ex}", renewal.Id, ex.Message);
+                }
             }
-            if (_cacheService.CachedInfo(order.Order) == null)
-            {
-                _logService.Information(LogType.All, "Renewal {renewal} running prematurely due to source change in order {order}", order.Renewal.LastFriendlyName, order.OrderName);
-                return true;
-            }
-            return false;
+            return expireMapping.Values.ToList();
         }
+
+        public List<StaticOrderInfo> CurrentOrders(Renewal renewal) =>
+            Mapping(renewal).
+            Where(x => !x.Missing).
+            ToList();
+    }
+
+    /// <summary>
+    /// Information about a sub-order derived 
+    /// and summarized from history entries
+    /// </summary>
+    public class StaticOrderInfo
+    {
+        public StaticOrderInfo(string key, DueDate dueDate)
+        {
+            Key = key;
+            DueDate = dueDate;
+        }
+
+        public string Key { get; set; }
+        public bool Missing { get; set; }
+        public bool Revoked { get; set; }
+        public DateTime? LastRenewal { get; set; }
+        public string? LastThumbprint { get; set; }
+        public int RenewCount { get; set; }
+        public DueDate DueDate { get; set; }
     }
 }

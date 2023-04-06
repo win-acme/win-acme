@@ -13,12 +13,12 @@ namespace PKISharp.WACS.Services
     {
         private readonly WacsJson _wacsJson;
         private readonly ISettingsService _settings;
-        private readonly IDueDateService _dueDate;
+        private readonly DueDateStaticService _dueDate;
         private readonly ILogService _log;
 
         public RenewalStoreDisk(
             ISettingsService settings,
-            IDueDateService dueDate,
+            DueDateStaticService dueDate,
             ILogService log,
             WacsJson wacsJson) : base()
         {
@@ -63,11 +63,7 @@ namespace PKISharp.WACS.Services
                     try
                     {
                         var text = File.ReadAllText(rj.FullName);
-                        var result = JsonSerializer.Deserialize(text, _wacsJson.Renewal);
-                        if (result == null)
-                        {
-                            throw new Exception("result is empty");
-                        }
+                        var result = JsonSerializer.Deserialize(text, _wacsJson.Renewal) ?? throw new Exception("result is empty");
                         if (result.Id != rj.Name.Replace(postFix, ""))
                         {
                             throw new Exception($"mismatch between filename and id {result.Id}");
@@ -96,10 +92,7 @@ namespace PKISharp.WACS.Services
                         {
                             result.LastFriendlyName = result.FriendlyName;
                         }
-                        if (result.History == null)
-                        {
-                            result.History = new List<RenewResult>();
-                        }
+                        result.History ??= new List<RenewResult>();
                         list.Add(result);
                     }
                     catch (Exception ex)
@@ -107,7 +100,7 @@ namespace PKISharp.WACS.Services
                         _log.Error("Unable to read renewal {renewal}: {reason}", rj.Name, ex.Message);
                     }
                 }
-                _renewalsCache = list.OrderBy(_dueDate.DueDate).ToList();
+                _renewalsCache = list.OrderBy(x => _dueDate.DueDate(x)?.Start).ToList();
             }
             return _renewalsCache;
         }
@@ -163,7 +156,7 @@ namespace PKISharp.WACS.Services
                     renewal.Updated = false;
                 }
             });
-            _renewalsCache = list.Where(x => !x.Deleted).OrderBy(_dueDate.DueDate).ToList();
+            _renewalsCache = list.Where(x => !x.Deleted).OrderBy(x => _dueDate.DueDate(x)?.Start).ToList();
         }
 
         /// <summary>

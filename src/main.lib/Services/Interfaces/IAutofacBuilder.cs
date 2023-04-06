@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins;
 using PKISharp.WACS.Plugins.Base;
@@ -26,7 +27,7 @@ namespace PKISharp.WACS.Services
         /// <param name="renewal"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        ILifetimeScope Execution(ILifetimeScope execution, Renewal renewal, RunLevel runLevel);
+        ILifetimeScope Execution(ILifetimeScope execution, Renewal renewal, AcmeClient acmeClient, RunLevel runLevel);
         
         /// <summary>
         /// To split the target 

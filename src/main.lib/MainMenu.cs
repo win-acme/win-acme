@@ -18,7 +18,7 @@ namespace PKISharp.WACS.Host
     internal class MainMenu
     {
         private readonly IAutofacBuilder _scopeBuilder;
-        private readonly IDueDateService _dueDateService;
+        private readonly DueDateStaticService _dueDateService;
         private readonly IInputService _input;
         private readonly ISharingLifetimeScope _container;
         private readonly ILogService _log;
@@ -34,6 +34,8 @@ namespace PKISharp.WACS.Host
         private readonly SecretServiceManager _secretServiceManager;
         private readonly ValidationOptionsService _validationOptionsService;
         private readonly TaskSchedulerService _taskScheduler;
+        private readonly AccountManager _accountManager;
+        private readonly AcmeClientManager _clientManager;
 
         public MainMenu(
             ISharingLifetimeScope container, 
@@ -43,7 +45,7 @@ namespace PKISharp.WACS.Host
             IInputService inputService,
             ISettingsService settingsService,
             IUserRoleService userRoleService,
-            IDueDateService dueDateService,
+            DueDateStaticService dueDateService,
             IRenewalStore renewalStore,
             ArgumentsParser argumentsParser,
             AdminService adminService,
@@ -51,6 +53,8 @@ namespace PKISharp.WACS.Host
             RenewalManager renewalManager,
             TaskSchedulerService taskSchedulerService,
             SecretServiceManager secretServiceManager,
+            AccountManager accountManager,
+            AcmeClientManager clientManager,
             ValidationOptionsService validationOptionsService)
         {
             // Basic services
@@ -69,6 +73,8 @@ namespace PKISharp.WACS.Host
             _arguments = argumentsParser;
             _input = inputService;
             _renewalStore = renewalStore;
+            _clientManager = clientManager;
+            _accountManager= accountManager;
             _validationOptionsService = validationOptionsService;
             _args = _arguments.GetArguments<MainArguments>() ?? new MainArguments();
         }
@@ -134,7 +140,8 @@ namespace PKISharp.WACS.Host
                     "Test email notification", "E"),
                 Choice.Create<Func<Task>>(
                     () => UpdateAccount(RunLevel.Interactive), 
-                    "ACME account details", "A"),
+                    "ACME account details", "A",
+                    state: !_accountManager.ListAccounts().Any() ? State.DisabledState("No account(s) configured yet.") : State.EnabledState()),
                 Choice.Create<Func<Task>>(
                     () => Import(RunLevel.Interactive | RunLevel.Advanced), 
                     "Import scheduled renewals from WACS/LEWS 1.9.x", "I",
@@ -155,7 +162,7 @@ namespace PKISharp.WACS.Host
         }
 
         /// <summary>
-        /// Load renewals from 1.9.x
+        /// Load renewals from 1.9.account
         /// </summary>
         internal async Task Import(RunLevel runLevel)
         {
@@ -235,22 +242,36 @@ namespace PKISharp.WACS.Host
         /// <param name="runLevel"></param>
         private async Task UpdateAccount(RunLevel runLevel)
         {
-            var acmeClient = _container.Resolve<AcmeClient>();
-            var acmeAccount = await acmeClient.GetAccount();
-            if (acmeAccount == null)
+            var renewals = _renewalStore.Renewals;
+            var accounts = _accountManager.ListAccounts();
+            var account = accounts.FirstOrDefault();
+            if (accounts.Count() > 1)
             {
-                throw new InvalidOperationException("Unable to initialize acmeAccount");
+                account = await _input.ChooseRequired(
+                    "Choose ACME account to view/update",
+                    accounts,
+                    account => {
+                        var count = renewals.Where(r => (r.Account ?? "") == account).Count();
+                        var label = $"({count} renewal{(count != 1 ? "s" : "")})";
+                        return new Choice<string>(account)
+                        {
+                            Description = account == "" ? $"Default account {label}" : $"Named account: {account} {label}",
+                            Default = string.Equals(account, "", StringComparison.OrdinalIgnoreCase),
+                        };
+                    });
             }
+            var client = await _clientManager.GetClient(account) ?? throw new InvalidOperationException("Unable to initialize acmeAccount");
+            var accountDetails = client.Account.Details;
             _input.CreateSpace();
-            _input.Show("Account ID", acmeAccount.Value.Payload.Id ?? "-");
-            _input.Show("Account KID", acmeAccount.Value.Kid ?? "-");
-            _input.Show("Created", acmeAccount.Value.Payload.CreatedAt);
-            _input.Show("Initial IP", acmeAccount.Value.Payload.InitialIp);
-            _input.Show("Status", acmeAccount.Value.Payload.Status);
-            if (acmeAccount.Value.Payload.Contact != null &&
-                acmeAccount.Value.Payload.Contact.Length > 0)
+            _input.Show("Account ID", accountDetails.Payload.Id ?? "-");
+            _input.Show("Account KID", accountDetails.Kid ?? "-");
+            _input.Show("Created", accountDetails.Payload.CreatedAt);
+            _input.Show("Initial IP", accountDetails.Payload.InitialIp);
+            _input.Show("Status", accountDetails.Payload.Status);
+            if (accountDetails.Payload.Contact != null &&
+                accountDetails.Payload.Contact.Length > 0)
             {
-                _input.Show("Contact(s)", string.Join(", ", acmeAccount.Value.Payload.Contact));
+                _input.Show("Contact(s)", string.Join(", ", accountDetails.Payload.Contact));
             }
             else
             {
@@ -260,7 +281,7 @@ namespace PKISharp.WACS.Host
             {
                 try
                 {
-                    await acmeClient.ChangeContacts();
+                    await _clientManager.ChangeContacts(account);
                     await UpdateAccount(runLevel);
                 } 
                 catch (Exception ex)

@@ -33,10 +33,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Autofac" Version="6.5.0" />
+		<PackageReference Include="Autofac" Version="7.0.0" />
 		<PackageReference Include="DnsClient" Version="1.7.0" />
-		<PackageReference Include="FluentFTP" Version="44.0.1" />
-		<PackageReference Include="MailKit" Version="3.5.0" />
+		<PackageReference Include="FluentFTP" Version="46.0.2" />
+		<PackageReference Include="MailKit" Version="3.6.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="7.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
@@ -58,7 +58,7 @@
 		<PackageReference Include="System.Net.Primitives" Version="4.3.1" />
 		<PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
 		<PackageReference Include="System.Security.Cryptography.Cng" Version="5.0.0" />
-		<PackageReference Include="System.Security.Cryptography.ProtectedData" Version="7.0.0" />
+		<PackageReference Include="System.Security.Cryptography.ProtectedData" Version="7.0.1" />
 		<PackageReference Include="System.Security.Cryptography.X509Certificates" Version="4.3.2" />
 		<PackageReference Include="TaskScheduler" Version="2.10.1" />
 		<PackageReference Include="WebDav.Client" Version="2.8.0" />

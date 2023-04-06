@@ -251,35 +251,5 @@ namespace PKISharp.WACS.Services
                 X509KeyStorageFlags.Exportable);
             return new CertificateInfo(tempPfx);
         }
-
-        /// <summary>
-        /// Revoke previously issued certificate
-        /// </summary>
-        /// <param name="binding"></param>
-        public async Task RevokeCertificate(Renewal renewal)
-        {
-            // Delete cached files
-            var infos = _cacheService.CachedInfos(renewal);
-            var error = false;
-            foreach (var info in infos)
-            {
-                try
-                {
-                    var certificateDer = info.Certificate.Export(X509ContentType.Cert);
-                    await _client.RevokeCertificate(certificateDer);
-                    _log.Warning($"Revoked certificate {info.Certificate.FriendlyName}");
-                    info.CacheFile.Delete();
-                }
-                catch (Exception ex)
-                {
-                    error = true;
-                    _log.Error(ex, $"Error revoking certificate {info.Certificate.FriendlyName}, please retry");
-                }
-            }
-            if (!error)
-            {
-                _cacheService.Delete(renewal);
-            }
-        }
     }
 }

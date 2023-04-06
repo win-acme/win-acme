@@ -1,5 +1,9 @@
-﻿using Autofac;
+﻿using ACMESharp.Protocol.Resources;
+using Autofac;
 using Autofac.Core;
+using MimeKit.Cryptography;
+using PKISharp.WACS.Clients.Acme;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
@@ -22,27 +26,28 @@ namespace PKISharp.WACS
         private readonly IInputService _input;
         private readonly ILogService _log;
         private readonly IRenewalStore _renewalStore;
-        private readonly MainArguments _args;
+        private readonly MainArguments _mainArgs;
+        private readonly AccountArguments _accountArgs;
         private readonly IPluginService _plugin;
         private readonly ISharingLifetimeScope _container;
         private readonly IAutofacBuilder _scopeBuilder;
-        private readonly IDueDateService _dueDate;
+        private readonly DueDateStaticService _dueDate;
         private readonly ExceptionHandler _exceptionHandler;
         private readonly RenewalExecutor _renewalExecution;
         private readonly IValidationOptionsService _validation;
         private readonly NotificationService _notification;
+        private readonly AccountManager _accountManager;
 
         public RenewalCreator(
-            MainArguments args,
+            MainArguments mainArgs, AccountArguments accountArgs,
             IRenewalStore renewalStore, ISharingLifetimeScope container,
             IInputService input, ILogService log,
             IPluginService plugin, IAutofacBuilder autofacBuilder,
-            IValidationOptionsService validationOptions,
-            NotificationService notification, IDueDateService dueDateService,
+            IValidationOptionsService validationOptions, AccountManager accountManager,
+            NotificationService notification, DueDateStaticService dueDateService,
             ExceptionHandler exceptionHandler, RenewalExecutor renewalExecutor)
         {
             _renewalStore = renewalStore;
-            _args = args;
             _input = input;
             _log = log;
             _validation = validationOptions;
@@ -53,6 +58,9 @@ namespace PKISharp.WACS
             _notification = notification;
             _dueDate = dueDateService;
             _plugin = plugin;
+            _mainArgs = mainArgs;
+            _accountArgs = accountArgs;
+            _accountManager = accountManager;
         }
 
         /// <summary>
@@ -68,7 +76,7 @@ namespace PKISharp.WACS
             // If Id has been specified, we don't consider the Friendlyname anymore
             // So specifying --id becomes a way to create duplicate certificates
             // with the same --friendlyname in unattended mode.
-            if (existing == null && string.IsNullOrEmpty(_args.Id))
+            if (existing == null && string.IsNullOrEmpty(_mainArgs.Id))
             {
                 existing = _renewalStore.FindByArguments(null, temp.LastFriendlyName?.EscapePattern()).FirstOrDefault();
             }
@@ -95,6 +103,7 @@ namespace PKISharp.WACS
             // the pre-existing one that we are overwriting
             _log.Warning("Overwriting previously created renewal");
             existing.Updated = true;
+            existing.Account = temp.Account;
             existing.TargetPluginOptions = temp.TargetPluginOptions;
             existing.OrderPluginOptions = temp.OrderPluginOptions;
             existing.CsrPluginOptions = temp.CsrPluginOptions;
@@ -114,17 +123,17 @@ namespace PKISharp.WACS
         /// <returns></returns>
         internal async Task SetupRenewal(RunLevel runLevel, Steps steps = Steps.All, Renewal? tempRenewal = null)
         {
-            if (_args.Test)
+            if (_mainArgs.Test)
             {
                 runLevel |= RunLevel.Test;
             }
-            if (_args.NoCache)
+            if (_mainArgs.NoCache)
             {
                 runLevel |= RunLevel.NoCache;
             }
             _log.Information(LogType.All, "Running in mode: {runLevel}", runLevel);
 
-            tempRenewal ??= Renewal.Create(_args.Id);
+            tempRenewal ??= Renewal.Create(_mainArgs.Id);
 
             // Choose the target plugin
             var resolver = CreateResolver(_container, runLevel);
@@ -148,9 +157,9 @@ namespace PKISharp.WACS
                 _exceptionHandler.HandleException(message: $"Source plugin {targetPluginName} was unable to generate the certificate parameters.");
                 return;
             }
-            if (!initialTarget.IsValid(_log))
+            if (!initialTarget.IsValid(_log, false))
             {
-                _exceptionHandler.HandleException(message: $"Source plugin {targetPluginName} generated invalid certificate parameters");
+                _exceptionHandler.HandleException(message: $"Source plugin {targetPluginName} generated an invalid source.");
                 return;
             }
             _log.Information("Source generated using plugin {name}: {target}", targetPluginName, initialTarget);
@@ -301,9 +310,30 @@ namespace PKISharp.WACS
                 }
             }
 
+            // Choose under which account the renewals should run
+            if (steps.HasFlag(Steps.Account))
+            {
+                tempRenewal.Account = await SetupAccount(runLevel);
+            }
+
             // Try to run for the first time
             var renewal = await CreateRenewal(tempRenewal, runLevel);
-        retry:
+            var retry = true;
+            while (retry)
+            {
+                retry = await FirstRun(renewal, runLevel);
+            }
+        }
+
+        /// <summary>
+        /// First run, with several user escapes before the renewal 
+        /// becomes final.
+        /// </summary>
+        /// <param name="renewal"></param>
+        /// <param name="runLevel"></param>
+        /// <returns></returns>
+        private async Task<bool> FirstRun(Renewal renewal, RunLevel runLevel)
+        {
             var result = await _renewalExecution.HandleRenewal(renewal, runLevel);
             if (result.Abort)
             {
@@ -314,9 +344,9 @@ namespace PKISharp.WACS
                 if (runLevel.HasFlag(RunLevel.Interactive) &&
                     await _input.PromptYesNo("Create certificate failed, retry?", false))
                 {
-                    goto retry;
+                    return true;
                 }
-                if (!renewal.New && 
+                if (!renewal.New &&
                     runLevel.HasFlag(RunLevel.Interactive) &&
                     await _input.PromptYesNo("Save these new settings anyway?", false))
                 {
@@ -330,12 +360,13 @@ namespace PKISharp.WACS
                 {
                     _renewalStore.Save(renewal, result);
                     await _notification.NotifyCreated(renewal, _log.Lines);
-                } 
+                }
                 catch (Exception ex)
                 {
                     _exceptionHandler.HandleException(ex);
                 }
             }
+            return false;
         }
 
         /// <summary>
@@ -345,11 +376,11 @@ namespace PKISharp.WACS
         /// <param name="renewal"></param>
         /// <param name="target"></param>
         /// <returns></returns>
-        internal async Task SetupFriendlyName(Renewal renewal, Target target, bool ask)
+        private async Task SetupFriendlyName(Renewal renewal, Target target, bool ask)
         {
-            if (!string.IsNullOrEmpty(_args.FriendlyName))
+            if (!string.IsNullOrEmpty(_mainArgs.FriendlyName))
             {
-                renewal.FriendlyName = _args.FriendlyName;
+                renewal.FriendlyName = _mainArgs.FriendlyName;
             }
             else if (ask)
             {
@@ -363,25 +394,65 @@ namespace PKISharp.WACS
             renewal.LastFriendlyName = renewal.FriendlyName ?? target.FriendlyName;
         }
 
-        internal async Task<ValidationPluginOptions?> SetupValidation(IResolver resolver, RunLevel runLevel) => 
+        private async Task<ValidationPluginOptions?> SetupValidation(IResolver resolver, RunLevel runLevel) => 
             await SetupPlugin(Steps.Validation, runLevel, resolver.GetValidationPlugin);
 
-        internal async Task<OrderPluginOptions?> SetupOrder(IResolver resolver, RunLevel runLevel) => 
+        private async Task<OrderPluginOptions?> SetupOrder(IResolver resolver, RunLevel runLevel) => 
             await SetupPlugin(Steps.Order, runLevel, resolver.GetOrderPlugin);
 
-        internal async Task<TargetPluginOptions?> SetupTarget(IResolver resolver, RunLevel runLevel) =>
+        private async Task<TargetPluginOptions?> SetupTarget(IResolver resolver, RunLevel runLevel) =>
             await SetupPlugin(Steps.Source, runLevel, resolver.GetTargetPlugin);
 
-        internal async Task<CsrPluginOptions?> SetupCsr(IResolver resolver, RunLevel runLevel) => 
+        private async Task<CsrPluginOptions?> SetupCsr(IResolver resolver, RunLevel runLevel) => 
             await SetupPlugin(Steps.Csr, runLevel, resolver.GetCsrPlugin);
 
-        internal async Task<List<StorePluginOptions>?> SetupStore(IResolver resolver, RunLevel runLevel) =>
+        private async Task<List<StorePluginOptions>?> SetupStore(IResolver resolver, RunLevel runLevel) =>
             await SetupPlugins(Steps.Store, runLevel, resolver.GetStorePlugin, typeof(Plugins.StorePlugins.Null));
 
-        internal async Task<List<InstallationPluginOptions>?> SetupInstallation(IResolver resolver, RunLevel runLevel, Renewal renewal)
+        private async Task<List<InstallationPluginOptions>?> SetupInstallation(IResolver resolver, RunLevel runLevel, Renewal renewal)
         {
             var stores = renewal.StorePluginOptions.Select(_plugin.GetPlugin);
             return await SetupPlugins(Steps.Installation, runLevel, factories => resolver.GetInstallationPlugin(stores, factories), typeof(Plugins.InstallationPlugins.Null));
+        }
+
+        private async Task<string?> SetupAccount(RunLevel runLevel)
+        {
+            // Unattended only listens to the command line
+            if (runLevel.HasFlag(RunLevel.Unattended))
+            {
+                if (_accountArgs.Account != null)
+                {
+                    _log.Information("Using account {name}");
+                    return _accountArgs.Account;
+                }
+                return null;
+            }
+
+            // So we are interactive...
+            var accounts = _accountManager.ListAccounts().ToList();
+            if (_accountArgs.Account != null && !accounts.Contains(_accountArgs.Account))
+            {
+                accounts.Add(_accountArgs.Account);
+            }
+            var selected = _accountArgs.Account ?? accounts.FirstOrDefault();
+            if (runLevel.HasFlag(RunLevel.Advanced))
+            {
+                if (accounts.Count > 1)
+                {
+                    return await _input.ChooseRequired(
+                        "Choose ACME account to use", 
+                        accounts, 
+                        x => new Choice<string>(x) { 
+                            Description = x == "" ? "Default account" : $"Named account: {x}",
+                            Default = string.Equals(x, selected, StringComparison.OrdinalIgnoreCase),
+                        });
+                }
+            }
+            if (selected == "")
+            {
+                selected = null;
+            }
+            return selected;
         }
 
         /// <summary>
@@ -396,7 +467,7 @@ namespace PKISharp.WACS
         /// <param name="default"></param>
         /// <param name="aquire"></param>
         /// <returns></returns>
-        internal async Task<List<TOptions>?> SetupPlugins<TOptions, TCapability>(
+        private async Task<List<TOptions>?> SetupPlugins<TOptions, TCapability>(
             Steps step,
             RunLevel runLevel,
             Func<IEnumerable<Plugin>, Task<PluginFrontend<TCapability, TOptions>?>> next,

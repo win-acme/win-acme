@@ -1,11 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Configuration.Settings
 {
     [JsonSerializable(typeof(Settings))]
-    internal partial class SettingsJson : JsonSerializerContext {}
+    internal partial class SettingsJson : JsonSerializerContext 
+    {
+        public static SettingsJson Insensitive => new(new JsonSerializerOptions() { 
+            PropertyNameCaseInsensitive = true,
+            AllowTrailingCommas = true,
+            ReadCommentHandling = JsonCommentHandling.Skip,
+            DefaultIgnoreCondition = JsonIgnoreCondition.Never
+        });
+    }
 
     /// <summary>
     /// All settings
@@ -233,6 +242,13 @@ namespace PKISharp.WACS.Configuration.Settings
         /// multiple orders, orders may run on different days.
         /// </summary>
         public int? RenewalDaysRange { get; set; }
+
+        /// <summary>
+        /// By default we use ARI to manage renewal period (if available
+        /// on the endpoint). This switch allows users to disable it.
+        /// https://datatracker.ietf.org/doc/draft-ietf-acme-ari/
+        /// </summary>
+        public bool? RenewalDisableServerSchedule { get; set; }
 
         /// <summary>
         /// Configures random time to wait for starting 

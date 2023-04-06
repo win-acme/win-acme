@@ -113,6 +113,11 @@ namespace PKISharp.WACS.DomainObjects
         public List<RenewResult> History { get; set; } = new List<RenewResult>();
 
         /// <summary>
+        /// Which ACME account is associated with the renewal (null = default)
+        /// </summary>
+        public string? Account { get; set; }
+
+        /// <summary>
         /// Pretty format
         /// </summary>
         /// <returns></returns>
@@ -122,23 +127,49 @@ namespace PKISharp.WACS.DomainObjects
         /// Pretty format
         /// </summary>
         /// <returns></returns>
-        public string ToString(IDueDateService? dueDateService, IInputService? inputService)
+        public string ToString(DueDateStaticService? dueDateService, IInputService? inputService)
         {
             var success = History.FindAll(x => x.Success == true).Count;
             var errors = History.AsEnumerable().Reverse().TakeWhile(x => x.Success == false);
-            var ret = $"{LastFriendlyName} - renewed {success} time{(success != 1 ? "s" : "")}";
+            var ret = $"{LastFriendlyName} - {success} renewal{(success != 1 ? "s" : "")}";
+            var orders = dueDateService?.CurrentOrders(this).Count ?? 0;
+            if (orders > 1)
+            {
+                ret += $", {orders} orders";
+            }
+            var format = (DateTime date) =>
+            {
+                if (inputService != null)
+                {
+                    return inputService.FormatDate(date);
+                }
+                else
+                {
+                    return date.ToShortDateString();
+                }
+            };
 
             if (dueDateService != null)
             {
                 var due = dueDateService.IsDue(this);
-                var dueDate = dueDateService.DueDate(this);
-                if (inputService == null)
+                if (!due)
                 {
-                    ret += due ? ", due now" : dueDate == null ? "" : $", due after {dueDate}";
-                }
+                    var dueDate = dueDateService.DueDate(this);
+                    if (dueDate != null)
+                    {
+                        if (dueDate.Start != dueDate.End) 
+                        {
+                            ret += $", due {format(dueDate.Start)} ~ {format(dueDate.End)}";
+                        }
+                        else
+                        {
+                            ret += $", due {format(dueDate.Start)}";
+                        }
+                    }
+                } 
                 else
                 {
-                    ret += due ? ", due now" : dueDate == null ? "" : $", due after {inputService.FormatDate(dueDate.Value)}";
+                    ret += ", due now";
                 }
             }
             if (errors.Any())

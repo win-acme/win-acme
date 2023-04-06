@@ -79,21 +79,6 @@ namespace PKISharp.WACS.Services
             public LoggingHttpClientHandler(ILogService log) => _log = log;
 
             /// <summary>
-            /// Synchronous request (note that this cannot call SendAsync,
-            /// see issue #2311)
-            /// </summary>
-            /// <param name="request"></param>
-            /// <param name="cancellationToken"></param>
-            /// <returns></returns>
-            protected override HttpResponseMessage Send(HttpRequestMessage request, CancellationToken cancellationToken) 
-            {
-                PreSend(request, cancellationToken).RunSynchronously();
-                var response = base.Send(request, cancellationToken);
-                PostSend(response, cancellationToken).RunSynchronously();
-                return response;
-            }
-
-            /// <summary>
             /// Asynchronous request
             /// </summary>
             /// <param name="request"></param>

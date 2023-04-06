@@ -41,8 +41,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         {
             _log = log;
 
-            var passwordRaw = !string.IsNullOrWhiteSpace(options.PfxPassword?.Value) ?
-                options.PfxPassword.Value :
+            var passwordRaw = 
+                options.PfxPassword?.Value ?? 
                 settings.Store.PfxFile?.DefaultPassword;
             _password = secretServiceManager.EvaluateSecret(passwordRaw);
             _name = options.FileName;

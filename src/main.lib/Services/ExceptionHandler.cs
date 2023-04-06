@@ -58,8 +58,8 @@ namespace PKISharp.WACS.Services
                         ExitCode = currentException.HResult;
                     }
                     else if (
-                        !(currentException is DependencyResolutionException) &&
-                        !(currentException is AggregateException))
+                        currentException is not DependencyResolutionException &&
+                        currentException is not AggregateException)
                     {
                         // Outer exceptions up to the point of Autofac logged with error priority
                         _log.Error("Wrapped in {type}: {message}", currentException.GetType().Name, currentException.Message);

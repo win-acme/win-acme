@@ -87,27 +87,24 @@ namespace PKISharp.WACS.Services
 
         public void Show(string? label, string? value, int level = 0)
         {
+            var offset = 0;
             var hasLabel = !string.IsNullOrEmpty(label);
             if (hasLabel)
             {
                 Console.ForegroundColor = ConsoleColor.White;
                 if (level > 0)
                 {
-                    Console.Write($"  - {label}");
+                    label = string.Join("", Enumerable.Repeat("  ", level)) + $"- {label}";
                 }
-                else
-                {
-                    Console.Write($" {label}");
-                }
+                offset = Math.Max(20, label!.Length + 1);
+                Console.Write(label);
                 Console.ResetColor();
             }
 
             if (!string.IsNullOrWhiteSpace(value))
             {
-                var offset = 0;
                 if (hasLabel)
                 {
-                    offset = Math.Max(20, label!.Length + 2);
                     Console.Write(":");
                 }
                 WriteMultiline(offset, value);
@@ -262,7 +259,7 @@ namespace PKISharp.WACS.Services
 
         // Replaces the characters of the typed in password with asterisks
         // More info: http://rajeshbailwal.blogspot.com/2012/03/password-in-c-console-application.html
-        public async Task<string?> ReadPassword(string what)
+        public Task<string?> ReadPassword(string what)
         {
             Validate(what);
             CreateSpace();
@@ -312,11 +309,11 @@ namespace PKISharp.WACS.Services
             var ret = password.ToString();
             if (string.IsNullOrEmpty(ret))
             {
-                return null;
+                return Task.FromResult<string?>(default);
             }
             else
             {
-                return ret;
+                return Task.FromResult<string?>(ret);
             }
         }
 

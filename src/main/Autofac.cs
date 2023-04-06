@@ -10,7 +10,6 @@ using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Plugins.ValidationPlugins;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
-using System.Runtime.InteropServices.Marshalling;
 
 namespace PKISharp.WACS.Host
 {
@@ -59,7 +58,8 @@ namespace PKISharp.WACS.Host
                 _ = builder.RegisterType<ExceptionHandler>().SingleInstance();
                 _ = builder.RegisterType<AutofacBuilder>().As<IAutofacBuilder>().SingleInstance();
                 _ = builder.RegisterType<AccountManager>().SingleInstance();
-                _ = builder.RegisterType<AcmeClient>().SingleInstance();
+                _ = builder.RegisterType<AcmeClientManager>().SingleInstance();
+                _ = builder.RegisterType<NetworkCheckService>().SingleInstance();
                 _ = builder.RegisterType<ZeroSsl>().SingleInstance();
                 _ = builder.RegisterType<OrderManager>().SingleInstance();
                 _ = builder.RegisterType<PemService>().SingleInstance();
@@ -68,16 +68,17 @@ namespace PKISharp.WACS.Host
                 _ = builder.RegisterType<LookupClientProvider>().SingleInstance();
                 _ = builder.RegisterType<CacheService>().As<ICacheService>().SingleInstance();
                 _ = builder.RegisterType<CertificatePicker>().SingleInstance();
-                _ = builder.RegisterType<CertificateService>().As<ICertificateService>().SingleInstance();
-                _ = builder.RegisterType<DueDateRandomService>().As<IDueDateService>().SingleInstance();
+                _ = builder.RegisterType<DueDateStaticService>().SingleInstance();
+                _ = builder.RegisterType<DueDateRuntimeService>().SingleInstance();
                 _ = builder.RegisterType<SecretServiceManager>().SingleInstance();
                 _ = builder.RegisterType<TaskSchedulerService>().SingleInstance();
                 _ = builder.RegisterType<NotificationService>().SingleInstance();
                 _ = builder.RegisterType<RenewalExecutor>().SingleInstance();
-                _ = builder.RegisterType<RenewalValidator>().SingleInstance();
-                _ = builder.RegisterType<OrderProcessor>().SingleInstance();
                 _ = builder.RegisterType<RenewalManager>().SingleInstance();
                 _ = builder.RegisterType<RenewalCreator>().SingleInstance();
+                _ = builder.RegisterType<RenewalDescriber>().SingleInstance();
+                _ = builder.RegisterType<RenewalRevoker>().As<IRenewalRevoker>().SingleInstance();
+                _ = builder.RegisterType<Unattended>().SingleInstance();
                 _ = builder.RegisterType<ArgumentsInputService>().SingleInstance();
                 _ = builder.RegisterType<MainMenu>().SingleInstance();
 
@@ -89,6 +90,7 @@ namespace PKISharp.WACS.Host
                 // Specials
                 _ = builder.RegisterType<HttpValidationParameters>().InstancePerLifetimeScope();
                 _ = builder.Register(c => c.Resolve<ArgumentsParser>().GetArguments<MainArguments>()!);
+                _ = builder.Register(c => c.Resolve<ArgumentsParser>().GetArguments<AccountArguments>()!);
                 _ = builder.Register(c => (ISharingLifetimeScope)c.Resolve<ILifetimeScope>()).As<ISharingLifetimeScope>().ExternallyOwned();
             });
         }

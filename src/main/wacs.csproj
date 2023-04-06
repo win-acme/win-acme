@@ -84,7 +84,7 @@
 
 	<ItemGroup>
 		<None Update="settings.json" Pack="true" PackagePath="settings_default.json">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
 

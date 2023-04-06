@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         private ArgumentResult<ProtectedString?> PfxPassword => _argumentInput.
             GetProtectedString<CentralSslArguments>(args => args.PfxPassword, true).
-            WithDefault(_settings.Store.CentralSsl.DefaultPassword.Protect()).
+            WithDefault(_settings.Store.CentralSsl.DefaultPassword.Protect(true)).
             DefaultAsNull();
 
         private ArgumentResult<string?> Path => _argumentInput.

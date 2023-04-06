@@ -29,6 +29,7 @@ namespace PKISharp.WACS.UnitTests.Mock
             _ = builder.RegisterType<Real.SecretServiceManager>();
             _ = builder.RegisterType<SecretService>().As<SecretService>().As<Real.ISecretService>().SingleInstance();
             _ = builder.RegisterType<AccountManager>();
+            _ = builder.RegisterType<OrderManager>();
             _ = builder.RegisterType<ZeroSsl>();
             WacsJson.Configure(builder);
             _ = builder.RegisterInstance(log).As<Real.ILogService>();
@@ -37,15 +38,19 @@ namespace PKISharp.WACS.UnitTests.Mock
             _ = builder.RegisterInstance(pluginService).As<Real.IPluginService>();
             _ = builder.RegisterInstance(input).As<Real.IInputService>();
             _ = builder.RegisterInstance(argumentsParser.GetArguments<MainArguments>()!).SingleInstance();
+            _ = builder.RegisterInstance(argumentsParser.GetArguments<AccountArguments>()!).SingleInstance();
             _ = builder.RegisterType<Real.ValidationOptionsService>().As<Real.IValidationOptionsService>().SingleInstance().WithAttributeFiltering(); ;
             _ = builder.RegisterType<Real.RenewalStore>().As<Real.IRenewalStore>().SingleInstance();
             _ = builder.RegisterType<Services.MockRenewalStore>().As<Real.IRenewalStoreBackend>().SingleInstance();
-            _ = builder.RegisterType<Real.DueDateStaticService>().As<Real.IDueDateService>().SingleInstance();
+            _ = builder.RegisterType<Real.DueDateStaticService>().SingleInstance();
+            _ = builder.RegisterType<Real.DueDateRuntimeService>().SingleInstance();
             _ = builder.RegisterType<Services.MockSettingsService>().As<Real.ISettingsService>().SingleInstance(); ;
             _ = builder.RegisterType<Services.UserRoleService>().As<Real.IUserRoleService>().SingleInstance();
             _ = builder.RegisterType<Services.ProxyService>().As<Real.IProxyService>().SingleInstance();
             _ = builder.RegisterType<Real.PasswordGenerator>().SingleInstance();
             _ = builder.RegisterType<RenewalCreator>().SingleInstance();
+            _ = builder.RegisterType<RenewalDescriber>().SingleInstance();
+            _ = builder.RegisterType<MockRenewalRevoker>().As<Real.IRenewalRevoker>().SingleInstance();
             _ = builder.RegisterType<Real.DomainParseService>().SingleInstance();
             _ = builder.RegisterType<Mock.Clients.MockIISClient>().As<IIISClient>().SingleInstance();
             _ = builder.RegisterType<IISHelper>().SingleInstance();
@@ -53,7 +58,7 @@ namespace PKISharp.WACS.UnitTests.Mock
             _ = builder.RegisterType<UnattendedResolver>();
             _ = builder.RegisterType<InteractiveResolver>();
             _ = builder.RegisterType<Real.AutofacBuilder>().As<Real.IAutofacBuilder>().SingleInstance();
-            _ = builder.RegisterType<AcmeClient>().SingleInstance();
+            _ = builder.RegisterType<AcmeClientManager>().SingleInstance();
             _ = builder.RegisterType<ZeroSsl>().SingleInstance();
             _ = builder.RegisterType<Real.PemService>().SingleInstance();
             _ = builder.RegisterType<EmailClient>().SingleInstance();

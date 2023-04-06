@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using Autofac.Core;
+using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
@@ -9,12 +10,9 @@ using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
-using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -24,9 +22,7 @@ namespace PKISharp.WACS
     {
         private readonly IInputService _input;
         private readonly ILogService _log;
-        private readonly IPluginService _plugin;
         private readonly IRenewalStore _renewalStore;
-        private readonly ICacheService _cacheService;
         private readonly ArgumentsParser _arguments;
         private readonly MainArguments _args;
         private readonly ISharingLifetimeScope _container;
@@ -34,18 +30,21 @@ namespace PKISharp.WACS
         private readonly ExceptionHandler _exceptionHandler;
         private readonly RenewalExecutor _renewalExecutor;
         private readonly RenewalCreator _renewalCreator;
+        private readonly RenewalDescriber _renewalDescriber;
+        private readonly IRenewalRevoker _renewalRevoker;
         private readonly ISettingsService _settings;
-        private readonly IDueDateService _dueDate;
+        private readonly DueDateStaticService _dueDate;
+        private readonly AccountManager _accountManager;
 
         public RenewalManager(
             ArgumentsParser arguments, MainArguments args,
             IRenewalStore renewalStore, ISharingLifetimeScope container,
-            ICacheService cacheService, IPluginService plugin,
             IInputService input, ILogService log,
-            ISettingsService settings, IDueDateService dueDate,
+            ISettingsService settings, DueDateStaticService dueDate,
             IAutofacBuilder autofacBuilder, ExceptionHandler exceptionHandler,
-            RenewalCreator renewalCreator,
-            RenewalExecutor renewalExecutor)
+            RenewalCreator renewalCreator, RenewalExecutor renewalExecutor,
+            AccountManager accountManager, RenewalDescriber renewalDescriber, 
+            IRenewalRevoker renewalRevoker)
         {
             _renewalStore = renewalStore;
             _args = args;
@@ -58,9 +57,10 @@ namespace PKISharp.WACS
             _exceptionHandler = exceptionHandler;
             _renewalExecutor = renewalExecutor;
             _renewalCreator = renewalCreator;
-            _cacheService = cacheService;
             _dueDate = dueDate;
-            _plugin = plugin;
+            _accountManager = accountManager;
+            _renewalDescriber = renewalDescriber;
+            _renewalRevoker = renewalRevoker;
         }
 
         /// <summary>
@@ -103,7 +103,7 @@ namespace PKISharp.WACS
                 }
                 var choices = displayRenewals.Select(x => Choice.Create<Renewal?>(x,
                                   description: x.ToString(_dueDate, _input),
-                                  color: x.History.LastOrDefault()?.Success ?? false ?
+                                  color: x.History.LastOrDefault()?.Success ?? true ?
                                           _dueDate.IsDue(x) ?
                                               ConsoleColor.DarkYellow :
                                               ConsoleColor.Green :
@@ -161,8 +161,10 @@ namespace PKISharp.WACS
                         async () => { 
                             foreach (var renewal in selectedRenewals) {
                                 var index = selectedRenewals.ToList().IndexOf(renewal) + 1;
-                                _input.Show($"{index}/{selectedRenewals.Count()}");
-                                await ShowRenewal(renewal);
+                                _input.Show($"-");
+                                _input.Show($"Renewal {index}/{selectedRenewals.Count()}");
+                                _input.Show($"-");
+                                _renewalDescriber.Show(renewal);
                                 var cont = false;
                                 if (index != selectedRenewals.Count())
                                 {
@@ -186,7 +188,7 @@ namespace PKISharp.WACS
                         async () => {
                             foreach (var renewal in selectedRenewals)
                             {
-                                _input.Show(null, AsCommandLine(renewal));
+                                _input.Show(null, _renewalDescriber.Describe(renewal));
                                 _input.CreateSpace();
                             }
                             await _input.Wait();
@@ -215,11 +217,7 @@ namespace PKISharp.WACS
                             var confirm = await _input.PromptYesNo($"Are you sure you want to cancel {selectedRenewals.Count()} currently selected {renewalSelectedLabel}?", false);
                             if (confirm)
                             {
-                                foreach (var renewal in selectedRenewals)
-                                {
-                                    _renewalStore.Cancel(renewal);
-                                    _cacheService.Delete(renewal);
-                                };
+                                await _renewalRevoker.CancelRenewals(selectedRenewals);
                                 originalSelection = _renewalStore.Renewals.OrderBy(x => x.LastFriendlyName);
                                 selectedRenewals = originalSelection;
                             }
@@ -231,7 +229,7 @@ namespace PKISharp.WACS
                             var confirm = await _input.PromptYesNo($"Are you sure you want to revoke the most recently issued certificate for {selectedRenewals.Count()} currently selected {renewalSelectedLabel}? This should only be done in case of a (suspected) security breach. Cancel the {renewalSelectedLabel} if you simply don't need the certificates anymore.", false);
                             if (confirm)
                             {
-                                await RevokeCertificates(selectedRenewals);
+                                await _renewalRevoker.RevokeCertificates(selectedRenewals);
                             }
                         },
                         $"Revoke certificate(s) for {selectionLabel}", "V", state: noneState));
@@ -352,7 +350,7 @@ namespace PKISharp.WACS
                     options.Add(
                       Choice.Create(
                           host.Value,
-                          $"Select {host.Value.Count} renewals covering host {host.Key}"));
+                          $"Select {host.Value.Count} renewals covering host {host.Key.Value}"));
                 }
             }
             _input.CreateSpace();
@@ -483,31 +481,6 @@ namespace PKISharp.WACS
         }
 
         /// <summary>
-        /// Filters for unattended mode
-        /// </summary>
-        /// <param name="command"></param>
-        /// <returns></returns>
-        private IEnumerable<Renewal> FilterRenewalsByCommandLine(string command)
-        {
-            if (_args.HasFilter)
-            {
-                var targets = _renewalStore.FindByArguments(
-                    _args.Id,
-                    _args.FriendlyName);
-                if (!targets.Any())
-                {
-                    _log.Error("No renewals matched.");
-                }
-                return targets;
-            }
-            else
-            {
-                _log.Error($"Specify which renewal to {command} using the parameter --id or --friendlyname.");
-            }
-            return new List<Renewal>();
-        }
-
-        /// <summary>
         /// Loop through the store renewals and run those which are
         /// due to be run
         /// </summary>
@@ -565,9 +538,12 @@ namespace PKISharp.WACS
             try
             {
                 var result = await _renewalExecutor.HandleRenewal(renewal, runLevel);
-                if (!result.Abort)
+                if (result.OrderResults.Any())
                 {
                     _renewalStore.Save(renewal, result);
+                }
+                if (!result.Abort)
+                {
                     if (result.Success == true)
                     {
                         await notification.NotifySuccess(renewal, _log.Lines);
@@ -578,11 +554,8 @@ namespace PKISharp.WACS
                         await notification.NotifyFailure(runLevel, renewal, result, _log.Lines);
                         return false;
                     }
-                } 
-                else
-                {
-                    return null;
                 }
+                return null;
             }
             catch (Exception ex)
             {
@@ -621,6 +594,7 @@ namespace PKISharp.WACS
                 Choice.Create(Steps.Validation, "Validation"),
                 Choice.Create(Steps.Store, "Store"),
                 Choice.Create(Steps.Installation, "Installation"),
+                Choice.Create(Steps.Account, "Account", state: _accountManager.ListAccounts().Count() > 1 ? State.EnabledState() : State.DisabledState("Only one account is registered.")),
                 Choice.Create(Steps.None, "Cancel")
             };
             var chosen = await _input.ChooseFromMenu("Which step do you want to edit?", options);
@@ -629,249 +603,5 @@ namespace PKISharp.WACS
                 await _renewalCreator.SetupRenewal(RunLevel.Interactive | RunLevel.Advanced | RunLevel.Force, chosen, renewal);
             }
         }
-
-        /// <summary>
-        /// Show certificate details
-        /// </summary>
-        private async Task ShowRenewal(Renewal renewal)
-        {
-            try
-            {
-                _input.CreateSpace();
-                _input.Show("Id", renewal.Id);
-                _input.Show("File", $"{renewal.Id}.renewal.json");
-                _input.Show("FriendlyName", string.IsNullOrEmpty(renewal.FriendlyName) ? $"[Auto] {renewal.LastFriendlyName}" : renewal.FriendlyName);
-                _input.Show(".pfx password", renewal.PfxPassword?.Value);
-                var expires = renewal.History.Where(x => x.Success == true).LastOrDefault()?.ExpireDate;
-                if (expires == null)
-                {
-                    _input.Show("Expires", "Unknown");
-                }
-                else
-                {
-                    _input.Show("Expires", _input.FormatDate(expires.Value));
-                }
-                var dueDate = _dueDate.DueDate(renewal);
-                if (dueDate == null)
-                {
-                    _input.Show("Renewal due", "Now");
-                } 
-                else
-                {
-                    _input.Show("Renewal due", _input.FormatDate(dueDate.Value));
-                }
-                _input.Show("Renewed", $"{renewal.History.Where(x => x.Success == true).Count()} times");
-                _input.Show("Command", AsCommandLine(renewal));
-                _input.CreateSpace();
-                renewal.TargetPluginOptions.Show(_input, _plugin);
-                renewal.ValidationPluginOptions.Show(_input, _plugin);
-                renewal.OrderPluginOptions?.Show(_input, _plugin);
-                renewal.CsrPluginOptions?.Show(_input, _plugin);
-                foreach (var ipo in renewal.StorePluginOptions)
-                {
-                    ipo.Show(_input, _plugin);
-                }
-                foreach (var ipo in renewal.InstallationPluginOptions)
-                {
-                    ipo.Show(_input, _plugin);
-                }
-                _input.CreateSpace();
-                // Show history
-                var historyLimit = 10; 
-                await _input.WritePagedList(
-                    renewal.History.
-                    AsEnumerable().
-                    Reverse().
-                    Take(historyLimit).
-                    Select(x => Choice.Create(x, command: "")));
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Unable to list details for target");
-            }
-        }
-
-        /// <summary>
-        /// Write the command line that can be used to create 
-        /// </summary>
-        /// <param name="renewal"></param>
-        private string AsCommandLine(Renewal renewal)
-        {
-            // Show the command line that may be used to (re)create this renewal
-            var args = new Dictionary<string, string?>();
-            var addArgs = (PluginOptions p) =>
-            {
-                var arguments = p.Describe(_container, _scopeBuilder, _plugin);
-                foreach (var arg in arguments)
-                {
-                    var meta = arg.Key;
-                    if (!args.ContainsKey(meta.ArgumentName))
-                    {
-                        var value = arg.Value;
-                        if (value != null)
-                        {
-                            var add = true;
-                            if (value is ProtectedString protectedString)
-                            {
-                                value = protectedString.Value?.StartsWith(SecretServiceManager.VaultPrefix) ?? false ? protectedString.Value : (object)"*******";
-                            }
-                            else if (value is string singleString)
-                            {
-                                value = meta.Secret ? "*******" : Escape(singleString); 
-                            } 
-                            else if (value is List<string> listString)
-                            {
-                                value = Escape(string.Join(",", listString));
-                            }
-                            else if (value is List<int> listInt)
-                            {
-                                value = string.Join(",", listInt);
-                            }
-                            else if (value is List<long> listLong)
-                            {
-                                value = string.Join(",", listLong);
-                            }
-                            else if (value is bool boolean)
-                            {
-                                value = boolean ? null : add = false;
-                            }
-                            if (add)
-                            {
-                                args.Add(meta.ArgumentName, value?.ToString());
-                            }
-                        }
-                    }
-                }
-            };
-
-            args.Add("source", _plugin.GetPlugin(renewal.TargetPluginOptions).Name.ToLower());
-            addArgs(renewal.TargetPluginOptions);
-            var validationPlugin = _plugin.GetPlugin(renewal.ValidationPluginOptions);
-            var validationName = validationPlugin.Name.ToLower();
-            if (!string.Equals(validationName, _settings.Validation.DefaultValidation ?? "selfhosting", StringComparison.OrdinalIgnoreCase))
-            {
-                args.Add("validation", validationName);
-            }
-            addArgs(renewal.ValidationPluginOptions);
-            if (renewal.OrderPluginOptions != null)
-            {
-                var orderName = _plugin.GetPlugin(renewal.OrderPluginOptions).Name.ToLower();
-                if (!string.Equals(orderName, _settings.Order.DefaultPlugin ?? "single", StringComparison.OrdinalIgnoreCase))
-                {
-                    args.Add("order", orderName);
-                }
-                addArgs(renewal.OrderPluginOptions);
-            }
-            if (renewal.CsrPluginOptions != null)
-            {
-                var csrName = _plugin.GetPlugin(renewal.CsrPluginOptions).Name.ToLower();
-                if (!string.Equals(csrName, _settings.Csr.DefaultCsr ?? "rsa", StringComparison.OrdinalIgnoreCase))
-                {
-                    args.Add("csr", csrName);
-                }
-                addArgs(renewal.CsrPluginOptions);
-            }
-            var storeNames = string.Join(",", renewal.StorePluginOptions.Select(_plugin.GetPlugin).Select(x => x.Name.ToLower()));
-            if (!string.Equals(storeNames, _settings.Store.DefaultStore ?? "certificatestore", StringComparison.OrdinalIgnoreCase))
-            {
-                args.Add("store", storeNames);
-            }
-            foreach (var so in renewal.StorePluginOptions)
-            {
-                addArgs(so);
-            }
-            var installationNames = string.Join(",", renewal.InstallationPluginOptions.Select(_plugin.GetPlugin).Select(x => x.Name.ToLower()));
-            if (!string.Equals(installationNames, _settings.Installation.DefaultInstallation ?? "none", StringComparison.OrdinalIgnoreCase))
-            {
-                args.Add("installation", installationNames);
-            }
-            foreach (var so in renewal.InstallationPluginOptions)
-            {
-                addArgs(so);
-            }
-            if (renewal.FriendlyName != null)
-            {
-                args.Add("friendlyname", renewal.FriendlyName);
-            }
-            return "wacs.exe " + string.Join(" ", args.Select(a => $"--{a.Key.ToLower()} {a.Value}".Trim()));
-        }
-
-        private static string Escape(string value)
-        {
-            if (value.Contains(' ') || value.Contains('"'))
-            {
-                return $"\"{value.Replace("\"", "\\\"")}\"";
-            }
-            return value;
-        }
-
-        #region  Unattended 
-
-        /// <summary>
-        /// For command line --list
-        /// </summary>
-        /// <returns></returns>
-        internal async Task ShowRenewalsUnattended()
-        {
-            await _input.WritePagedList(
-                 _renewalStore.Renewals.Select(x => Choice.Create<Renewal?>(x,
-                    description: x.ToString(_dueDate, _input),
-                    color: x.History.Last().Success == true ?
-                            _dueDate.IsDue(x) ?
-                                ConsoleColor.DarkYellow :
-                                ConsoleColor.Green :
-                            ConsoleColor.Red)));
-        }
-
-        /// <summary>
-        /// Cancel certificate from the command line
-        /// </summary>
-        /// <returns></returns>
-        internal void CancelRenewalsUnattended()
-        {
-            var targets = FilterRenewalsByCommandLine("cancel");
-            foreach (var t in targets)
-            {
-                _renewalStore.Cancel(t);
-                _cacheService.Delete(t);
-            }
-        }
-
-        /// <summary>
-        /// Revoke certifcate from the command line
-        /// </summary>
-        /// <returns></returns>
-        internal async Task RevokeCertificatesUnattended()
-        {
-            _log.Warning($"Certificates should only be revoked in case of a (suspected) security breach. Cancel the renewal if you simply don't need the certificate anymore.");
-            var renewals = FilterRenewalsByCommandLine("revoke");
-            await RevokeCertificates(renewals);
-        }
-
-        /// <summary>
-        /// Shared code for command line and renewal manager
-        /// </summary>
-        /// <param name="renewals"></param>
-        /// <returns></returns>
-        internal async Task RevokeCertificates(IEnumerable<Renewal> renewals)
-        {
-            foreach (var renewal in renewals)
-            {
-                using var scope = _scopeBuilder.Execution(_container, renewal, RunLevel.Unattended);
-                var cs = scope.Resolve<ICertificateService>();
-                try
-                {
-                    await cs.RevokeCertificate(renewal);
-                    renewal.History.Add(new RenewResult("Certificate(s) revoked"));
-                }
-                catch (Exception ex)
-                {
-                    _exceptionHandler.HandleException(ex);
-                }
-            }
-        }
-
-        #endregion
-
     }
 }

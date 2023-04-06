@@ -51,30 +51,42 @@ namespace PKISharp.WACS.DomainObjects
         /// the renewal that was run
         /// </summary>
         [JsonIgnore]
-        public List<OrderResult>? OrderResults
+        public List<OrderResult> OrderResults
         {
             get
             {
-                if (OrderResultsJson != null)
+                var ret = OrderResultsJson;
+                if (ret == null)
                 {
-                    return OrderResultsJson;
-                }
-                else if (ThumbprintsJson != null)
-                {
-                    return ThumbprintsJson.Select(x =>
-                        new OrderResult("legacy")
+                    ret = new List<OrderResult>();
+                    if (ThumbprintsJson != null && ThumbprintsJson.Any())
+                    {
+                        foreach (var thumb in ThumbprintsJson)
                         {
-                            Thumbprint = x,
-                            Success = Success
-                        }).ToList();
+                            ret.Add(new OrderResult(!ret.Any() ? "main" : "legacy")
+                            {
+                                Thumbprint = thumb,
+                                ExpireDate = _expireDate,
+                                Success = Success
+                            });
+                        }
+                    }
+                    else
+                    {
+                        ret.Add(new OrderResult("main")
+                        {
+                            Success = Success,
+                            ExpireDate = _expireDate,
+                        });
+                    }
                 }
-                return null;
+                return ret;
             }
             set => OrderResultsJson = value;
         }
 
         [JsonPropertyName("Thumbprints")]
-        private List<string>? ThumbprintsJson { get; set; }
+        public List<string>? ThumbprintsJson { get; set; }
 
         [JsonIgnore]
         public List<string> Thumbprints
@@ -119,7 +131,7 @@ namespace PKISharp.WACS.DomainObjects
 
         public override string ToString() => $"{Date} " +
             $"- {(Success == true ? "Success" : "Error")}" +
-            $"{(Thumbprints.Count == 0 ? "" : $" - Thumbprint {string.Join(", ", Thumbprints)}")}" +
+            $"{((OrderResults?.Count ?? 0) == 0 ? "" : $" - Orders {string.Join(", ", OrderResults!.Select(x => x.Name))}")}" +
             $"{((ErrorMessages?.Count ?? 0) == 0 ? "" : $" - {string.Join(", ", ErrorMessages!.Select(x => x.ReplaceNewLines()))}")}";
     }
 }

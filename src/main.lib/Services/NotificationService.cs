@@ -17,19 +17,23 @@ namespace PKISharp.WACS.Services
         private readonly IPluginService _plugin;
         private readonly ISettingsService _settings;
         private readonly EmailClient _email;
+        private readonly DueDateStaticService _dueDate;
 
         public NotificationService(
             ILogService log,
             ISettingsService setttings,
             IPluginService pluginService,
             EmailClient email,
+            DueDateStaticService dueDate,
             ICacheService certificateService)
         {
             _log = log;
             _cacheService = certificateService;
+            _plugin = pluginService;
             _email = email;
             _settings = setttings;
             _plugin = pluginService;
+            _dueDate = dueDate;
         }
 
         /// <summary>
@@ -175,22 +179,28 @@ namespace PKISharp.WACS.Services
 
         private string NotificationHosts(Renewal renewal)
         {
+            var hosts = new List<string>();
             try
             {
-                var infos = _cacheService.CachedInfos(renewal);
-                if (infos == null || !infos.Any())
+                var orders = _dueDate.CurrentOrders(renewal);
+                foreach (var order in orders)
                 {
-                    return "Unknown";
-                }
-                else
-                {
-                    return string.Join(", ", infos.SelectMany(i => i.SanNames).Distinct());
+                    var cert = _cacheService.PreviousInfo(renewal, order.Key);
+                    if (cert != null)
+                    {
+                        hosts.AddRange(cert.SanNames.Select(x => x.Value));
+                    }
                 }
             }
             catch
             {
                 return "Error";
             }
+            if (!hosts.Any())
+            {
+                return "Unknown";
+            }
+            return string.Join(", ", hosts.Distinct());
         }
     }
 }

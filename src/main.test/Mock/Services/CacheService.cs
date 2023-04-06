@@ -1,8 +1,6 @@
 ﻿using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -15,17 +13,10 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
             throw new NotImplementedException();
         }
 
-        public IEnumerable<CertificateInfoCache> CachedInfos(Renewal renewal)
+        public CertificateInfoCache? PreviousInfo(Renewal renewal, string order)
         {
             throw new NotImplementedException();
         }
-
-        public IEnumerable<CertificateInfoCache> CachedInfos(Renewal renewal, Order order)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Delete(Order order) {}
 
         public void Delete(Renewal renewal) {}
 
@@ -45,6 +36,16 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         }
 
         public Task<ICertificateInfo> StorePfx(Order order, CertificateOption option)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Delete(Renewal renewal, string order)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Revoke(Renewal renewal)
         {
             throw new NotImplementedException();
         }
