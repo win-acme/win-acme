@@ -566,7 +566,7 @@ namespace PKISharp.WACS
         }
 
         /// <summary>
-        /// List a warning when the user appears to be trying to
+        /// Show a warning when the user appears to be trying to
         /// use command line arguments in combination with a renew
         /// command.
         /// </summary>

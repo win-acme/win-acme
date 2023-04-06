@@ -14,7 +14,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         public long? SiteId { get; set; }
 
         /// <summary>
-        /// List to use what has been configured
+        /// Show what has been configured
         /// </summary>
         /// <param name="input"></param>
         public override void Show(IInputService input)

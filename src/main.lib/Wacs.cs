@@ -207,7 +207,7 @@ namespace PKISharp.WACS.Host
         }
 
         /// <summary>
-        /// List banner
+        /// Show banner
         /// </summary>
         private async Task ShowBanner()
         {
