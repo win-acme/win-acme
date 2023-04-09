@@ -18,7 +18,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         [CommandLine(Description = "TSIG key name")]
         public string? TsigKeyName { get; set; }
 
-        [CommandLine(Description = "TSIG key secret", Secret = true)]
+        [CommandLine(Description = "TSIG key secret (Base64 encoded)", Secret = true)]
         public string? TsigKeySecret { get; set; }
 
         [CommandLine(Description = "TSIG key algorithm")]

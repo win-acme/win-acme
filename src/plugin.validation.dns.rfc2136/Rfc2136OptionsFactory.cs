@@ -17,7 +17,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             Required();
 
         private ArgumentResult<int?> ServerPort => _arguments.
-            GetInt<Rfc2136Arguments>(a => a.ServerPort);
+            GetInt<Rfc2136Arguments>(a => a.ServerPort).
+            WithDefault(53).
+            DefaultAsNull();
 
         private ArgumentResult<string?> TsigKeyName => _arguments.
             GetString<Rfc2136Arguments>(a => a.TsigKeyName).
