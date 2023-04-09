@@ -1,10 +1,8 @@
 ﻿using Autofac;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins;
 using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Interfaces;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace PKISharp.WACS.Services.Serialization
