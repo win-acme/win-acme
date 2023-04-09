@@ -143,7 +143,7 @@ namespace PKISharp.WACS
                     options.Add(
                         Choice.Create<Func<Task>>(
                             async () => selectedRenewals = await FilterRenewalsMenu(selectedRenewals),
-                            all ? "Apply filter" : "Apply additional filter", "F", state: sortFilterState));
+                            all ? "Apply filter" : "Apply additional filter", "I", state: sortFilterState));
                     options.Add(
                         Choice.Create<Func<Task>>(
                              async () => selectedRenewals = await SortRenewalsMenu(selectedRenewals),
