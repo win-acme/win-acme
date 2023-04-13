@@ -283,7 +283,10 @@ namespace PKISharp.WACS.Clients.Acme
             {
                 return;
             }
-            _ = await _client.Retry(() => _client.UpdateRenewalInfo(CertificateId(certificate)), _log);
+            _ = await _client.Retry<object?>(async () => {
+                await _client.UpdateRenewalInfo(CertificateId(certificate));
+                return null; // we need to return something to make Retry<T>() happy
+            }, _log);
         }
 
         private static byte[] CertificateId(ICertificateInfo certificate)
