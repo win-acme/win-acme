@@ -385,6 +385,14 @@ namespace PKISharp.WACS.Services
             {
                 throw new Exception("Default option is disabled");
             }
+            var duplicates = choices.
+                Where(c => c.Command != null).
+                GroupBy(c => c.Command).
+                Where(g => g.Count() > 1);
+            if (duplicates.Any())
+            {
+                throw new Exception($"Duplicate command: {duplicates.First().Key}");
+            }
 
             await WritePagedList(choices);
 
