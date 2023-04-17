@@ -76,8 +76,11 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 };
                 collection.AddRange(input.Chain.ToArray());
                 var ms = new MemoryStream(collection.Export(X509ContentType.Pfx)!);
-                var bcPfxIn = new Bc.Pkcs.Pkcs12Store(ms, Array.Empty<char>());
-                var bcPfxOut = new Bc.Pkcs.Pkcs12Store();
+                var bcPfxBuilder = new Bc.Pkcs.Pkcs12StoreBuilder();
+                var bcPfxIn = bcPfxBuilder.Build();
+                bcPfxIn.Load(ms, Array.Empty<char>());
+                var bcPfxOut = bcPfxBuilder.Build();
+
                 var aliases = bcPfxIn.Aliases.OfType<string>().ToList();
                 var keyAlias = aliases.FirstOrDefault(a => bcPfxIn.IsKeyEntry(a));
                 if (keyAlias != null)

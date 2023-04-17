@@ -50,12 +50,11 @@ namespace PKISharp.WACS.DomainObjects
             // Check if we have the private key
             if (main.HasPrivateKey)
             {
-                var bytes = rawCollection.Export(X509ContentType.Pfx);
-                if (bytes == null)
-                {
+                var bytes = rawCollection.Export(X509ContentType.Pfx) ?? 
                     throw new InvalidOperationException();
-                }
-                var store = new Pkcs12Store(new MemoryStream(bytes), "".ToCharArray());
+                var builder = new Pkcs12StoreBuilder();
+                var store = builder.Build();
+                store.Load(new MemoryStream(bytes), "".ToCharArray());
                 var alias = store.Aliases.OfType<string>().FirstOrDefault(store.IsKeyEntry);
                 if (alias != null)
                 {

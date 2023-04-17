@@ -34,9 +34,10 @@
 
 	<ItemGroup>
 		<PackageReference Include="Autofac" Version="7.0.0" />
+		<PackageReference Include="BouncyCastle.Cryptography" Version="2.2.0" />
 		<PackageReference Include="DnsClient" Version="1.7.0" />
 		<PackageReference Include="FluentFTP" Version="46.0.2" />
-		<PackageReference Include="MailKit" Version="3.6.0" />
+		<PackageReference Include="MailKit" Version="4.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="7.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
