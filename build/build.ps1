@@ -48,6 +48,7 @@ foreach ($release in @("Release", "ReleaseTrimmed")) {
 & dotnet publish $RepoRoot\src\plugin.validation.dns.linode\wacs.validation.dns.linode.csproj -c "Release"
 & dotnet publish $RepoRoot\src\plugin.validation.dns.luadns\wacs.validation.dns.luadns.csproj -c "Release"
 & dotnet publish $RepoRoot\src\plugin.validation.dns.ns1\wacs.validation.dns.ns1.csproj -c "Release"
+& dotnet publish $RepoRoot\src\plugin.validation.dns.rfc2136\wacs.validation.dns.rfc2136.csproj -c "Release"
 & dotnet publish $RepoRoot\src\plugin.validation.dns.route53\wacs.validation.dns.route53.csproj -c "Release"
 & dotnet publish $RepoRoot\src\plugin.validation.dns.simply\wacs.validation.dns.simply.csproj -c "Release"
 & dotnet publish $RepoRoot\src\plugin.validation.dns.transip\wacs.validation.dns.transip.csproj -c "Release"
