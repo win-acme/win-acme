@@ -67,6 +67,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.store.userstore", "plu
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.dns.infomaniak", "plugin.validation.dns.infomaniak\wacs.validation.dns.infomaniak.csproj", "{81CA3C77-B0B1-4931-9820-2CD554D3D4BD}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.dns.rfc2136", "plugin.validation.dns.rfc2136\wacs.validation.dns.rfc2136.csproj", "{C22EFB37-8CC1-42C2-8F82-6670969DBB0C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -235,6 +237,14 @@ Global
 		{81CA3C77-B0B1-4931-9820-2CD554D3D4BD}.Release|Any CPU.Build.0 = Release|Any CPU
 		{81CA3C77-B0B1-4931-9820-2CD554D3D4BD}.ReleaseTrimmed|Any CPU.ActiveCfg = Release|Any CPU
 		{81CA3C77-B0B1-4931-9820-2CD554D3D4BD}.ReleaseTrimmed|Any CPU.Build.0 = Release|Any CPU
+		{C22EFB37-8CC1-42C2-8F82-6670969DBB0C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C22EFB37-8CC1-42C2-8F82-6670969DBB0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C22EFB37-8CC1-42C2-8F82-6670969DBB0C}.DebugTrimmed|Any CPU.ActiveCfg = Debug|Any CPU
+		{C22EFB37-8CC1-42C2-8F82-6670969DBB0C}.DebugTrimmed|Any CPU.Build.0 = Debug|Any CPU
+		{C22EFB37-8CC1-42C2-8F82-6670969DBB0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C22EFB37-8CC1-42C2-8F82-6670969DBB0C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C22EFB37-8CC1-42C2-8F82-6670969DBB0C}.ReleaseTrimmed|Any CPU.ActiveCfg = Release|Any CPU
+		{C22EFB37-8CC1-42C2-8F82-6670969DBB0C}.ReleaseTrimmed|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
