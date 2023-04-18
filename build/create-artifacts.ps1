@@ -181,6 +181,10 @@ PluginRelease plugin.validation.dns.luadns @(
 PluginRelease plugin.validation.dns.ns1 @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.NS1.dll"
 )
+PluginRelease plugin.validation.dns.rfc2136 @(
+	"ARSoft.Tools.Net.dll",
+	"PKISharp.WACS.Plugins.ValidationPlugins.Rfc2136.dll"
+)
 PluginRelease plugin.validation.dns.route53 @(
 	"AWSSDK.Core.dll", 
 	"AWSSDK.Route53.dll",
