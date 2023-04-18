@@ -83,7 +83,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 } 
                 catch
                 {
-                    _recordSets[zone].Add(relativeKey, new DnsTxtRecordData());
+                    _recordSets[zone].Add(relativeKey, new DnsTxtRecordData() { TtlInSeconds = 60 });
                 }
             }
             if (!_recordSets[zone][relativeKey].DnsTxtRecords.Any(x => x.Values.Contains(record.Value)))
