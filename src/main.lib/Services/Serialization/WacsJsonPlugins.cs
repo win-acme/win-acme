@@ -16,7 +16,6 @@ namespace PKISharp.WACS.Services.Serialization
     [JsonSerializable(typeof(Target.IISBindingOptions))]
     [JsonSerializable(typeof(Target.IISSiteOptions))]
     [JsonSerializable(typeof(Target.IISSitesOptions))]
-    [JsonSerializable(typeof(Target.IISOptions))]
     [JsonSerializable(typeof(Target.CsrOptions))]
     [JsonSerializable(typeof(Validation.Dns.AcmeOptions))]
     [JsonSerializable(typeof(Validation.Dns.ManualOptions), TypeInfoPropertyName = "DnsManualOptions")]
