@@ -51,7 +51,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         protected static string TemplateWebConfig => Path.Combine(VersionService.ResourcePath, "web_config.xml");
 
         /// <summary>
-        /// Character to seperate folders, different for FTP 
+        /// Character to separate folders, different for FTP 
         /// </summary>
         protected virtual char PathSeparator => '\\';
 

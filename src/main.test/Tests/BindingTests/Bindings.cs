@@ -899,7 +899,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
         }
 
         /// <summary>
-        /// Like above, but the new domain is different so a seperate binding should
+        /// Like above, but the new domain is different so a separate binding should
         /// be created for it
         /// </summary>
         [TestMethod]

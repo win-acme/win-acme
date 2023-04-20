@@ -35,7 +35,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         [CommandLine(Description = "Exclude host names from the certificate. This may be a comma-separated list.")]
         public string? ExcludeBindings { get; set; }
 
-        [CommandLine(Default = "http", Name = "host-type", Description = "Specify which types of bindings to consider. May be set to http, ftp or both (comma seperated)")]
+        [CommandLine(Default = "http", Name = "host-type", Description = "Specify which types of bindings to consider. May be set to http, ftp or both (comma separated)")]
         public string? Type { get; set; }
     }
 }

@@ -175,7 +175,7 @@ namespace PKISharp.WACS.Services
             }
             else
             {
-                // Create seperate logs for each endpoint
+                // Create separate logs for each endpoint
                 return Path.Combine(Client.LogPath, BaseUri.CleanUri());
             }
         }

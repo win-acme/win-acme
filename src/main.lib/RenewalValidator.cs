@@ -350,7 +350,7 @@ namespace PKISharp.WACS
                     continue;
                 }
 
-                // For serial mode we *MUST* create a seperate DI scope 
+                // For serial mode we *MUST* create a separate DI scope 
                 // for each identifier if the plugin is not capable/aware
                 // of any parallel operation, because it might not properly
                 // maintain its internal state for multiple uses. 
