@@ -97,7 +97,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         private async Task SendUpdate(DnsUpdateMessage msg)
         {
-            if (!Enum.TryParse<TSigAlgorithm>(_options.TsigKeyName, true, out var algorithm)) 
+            if (!Enum.TryParse<TSigAlgorithm>(_options.TsigKeyAlgorithm, true, out var algorithm)) 
             {
                 algorithm = TSigAlgorithm.Md5;
             }
