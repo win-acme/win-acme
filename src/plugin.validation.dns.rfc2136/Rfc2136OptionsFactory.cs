@@ -30,8 +30,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             Required();
 
         private ArgumentResult<string?> TsigKeyAlgorithm => _arguments.
-            GetString<Rfc2136Arguments>(a => a.TsigKeyAlgorithm).
-            Required();
+            GetString<Rfc2136Arguments>(a => a.TsigKeyAlgorithm);
 
         public override async Task<Rfc2136Options?> Aquire(IInputService input, RunLevel runLevel)
         {
