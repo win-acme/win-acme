@@ -15,7 +15,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Target = PKISharp.WACS.DomainObjects.Target;
 using X509Extension = Org.BouncyCastle.Asn1.X509.X509Extension;
@@ -224,11 +223,11 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
                 }
             }
             var finalCommonName = commonName ?? identifiers.FirstOrDefault();
-            IDictionary attrs = new Hashtable
+            var attrs = new Dictionary<DerObjectIdentifier, string?>
             {
                 [X509Name.CN] = finalCommonName?.Value
             };
-            IList ord = new ArrayList
+            var ord = new List<DerObjectIdentifier>
             {
                 X509Name.CN
             };

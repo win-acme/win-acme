@@ -18,6 +18,25 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS
 {
+
+    public enum Shortcuts
+    {
+        A, // List all selected
+        C, // Cancel
+        D, // Show details
+        E, // Edit
+        F, // Filter
+        L, // Show command line
+        O, // Sort
+        Q, // Quit
+        R, // Run
+        S, // Run force
+        T, // Run force, no cache
+        U, // Analyze
+        V, // Revoke
+        X, // Reset filter and sort
+    }
+
     internal class RenewalManager
     {
         private readonly IInputService _input;
@@ -35,6 +54,7 @@ namespace PKISharp.WACS
         private readonly ISettingsService _settings;
         private readonly DueDateStaticService _dueDate;
         private readonly AccountManager _accountManager;
+
 
         public RenewalManager(
             ArgumentsParser arguments, MainArguments args,
@@ -132,29 +152,29 @@ namespace PKISharp.WACS
                     options.Add(
                         Choice.Create<Func<Task>>(
                             () => { displayAll = true; return Task.CompletedTask; },
-                            "List all selected renewals", "A"));
+                            "List all selected renewals", Shortcuts.A.ToString()));
                 }
                 options.Add(
                     Choice.Create<Func<Task>>(
                         async () => { quit = true; await EditRenewal(selectedRenewals.First()); },
-                        "Edit renewal", "E", state: editState));
+                        "Edit renewal", Shortcuts.E.ToString(), state: editState));
                 if (selectedRenewals.Count() > 1)
                 {
                     options.Add(
                         Choice.Create<Func<Task>>(
                             async () => selectedRenewals = await FilterRenewalsMenu(selectedRenewals),
-                            all ? "Apply filter" : "Apply additional filter", "I", state: sortFilterState));
+                            all ? "Apply filter" : "Apply additional filter", Shortcuts.F.ToString(), state: sortFilterState));
                     options.Add(
                         Choice.Create<Func<Task>>(
                              async () => selectedRenewals = await SortRenewalsMenu(selectedRenewals),
-                            "Sort renewals", "S", state: sortFilterState));
+                            "Sort renewals", Shortcuts.O.ToString(), state: sortFilterState));
                 }
                 if (!all)
                 {
                     options.Add(
                         Choice.Create<Func<Task>>(
                             () => { selectedRenewals = originalSelection; return Task.CompletedTask; },
-                            "Reset sorting and filtering", "X"));
+                            "Reset sorting and filtering", Shortcuts.X.ToString()));
                 }
                 options.Add(
                     Choice.Create<Func<Task>>(
@@ -181,7 +201,7 @@ namespace PKISharp.WACS
 
                             } 
                         },
-                        $"Show details for {selectionLabel}", "D",
+                        $"Show details for {selectionLabel}", Shortcuts.D.ToString(),
                         state: noneState));
                 options.Add(
                     Choice.Create<Func<Task>>(
@@ -193,24 +213,24 @@ namespace PKISharp.WACS
                             }
                             await _input.Wait();
                         },
-                        $"Show command line for {selectionLabel}", "L",
+                        $"Show command line for {selectionLabel}", Shortcuts.L.ToString(),
                         state: noneState));
                 options.Add(
                     Choice.Create<Func<Task>>(() => Run(selectedRenewals, RunLevel.Interactive),
-                        $"Run {selectionLabel}", "R", state: noneState));
+                        $"Run {selectionLabel}", Shortcuts.R.ToString(), state: noneState));
                 options.Add(
                     Choice.Create<Func<Task>>(() => Run(selectedRenewals, RunLevel.Interactive | RunLevel.Force),
-                        $"Run {selectionLabel} (force)", "S", state: noneState));
+                        $"Run {selectionLabel} (force)", Shortcuts.S.ToString(), state: noneState));
                 if (_settings.Cache.ReuseDays > 0)
                 {
                     options.Add(
                         Choice.Create<Func<Task>>(() => Run(selectedRenewals, RunLevel.Interactive | RunLevel.Force | RunLevel.NoCache),
-                        $"Run {selectionLabel} (force, no cache)", "T", state: noneState));
+                        $"Run {selectionLabel} (force, no cache)", Shortcuts.T.ToString(), state: noneState));
                 }
                 options.Add(
                     Choice.Create<Func<Task>>(
                         async () => selectedRenewals = await Analyze(selectedRenewals),
-                        $"Analyze duplicates for {selectionLabel}", "U", state: noneState));
+                        $"Analyze duplicates for {selectionLabel}", Shortcuts.U.ToString(), state: noneState));
                 options.Add(
                     Choice.Create<Func<Task>>(
                         async () => {
@@ -222,7 +242,7 @@ namespace PKISharp.WACS
                                 selectedRenewals = originalSelection;
                             }
                         },
-                        $"Cancel {selectionLabel}", "C", state: noneState));
+                        $"Cancel {selectionLabel}", Shortcuts.C.ToString(), state: noneState));
                 options.Add(
                     Choice.Create<Func<Task>>(
                         async () => {
@@ -232,11 +252,11 @@ namespace PKISharp.WACS
                                 await _renewalRevoker.RevokeCertificates(selectedRenewals);
                             }
                         },
-                        $"Revoke certificate(s) for {selectionLabel}", "V", state: noneState));
+                        $"Revoke certificate(s) for {selectionLabel}", Shortcuts.V.ToString(), state: noneState));
                 options.Add(
                     Choice.Create<Func<Task>>(
                         () => { quit = true; return Task.CompletedTask; },
-                        "Back", "Q",
+                        "Back", Shortcuts.Q.ToString(),
                         @default: !originalSelection.Any()));
 
                 if (selectedRenewals.Count() > 1)

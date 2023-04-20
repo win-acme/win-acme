@@ -2,6 +2,7 @@
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
@@ -20,6 +21,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         /// <summary>
         /// Regular expression to select hosts
         /// </summary>
+        [JsonConverter(typeof(IISOptionsRegexConverter))]
         public string? IncludeRegex { get; set; }
 
         /// <summary>

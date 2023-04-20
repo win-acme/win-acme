@@ -1,4 +1,4 @@
-version: 2.2.3.{build}
+version: 2.2.4.{build}
 image: Visual Studio 2022
 platform: Any CPU
 shallow_clone: true
@@ -41,6 +41,7 @@ build_script:
   - cmd: dotnet publish ./src/plugin.validation.dns.linode/wacs.validation.dns.linode.csproj -c Release
   - cmd: dotnet publish ./src/plugin.validation.dns.luadns/wacs.validation.dns.luadns.csproj -c Release
   - cmd: dotnet publish ./src/plugin.validation.dns.ns1/wacs.validation.dns.ns1.csproj -c Release
+  - cmd: dotnet publish ./src/plugin.validation.dns.rfc2136/wacs.validation.dns.rfc2136.csproj -c Release
   - cmd: dotnet publish ./src/plugin.validation.dns.route53/wacs.validation.dns.route53.csproj -c Release
   - cmd: dotnet publish ./src/plugin.validation.dns.simply/wacs.validation.dns.simply.csproj -c Release
   - cmd: dotnet publish ./src/plugin.validation.dns.transip/wacs.validation.dns.transip.csproj -c Release

@@ -186,7 +186,8 @@ namespace PKISharp.WACS.Services
             // Build pfx archive including any intermediates provided
             _log.Verbose("Parsing certificate from {bytes} bytes received", bytes.Length);
             var text = Encoding.UTF8.GetString(bytes);
-            var pfx = new Bc.Pkcs.Pkcs12Store();
+            var pfxBuilder = new Bc.Pkcs.Pkcs12StoreBuilder();
+            var pfx = pfxBuilder.Build();
             var startIndex = 0;
             const string startString = "-----BEGIN CERTIFICATE-----";
             const string endString = "-----END CERTIFICATE-----";
