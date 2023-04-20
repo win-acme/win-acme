@@ -49,10 +49,10 @@ namespace PKISharp.WACS.Configuration.Arguments
         [CommandLine(Description = "Renew any certificates that are due. This argument is used by the scheduled task. Note that it's not possible to change certificate properties and renew at the same time.")]
         public bool Renew { get; set; }
 
-        [CommandLine(Description = "Force renewal when used together with --renew.")]
+        [CommandLine(Description = "[--renew] Always execute the renewal, disregarding the validity of the current certificates and the prefered schedule.")]
         public bool Force { get; set; }
 
-        [CommandLine(Description = "Bypass the certificate cache on new certificate requests.")]
+        [CommandLine(Description = "Bypass the cache on certificate requests. Applies to both new requests and renewals.")]
         public bool NoCache { get; set; }
 
         // Commands

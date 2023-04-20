@@ -10,9 +10,6 @@
         [CommandLine(Description = "Email address to link to your ACME account.")]
         public string? EmailAddress { get; set; }
 
-        [CommandLine(Description = "Name for your ACME account. A seperate registration and signer will be generated for each unique value that you provide.")]
-        public string? Account { get; set; }
-
         [CommandLine(Name = "eab-key-identifier", Description = "Key identifier to use for external account binding.")]
         public string? EabKeyIdentifier { get; set; }
 
@@ -21,5 +18,8 @@
 
         [CommandLine(Name = "eab-algorithm", Description = "Algorithm to use for external account binding. Valid values are HS256 (default), HS384, and HS512.")]
         public string? EabAlgorithm { get; set; }
+
+        [CommandLine(Description = "Optionally provide a name for the account. Using different names for different renewals enables you to managed multiple accounts for a single ACME endpoint. Unless you have a specific need to do this, we recommend to not use this.")]
+        public string? Account { get; set; }
     }
 }
