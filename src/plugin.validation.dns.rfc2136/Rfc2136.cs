@@ -6,8 +6,10 @@ using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
+using System.Linq;
 using System.Net;
 using System.Runtime.Versioning;
+using System.Security.Policy;
 using System.Threading.Tasks;
 using ArDnsClient = ARSoft.Tools.Net.Dns.DnsClient;
 
@@ -23,45 +25,65 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         "Create verification records using dynamic updates")]
     internal sealed class Rfc2136 : DnsValidation<Rfc2136>
     {
+        private const int _ttl = 60;
         private readonly string _key; 
         private readonly Rfc2136Options _options;
-        private readonly ArDnsClient _client;
+        private readonly LookupClientProvider _lookupClientProvider;
+        private readonly DomainParseService _domainParser;
+        private ArDnsClient? _client;
 
         public Rfc2136(
             LookupClientProvider dnsClient,
             ILogService log,
             ISettingsService settings,
             SecretServiceManager ssm,
+            LookupClientProvider lcp,
+            DomainParseService domainParser,
             Rfc2136Options options): base(dnsClient, log, settings)
         {
             _options = options;
+            _lookupClientProvider = lcp;
+            _domainParser = domainParser;
             var key = ssm.EvaluateSecret(options.TsigKeySecret);
             if (string.IsNullOrEmpty(key))
             {
                 throw new InvalidOperationException("Missing TsigKeySecret");
             }
             _key = key;
+        }
 
-            if (string.IsNullOrEmpty(options.ServerHost)) 
+        private async Task<ArDnsClient> GetClient()
+        {
+            if (_client == null)
             {
-                throw new InvalidOperationException("Missing ServerHost");
+                var port = _options.ServerPort ?? 53;
+                if (!IPAddress.TryParse(_options.ServerHost, out var ipAddress))
+                {
+                    if (string.IsNullOrEmpty(_options.ServerHost))
+                    {
+                        throw new InvalidOperationException("Missing ServerHost");
+                    }
+                    var lookup = await _lookupClientProvider.GetDefaultClient(0).GetIps(_options.ServerHost);
+                    if (!lookup.Any())
+                    {
+                        throw new Exception($"Unable to find IP for {_options.ServerHost}");
+                    }
+                    ipAddress = lookup.First();
+                }
+                _client = new ArDnsClient(ipAddress, port);
             }
-            _client = new ArDnsClient(
-                IPAddress.Parse(options.ServerHost),
-                options.ServerPort ?? 53);
+            return _client;
         }
 
         public override async Task<bool> CreateRecord(DnsValidationRecord record)
         {
-            var msg = new DnsUpdateMessage
-            {
-                ZoneName = DomainName.Parse(record.Context.Identifier)
-            };
+            var zone = _domainParser.GetRegisterableDomain(record.Context.Identifier);
+            var msg = new DnsUpdateMessage { ZoneName = DomainName.Parse(zone + ".") };
             msg.Updates.Add(
                 new AddRecordUpdate(
                     new TxtRecord(
                         DomainName.Parse(record.Authority.Domain),
-                        60,
+                        _ttl,
                         record.Value)));
             try
             {
@@ -77,14 +99,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public override async Task DeleteRecord(DnsValidationRecord record)
         {
-            var msg = new DnsUpdateMessage
-            {
-                ZoneName = DomainName.Parse(record.Context.Identifier)
-            };
+            var zone = _domainParser.GetRegisterableDomain(record.Context.Identifier);
+            var msg = new DnsUpdateMessage { ZoneName = DomainName.Parse(zone) };
             msg.Updates.Add(
-                new DeleteAllRecordsUpdate(
-                    DomainName.Parse(record.Authority.Domain), 
-                    RecordType.Txt));
+                new DeleteRecordUpdate(
+                    new TxtRecord(
+                        DomainName.Parse(record.Authority.Domain), 
+                        60, 
+                        record.Value)));
             try
             {
                 await SendUpdate(msg);
@@ -112,7 +134,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 null,
                 Convert.FromBase64String(_key));
 
-            var ret = await _client.SendUpdateAsync(msg);
+            var client = await GetClient();
+            var ret = await client.SendUpdateAsync(msg);
             if (ret == null || ret.ReturnCode != ReturnCode.NoError)
             {
                 throw new Exception(ret?.ReturnCode.ToString() ?? "no response");

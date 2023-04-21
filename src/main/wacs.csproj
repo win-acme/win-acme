@@ -70,6 +70,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\main.lib\wacs.lib.csproj" />
+		<ProjectReference Include="..\plugin.validation.dns.rfc2136\wacs.validation.dns.rfc2136.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

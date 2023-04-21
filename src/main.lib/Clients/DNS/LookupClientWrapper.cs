@@ -82,7 +82,25 @@ namespace PKISharp.WACS.Clients.DNS
                 OfType<string>().
                 ToList();
         }
-        
+
+        public async Task<IEnumerable<IPAddress>> GetIps(string host)
+        {
+            var ret = new List<IPAddress>();
+            var ipv4 = await _lookupClient.QueryAsync(host, QueryType.A);
+            ret.AddRange(ipv4.Answers.ARecords().
+                Where(aRecord => aRecord != null).
+                Select(aRecord => aRecord.Address).
+                Where(ip => ip != null).
+                OfType<IPAddress>());
+            var ipv6 = await _lookupClient.QueryAsync(host, QueryType.AAAA);
+            ret.AddRange(ipv6.Answers.AaaaRecords().
+                Where(aRecord => aRecord != null).
+                Select(aRecord => aRecord.Address).
+                Where(ip => ip != null).
+                OfType<IPAddress>());
+            return ret;
+        }
+
         public async Task<string?> GetCname(string host)
         {
             var cnames = await _lookupClient.QueryAsync(host, QueryType.CNAME);
