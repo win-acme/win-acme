@@ -8,6 +8,7 @@ using PKISharp.WACS.Services;
 using System;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Runtime.Versioning;
 using System.Threading.Tasks;
 using ArDnsClient = ARSoft.Tools.Net.Dns.DnsClient;
@@ -24,7 +25,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         "Create verification records using dynamic updates")]
     internal sealed class Rfc2136 : DnsValidation<Rfc2136>
     {
-        private const int _ttl = 60;
         private readonly string _key; 
         private readonly Rfc2136Options _options;
         private readonly LookupClientProvider _lookupClientProvider;
@@ -51,6 +51,74 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _key = key;
         }
 
+        /// <summary>
+        /// Allow multiple validation at once when DisableMultiThreading = false
+        /// </summary>
+        public override ParallelOperations Parallelism => ParallelOperations.Answer;
+
+        /// <summary>
+        /// Create record using AddRecordUpdate message
+        /// </summary>
+        /// <param name="record"></param>
+        /// <returns></returns>
+        public override async Task<bool> CreateRecord(DnsValidationRecord record)
+        {
+            var zone = _domainParser.GetRegisterableDomain(record.Context.Identifier);
+            var msg = new DnsUpdateMessage { ZoneName = DomainName.Parse(zone) };
+            msg.Updates.Add(
+                new AddRecordUpdate(
+                    new TxtRecord(
+                        DomainName.Parse(record.Authority.Domain),
+                        60,
+                        record.Value)));
+            try
+            {
+                await SendUpdate(msg);
+                return true;
+            } 
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error creating DNS record");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Delete record using DeleteRecordUpdate
+        /// </summary>
+        /// <param name="record"></param>
+        /// <returns></returns>
+        public override async Task DeleteRecord(DnsValidationRecord record)
+        {
+            var zone = _domainParser.GetRegisterableDomain(record.Context.Identifier);
+            var msg = new DnsUpdateMessage { ZoneName = DomainName.Parse(zone) };
+            var txtRecord = new TxtRecord(DomainName.Parse(record.Authority.Domain), 0, record.Value);
+
+            // Work around bug https://github.com/alexreinert/ARSoft.Tools.Net/issues/28
+            _ = typeof(TxtRecord).InvokeMember(
+                nameof(txtRecord.RecordClass),
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.SetProperty | BindingFlags.Instance,
+                null,
+                txtRecord,
+                new object[] { RecordClass.None });
+            var delete = new DeleteRecordUpdate(txtRecord);
+            msg.Updates.Add(delete);
+            try
+            {
+                await SendUpdate(msg);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error deleting DNS record");
+            }
+        }
+
+        /// <summary>
+        /// Construct client and cache result
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        /// <exception cref="Exception"></exception>
         private async Task<ArDnsClient> GetClient()
         {
             if (_client == null)
@@ -74,48 +142,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return _client;
         }
 
-        public override async Task<bool> CreateRecord(DnsValidationRecord record)
-        {
-            var zone = _domainParser.GetRegisterableDomain(record.Context.Identifier);
-            var msg = new DnsUpdateMessage { ZoneName = DomainName.Parse(zone + ".") };
-            msg.Updates.Add(
-                new AddRecordUpdate(
-                    new TxtRecord(
-                        DomainName.Parse(record.Authority.Domain),
-                        _ttl,
-                        record.Value)));
-            try
-            {
-                await SendUpdate(msg);
-                return true;
-            } 
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Error creating DNS record");
-                return false;
-            }
-        }
-
-        public override async Task DeleteRecord(DnsValidationRecord record)
-        {
-            var zone = _domainParser.GetRegisterableDomain(record.Context.Identifier);
-            var msg = new DnsUpdateMessage { ZoneName = DomainName.Parse(zone) };
-            msg.Updates.Add(
-                new DeleteRecordUpdate(
-                    new TxtRecord(
-                        DomainName.Parse(record.Authority.Domain), 
-                        60, 
-                        record.Value)));
-            try
-            {
-                await SendUpdate(msg);
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Error deleting DNS record");
-            }
-        }
-
+        /// <summary>
+        /// Add TSIG options and send the message to the server
+        /// </summary>
+        /// <param name="msg"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         private async Task SendUpdate(DnsUpdateMessage msg)
         {
             if (!Enum.TryParse<TSigAlgorithm>(_options.TsigKeyAlgorithm, true, out var algorithm)) 
