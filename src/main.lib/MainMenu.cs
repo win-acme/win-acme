@@ -139,9 +139,8 @@ namespace PKISharp.WACS.Host
                     () => _container.Resolve<EmailClient>().Test(), 
                     "Test email notification", "E"),
                 Choice.Create<Func<Task>>(
-                    () => UpdateAccount(RunLevel.Interactive), 
-                    "ACME account details", "A",
-                    state: !_accountManager.ListAccounts().Any() ? State.DisabledState("No account(s) configured yet.") : State.EnabledState()),
+                    () => UpdateAccount(RunLevel.Interactive),
+                    _accountManager.ListAccounts().Any() ? "ACME account details" : "Create ACME account", "A"),
                 Choice.Create<Func<Task>>(
                     () => Import(RunLevel.Interactive | RunLevel.Advanced), 
                     "Import scheduled renewals from WACS/LEWS 1.9.x", "I",
