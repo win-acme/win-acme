@@ -210,6 +210,7 @@ namespace PKISharp.WACS.Services
                 if (bcCertificate != null)
                 {
                     var bcCertificateEntry = new Bc.Pkcs.X509CertificateEntry(bcCertificate);
+                    _log.Verbose("Certificate {name} parsed", bcCertificateEntry.Certificate.SubjectDN);
                     var bcCertificateAlias = startIndex == 0 ?
                         friendlyName :
                         bcCertificate.SubjectDN.ToString();
@@ -220,13 +221,14 @@ namespace PKISharp.WACS.Services
                     // are intermediates
                     if (startIndex == 0 && pk != null)
                     {
+                        _log.Verbose($"Associating private key");
                         var bcPrivateKeyEntry = new Bc.Pkcs.AsymmetricKeyEntry(pk);
                         pfx.SetKeyEntry(bcCertificateAlias, bcPrivateKeyEntry, new[] { bcCertificateEntry });
                     }
                 }
                 else
                 {
-                    _log.Warning("PEM data at range {startIndex}..{endIndex} could not be parsed as X509Certificate", startIndex, endIndex);
+                    _log.Warning("PEM data could not be parsed as X509Certificate", startIndex, endIndex);
                 }
 
                 // This should never happen, but is a sanity check
