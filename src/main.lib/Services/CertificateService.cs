@@ -219,7 +219,7 @@ namespace PKISharp.WACS.Services
                     // Assume that the first certificate in the reponse is the main one
                     // so we associate the private key with that one. Other certificates
                     // are intermediates
-                    if (startIndex == 0 && pk != null)
+                    if (pfx.Count == 1 && pk != null)
                     {
                         _log.Verbose($"Associating private key");
                         var bcPrivateKeyEntry = new Bc.Pkcs.AsymmetricKeyEntry(pk);
