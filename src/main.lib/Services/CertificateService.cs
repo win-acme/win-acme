@@ -193,12 +193,12 @@ namespace PKISharp.WACS.Services
             const string endString = "-----END CERTIFICATE-----";
             while (true)
             {
-                startIndex = text.IndexOf(startString, startIndex);
+                startIndex = text.IndexOf(startString, startIndex, StringComparison.Ordinal);
                 if (startIndex < 0)
                 {
                     break;
                 }
-                var endIndex = text.IndexOf(endString, startIndex);
+                var endIndex = text.IndexOf(endString, startIndex, StringComparison.Ordinal);
                 if (endIndex < 0)
                 {
                     break;
