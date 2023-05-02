@@ -422,7 +422,7 @@ namespace PKISharp.WACS
             {
                 if (_accountArgs.Account != null)
                 {
-                    _log.Information("Using account {name}");
+                    _log.Information("Using account {name}", _accountArgs.Account);
                     return _accountArgs.Account;
                 }
                 return null;
