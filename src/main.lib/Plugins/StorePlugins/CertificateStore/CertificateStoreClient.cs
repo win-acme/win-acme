@@ -86,7 +86,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             imStore ??= _store;
             foreach (var cert in chain)
             {
-                if (imStore.Certificates.Find(X509FindType.FindByThumbprint, cert.Thumbprint, false) == null)
+                if (imStore.Certificates.Find(X509FindType.FindByThumbprint, cert.Thumbprint, false).Count == 0)
                 {
                     try
                     {
