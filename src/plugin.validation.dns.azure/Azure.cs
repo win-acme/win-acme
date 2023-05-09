@@ -32,6 +32,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         private ArmClient? _armClient;
         private ResourceGroupResource? _resourceGroupResource;
+        private SubscriptionResource? _subscriptionResource;
 
         private readonly AzureOptions _options;
         private readonly AzureHelpers _helpers;
@@ -184,22 +185,31 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         }
 
         /// <summary>
+        /// Get the subscription
+        /// </summary>
+        /// <returns></returns>
+        private async Task<SubscriptionResource> Subscription()
+        {
+            if (_subscriptionResource != null)
+            {
+                _subscriptionResource = _options.SubscriptionId == null
+                    ? await Client.GetDefaultSubscriptionAsync()
+                    : await Client.GetSubscriptions().GetAsync(_options.SubscriptionId);
+            }
+            if (_subscriptionResource == null)
+            {
+                throw new Exception($"Unable to find subscription {_options.SubscriptionId}");
+            }
+            return _subscriptionResource;
+        }
+
+        /// <summary>
         /// Get the resource group
         /// </summary>
         /// <returns></returns>
         private async Task<ResourceGroupResource> ResourceGroup()
         {
-            if (_resourceGroupResource != null)
-            {
-                return _resourceGroupResource;
-            }
-            var subscription = _options.SubscriptionId == null
-                ? await Client.GetDefaultSubscriptionAsync()
-                : await Client.GetSubscriptions().GetAsync(_options.SubscriptionId);
-            if (subscription == null)
-            {
-                throw new Exception($"Unable to find subscription {_options.SubscriptionId}");
-            }
+            var subscription = await Subscription();
             var resourceGroup = await subscription.GetResourceGroupAsync(_options.ResourceGroupName);
             _resourceGroupResource = resourceGroup.Value;
             return _resourceGroupResource;
@@ -212,15 +222,25 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         /// <returns></returns>
         private async Task<DnsZoneResource?> GetHostedZone(string recordName)
         {
-            var resourceGroup = await ResourceGroup();
+            var subscription = await Subscription();
 
             // Option to bypass the best match finder
             if (!string.IsNullOrEmpty(_options.HostedZone))
             {
-                return await resourceGroup.GetDnsZoneAsync(_options.HostedZone);
+                var zones = subscription.GetDnsZonesAsync();
+                await foreach (var zone in zones)
+                {
+                    if (string.Equals(zone.Data.Name, _options.HostedZone, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return zone;
+                    }
+                }
+                _log.Error("Unable to find hosted zone {name}", _options.HostedZone);
+                return null;
             }
 
             // Cache so we don't have to repeat this more than once for each renewal
+            var resourceGroup = await ResourceGroup();
             if (_hostedZones == null)
             {
                 var zones = new List<DnsZoneResource>();
