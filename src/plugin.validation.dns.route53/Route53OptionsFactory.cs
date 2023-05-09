@@ -3,6 +3,7 @@ using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
@@ -21,14 +22,20 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             GetString<Route53Arguments>(a => a.Route53AccessKeyId).
             Required();
 
+        /// <summary>
+        /// https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_iam-quotas.html
+        /// IAM name requirements
+        /// </summary>
         private ArgumentResult<string?> IamRole => _arguments.
-            GetString<Route53Arguments>(a => a.Route53IAMRole);
+            GetString<Route53Arguments>(a => a.Route53IAMRole).
+            Validate(x => Task.FromResult(!x?.Contains(':') ?? true), "ARN instead of IAM name").
+            Validate(x => Task.FromResult(Regex.Match(x ?? "", "^[A-Za-z0-9+=,.@_-]+$").Success), "invalid IAM name");
 
         public override async Task<Route53Options?> Aquire(IInputService input, RunLevel runLevel)
         {
             var options = new Route53Options
             {
-                IAMRole = await IamRole.Interactive(input, "IAM role (blank for default)").GetValue()
+                IAMRole = await IamRole.Interactive(input, "IAM role name (leave blank to use access key)").GetValue()
             };
             if (!string.IsNullOrWhiteSpace(options.IAMRole))
             {
