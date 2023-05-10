@@ -1,6 +1,7 @@
 ﻿using PKISharp.WACS.Plugins.Azure.Common;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services.Serialization;
+using System;
 using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
@@ -16,11 +17,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public string? AzureEnvironment { get; set; }
         public bool UseMsi { get; set; }
         public string? ClientId { get; set; }
+        [Obsolete]
         public string? ResourceGroupName { get; set; }
-
         [JsonPropertyName("SecretSafe")]
         public ProtectedString? Secret { get; set; }
-
         public string? SubscriptionId { get; set; }
         public string? TenantId { get; set; }
         public string? HostedZone { get; set; }

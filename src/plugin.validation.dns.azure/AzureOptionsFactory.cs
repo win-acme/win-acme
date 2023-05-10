@@ -16,13 +16,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public AzureOptionsFactory(ArgumentsInputService arguments) => _arguments = arguments;
 
-        private ArgumentResult<string?> ResourceGroupName => _arguments.
-            GetString<AzureArguments>(a => a.AzureResourceGroupName).
-            Required();
-
         private ArgumentResult<string?> SubscriptionId => _arguments.
-            GetString<AzureArguments>(a => a.AzureSubscriptionId).
-            Required();
+            GetString<AzureArguments>(a => a.AzureSubscriptionId);
 
         private ArgumentResult<string?> HostedZone => _arguments.
              GetString<AzureArguments>(a => a.AzureHostedZone);
@@ -32,7 +27,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var options = new AzureOptions();
             var common = new AzureOptionsFactoryCommon<AzureArguments>(_arguments);
             await common.Aquire(options, input);
-            options.ResourceGroupName = await ResourceGroupName.Interactive(input).GetValue();
             options.SubscriptionId = await SubscriptionId.Interactive(input).GetValue();
             options.HostedZone = await HostedZone.Interactive(input).GetValue();
             return options;
@@ -43,7 +37,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var options = new AzureOptions();
             var common = new AzureOptionsFactoryCommon<AzureArguments>(_arguments);
             await common.Default(options);
-            options.ResourceGroupName = await ResourceGroupName.GetValue();
             options.SubscriptionId = await SubscriptionId.GetValue();
             options.HostedZone = await HostedZone.GetValue();
             return options;
@@ -56,7 +49,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             {
                 yield return x;
             }
-            yield return (ResourceGroupName.Meta, options.ResourceGroupName);
             yield return (SubscriptionId.Meta, options.SubscriptionId);
             yield return (HostedZone.Meta, options.HostedZone);
         }
