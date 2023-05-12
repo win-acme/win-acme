@@ -70,7 +70,6 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\main.lib\wacs.lib.csproj" />
-		<ProjectReference Include="..\plugin.validation.dns.azure\wacs.validation.dns.azure.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
