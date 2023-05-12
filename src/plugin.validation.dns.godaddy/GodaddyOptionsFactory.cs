@@ -21,7 +21,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             Required();
 
         private ArgumentResult<ProtectedString?> ApiSecret => _arguments.
-            GetProtectedString<GodaddyArguments>(a => a.ApiSecret);
+            GetProtectedString<GodaddyArguments>(a => a.ApiSecret).
+            Required();
 
         public override async Task<GodaddyOptions?> Aquire(IInputService input, RunLevel runLevel)
         {
