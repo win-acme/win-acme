@@ -190,7 +190,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         /// <returns></returns>
         private async Task<SubscriptionResource> Subscription()
         {
-            if (_subscriptionResource != null)
+            if (_subscriptionResource == null)
             {
                 _subscriptionResource = await Client.GetDefaultSubscriptionAsync();
             }
