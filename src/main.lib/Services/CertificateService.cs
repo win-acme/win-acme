@@ -241,18 +241,28 @@ namespace PKISharp.WACS.Services
                 startIndex = endIndex;
             }
 
-            var pfxStream = new MemoryStream();
-            pfx.Save(pfxStream, null, new Bc.Security.SecureRandom());
-            pfxStream.Position = 0;
-            using var pfxStreamReader = new BinaryReader(pfxStream);
+            try
+            {
+                var tempPassword = PasswordGenerator.Generate();
+                var pfxStream = new MemoryStream();
+                pfx.Save(pfxStream, tempPassword.ToCharArray(), new Bc.Security.SecureRandom());
+                pfxStream.Position = 0;
+                using var pfxStreamReader = new BinaryReader(pfxStream);
 
-            var tempPfx = new X509Certificate2Collection();
-            tempPfx.Import(
-                pfxStreamReader.ReadBytes((int)pfxStream.Length),
-                null,
-                X509KeyStorageFlags.EphemeralKeySet |
-                X509KeyStorageFlags.Exportable);
-            return new CertificateInfo(tempPfx);
+                var tempPfx = new X509Certificate2Collection();
+                tempPfx.Import(
+                    pfxStreamReader.ReadBytes((int)pfxStream.Length),
+                    tempPassword,
+                    X509KeyStorageFlags.EphemeralKeySet |
+                    X509KeyStorageFlags.Exportable);
+                return new CertificateInfo(tempPfx);
+            } 
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Internal error parsing certificate");
+                throw;
+            }
+
         }
     }
 }
