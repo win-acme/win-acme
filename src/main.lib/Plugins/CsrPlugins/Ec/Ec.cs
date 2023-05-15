@@ -46,7 +46,10 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             var ret = "secp384r1"; // Default
             try
             {
-                var config = _settings.Security.ECCurve;
+                var config = _settings.Csr?.Ec?.CurveName ??
+#pragma warning disable CS0618
+                _settings.Security?.ECCurve;
+#pragma warning restore CS0618
                 if (config != null)
                 {
                     DerObjectIdentifier? curveOid = null;
@@ -73,6 +76,6 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             return ret;
         }
 
-        public override string GetDefaultSignatureAlgorithm() => "SHA512withECDSA";
+        public override string GetSignatureAlgorithm() => _settings.Csr?.Ec?.SignatureAlgorithm ?? "SHA512withECDSA";
     }
 }

@@ -31,13 +31,21 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         {
             var randomGenerator = new CryptoApiRandomGenerator();
             var random = new SecureRandom(randomGenerator);
-            var keyGenerationParameters = new KeyGenerationParameters(random, _settings.Security.RSAKeyBits);
+
+            var keyGenerationParameters = new KeyGenerationParameters(random,
+                _settings.Csr?.Rsa?.KeyBits ??
+#pragma warning disable CS0618
+                _settings.Security?.RSAKeyBits ??
+#pragma warning restore CS0618
+                3072);
+
             var keyPairGenerator = new RsaKeyPairGenerator();
             keyPairGenerator.Init(keyGenerationParameters);
             var subjectKeyPair = keyPairGenerator.GenerateKeyPair();
             return subjectKeyPair;
         }
 
-        public override string GetDefaultSignatureAlgorithm() => "SHA512withRSA";
+        public override string GetSignatureAlgorithm() => 
+            _settings.Csr?.Rsa?.SignatureAlgorithm ?? "SHA512withRSA";
     }
 }

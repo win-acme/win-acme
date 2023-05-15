@@ -120,20 +120,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             File.WriteAllText(cachePath, rawData.DiskValue(_settings.Security.EncryptConfig));
         }
 
-        public abstract string GetDefaultSignatureAlgorithm();
-
-        /// <summary>
-        /// Allow the options to overrule any specific algorithm
-        /// </summary>
-        /// <returns></returns>
-        private string GetSignatureAlgorithm()
-        {
-            if (!string.IsNullOrWhiteSpace(_settings.Csr.SignatureAlgorithm))
-            {
-                return _settings.Csr.SignatureAlgorithm;
-            }
-            return GetDefaultSignatureAlgorithm();
-        }
+        public abstract string GetSignatureAlgorithm();
 
         /// <summary>
         /// Get public and private keys

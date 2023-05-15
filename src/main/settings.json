@@ -57,8 +57,6 @@
     "ComputerName": null
   },
   "Security": {
-    "RSAKeyBits": 3072,
-    "ECCurve": "secp384r1",
     "EncryptConfig": true,
     "FriendlyNameDateTimeStamp": true
   },
@@ -87,7 +85,14 @@
   },
   "Csr": {
     "DefaultCsr": null,
-    "SignatureAlgorithm": null
+    "Rsa": {
+      "KeyBits": 3072,
+      "SignatureAlgorithm": "SHA512withRSA"
+    },
+    "Ec": {
+      "CurveName": "secp384r1",
+      "SignatureAlgorithm": "SHA512withECDSA"
+    }
   },
   "Store": {
     "DefaultStore": null,

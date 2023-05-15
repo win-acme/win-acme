@@ -337,17 +337,15 @@ namespace PKISharp.WACS.Configuration.Settings
 
     public class SecuritySettings
     {
-        /// <summary>
-        /// The key size to sign the certificate with. 
-        /// Minimum is 2048.
-        /// </summary>
-        public int RSAKeyBits { get; set; }
-        /// <summary>
-        /// The curve to use for EC certificates.
-        /// </summary>
+        [Obsolete("Use Csr.Rsa.KeySize")]
+        public int? RSAKeyBits { get; set; }
+
+        [Obsolete("Use Csr.Ec.CurveName")]
         public string? ECCurve { get; set; }
-        [Obsolete("Use ")]
+
+        [Obsolete("Use Store.CertificateStore.PrivateKeyExportable")]
         public bool? PrivateKeyExportable { get; set; }
+
         /// <summary>
         /// Uses Microsoft Data Protection API to encrypt 
         /// sensitive parts of the configuration, e.g. 
@@ -462,6 +460,36 @@ namespace PKISharp.WACS.Configuration.Settings
         /// Default plugin to select 
         /// </summary>
         public string? DefaultCsr { get; set; }
+        /// <summary>
+        /// RSA key settings
+        /// </summary>
+        public RsaSettings? Rsa { get; set; }
+        /// <summary>
+        /// EC key settings
+        /// </summary>
+        public EcSettings? Ec { get; set; }
+    }
+
+    public class RsaSettings
+    {
+        /// <summary>
+        /// The key size to sign the certificate with. 
+        /// Minimum is 2048.
+        /// </summary>
+        public int? KeyBits { get; set; }
+        /// <summary>
+        /// CSR signature algorithm, to be picked from 
+        /// https://github.com/bcgit/bc-csharp/blob/master/crypto/src/cms/CMSSignedGenerator.cs
+        /// </summary>
+        public string? SignatureAlgorithm { get; set; }
+    }
+
+    public class EcSettings
+    {
+        /// <summary>
+        /// The curve to use for EC certificates.
+        /// </summary>
+        public string? CurveName { get; set; }
         /// <summary>
         /// CSR signature algorithm, to be picked from 
         /// https://github.com/bcgit/bc-csharp/blob/master/crypto/src/cms/CMSSignedGenerator.cs
