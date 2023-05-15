@@ -73,6 +73,6 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             return ret;
         }
 
-        public override string GetSignatureAlgorithm() => "SHA512withECDSA";
+        public override string GetDefaultSignatureAlgorithm() => "SHA512withECDSA";
     }
 }

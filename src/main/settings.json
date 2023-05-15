@@ -86,7 +86,8 @@
     "DefaultOrder": null
   },
   "Csr": {
-    "DefaultCsr": null
+    "DefaultCsr": null,
+    "SignatureAlgorithm": null
   },
   "Store": {
     "DefaultStore": null,

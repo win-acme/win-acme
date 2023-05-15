@@ -38,6 +38,6 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             return subjectKeyPair;
         }
 
-        public override string GetSignatureAlgorithm() => "SHA512withRSA";
+        public override string GetDefaultSignatureAlgorithm() => "SHA512withRSA";
     }
 }
