@@ -62,9 +62,7 @@
   },
   "Script": {
     "Timeout": 600,
-    "PowershellExecutablePath": "powershell.exe",
-    "PreExecutionScript": null,
-    "PostExecutionScript": null
+    "PowershellExecutablePath": "powershell.exe"
   },
   "Source": {
     "DefaultSource": null
