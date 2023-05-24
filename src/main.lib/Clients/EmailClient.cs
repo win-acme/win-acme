@@ -1,9 +1,11 @@
-﻿using MailKit.Net.Smtp;
+﻿using MailKit;
+using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -74,7 +76,9 @@ namespace PKISharp.WACS.Clients
             {
                 return false;
             }
-            using var client = new SmtpClient();
+            using var logStream = new MemoryStream();
+            var logger = new ProtocolLogger(logStream);
+            using var client = new SmtpClient(logger);
             try
             {
                 var options = SecureSocketOptions.None;
@@ -132,6 +136,13 @@ namespace PKISharp.WACS.Clients
             catch (Exception ex)
             {
                 _log.Error(ex, "Problem sending e-mail");
+                logStream.Position = 0;
+                var logReader = new StreamReader(logStream);
+                var logOutput = logReader.ReadToEnd();
+                if (!string.IsNullOrWhiteSpace(logOutput))
+                {
+                    _log.Debug(logOutput);
+                }
                 return false;
             }
             return true;
