@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.Configuration.Arguments;
+﻿using PKISharp.WACS.Clients.Acme;
+using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
 using System;
@@ -16,6 +17,8 @@ namespace PKISharp.WACS
         private readonly MainArguments _args;
         private readonly DueDateStaticService _dueDate;
         private readonly IRenewalRevoker _renewalRevoker;
+        private readonly AcmeClientManager _clientManager;
+        private readonly AccountArguments _accountArguments;
 
         public Unattended(  
             MainArguments args,
@@ -23,7 +26,9 @@ namespace PKISharp.WACS
             IInputService input, 
             ILogService log,
             DueDateStaticService dueDate,
-            IRenewalRevoker renewalRevoker)
+            IRenewalRevoker renewalRevoker,
+            AccountArguments accountArguments,
+            AcmeClientManager clientManager)
         {
             _renewalStore = renewalStore;
             _args = args;
@@ -31,6 +36,8 @@ namespace PKISharp.WACS
             _log = log;
             _dueDate = dueDate;
             _renewalRevoker = renewalRevoker;
+            _clientManager = clientManager;
+            _accountArguments = accountArguments;
         }
 
         /// <summary>
@@ -70,6 +77,11 @@ namespace PKISharp.WACS
             await _renewalRevoker.RevokeCertificates(renewals);
         }
 
+        /// <summary>
+        /// Register new ACME account from the command line
+        /// </summary>
+        /// <returns></returns>
+        internal async Task Register() => await _clientManager.GetClient(_accountArguments.Account);
 
         /// <summary>
         /// Filters for unattended mode

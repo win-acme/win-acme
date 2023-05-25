@@ -57,6 +57,9 @@ namespace PKISharp.WACS.Configuration.Arguments
 
         // Commands
 
+        [CommandLine(Description = "Create an ACME service account.")]
+        public bool Register { get; set; }
+
         [CommandLine(Description = "Cancel renewal specified by the --friendlyname or --id arguments.")]
         public bool Cancel { get; set; }
 

@@ -144,6 +144,11 @@ namespace PKISharp.WACS.Host
                         await _unattended.Revoke();
                         await CloseDefault();
                     }
+                    else if (_args.Register)
+                    {
+                        await _unattended.Register();
+                        await CloseDefault();
+                    }
                     else if (_args.Renew)
                     {
                         var runLevel = RunLevel.Unattended;
