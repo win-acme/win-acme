@@ -28,6 +28,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
 
         internal override AsymmetricCipherKeyPair GenerateNewKeyPair()
         {
+            _log.Verbose("Generating private key using curve {curve}", curve);
             var generator = new ECKeyPairGenerator();
             var curve = GetEcCurve();
             var genParam = new ECKeyGenerationParameters(
