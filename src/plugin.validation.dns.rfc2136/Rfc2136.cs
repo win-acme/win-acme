@@ -73,6 +73,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                         record.Value)));
             try
             {
+                _log.Verbose("Creating record {name} in zone {zone}", record.Authority.Domain, zone);
                 await SendUpdate(msg);
                 return true;
             } 
@@ -105,6 +106,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             msg.Updates.Add(delete);
             try
             {
+                _log.Verbose("Deleting record {name} in zone {zone}", record.Authority.Domain, zone);
                 await SendUpdate(msg);
             }
             catch (Exception ex)
@@ -137,6 +139,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                     }
                     ipAddress = lookup.First();
                 }
+                _log.Verbose("Connnecting to DNS server at {ipAddress}:{port} using key {key}", ipAddress, port, _options.TsigKeyName);
                 _client = new ArDnsClient(ipAddress, port);
             }
             return _client;
@@ -166,6 +169,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 Convert.FromBase64String(_key));
 
             var client = await GetClient();
+            _log.Verbose("Send DNS update transaction {TransactionID}");
             var ret = await client.SendUpdateAsync(msg);
             if (ret == null || ret.ReturnCode != ReturnCode.NoError)
             {
