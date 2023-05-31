@@ -21,11 +21,19 @@ namespace PKISharp.WACS.DomainObjects
         {
             get
             {
-                if (_expireDate != null && _expireDate.HasValue)
+                if (_expireDate != null && 
+                    _expireDate.HasValue && 
+                    _expireDate != DateTime.MinValue)
                 {
                     return _expireDate.Value;
                 }
-                return OrderResults?.Select(x => x.ExpireDate).Min();
+                return OrderResults?.
+                    Where(x => 
+                        x.ExpireDate != null && 
+                        _expireDate.HasValue && 
+                        _expireDate != DateTime.MinValue).
+                    Select(x => x.ExpireDate).
+                    Min();
             }
             [Obsolete("Only for legacy")]
             set => _expireDate = value;
