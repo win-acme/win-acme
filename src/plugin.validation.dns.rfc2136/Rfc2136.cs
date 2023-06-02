@@ -132,7 +132,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                     {
                         throw new InvalidOperationException("Missing ServerHost");
                     }
-                    var lookup = await _lookupClientProvider.GetDefaultClient(0).GetIps(_options.ServerHost);
+                    var lookup = await _lookupClientProvider.
+                        GetSystemClient().
+                        GetIps(_options.ServerHost);
                     if (!lookup.Any())
                     {
                         throw new Exception($"Unable to find IP for {_options.ServerHost}");

@@ -1,7 +1,6 @@
 ﻿using DnsClient;
 using DnsClient.Protocol;
 using PKISharp.WACS.Services;
-using Serilog.Context;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -13,25 +12,50 @@ namespace PKISharp.WACS.Clients.DNS
     public class LookupClientWrapper
     {
         private readonly ILogService _log;
-        private readonly LookupClientProvider _provider;
+        private readonly LookupClientWrapper _system;
         private readonly IPAddress? _ipAddress;
+        private readonly ILookupClient _lookupClient;
 
-        private ILookupClient _lookupClient { get; set; }
+        private bool? _connected = null;
         public string IpAddress => _ipAddress?.ToString() ?? "[System]";
 
-        public LookupClientWrapper(ILogService logService, IPAddress? ipAddress, LookupClientProvider provider)
+        /// <summary>
+        /// Construct system DNS
+        /// </summary>
+        /// <param name="logService"></param>
+        /// <param name="ipAddress"></param>
+        /// <param name="system"></param>
+        public LookupClientWrapper(ILogService logService, IEnumerable<IPAddress>? ipAddress)
         {
-            _ipAddress = ipAddress;
-            var clientOptions = _ipAddress != null ?
-                new LookupClientOptions(new[] { _ipAddress }) : 
+            _ipAddress = ipAddress?.FirstOrDefault();
+            var clientOptions = ipAddress != null && ipAddress.Any() ?
+                new LookupClientOptions(ipAddress.ToArray()) :
                 new LookupClientOptions();
             clientOptions.UseCache = false;
             _lookupClient = new LookupClient(clientOptions);
             _log = logService;
-            _provider = provider;
+            _system = this;
         }
 
-        public async Task<IEnumerable<IPAddress>?> GetNameServers(string host, int round)
+        /// <summary>
+        /// Regular wrapper for specific name server
+        /// </summary>
+        /// <param name="logService"></param>
+        /// <param name="ipAddress"></param>
+        /// <param name="system"></param>
+        public LookupClientWrapper(ILogService logService, IPAddress ipAddress, LookupClientWrapper system)
+        {
+            _ipAddress = ipAddress;
+            var clientOptions = new LookupClientOptions(new[] { _ipAddress })
+            {
+                UseCache = false
+            };
+            _lookupClient = new LookupClient(clientOptions);
+            _log = logService;
+            _system = system;
+        }
+
+        public async Task<IEnumerable<IPAddress>> GetNameServers(string host)
         {
             host = host.TrimEnd('.');
             _log.Debug("Querying name servers for {part}", host);
@@ -44,32 +68,50 @@ namespace PKISharp.WACS.Clients.DNS
             }
             if (nsRecords.Any())
             {
-                return GetIpAddresses(nsRecords.Select(n => n.NSDName.Value), round);
+                var nsHosts = nsRecords.Select(n => n.NSDName.Value);
+                _log.Verbose("Found nsRecords: {nsRecord}", nsHosts);
+                return GetIpAddresses(nsHosts);
             }
-            //if (cnameRecords.Any())
-            //{
-            //    var client = await _provider.GetClients(cnameRecords.First().CanonicalName.Value);
-            //    return await _provider.GetAuthoritativeNameServersForDomain(cnameRecords.First().CanonicalName.Value, round);
-            //}
-            return null;
+            return new List<IPAddress>();
         }
 
-        private IEnumerable<IPAddress> GetIpAddresses(IEnumerable<string> hosts, int round)
+        private IEnumerable<IPAddress> GetIpAddresses(IEnumerable<string> hosts)
         {
+            var ret = new List<IPAddress>();    
             foreach (var nsRecord in hosts)
             {
-                using (LogContext.PushProperty("NameServer", nsRecord))
+                _log.Verbose("Querying IP for name server {nsRecord}", nsRecord);
+                var aResponse = _system._lookupClient.Query(nsRecord, QueryType.A);
+                var nameServerIp = aResponse.Answers.ARecords().FirstOrDefault()?.Address;
+                if (nameServerIp != null)
                 {
-                    _log.Verbose("Querying IP for name server");
-                    var aResponse = _provider.GetDefaultClient(round)._lookupClient.Query(nsRecord, QueryType.A);
-                    var nameServerIp = aResponse.Answers.ARecords().FirstOrDefault()?.Address;
-                    if (nameServerIp != null)
-                    {
-                        _log.Verbose("Name server IP {NameServerIpAddress} identified", nameServerIp);
-                        yield return nameServerIp;
-                    }
+                    ret.Add(nameServerIp);
+                    _log.Verbose("Name server IP {NameServerIpAddress} identified", nameServerIp);
                 }
             }
+            return ret;
+        }
+
+        /// <summary>
+        /// Verify that we can connect to the main server
+        /// </summary>
+        /// <returns></returns>
+        public async Task<bool> Connect()
+        {
+            if (_connected == null) 
+            {
+                try
+                {
+                    await GetTxtRecords("www.example.com");
+                    _connected = true;
+                }
+                catch
+                {
+                    _log.Warning("Error connection to {ip}", IpAddress);
+                    _connected = false;
+                }
+            }
+            return _connected == true;
         }
 
         public async Task<IEnumerable<string>> GetTxtRecords(string host)

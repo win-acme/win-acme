@@ -1,6 +1,5 @@
 ﻿using DnsClient;
 using PKISharp.WACS.Services;
-using Serilog.Context;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -12,10 +11,10 @@ namespace PKISharp.WACS.Clients.DNS
 {
     public class LookupClientProvider
     {
-        private readonly List<IPAddress> _defaultNs;
         private readonly ConcurrentDictionary<string, IEnumerable<IPAddress>> _authoritativeNs;
         private readonly ConcurrentDictionary<string, string?> _cnames;
         private readonly ConcurrentDictionary<IPAddress, LookupClientWrapper> _lookupClients;
+        private readonly LookupClientWrapper _systemClient;
 
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
@@ -32,15 +31,14 @@ namespace PKISharp.WACS.Clients.DNS
             _authoritativeNs = new ConcurrentDictionary<string, IEnumerable<IPAddress>>();
             _cnames = new ConcurrentDictionary<string, string?>();
             _lookupClients = new ConcurrentDictionary<IPAddress, LookupClientWrapper>();
-            _defaultNs = ParseDefaultClients();
-
+            _systemClient = new LookupClientWrapper(_log, ParseDefaultClients());
         }
 
         /// <summary>
         /// Convert configured servers to a list of IP addresses
         /// </summary>
         /// <returns></returns>
-        private List<IPAddress> ParseDefaultClients()
+        private List<IPAddress>? ParseDefaultClients()
         {
             var ret = new List<IPAddress>();
             var items = _settings.Validation.DnsServers;
@@ -58,7 +56,7 @@ namespace PKISharp.WACS.Clients.DNS
                         if (item.Equals("[System]", StringComparison.OrdinalIgnoreCase))
                         {
                             _log.Debug("Adding local system default as DNS server");
-                            ret.Add(new IPAddress(0));
+                            return null;
                         }
                         else
                         {
@@ -81,9 +79,126 @@ namespace PKISharp.WACS.Clients.DNS
             if (ret.Count == 0)
             {
                 _log.Debug("Adding local system default as DNS server");
-                ret.Add(new IPAddress(0));
+                return null;
             }
             return ret;
+        }
+
+        /// <summary>
+        /// Get client for the default DNS servers
+        /// </summary>
+        /// <returns></returns>
+        public LookupClientWrapper GetSystemClient() => _systemClient;
+
+        /// <summary>
+        /// Get cached list of authoritative name server ip addresses
+        /// </summary>
+        /// <param name="domainName"></param>
+        /// <param name="round"></param>
+        /// <returns></returns>
+        public async Task<DnsLookupResult> GetAuthority(string domainName, bool followCnames = true, DnsLookupResult? from = null)
+        {
+            var result = await Produce(domainName, from);
+            if (followCnames)
+            {
+                string? cname;
+                if (!_cnames.ContainsKey(domainName))
+                {
+                    var pickNs = result.Nameservers.First();
+                    _log.Verbose("Query CNAME for {domainName} at {pickNs}", domainName, pickNs.IpAddress);
+                    cname = await pickNs.GetCname(domainName);
+                    _cnames.TryAdd(domainName, cname);
+                }
+                else
+                {
+                    cname = _cnames[domainName];
+                }
+                if (cname != null)
+                {
+                    _log.Verbose("Following CNAME from {domainName} to {cname}", domainName, cname);
+                    return await GetAuthority(cname, true, result);
+                }
+            }
+            return result;
+        }
+
+        private async Task<IEnumerable<IPAddress>> GetNameServers(string domainName)
+        {
+            IEnumerable<IPAddress>? backup = null;
+            try
+            {
+                // Example: _acme-challenge.sub.example.co.uk
+                domainName = domainName.TrimEnd('.');
+
+                // Subresult cache
+                if (_authoritativeNs.TryGetValue(domainName, out var cached))
+                {
+                    return cached;
+                }
+
+                // Root domain is queried from the system client
+                var rootDomain = _domainParser.GetRegisterableDomain(domainName);
+
+                IEnumerable<IPAddress>? unverified;
+                if (domainName == rootDomain)
+                {
+                    unverified = await _systemClient.GetNameServers(domainName);
+                    if (!unverified.Any())
+                    {
+                        _log.Warning("Unable to find any name servers for {domainName}", domainName);
+                        return unverified;
+                    }
+                }
+                else
+                {
+                    // Get name servers from one level up, e.g. 
+                    // if we are asked about a.b.c.d, we should
+                    // get the name servers for b.c.d
+                    var levelUp = string.Join('.', domainName.Split('.').Skip(1));
+                    backup = await GetNameServers(levelUp);
+                    LookupClientWrapper specifiedClient;
+                    if (!backup.Any())
+                    {
+                        specifiedClient = _systemClient;
+                    }
+                    else
+                    {
+                        specifiedClient = Produce(backup.First());
+                    }
+                    unverified = await specifiedClient.GetNameServers(domainName);
+                }
+
+                // Test if the name servers are usable
+                var verified = new List<IPAddress>();
+                foreach (var candidate in unverified)
+                {
+                    var testClient = Produce(candidate);
+                    if (await testClient.Connect())
+                    {
+                        verified.Add(candidate);
+                    }
+                }     
+                if (!verified.Any())
+                {
+                    if (unverified.Any())
+                    {
+                        _log.Warning("Unable to contact name servers for {domainName}", domainName);
+                    }
+                    else
+                    {
+                        _log.Verbose("No specific name servers identified for {domainName}", domainName);
+                    }
+                    verified = backup?.ToList() ?? new List<IPAddress>();
+                }
+                _authoritativeNs.TryAdd(domainName, verified);
+            }
+            catch (Exception ex)
+            {
+                _log.Warning("Unexpected DNS error while checking {domainName}: {message}", domainName, ex.Message);
+                _log.Verbose(ex.StackTrace ?? "No stacktrace");
+                _authoritativeNs.TryAdd(domainName, new List<IPAddress>());
+            }
+            return _authoritativeNs[domainName];
         }
 
         /// <summary>
@@ -92,124 +207,21 @@ namespace PKISharp.WACS.Clients.DNS
         /// </summary>
         /// <param name="ip"></param>
         /// <returns></returns>
-        private LookupClientWrapper Produce(IPAddress ip) => _lookupClients.GetOrAdd(ip, (ip) => new LookupClientWrapper(_log, ip.Equals(new IPAddress(0)) ? null : ip, this));
+        private LookupClientWrapper Produce(IPAddress ip) => _lookupClients.GetOrAdd(ip, (ip) => new LookupClientWrapper(_log, ip, _systemClient));
 
         /// <summary>
-        /// Get clients for all default DNS servers
+        /// Produce a DnsLookupResult
         /// </summary>
+        /// <param name="key"></param>
+        /// <param name="parent"></param>
         /// <returns></returns>
-        public List<LookupClientWrapper> GetDefaultClients() => _defaultNs.Select(x => Produce(x)).ToList();
-
-        /// <summary>
-        /// The default <see cref="LookupClient"/>. Internally uses your local network DNS.
-        /// </summary>
-        public LookupClientWrapper GetDefaultClient(int round)
+        private async Task<DnsLookupResult> Produce(string key, DnsLookupResult? parent = null)
         {
-            var index = round % GetDefaultClients().Count;
-            var ret = GetDefaultClients().ElementAt(index);
-            return ret;
+            var nameServers = await GetNameServers(key);
+            var clients = nameServers.Any() ?
+                nameServers.Select(Produce) :
+                new[] { _systemClient };
+            return new(key, clients, parent);
         }
-
-        public class DnsLookupResult
-        {
-            public DnsLookupResult(string domain, IEnumerable<LookupClientWrapper> nameServers, DnsLookupResult? cnameFrom = null)
-            {
-                Nameservers = nameServers;
-                Domain = domain;
-                From = cnameFrom;
-            }
-
-            public IEnumerable<LookupClientWrapper> Nameservers { get; set; }
-            public string Domain { get; set; }
-            public DnsLookupResult? From { get; set; }
-        }
-
-        /// <summary>
-        /// Get cached list of authoritative name server ip addresses
-        /// </summary>
-        /// <param name="domainName"></param>
-        /// <param name="round"></param>
-        /// <returns></returns>
-        public async Task<DnsLookupResult> GetAuthority(string domainName, int round = 0, bool followCnames = true, DnsLookupResult? from = null)
-        {
-            var key = domainName.ToLower().TrimEnd('.');
-            try
-            {
-                // Example: _acme-challenge.sub.example.co.uk
-                domainName = domainName.TrimEnd('.');
-
-                // First domain we should try to ask is the tld (e.g. example.co.uk)
-                var rootDomain = _domainParser.GetRegisterableDomain(domainName);
-                var testZone = rootDomain;
-                var client = GetDefaultClient(round);
-
-                // Other sub domains we should ask:
-                // 1. example
-                // 1. sub
-                // 2. _acme-challenge
-                var remainingParts = domainName.Substring(0, domainName.LastIndexOf(rootDomain))
-                    .Trim('.').Split('.')
-                    .Where(x => !string.IsNullOrEmpty(x));
-                remainingParts = remainingParts.Reverse();
-
-                var digDeeper = true;
-                IEnumerable<IPAddress>? ipSet = null;
-                do
-                {
-                    // Partial result cachign
-                    if (!_authoritativeNs.ContainsKey(testZone))
-                    {
-                        _log.Verbose("Querying server {server} about {part}", client.IpAddress, testZone);
-                        using (LogContext.PushProperty("Domain", testZone))
-                        {
-                            var tempResult = await client.GetNameServers(testZone, round);
-                            _authoritativeNs.TryAdd(testZone, tempResult?.ToList() ?? ipSet ?? _defaultNs);
-                        }
-                    }
-                    ipSet = _authoritativeNs[testZone];
-                    client = Produce(ipSet.OrderBy(x => Guid.NewGuid()).First());  
-                        
-                    // CNAME only valid for full domain. Subdomains may be 
-                    // regular records again
-                    if (followCnames && testZone == key)
-                    {
-                        var cname = default(string?);
-                        if (!_cnames.ContainsKey(key))
-                        {
-                            _cnames.TryAdd(key, await client.GetCname(testZone));
-                        } 
-                        cname = _cnames[key];
-                        if (cname != null)
-                        {                          
-                            return await GetAuthority(cname, round, true, Produce(key, from));
-                        }
-                    }
-       
-                    if (remainingParts.Any())
-                    {
-                        testZone = $"{remainingParts.First()}.{testZone}";
-                        remainingParts = remainingParts.Skip(1).ToArray();
-                    }
-                    else
-                    {
-                        digDeeper = false;
-                    }
-                }
-                while (digDeeper);
-
-                if (ipSet == null)
-                {
-                    throw new Exception("No results");
-                }
-            }
-            catch (Exception ex)
-            {
-                _log.Warning("Unable to find or contact authoritative name servers for {domainName}: {message}", domainName, ex.Message);
-                _authoritativeNs.TryAdd(key, _defaultNs);
-            }
-            return Produce(key, from);
-        }
-
-        private DnsLookupResult Produce(string key, DnsLookupResult? parent = null) => new(key, _authoritativeNs[key].Select(ip => Produce(ip)), parent);
     }
 }

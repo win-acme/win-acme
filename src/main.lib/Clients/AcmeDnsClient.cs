@@ -105,10 +105,9 @@ namespace PKISharp.WACS.Clients
 
         private async Task<bool> VerifyRegistration(string domain, string fullDomain, bool interactive)
         {
-            var round = 0;
             do
             {
-                if (await VerifyCname(domain, fullDomain, round++))
+                if (await VerifyCname(domain, fullDomain))
                 {
                     return true;
                 }
@@ -133,11 +132,11 @@ namespace PKISharp.WACS.Clients
         /// <param name="domain"></param>
         /// <param name="cname"></param>
         /// <returns></returns>
-        private async Task<bool> VerifyCname(string domain, string expected, int round)
+        private async Task<bool> VerifyCname(string domain, string expected)
         {
             try
             {
-                var authority = await _dnsClient.GetAuthority(domain, round, false);
+                var authority = await _dnsClient.GetAuthority(domain, false);
                 var result = authority.Nameservers.ToList();
                 _log.Debug("Configuration will now be checked at name servers: {address}",
                     string.Join(", ", result.Select(x => x.IpAddress)));
@@ -223,7 +222,7 @@ namespace PKISharp.WACS.Clients
                 _log.Error("Registration for domain {domain} appears invalid", domain);
                 return false;
             }
-            if (!await VerifyCname(domain, reg.Fulldomain, 0))
+            if (!await VerifyCname(domain, reg.Fulldomain))
             {
                 _log.Warning("Registration for domain {domain} appears invalid", domain);
             }
