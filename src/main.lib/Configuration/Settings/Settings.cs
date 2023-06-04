@@ -104,7 +104,7 @@ namespace PKISharp.WACS.Configuration.Settings
         /// If there are alternate certificate, select 
         /// which issuer is preferred
         /// </summary>
-        public string? PreferredIssuer { get; set; }
+        public string? PreferredIssuer { get; set; }        
     }
 
     /// <summary>
@@ -452,6 +452,11 @@ namespace PKISharp.WACS.Configuration.Settings
         /// command line
         /// </summary>
         public string? DefaultPlugin { get; set; }
+        /// <summary>
+        /// Amount of time (in days) that ordered 
+        /// certificates should remain valid
+        /// </summary>
+        public int? DefaultValidDays { get; set; } = null;
     }
 
     public class CsrSettings

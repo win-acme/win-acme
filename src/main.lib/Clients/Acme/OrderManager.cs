@@ -182,9 +182,17 @@ namespace PKISharp.WACS.Clients.Acme
                     commonName = identifiers.First();
                 }
 
+                // Determine notAfter value (unsupported by Let's
+                // Encrypt at this time, but should work at Sectigo
+                // and possibly others
+                var validDays = _settings.Order.DefaultValidDays;
+                var notAfter = validDays != null ? 
+                    DateTime.Now.AddDays(validDays.Value) : 
+                    (DateTime?)null;
+
                 // Create the order
-                _log.Verbose("Creating order for identifiers: {identifiers}", identifiers.Select(x => x.Value));
-                var order = await client.CreateOrder(identifiers);
+                _log.Verbose("Creating order for identifiers: {identifiers} (notAfter: {notAfter})", identifiers.Select(x => x.Value), notAfter);
+                var order = await client.CreateOrder(identifiers, notAfter);
                 if (order.Payload.Error != default)
                 {
                     _log.Error("Failed to create order {url}: {detail}", order.OrderUrl, order.Payload.Error.Detail);

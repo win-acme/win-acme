@@ -70,7 +70,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// <param name="identifiers"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        internal async Task<AcmeOrderDetails> CreateOrder(IEnumerable<Identifier> identifiers)
+        internal async Task<AcmeOrderDetails> CreateOrder(IEnumerable<Identifier> identifiers, DateTime? notAfter)
         {
             var acmeIdentifiers = identifiers.Select(i => new AcmeIdentifier()
             {
@@ -82,7 +82,7 @@ namespace PKISharp.WACS.Clients.Acme
                 },
                 Value = i.Value
             });
-            return await _client.Retry(() => _client.CreateOrderAsync(acmeIdentifiers), _log);
+            return await _client.Retry(() => _client.CreateOrderAsync(acmeIdentifiers, notAfter: notAfter), _log);
         }
 
         /// <summary>
