@@ -6,10 +6,12 @@ using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Runtime.Versioning;
+using System.Security.Policy;
 using System.Threading.Tasks;
 using ArDnsClient = ARSoft.Tools.Net.Dns.DnsClient;
 
@@ -29,6 +31,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         private readonly Rfc2136Options _options;
         private readonly LookupClientProvider _lookupClientProvider;
         private readonly DomainParseService _domainParser;
+        private readonly Dictionary<string, string> _zoneMap = new();
         private ArDnsClient? _client;
 
         public Rfc2136(
@@ -54,7 +57,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         /// <summary>
         /// Allow multiple validation at once when DisableMultiThreading = false
         /// </summary>
-        public override ParallelOperations Parallelism => ParallelOperations.Answer;
+        public override ParallelOperations Parallelism => ParallelOperations.Answer | ParallelOperations.Reuse;
 
         /// <summary>
         /// Create record using AddRecordUpdate message
@@ -63,25 +66,55 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         /// <returns></returns>
         public override async Task<bool> CreateRecord(DnsValidationRecord record)
         {
-            var zone = _domainParser.GetRegisterableDomain(record.Context.Identifier);
-            var msg = new DnsUpdateMessage { ZoneName = DomainName.Parse(zone) };
-            msg.Updates.Add(
-                new AddRecordUpdate(
-                    new TxtRecord(
-                        DomainName.Parse(record.Authority.Domain),
-                        60,
-                        record.Value)));
-            try
+            var domain = record.Authority.Domain;
+            var topZone = _zoneMap.ContainsKey(domain) ? 
+                _zoneMap[domain] : 
+                _domainParser.GetRegisterableDomain(domain);
+            var subDomains = domain.
+                Split(".").
+                SkipLast(topZone.Split(".").Length).
+                ToList();
+
+            var currentZone = topZone;
+            while (true)
             {
-                _log.Verbose("Creating record {name} in zone {zone}", record.Authority.Domain, zone);
-                await SendUpdate(msg);
-                return true;
-            } 
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Error creating DNS record");
-                return false;
-            }
+                var msg = new DnsUpdateMessage { ZoneName = DomainName.Parse(currentZone) };
+                msg.Updates.Add(
+                    new AddRecordUpdate(
+                        new TxtRecord(
+                            DomainName.Parse(domain),
+                            60,
+                            record.Value)));
+                try
+                {
+                    _log.Verbose("Attempt to create {domain} in zone {zone}", domain, currentZone);
+                    await SendUpdate(msg);
+
+                    // Cache succesful zone result after succesful
+                    // update so that we don't have to retry again
+                    // for subsequent adds and deletes.
+                    if (!_zoneMap.ContainsKey(domain))
+                    {
+                        _zoneMap.Add(domain, currentZone);
+                    }
+
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    _log.Debug("Error creating {domain} in zone {zone}: {ex}", domain, currentZone, ex.Message);
+                }
+
+                if (subDomains.Any())
+                {
+                    currentZone = $"{subDomains.Last()}.{currentZone}";
+                    subDomains.RemoveAt(subDomains.Count - 1);
+                }
+                else
+                {
+                    return false;
+                }
+            }       
         }
 
         /// <summary>
@@ -91,9 +124,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         /// <returns></returns>
         public override async Task DeleteRecord(DnsValidationRecord record)
         {
-            var zone = _domainParser.GetRegisterableDomain(record.Context.Identifier);
-            var msg = new DnsUpdateMessage { ZoneName = DomainName.Parse(zone) };
-            var txtRecord = new TxtRecord(DomainName.Parse(record.Authority.Domain), 0, record.Value);
+            var domain = record.Authority.Domain;
+            var topZone = _zoneMap.ContainsKey(domain) ?
+                _zoneMap[domain] :
+                _domainParser.GetRegisterableDomain(domain);
+            var msg = new DnsUpdateMessage { ZoneName = DomainName.Parse(topZone) };
+            var txtRecord = new TxtRecord(DomainName.Parse(domain), 0, record.Value);
 
             // Work around bug https://github.com/alexreinert/ARSoft.Tools.Net/issues/28
             _ = typeof(TxtRecord).InvokeMember(
@@ -106,7 +142,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             msg.Updates.Add(delete);
             try
             {
-                _log.Verbose("Deleting record {name} in zone {zone}", record.Authority.Domain, zone);
+                _log.Verbose("Deleting record {name} in zone {zone}", record.Authority.Domain, topZone);
                 await SendUpdate(msg);
             }
             catch (Exception ex)
