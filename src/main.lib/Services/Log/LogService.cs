@@ -2,6 +2,7 @@
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
+using Serilog.Settings.Configuration;
 using Serilog.Sinks.SystemConsole.Themes;
 using System;
 using System.Collections.Generic;
@@ -85,7 +86,7 @@ namespace PKISharp.WACS.Services
                     .MinimumLevel.ControlledBy(_levelSwitch)
                     .Enrich.FromLogContext()
                     .WriteTo.EventLog("win-acme", manageEventSource: true)
-                    .ReadFrom.Configuration(_eventConfig, "event")
+                    .ReadFrom.Configuration(_eventConfig, new ConfigurationReaderOptions() { SectionName = "event" })
                     .CreateLogger();
             }
             catch (Exception ex)
@@ -143,7 +144,7 @@ namespace PKISharp.WACS.Services
                         defaultPath, 
                         rollingInterval: defaultRollingInterval,
                         retainedFileCountLimit: defaultRetainedFileCountLimit)
-                    .ReadFrom.Configuration(fileConfig, "disk")
+                    .ReadFrom.Configuration(fileConfig, new ConfigurationReaderOptions() { SectionName = "disk" })
                     .CreateLogger();
             }
             catch (Exception ex)
