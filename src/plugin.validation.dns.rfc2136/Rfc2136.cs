@@ -130,14 +130,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 _domainParser.GetRegisterableDomain(domain);
             var msg = new DnsUpdateMessage { ZoneName = DomainName.Parse(topZone) };
             var txtRecord = new TxtRecord(DomainName.Parse(domain), 0, record.Value);
-
-            // Work around bug https://github.com/alexreinert/ARSoft.Tools.Net/issues/28
-            _ = typeof(TxtRecord).InvokeMember(
-                nameof(txtRecord.RecordClass),
-                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.SetProperty | BindingFlags.Instance,
-                null,
-                txtRecord,
-                new object[] { RecordClass.None });
             var delete = new DeleteRecordUpdate(txtRecord);
             msg.Updates.Add(delete);
             try
