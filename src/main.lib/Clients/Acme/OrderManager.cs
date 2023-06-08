@@ -186,8 +186,12 @@ namespace PKISharp.WACS.Clients.Acme
                 // Encrypt at this time, but should work at Sectigo
                 // and possibly others
                 var validDays = _settings.Order.DefaultValidDays;
-                var notAfter = validDays != null ? 
-                    DateTime.Now.AddDays(validDays.Value) : 
+                // Certificates use UTC 
+                var now = DateTime.UtcNow; 
+                // We don't want milliseconds/ticks
+                var nowRound = new DateTime(now.Year, now.Month, now.Day, now.Hour, 0, 0, now.Kind);
+                var notAfter = validDays != null ?
+                    nowRound.AddDays(validDays.Value) : 
                     (DateTime?)null;
 
                 // Create the order
