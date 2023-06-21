@@ -100,6 +100,30 @@ namespace PKISharp.WACS.Clients.Acme
         }
 
         /// <summary>
+        /// Delete all relevant files from the order cache
+        /// </summary>
+        /// <param name="cacheKey"></param>
+        private void DeleteFromCache(string cacheKey)
+        {
+            DeleteFile($"{cacheKey}.{_orderFileExtension}");
+            DeleteFile($"{cacheKey}.{_orderKeyExtension}");
+        }
+
+        /// <summary>
+        /// Delete a file from the order cache
+        /// </summary>
+        /// <param name="path"></param>
+        private void DeleteFile(string path)
+        {
+            var fileInfo = new FileInfo(Path.Combine(_orderPath.FullName, path));
+            if (fileInfo.Exists)
+            {
+                fileInfo.Delete();
+                _log.Debug("Deleted {fileInfo}", fileInfo.FullName);
+            }
+        }
+
+        /// <summary>
         /// Get order from the cache
         /// </summary>
         /// <param name="cacheKey"></param>
@@ -116,8 +140,12 @@ namespace PKISharp.WACS.Clients.Acme
 
             if (runLevel.HasFlag(RunLevel.NoCache))
             {
+                // Delete previously cached order
+                // and previously cached key as well
+                // to ensure that it won't be used
                 _log.Warning("Cached order available but not used with --{switch} option.",
                     nameof(MainArguments.NoCache).ToLower());
+                DeleteFromCache(cacheKey);
                 return null;
             }
 
@@ -129,6 +157,7 @@ namespace PKISharp.WACS.Clients.Acme
             catch (Exception ex)
             {
                 _log.Warning("Unable to refresh cached order: {ex}", ex.Message);
+                DeleteFromCache(cacheKey);
                 return null;
             }
 
@@ -136,6 +165,7 @@ namespace PKISharp.WACS.Clients.Acme
                 existingOrder.Payload.Status != AcmeClient.OrderReady)
             {
                 _log.Warning("Cached order has status {status}, discarding", existingOrder.Payload.Status);
+                DeleteFromCache(cacheKey);
                 return null;
             }
             
