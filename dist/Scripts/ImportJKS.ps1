@@ -36,7 +36,9 @@ param(
 	$KeyStoreKeyPassword
 )
 
-Set-Alias keytool "C:\Program Files (x86)\Java\jre1.8.0_141\bin\keytool.exe"
+$keytoolpath = Join-Path -Path $env:JAVA_HOME -ChildPath bin\keytool.exe
+
+Set-Alias keytool $keytoolpath
 
 if ([string]::IsNullOrEmpty($KeyStoreKeyPassword)) 
 {
