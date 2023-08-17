@@ -1,7 +1,6 @@
 ﻿using DnsClient;
 using DnsClient.Protocol;
 using PKISharp.WACS.Services;
-using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -61,6 +60,10 @@ namespace PKISharp.WACS.Clients.DNS
             host = host.TrimEnd('.');
             _log.Debug("Querying name servers for {part}", host);
             var nsResponse = await _lookupClient.QueryAsync(host, QueryType.NS);
+            if (nsResponse.HasError)
+            {
+                _log.Verbose("Error from {server}: {message}", IpAddress, nsResponse.ErrorMessage);
+            }
             var nsRecords = nsResponse.Answers.NsRecords();
             var cnameRecords = nsResponse.Answers.CnameRecords();
             if (!nsRecords.Any() && !cnameRecords.Any())
@@ -134,12 +137,20 @@ namespace PKISharp.WACS.Clients.DNS
         {
             var ret = new List<IPAddress>();
             var ipv4 = await _lookupClient.QueryAsync(host, QueryType.A);
+            if (ipv4.HasError)
+            {
+                _log.Verbose("Error from {server}: {message}", IpAddress, ipv4.ErrorMessage);
+            }
             ret.AddRange(ipv4.Answers.ARecords().
                 Where(aRecord => aRecord != null).
                 Select(aRecord => aRecord.Address).
                 Where(ip => ip != null).
                 OfType<IPAddress>());
             var ipv6 = await _lookupClient.QueryAsync(host, QueryType.AAAA);
+            if (ipv6.HasError)
+            {
+                _log.Verbose("Error from {server}: {message}", IpAddress, ipv6.ErrorMessage);
+            }
             ret.AddRange(ipv6.Answers.AaaaRecords().
                 Where(aRecord => aRecord != null).
                 Select(aRecord => aRecord.Address).
@@ -151,6 +162,10 @@ namespace PKISharp.WACS.Clients.DNS
         public async Task<string?> GetCname(string host)
         {
             var cnames = await _lookupClient.QueryAsync(host, QueryType.CNAME);
+            if (cnames.HasError)
+            {
+                _log.Verbose("Error from {server}: {message}", IpAddress, cnames.ErrorMessage);
+            }
             var cnameRecords = cnames.Answers.CnameRecords();
             if (cnameRecords.Any())
             {
