@@ -1,6 +1,7 @@
 ﻿using DnsClient;
 using DnsClient.Protocol;
 using PKISharp.WACS.Services;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -117,6 +118,10 @@ namespace PKISharp.WACS.Clients.DNS
         public async Task<IEnumerable<string>> GetTxtRecords(string host)
         {
             var txtResult = await _lookupClient.QueryAsync(host, QueryType.TXT);
+            if (txtResult.HasError)
+            {
+                _log.Verbose("Error from {server}: {message}", IpAddress, txtResult.ErrorMessage);
+            }
             return txtResult.Answers.TxtRecords().
                 Where(txtRecord => txtRecord != null).
                 SelectMany(txtRecord => txtRecord.EscapedText).
