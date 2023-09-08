@@ -90,6 +90,10 @@ namespace PKISharp.WACS.Configuration.Settings
         /// </summary>
         public bool PostAsGet { get; set; }
         /// <summary>
+        /// Validate the server certificate
+        /// </summary>
+        public bool? ValidateServerCertificate { get; set; }
+        /// <summary>
         /// Number of times wait for the ACME server to 
         /// handle validation and order processing
         /// </summary>

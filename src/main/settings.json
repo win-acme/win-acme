@@ -15,6 +15,7 @@
     "DefaultBaseUriTest": "https://acme-staging-v02.api.letsencrypt.org/",
     "DefaultBaseUriImport": "https://acme-v01.api.letsencrypt.org/",
     "PostAsGet": true,
+    "ValidateServerCertificate": true,
     "RetryCount": 15,
     "RetryInterval": 5,
     "PreferredIssuer": null
