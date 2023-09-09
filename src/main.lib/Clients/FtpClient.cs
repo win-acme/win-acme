@@ -1,4 +1,5 @@
 ﻿using FluentFTP;
+using FluentFTP.GnuTLS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Services;
 using System;
@@ -37,6 +38,8 @@ namespace PKISharp.WACS.Clients
                 var port = uri.Port == -1 ? 21 : uri.Port;
                 var options = new FtpConfig()
                 {
+                    CustomStream = typeof(GnuTlsStream),
+                    CustomStreamConfig = new GnuConfig(),
                     ValidateAnyCertificate = true,
                 };
                 var client = new AsyncFtpClient(uri.Host, port, options)

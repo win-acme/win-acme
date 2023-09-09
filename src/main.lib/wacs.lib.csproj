@@ -37,6 +37,7 @@
 		<PackageReference Include="BouncyCastle.Cryptography" Version="2.2.1" />
 		<PackageReference Include="DnsClient" Version="1.7.0" />
 		<PackageReference Include="FluentFTP" Version="47.1.0" />
+		<PackageReference Include="FluentFTP.GnuTLS" Version="1.0.22" />
 		<PackageReference Include="MailKit" Version="4.2.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="7.0.0" />
