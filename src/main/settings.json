@@ -77,7 +77,10 @@
     "PreValidateDnsRetryCount": 10,
     "PreValidateDnsRetryInterval": 30,
     "AllowDnsSubstitution": true,
-    "DnsServers": [ "[System]" ]
+    "DnsServers": [ "[System]" ],
+    "Ftp": {
+      "UseGnuTls": false
+    }
   },
   "Order": {
     "DefaultOrder": null,
