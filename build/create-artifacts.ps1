@@ -68,10 +68,11 @@ function PlatformRelease
 		$GnuTlsSrc = "$MainBin\Libs\Win64"
 		if (!(Test-Path $GnuTlsSrc)) 
 		{
+			dir
 			$GnuTlsSrc = "$MainBin\publish\Libs\Win64"
 		}
 
-		if (!(Test-Path $GnuTlsZip)) {
+		if (!(Test-Path $GnuTlsZipPath)) {
 			CreateArtifact $GnuTlsSrc @(
 				"libgcc_s_seh-1.dll", 
 				"libgmp-10.dll", 
@@ -126,20 +127,6 @@ PlatformRelease "ReleaseTrimmed" win-x64
 PlatformRelease "ReleaseTrimmed" win-x86
 PlatformRelease "ReleaseTrimmed" win-arm64
 
-PluginRelease plugin.store.keyvault @(
-	"Azure.Core.dll",
-	"Azure.Identity.dll",
-	"Azure.ResourceManager.dll",
-	"Azure.ResourceManager.KeyVault.dll",
-	"Azure.Security.KeyVault.Certificates.dll",
-	"Microsoft.Bcl.AsyncInterfaces.dll",
-	"Microsoft.Identity.Client.dll",
-	"Microsoft.Identity.Client.Extensions.Msal.dll",
-	"Microsoft.IdentityModel.Abstractions.dll",
-	"PKISharp.WACS.Plugins.Azure.Common.dll",
-	"PKISharp.WACS.Plugins.StorePlugins.KeyVault.dll",
-	"System.Memory.Data.dll"
-)
 PluginRelease plugin.store.keyvault @(
 	"Azure.Core.dll",
 	"Azure.Identity.dll",
