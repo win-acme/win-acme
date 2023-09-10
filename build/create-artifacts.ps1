@@ -68,7 +68,8 @@ function PlatformRelease
 		$GnuTlsSrc = "$MainBin\Libs\Win64"
 		if (!(Test-Path $GnuTlsSrc)) 
 		{
-			Get-ChildItem -Recurse -Directory
+			Write-Host $MainBin
+			Get-ChildItem $Root -Recurse -Directory
 			$GnuTlsSrc = "$MainBin\publish\Libs\Win64"
 		}
 
