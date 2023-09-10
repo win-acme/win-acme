@@ -65,8 +65,14 @@ function PlatformRelease
 	if ($Platform -eq "win-x64") {
 		$GnuTlsZip = "gnutls.v$Version.$PlatformShort.zip"
 		$GnuTlsZipPath = "$Out\$GnuTlsZip"
+		$GnuTlsSrc = "$MainBin\Libs\Win64"
+		if (!(Test-Path $GnuTlsSrc)) 
+		{
+			$GnuTlsSrc "$MainBin\publish\Libs\Win64"
+		}
+
 		if (!(Test-Path $GnuTlsZip)) {
-			CreateArtifact "$MainBin\Libs\Win64" @(
+			CreateArtifact $GnuTlsSrc @(
 				"libgcc_s_seh-1.dll", 
 				"libgmp-10.dll", 
 				"libgnutls-30.dll", 
