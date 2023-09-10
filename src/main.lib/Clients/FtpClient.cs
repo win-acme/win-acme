@@ -38,9 +38,7 @@ namespace PKISharp.WACS.Clients
                 var port = uri.Port == -1 ? 21 : uri.Port;
                 var options = new FtpConfig()
                 {
-                    CustomStream = typeof(GnuTlsStream),
-                    CustomStreamConfig = new GnuConfig(),
-                    ValidateAnyCertificate = true,
+                    ValidateAnyCertificate = true
                 };
                 var client = new AsyncFtpClient(uri.Host, port, options)
                 {
