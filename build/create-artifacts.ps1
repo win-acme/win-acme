@@ -68,7 +68,7 @@ function PlatformRelease
 		$GnuTlsSrc = "$MainBin\Libs\Win64"
 		if (!(Test-Path $GnuTlsSrc)) 
 		{
-			$GnuTlsSrc "$MainBin\publish\Libs\Win64"
+			$GnuTlsSrc = "$MainBin\publish\Libs\Win64"
 		}
 
 		if (!(Test-Path $GnuTlsZip)) {
