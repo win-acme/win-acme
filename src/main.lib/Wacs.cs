@@ -67,7 +67,9 @@ namespace PKISharp.WACS.Host
             {
                 try
                 {
-                    Console.OutputEncoding = System.Text.Encoding.GetEncoding(_settings.UI.TextEncoding);
+                    var encoding = System.Text.Encoding.GetEncoding(_settings.UI.TextEncoding);
+                    Console.OutputEncoding = encoding;
+                    Console.InputEncoding = encoding;
                 }
                 catch
                 {
