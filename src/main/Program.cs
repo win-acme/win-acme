@@ -29,7 +29,8 @@ namespace PKISharp.WACS.Host
             // The main class might change the character encoding
             // save the original setting so that it can be restored
             // after the run.
-            var original = Console.OutputEncoding;
+            var originalOut = Console.OutputEncoding;
+            var originalIn = Console.InputEncoding;
             try
             {
                 // Setup IOC container
@@ -55,7 +56,8 @@ namespace PKISharp.WACS.Host
             finally
             {
                 // Restore original code page
-                Console.OutputEncoding = original;
+                Console.OutputEncoding = originalOut;
+                Console.InputEncoding = originalIn;
                 _globalMutex?.Dispose();
             }
         }

@@ -1,4 +1,5 @@
 ﻿using FluentFTP;
+using FluentFTP.GnuTLS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Services;
 using System;
@@ -14,12 +15,15 @@ namespace PKISharp.WACS.Clients
     {
         private NetworkCredential? Credential { get; set; }
         private readonly ILogService _log;
+        private readonly ISettingsService _settings;
 
         public FtpClient(
             NetworkCredentialOptions? options,
+            ISettingsService settings,
             ILogService log, 
             SecretServiceManager secretService)
         {
+            _settings = settings;
             _log = log;
             if (options != null)
             {
@@ -37,8 +41,16 @@ namespace PKISharp.WACS.Clients
                 var port = uri.Port == -1 ? 21 : uri.Port;
                 var options = new FtpConfig()
                 {
-                    ValidateAnyCertificate = true,
+                    ValidateAnyCertificate = true
                 };
+                if (_settings.Validation?.Ftp?.UseGnuTls == true)
+                {
+#if PLUGGABLE
+                    options.CustomStream = typeof(GnuTlsStream);
+#else
+                    _log.Warning("Unable to use GnuTLS with trimmed build of win-acme, please download a pluggable build.");
+#endif 
+                }
                 var client = new AsyncFtpClient(uri.Host, port, options)
                 {
                     Credentials = Credential

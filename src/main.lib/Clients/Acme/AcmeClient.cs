@@ -53,7 +53,7 @@ namespace PKISharp.WACS.Clients.Acme
         {
             _log = log;
             _settings = settings;
-            var httpClient = proxy.GetHttpClient();
+            var httpClient = proxy.GetHttpClient(settings.Acme.ValidateServerCertificate != false);
             httpClient.BaseAddress = settings.BaseUri;
             _client = new AcmeProtocolClient(httpClient, usePostAsGet: _settings.Acme.PostAsGet)
             {

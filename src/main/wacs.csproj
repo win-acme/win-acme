@@ -83,6 +83,31 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <PackageReference Include="FluentFTP.GnuTLS" Version="1.0.22" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Update="C:\Users\woute\.nuget\packages\fluentftp.gnutls\1.0.22\contentFiles\any\net6.0\Libs\Win64\libgcc_s_seh-1.dll">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
+	  <Content Update="C:\Users\woute\.nuget\packages\fluentftp.gnutls\1.0.22\contentFiles\any\net6.0\Libs\Win64\libgmp-10.dll">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
+	  <Content Update="C:\Users\woute\.nuget\packages\fluentftp.gnutls\1.0.22\contentFiles\any\net6.0\Libs\Win64\libgnutls-30.dll">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
+	  <Content Update="C:\Users\woute\.nuget\packages\fluentftp.gnutls\1.0.22\contentFiles\any\net6.0\Libs\Win64\libhogweed-6.dll">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
+	  <Content Update="C:\Users\woute\.nuget\packages\fluentftp.gnutls\1.0.22\contentFiles\any\net6.0\Libs\Win64\libnettle-8.dll">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
+	  <Content Update="C:\Users\woute\.nuget\packages\fluentftp.gnutls\1.0.22\contentFiles\any\net6.0\Libs\Win64\libwinpthread-1.dll">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
+	</ItemGroup>
+
+	<ItemGroup>
 		<None Update="settings.json" Pack="true" PackagePath="settings_default.json">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>

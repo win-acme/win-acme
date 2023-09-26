@@ -97,7 +97,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                         bcPfxOut.SetCertificateEntry(alias, bcPfxIn.GetCertificate(alias));
                     }
                 }
-                using var fs = new FileInfo(dest).OpenWrite();
+                using var fs = new FileInfo(dest).Open(FileMode.Create);
                 bcPfxOut.Save(fs, _password?.ToCharArray(), new Bc.Security.SecureRandom());
             }
             catch (Exception ex)

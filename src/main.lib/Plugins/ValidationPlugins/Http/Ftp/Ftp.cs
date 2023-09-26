@@ -20,10 +20,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         public Ftp(
             FtpOptions options, 
             HttpValidationParameters pars,
+            ISettingsService settings,
             RunLevel runLevel, 
             SecretServiceManager secretService) : 
             base(options, runLevel, pars) => 
-            _ftpClient = new FtpClient(_options.Credential, pars.LogService, secretService);
+            _ftpClient = new FtpClient(_options.Credential, settings, pars.LogService, secretService);
 
         protected override char PathSeparator => '/';
 

@@ -400,11 +400,11 @@ namespace PKISharp.WACS
             var options = new List<Choice<Func<IEnumerable<Renewal>>>>
             {
                 Choice.Create<Func<IEnumerable<Renewal>>>(
-                    () => current.OrderBy(x => x.LastFriendlyName),
+                    () => current.OrderBy(x => x.LastFriendlyName ?? ""),
                     "Sort by friendly name",
                     @default: true),
                 Choice.Create<Func<IEnumerable<Renewal>>>(
-                    () => current.OrderByDescending(x => x.LastFriendlyName),
+                    () => current.OrderByDescending(x => x.LastFriendlyName ?? ""),
                     "Sort by friendly name (descending)"),
                 Choice.Create<Func<IEnumerable<Renewal>>>(
                     () => current.OrderBy(x => _dueDate.DueDate(x)),

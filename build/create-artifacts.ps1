@@ -58,10 +58,40 @@ function PlatformRelease
 	$DbiZip = "mscordbi.v$Version.$PlatformShort.zip"
 	$DbiZipPath = "$Out\$DbiZip"
 	if (!(Test-Path $DbiZipPath)) {
-		Remove-Item $Temp\* -recurse
-		Copy-Item "$MainBin\mscordbi.dll" $Temp
-		[io.compression.zipfile]::CreateFromDirectory($Temp, $DbiZipPath)
+		CreateArtifact $MainBin @("mscordbi.dll") $DbiZipPath
 	}
+
+	# GnuTLS DLL for FluentFTP
+	if ($Platform -eq "win-x64") {
+		$GnuTlsZip = "gnutls.v$Version.$PlatformShort.zip"
+		$GnuTlsZipPath = "$Out\$GnuTlsZip"
+		$GnuTlsSrc = "$MainBin\Libs\Win64"
+		if (!(Test-Path $GnuTlsSrc)) 
+		{
+			$GnuTlsSrc = "$MainBin\publish"
+		}
+
+		if (!(Test-Path $GnuTlsZipPath)) {
+			CreateArtifact $GnuTlsSrc @(
+				"libgcc_s_seh-1.dll", 
+				"libgmp-10.dll", 
+				"libgnutls-30.dll", 
+				"libhogweed-6.dll", 
+				"libnettle-8.dll", 
+				"libwinpthread-1.dll") $GnuTlsZipPath
+		}
+	}
+
+}
+
+function CreateArtifact {
+	param($Dir, $Files, $Target)
+
+	Remove-Item $Temp\* -recurse
+	foreach ($file in $files) {
+		Copy-Item "$Dir\$file" $Temp
+	}
+	[io.compression.zipfile]::CreateFromDirectory($Temp, $Target)
 }
 
 function PluginRelease
@@ -76,13 +106,7 @@ function PluginRelease
 	{
 		$PlugBin = "$Root\src\$Dir\bin\Any CPU\Release\net7.0\publish"
 	}
-	if (Test-Path $PlugBin) 
-	{
-		foreach ($file in $files) {
-			Copy-Item "$PlugBin\$file" $Temp
-		}
-		[io.compression.zipfile]::CreateFromDirectory($Temp, $PlugZipPath)
-	}
+	CreateArtifact $PlugBin $Files $PlugZipPath
 }
 
 function NugetRelease 

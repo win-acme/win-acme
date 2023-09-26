@@ -90,6 +90,10 @@ namespace PKISharp.WACS.Configuration.Settings
         /// </summary>
         public bool PostAsGet { get; set; }
         /// <summary>
+        /// Validate the server certificate
+        /// </summary>
+        public bool? ValidateServerCertificate { get; set; }
+        /// <summary>
         /// Number of times wait for the ACME server to 
         /// handle validation and order processing
         /// </summary>
@@ -443,6 +447,19 @@ namespace PKISharp.WACS.Configuration.Settings
         /// hosting a private version of the DNS zone for internal use.
         /// </summary>
         public List<string>? DnsServers { get; set; }
+        /// <summary>
+        /// Settings for FTP validation
+        /// </summary>
+        public FtpSettings? Ftp { get; set; }
+    }
+
+    /// <summary>
+    /// Settings for FTP validation
+    /// </summary>
+    public class FtpSettings
+    {
+        // Use GnuTls library for SSL, tradeoff: https://github.com/robinrodricks/FluentFTP/wiki/FTPS-Connection-using-GnuTLS
+        public bool? UseGnuTls { get; set; }
     }
 
     public class OrderSettings
