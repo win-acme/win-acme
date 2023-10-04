@@ -14,7 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Google.Apis.Dns.v1" Version="1.62.0.3140" />
+    <PackageReference Include="Google.Apis.Dns.v1" Version="1.62.0.3164" />
   </ItemGroup>
 
   <ItemGroup>

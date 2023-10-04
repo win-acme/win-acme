@@ -84,7 +84,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="FluentFTP.GnuTLS" Version="1.0.22" />
+	  <PackageReference Include="FluentFTP.GnuTLS" Version="1.0.23" />
 	</ItemGroup>
 
 	<ItemGroup>
