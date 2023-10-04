@@ -297,7 +297,7 @@ namespace PKISharp.WACS.Services
                 {
                     if (info.Key != ConsoleKey.Backspace)
                     {
-                        Console.Write("*");
+                        Write("*");
                         password.Append(info.KeyChar);
                     }
                     else if (info.Key == ConsoleKey.Backspace)
@@ -311,7 +311,7 @@ namespace PKISharp.WACS.Services
                             // move the cursor to the left by one character
                             Console.SetCursorPosition(pos - 1, Console.CursorTop);
                             // replace it with space
-                            Console.Write(" ");
+                            Write(" ");
                             // move the cursor to the left by one character again
                             Console.SetCursorPosition(pos - 1, Console.CursorTop);
                         }
