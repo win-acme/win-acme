@@ -37,15 +37,47 @@ namespace PKISharp.WACS.Services
             {
                 _log.Dirty = false;
                 _dirty = false;
-                Console.WriteLine();
+                WriteLine();
             }
+        }
+
+        private const string Black = "\u001b[40m";
+        private const string Reset = "\u001b[0m";
+        private static void WriteLine(string? text = "", ConsoleColor? color = null)
+        {
+            text ??= "";
+            var size = Console.WindowWidth - 1;
+            if (size != Console.CursorLeft + 1)
+            {
+                size -= Console.CursorLeft;
+            }
+            if (size < text.Length)
+            {
+                size = Console.WindowWidth + size;
+            }
+            if (size < 0)
+            {
+                size = text.Length;
+            }
+            Write($"{Black}{text.PadRight(size)}{Reset}\n", color);
+        }
+
+        private static void Write(string? text = "", ConsoleColor? color = null)
+        {
+            text ??= "";
+            if (color != null)
+            {
+                Console.ForegroundColor = color.Value;
+            }
+            Console.Write($"{Black}{text}{Reset}");
+            Console.ResetColor();
         }
 
         public Task<bool> Continue(string message = "Press <Space> to continue...")
         {
             Validate(message);
             CreateSpace();
-            Console.Write($" {message} ");
+            Write($" {message} ");
             while (true)
             {
                 var response = Console.ReadKey(true);
@@ -64,19 +96,19 @@ namespace PKISharp.WACS.Services
         {
             Validate(message);
             CreateSpace();
-            Console.Write($" {message} ");
+            Write($" {message} ");
             while (true)
             {
                 var response = Console.ReadKey(true);
                 switch (response.Key)
                 {
                     case ConsoleKey.Enter:
-                        Console.WriteLine();
-                        Console.WriteLine();
+                        WriteLine();
+                        WriteLine();
                         return Task.FromResult(true);
                     case ConsoleKey.Escape:
-                        Console.WriteLine();
-                        Console.WriteLine();
+                        WriteLine();
+                        WriteLine();
                         return Task.FromResult(false);
                     default:
                         _log.Verbose("Unexpected key {key} pressed", response.Key);
@@ -91,21 +123,19 @@ namespace PKISharp.WACS.Services
             var hasLabel = !string.IsNullOrEmpty(label);
             if (hasLabel)
             {
-                Console.ForegroundColor = ConsoleColor.White;
                 if (level > 0)
                 {
                     label = string.Join("", Enumerable.Repeat("  ", level)) + $"- {label}";
                 }
                 offset = Math.Max(20, label!.Length + 1);
-                Console.Write(label);
-                Console.ResetColor();
+                Write(label, ConsoleColor.White);
             }
 
             if (!string.IsNullOrWhiteSpace(value))
             {
                 if (hasLabel)
                 {
-                    Console.Write(":");
+                    Write(":");
                 }
                 WriteMultiline(offset, value);
             }
@@ -115,7 +145,7 @@ namespace PKISharp.WACS.Services
                 {
                     Console.SetCursorPosition(15, Console.CursorTop);
                 }
-                Console.WriteLine($"-----------------------------------------------------------------");
+                WriteLine($"-----------------------------------------------------------------");
             }
 
             _dirty = true;
@@ -147,7 +177,7 @@ namespace PKISharp.WACS.Services
                     {
                         Console.SetCursorPosition(startPos, Console.CursorTop);
                     }
-                    Console.WriteLine($" {line.TrimEnd()}");
+                    WriteLine($" {line.TrimEnd()}");
                 }
             }
         }
@@ -170,9 +200,7 @@ namespace PKISharp.WACS.Services
         {
             Validate(what);
             CreateSpace();
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.Write($" {what}: ");
-            Console.ResetColor();
+            Write($" {what}: ", ConsoleColor.Green);
 
             // Copied from http://stackoverflow.com/a/16638000
             var bufferSize = 16384;
@@ -206,13 +234,13 @@ namespace PKISharp.WACS.Services
                 {
                     Console.SetCursorPosition(left, top);
                 }
-                Console.WriteLine("<Enter>");
-                Console.WriteLine();
+                WriteLine("<Enter>");
+                WriteLine();
                 return Task.FromResult(string.Empty);
             }
             else
             {
-                Console.WriteLine();
+                WriteLine();
                 return Task.FromResult(answer.Trim());
             }
         }
@@ -221,37 +249,34 @@ namespace PKISharp.WACS.Services
         {
             Validate(message);
             CreateSpace();
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.Write($" {message} ");
-            Console.ForegroundColor = ConsoleColor.Yellow;
+            Write($" {message} ", ConsoleColor.Green);
             if (defaultChoice)
             {
-                Console.Write($"(y*/n) ");
+                Write($"(y*/n) ", ConsoleColor.Yellow);
             }
             else
             {
-                Console.Write($"(y/n*) ");
+                Write($"(y/n*) ", ConsoleColor.Yellow);
             }
-            Console.ResetColor();
             while (true)
             {
                 var response = Console.ReadKey(true);
                 switch (response.Key)
                 {
                     case ConsoleKey.Enter:
-                        Console.WriteLine($"- <Enter>");
-                        Console.WriteLine();
+                        WriteLine($"- <Enter>");
+                        WriteLine();
                         return Task.FromResult(defaultChoice);
                 }
                 switch (response.KeyChar.ToString().ToLower())
                 {
                     case "y":
-                        Console.WriteLine("- yes");
-                        Console.WriteLine();
+                        WriteLine("- yes");
+                        WriteLine();
                         return Task.FromResult(true);
                     case "n":
-                        Console.WriteLine("- no");
-                        Console.WriteLine();
+                        WriteLine("- no");
+                        WriteLine();
                         return Task.FromResult(false);
                 }
             }
@@ -263,9 +288,7 @@ namespace PKISharp.WACS.Services
         {
             Validate(what);
             CreateSpace();
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.Write($" {what}: ");
-            Console.ResetColor();
+            Write($" {what}: ", ConsoleColor.Green);
             var password = new StringBuilder();
             try
             {
@@ -296,7 +319,7 @@ namespace PKISharp.WACS.Services
                     info = Console.ReadKey(true);
                 }
                 // add a new line because user pressed enter at the end of their password
-                Console.WriteLine();
+                WriteLine();
                 _dirty = true;
                 _log.Dirty = true;
             }
@@ -443,8 +466,8 @@ namespace PKISharp.WACS.Services
             CreateSpace();
             if (!listItems.Any())
             {
-                Console.WriteLine($" [empty] ");
-                Console.WriteLine();
+                WriteLine($" [empty] ");
+                WriteLine();
                 return;
             }
 
@@ -471,33 +494,24 @@ namespace PKISharp.WACS.Services
 
                     if (!string.IsNullOrEmpty(target.Command))
                     {
-                        Console.ForegroundColor = target.Default ? 
-                            ConsoleColor.Green : 
+                        Write($" {target.Command}: ", target.Default ?
+                            ConsoleColor.Green :
                             target.Disabled ?
-                                ConsoleColor.DarkGray : 
-                                ConsoleColor.White;
-                        Console.Write($" {target.Command}: ");
-                        Console.ResetColor();
+                                ConsoleColor.DarkGray :
+                                ConsoleColor.White);
                     }
                     else
                     {
-                        Console.Write($" * ");
+                        Write($" * ");
                     }
 
-                    if (target.Disabled)
-                    {
-                        Console.ForegroundColor = ConsoleColor.DarkGray;
-                    } 
-                    else if (target.Color.HasValue)
-                    {
-                        Console.ForegroundColor = target.Color.Value;
-                    }
-                    Console.WriteLine(target.Description);
-                    Console.ResetColor();
+                    WriteLine(target.Description, 
+                        target.Disabled ? ConsoleColor.DarkGray : 
+                        target.Color.HasValue ? target.Color.Value : null);
                     currentIndex++;
                 }
             }
-            Console.WriteLine();
+            WriteLine();
         }
 
         public string FormatDate(DateTime date) => date.ToString(_settings.UI.DateFormat);
