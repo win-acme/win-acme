@@ -72,13 +72,17 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private ArgumentResult<string?> AclFullControl => _arguments.
             GetString<CertificateStoreArguments>(x => x.AclFullControl);
 
+        private ArgumentResult<string?> AclRead => _arguments.
+            GetString<CertificateStoreArguments>(x => x.AclRead);
+
         public override async Task<CertificateStoreOptions?> Default()
         {
             return new CertificateStoreOptions
             {
                 StoreName = await StoreName.GetValue(),
                 KeepExisting = await KeepExisting.GetValue(),
-                AclFullControl = (await AclFullControl.GetValue()).ParseCsv()
+                AclFullControl = (await AclFullControl.GetValue()).ParseCsv(),
+                AclRead = (await AclRead.GetValue()).ParseCsv()
             };
         }
 
@@ -87,6 +91,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             yield return (KeepExisting.Meta, options.KeepExisting);
             yield return (StoreName.Meta, options.StoreName);
             yield return (AclFullControl.Meta, options.AclFullControl);
+            yield return (AclRead.Meta, options.AclRead);
         }
     }
 }

@@ -12,9 +12,14 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public string? StoreName { get; set; }        
         
         /// <summary>
-        /// ACL to add to the private key
+        /// ACL with full control to add to the private key
         /// </summary>
         public List<string>? AclFullControl { get; set; }
+
+        /// <summary>
+        /// ACL with read to add to the private key
+        /// </summary>
+        public List<string>? AclRead { get; set; }
 
         /// <summary>
         /// Print details to user
@@ -30,6 +35,10 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             if (AclFullControl != null)
             {
                 input.Show("AclFullControl", string.Join(",", AclFullControl), level: 1);
+            }
+            if (AclRead != null)
+            {
+                input.Show("AclRead", string.Join(",", AclRead), level: 1);
             }
         }
     }

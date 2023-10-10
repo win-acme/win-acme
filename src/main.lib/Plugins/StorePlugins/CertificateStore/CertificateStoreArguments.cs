@@ -18,5 +18,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         [CommandLine(Name = "acl-fullcontrol", Description = "List of additional principals (besides the owners of the store) that should get full control permissions on the private key of the certificate.")]
         public string? AclFullControl { get; set; }
+
+        [CommandLine(Name = "acl-read", Description = "List of additional principals (besides the owners of the store) that should get read permissions on the private key of the certificate.")]
+        public string? AclRead { get; set; }
     }
 }

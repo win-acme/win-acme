@@ -104,7 +104,11 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
             if (_options.AclFullControl != null)
             {
-                SetAcl(store, _options.AclFullControl);
+                SetAcl(store, _options.AclFullControl, FileSystemRights.FullControl);
+            }
+            if (_options.AclRead != null)
+            {
+                SetAcl(store, _options.AclRead, FileSystemRights.Read);
             }
 
             return Task.FromResult<StoreInfo?>(new StoreInfo() {
@@ -113,7 +117,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             });
         }
 
-        private void SetAcl(X509Certificate2? cert, List<string> fullControl)
+        private void SetAcl(X509Certificate2? cert, List<string> accounts, FileSystemRights rights)
         {
             if (cert == null)
             {
@@ -127,12 +131,12 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 {
                     _log.Verbose("Private key found at {dir}", file.FullName);
                     var fs = new FileSecurity(file.FullName, AccessControlSections.All);
-                    foreach (var account in fullControl)
+                    foreach (var account in accounts)
                     {
                         try
                         {
                             var principal = new NTAccount(account);
-                            fs.AddAccessRule(new FileSystemAccessRule(principal, FileSystemRights.FullControl, AccessControlType.Allow));
+                            fs.AddAccessRule(new FileSystemAccessRule(principal, rights, AccessControlType.Allow));
                             _log.Information("Add full control rights for {account}", account);
                         }
                         catch (Exception ex)
