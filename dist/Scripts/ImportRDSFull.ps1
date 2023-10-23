@@ -118,7 +118,7 @@ if ($CertInStore)
     }
 	catch 
 	{
-        "Could not export temporary Certificte. RD Gateway, RD WebAccess, RD Redirector and RD Connection Broker certificates not set."
+        "Could not export temporary Certificate. RD Gateway, RD WebAccess, RD Redirector and RD Connection Broker certificates not set."
         "Error: $($Error[0])"
 		return
     }
