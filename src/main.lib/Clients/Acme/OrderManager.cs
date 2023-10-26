@@ -28,7 +28,9 @@ namespace PKISharp.WACS.Clients.Acme
         {
             _log = log;
             _settings = settings;
-            _orderPath = new DirectoryInfo(Path.Combine(settings.Client.ConfigurationPath, "Orders"));
+            _orderPath = settings.Valid ? 
+                new DirectoryInfo(Path.Combine(settings.Client.ConfigurationPath, "Orders")) : 
+                new DirectoryInfo(Directory.GetCurrentDirectory());
         }
 
         /// <summary>
