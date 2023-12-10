@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using static PKISharp.WACS.Clients.DNS.LookupClientProvider;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
@@ -56,7 +55,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 } 
                 else
                 {
-                    _log.Debug("[{identifier}] Record {value} successfully created", context.Label, record.Value);
+                    _log.Information("[{identifier}] Record {value} successfully created", context.Label, record.Value);
                     _recordsCreated.Add(record);
                 }
             }
@@ -76,7 +75,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             // propagation/caching/TTL issues to resolve themselves naturally
             if (_settings.Validation.PreValidateDns)
             {
-                var validationTasks = _recordsCreated.Select(r => ValidateRecord(r));
+                var validationTasks = _recordsCreated.Select(ValidateRecord);
                 await Task.WhenAll(validationTasks);
             }
         }
@@ -152,19 +151,22 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 try
                 {
                     await DeleteRecord(record);
+                    _log.Information("[{identifier}] Record {value} deleted", record.Context.Label, record.Value);
                 }
                 catch (Exception ex)
                 {
-                    _log.Warning($"Error deleting record: {ex.Message}");
+                    _log.Warning("[{identifier}] Error deleting record {value}: {message}", record.Context.Label, record.Value, ex.Message);
                 }
             }
             try
             {
                 await Finalize();
+                _recordsCreated.Clear();
+                _log.Debug("DNS record cleanup finalized");
             }
             catch (Exception ex)
             {
-                _log.Warning($"Error finalizing cleanup: {ex.Message}");
+                _log.Warning("Error finalizing cleanup: {Message}", ex.Message);
             }
         }
 
@@ -197,12 +199,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                     retry += 1;
                     if (retry > maxRetries)
                     {
-                        _log.Information("It looks like validation is going to fail, but we will try now anyway...");
+                        _log.Information("[{identifier}] It looks like validation is going to fail, but we will try now anyway...", record.Context.Label);
                         break;
                     }
                     else
                     {
-                        _log.Information("Will retry in {s} seconds (retry {i}/{j})...", retrySeconds, retry, maxRetries);
+                        _log.Information("[{identifier}] Will retry in {s} seconds (retry {i}/{j})...", record.Context.Label, retrySeconds, retry, maxRetries);
                         await Task.Delay(retrySeconds * 1000);
                     }
                 }
