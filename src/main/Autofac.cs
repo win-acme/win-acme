@@ -9,6 +9,7 @@ using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Plugins.ValidationPlugins;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Interfaces;
 using PKISharp.WACS.Services.Serialization;
 
 namespace PKISharp.WACS.Host
@@ -73,6 +74,7 @@ namespace PKISharp.WACS.Host
                 _ = builder.RegisterType<SecretServiceManager>().SingleInstance();
                 _ = builder.RegisterType<TaskSchedulerService>().SingleInstance();
                 _ = builder.RegisterType<NotificationService>().SingleInstance();
+                _ = builder.RegisterType<NotificationTargetEmail>().As<INotificationTarget>().SingleInstance();
                 _ = builder.RegisterType<RenewalExecutor>().SingleInstance();
                 _ = builder.RegisterType<RenewalManager>().SingleInstance();
                 _ = builder.RegisterType<RenewalCreator>().SingleInstance();
