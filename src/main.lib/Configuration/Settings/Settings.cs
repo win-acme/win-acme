@@ -406,6 +406,11 @@ namespace PKISharp.WACS.Configuration.Settings
         public bool? DisableMultiThreading { get; set; }
 
         /// <summary>
+        /// Max number of validations to run in parallel
+        /// </summary>
+        public int? ParellelBatchSize { get; set; }
+
+        /// <summary>
         /// If set to True, it will cleanup the folder structure
         /// and files it creates under the site for authorization.
         /// </summary>
