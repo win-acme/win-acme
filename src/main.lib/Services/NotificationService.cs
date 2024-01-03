@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.DomainObjects;
+﻿using Autofac;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services.Interfaces;
 using Serilog.Events;
 using System.Collections.Generic;
@@ -11,16 +12,21 @@ namespace PKISharp.WACS.Services
     {
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
-        private readonly INotificationTarget _target;
+        private readonly IEnumerable<INotificationTarget> _targets;
 
         public NotificationService(
+            ILifetimeScope scope,
             ILogService log,
-            ISettingsService setttings,
-            INotificationTarget target)
+            IPluginService pluginService,
+            ISettingsService setttings)
         {
             _log = log;
-            _target = target;
             _settings = setttings;
+            _targets = pluginService.
+                GetNotificationTargets().
+                Select(b => scope.Resolve(b.Backend)).
+                OfType<INotificationTarget>().
+                ToList();
         }
 
         /// <summary>
@@ -36,7 +42,16 @@ namespace PKISharp.WACS.Services
                 renewal.LastFriendlyName);
             if (_settings.Notification.EmailOnSuccess)
             {
-                await _target.SendCreated(renewal, log);
+                foreach (var target in _targets) {
+                    try
+                    {
+                        await target.SendCreated(renewal, log);
+                    } 
+                    catch 
+                    {
+                        _log.Error("Unable to send notification using {n}", target.GetType().Name);
+                    }
+                }
             }
         }
 
@@ -54,7 +69,17 @@ namespace PKISharp.WACS.Services
                 renewal.LastFriendlyName);
             if (withErrors || _settings.Notification.EmailOnSuccess)
             {
-                await _target.SendSuccess(renewal, log);
+                foreach (var target in _targets)
+                {
+                    try
+                    {
+                        await target.SendSuccess(renewal, log);
+                    }
+                    catch
+                    {
+                        _log.Error("Unable to send notification using {n}", target.GetType().Name);
+                    }
+                }
             }
         }
 
@@ -81,7 +106,17 @@ namespace PKISharp.WACS.Services
             // Do not send emails when running interactively      
             if (runLevel.HasFlag(RunLevel.Unattended))
             {
-                await _target.SendFailure(renewal, log, errors);
+                foreach (var target in _targets)
+                {
+                    try
+                    {
+                        await target.SendFailure(renewal, log, errors);
+                    }
+                    catch
+                    {
+                        _log.Error("Unable to send notification using {n}", target.GetType().Name);
+                    }
+                }
             }
         }
 
@@ -92,7 +127,17 @@ namespace PKISharp.WACS.Services
         /// <param name="renewal"></param>
         internal async Task NotifyTest()
         {
-            await _target.SendTest();
+            foreach (var target in _targets)
+            {
+                try
+                {
+                    await target.SendTest();
+                }
+                catch
+                {
+                    _log.Error("Unable to send notification using {n}", target.GetType().Name);
+                }
+            }
         }
     }
 }

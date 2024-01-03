@@ -7,6 +7,7 @@ using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
+using PKISharp.WACS.Plugins.NotificationPlugins;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Services.Interfaces;
 using PKISharp.WACS.Services.Serialization;
@@ -69,7 +70,7 @@ namespace PKISharp.WACS.UnitTests.Mock
             _ = builder.RegisterType<CertificateService>().As<Real.ICertificateService>().SingleInstance();
             _ = builder.RegisterType<Real.TaskSchedulerService>().SingleInstance();
             _ = builder.RegisterType<Real.NotificationService>().SingleInstance();
-            _ = builder.RegisterType<Real.NotificationTargetEmail>().As<INotificationTarget>().SingleInstance();
+            _ = builder.RegisterType<NotificationTargetEmail>().SingleInstance();
             _ = builder.RegisterType<RenewalValidator>().SingleInstance();
             _ = builder.RegisterType<RenewalExecutor>().SingleInstance();
             _ = builder.RegisterType<OrderProcessor>().SingleInstance();

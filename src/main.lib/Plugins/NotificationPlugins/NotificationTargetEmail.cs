@@ -1,6 +1,7 @@
 ﻿using MimeKit;
 using PKISharp.WACS.Clients;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Interfaces;
 using Serilog.Events;
 using System;
@@ -9,7 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
 
-namespace PKISharp.WACS.Services
+namespace PKISharp.WACS.Plugins.NotificationPlugins
 {
     internal class NotificationTargetEmail : INotificationTarget
     {

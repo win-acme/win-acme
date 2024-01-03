@@ -38,7 +38,10 @@ namespace PKISharp.WACS.Host
                 foreach (var plugin in pluginService.GetPlugins()) {
                     _ = builder.RegisterType(plugin.OptionsJson);
                 }                
-                foreach (var plugin in pluginService.GetSecretStores()) {
+                foreach (var plugin in pluginService.GetSecretServices()) {
+                    _ = builder.RegisterType(plugin.Backend);
+                }
+                foreach (var plugin in pluginService.GetNotificationTargets()) {
                     _ = builder.RegisterType(plugin.Backend);
                 }
                 WacsJson.Configure(builder);
@@ -74,7 +77,6 @@ namespace PKISharp.WACS.Host
                 _ = builder.RegisterType<SecretServiceManager>().SingleInstance();
                 _ = builder.RegisterType<TaskSchedulerService>().SingleInstance();
                 _ = builder.RegisterType<NotificationService>().SingleInstance();
-                _ = builder.RegisterType<NotificationTargetEmail>().As<INotificationTarget>().SingleInstance();
                 _ = builder.RegisterType<RenewalExecutor>().SingleInstance();
                 _ = builder.RegisterType<RenewalManager>().SingleInstance();
                 _ = builder.RegisterType<RenewalCreator>().SingleInstance();
