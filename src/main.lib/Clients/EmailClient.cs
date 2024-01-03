@@ -147,24 +147,5 @@ namespace PKISharp.WACS.Clients
             }
             return true;
         }
-
-        internal async Task Test()
-        {
-            if (!Enabled)
-            {
-                _log.Error("Email notifications not enabled. Configure an SMTP server, sender and receiver in settings.json to enable this.");
-            }
-            else
-            {
-                _log.Information("Sending test message...");
-                var success = await Send("Test notification",
-                    "<p>If you are reading this, it means you will receive notifications about critical errors in the future.</p>",
-                    MessagePriority.Normal);
-                if (success)
-                {
-                    _log.Information("Test message sent!");
-                }
-            }
-        }
     }
 }

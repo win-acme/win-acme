@@ -2,6 +2,7 @@
 using PKISharp.WACS.Plugins;
 using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Services.Interfaces;
 using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
@@ -15,6 +16,7 @@ namespace PKISharp.WACS.Services
         private readonly AssemblyService _assemblyService;
         private readonly List<Plugin> _plugins;
         private readonly List<BasePlugin> _secretServices;
+        private readonly List<BasePlugin> _notificationTargets;
         internal readonly ILogService _log;
 
         public PluginService(ILogService logger, AssemblyService assemblyService)
@@ -29,14 +31,22 @@ namespace PKISharp.WACS.Services
             AddPluginType<IStorePlugin>(Steps.Store);
             AddPluginType<IInstallationPlugin>(Steps.Installation);
             _secretServices = GetPluginType<ISecretService>("secret");
+            _notificationTargets = GetPluginType<INotificationTarget>("notification");
         }
+
+        /// <summary>
+        /// Get all notification services
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public IEnumerable<BasePlugin> GetNotificationTargets() => _notificationTargets;
 
         /// <summary>
         /// Get all secret services
         /// </summary>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public IEnumerable<BasePlugin> GetSecretStores() => _secretServices;
+        public IEnumerable<BasePlugin> GetSecretServices() => _secretServices;
 
         /// <summary>
         /// Get all plugins

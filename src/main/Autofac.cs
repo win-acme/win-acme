@@ -9,6 +9,7 @@ using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Plugins.ValidationPlugins;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Interfaces;
 using PKISharp.WACS.Services.Serialization;
 
 namespace PKISharp.WACS.Host
@@ -37,7 +38,10 @@ namespace PKISharp.WACS.Host
                 foreach (var plugin in pluginService.GetPlugins()) {
                     _ = builder.RegisterType(plugin.OptionsJson);
                 }                
-                foreach (var plugin in pluginService.GetSecretStores()) {
+                foreach (var plugin in pluginService.GetSecretServices()) {
+                    _ = builder.RegisterType(plugin.Backend);
+                }
+                foreach (var plugin in pluginService.GetNotificationTargets()) {
                     _ = builder.RegisterType(plugin.Backend);
                 }
                 WacsJson.Configure(builder);
