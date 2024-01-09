@@ -187,6 +187,7 @@ namespace PKISharp.WACS.Services
             _log.Verbose("Parsing certificate from {bytes} bytes received", bytes.Length);
             var text = Encoding.UTF8.GetString(bytes);
             var pfxBuilder = new Bc.Pkcs.Pkcs12StoreBuilder();
+            pfxBuilder.SetUseDerEncoding(true);
             var pfx = pfxBuilder.Build();
             var startIndex = 0;
             const string startString = "-----BEGIN CERTIFICATE-----";
