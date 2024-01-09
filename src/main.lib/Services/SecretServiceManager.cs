@@ -21,7 +21,7 @@ namespace PKISharp.WACS.Services
             ILogService logService) 
         {
             _backends = pluginService.
-                GetSecretStores().
+                GetSecretServices().
                 Select(b => scope.Resolve(b.Backend)).
                 OfType<ISecretService>().
                 ToList();
