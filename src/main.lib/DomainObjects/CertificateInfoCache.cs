@@ -41,7 +41,7 @@ namespace PKISharp.WACS.DomainObjects
         public X509Certificate2 Certificate => _inner.Certificate;
         public IEnumerable<X509Certificate2> Chain => _inner.Chain;
         public X509Certificate2Collection Collection => _inner.Collection;
-        public Identifier CommonName => _inner.CommonName;
+        public Identifier? CommonName => _inner.CommonName;
         public AsymmetricKeyParameter? PrivateKey => _inner.PrivateKey;
         public IEnumerable<Identifier> SanNames => _inner.SanNames;
     }

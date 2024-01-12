@@ -1,5 +1,4 @@
 ﻿using Org.BouncyCastle.Crypto;
-using System;
 using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 
@@ -25,7 +24,7 @@ namespace PKISharp.WACS.DomainObjects
         /// <summary>
         /// The common name / subject name
         /// </summary>
-        Identifier CommonName { get; }
+        Identifier? CommonName { get; }
 
         /// <summary>
         /// Private key in Bouncy Castle format

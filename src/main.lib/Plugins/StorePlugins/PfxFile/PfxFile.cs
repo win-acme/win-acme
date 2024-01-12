@@ -66,7 +66,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         public Task<StoreInfo?> Save(ICertificateInfo input)
         {
-            var dest = PathForIdentifier(_name ?? input.CommonName.Value);
+            var dest = PathForIdentifier(_name ?? input.CommonName?.Value ?? input.SanNames.First().Value);
             _log.Information("Copying certificate to the pfx folder {dest}", dest);
             try
             {
@@ -86,7 +86,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 if (keyAlias != null)
                 {
                     bcPfxOut.SetKeyEntry(
-                        input.CommonName.Value,
+                        input.CommonName?.Value ?? input.SanNames.First().Value,
                         bcPfxIn.GetKey(keyAlias), 
                         bcPfxIn.GetCertificateChain(keyAlias));
                 }

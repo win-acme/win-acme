@@ -58,7 +58,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             return Regex.Replace(input, "{.+?}", (m) => {
                 return m.Value switch
                 {
-                    "{0}" or "{CertCommonName}" => newCertificate.CommonName.Value,
+                    "{0}" or "{CertCommonName}" => newCertificate.CommonName?.Value ?? "",
                     "{1}" or "{CachePassword}" => (censor ? _renewal.PfxPassword?.DisplayValue : _renewal.PfxPassword?.Value) ?? "",
                     "{2}" or "{CacheFile}" => cachedCertificate?.CacheFile.FullName ?? "",
                     "{3}" or "{StorePath}" => defaultStoreInfo?.Path ?? "",

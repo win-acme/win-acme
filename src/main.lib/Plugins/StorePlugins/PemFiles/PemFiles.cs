@@ -6,6 +6,7 @@ using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 
@@ -62,7 +63,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             try
             {
                 // Determine name
-                var name = _name ?? input.CommonName.Value.Replace("*", "_");
+                var name = _name ?? input.CommonName?.Value ?? input.SanNames.First().Value;
+                name = name.Replace("*", "_");
 
                 // Base certificate
                 var certificateExport = input.Certificate.Export(X509ContentType.Cert);
