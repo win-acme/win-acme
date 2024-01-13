@@ -42,7 +42,7 @@ namespace PKISharp.WACS.DomainObjects
                 }
                 if (string.IsNullOrEmpty(friendlyNameBase))
                 {
-                    friendlyNameBase = Target.CommonName.Unicode(true).Value;
+                    friendlyNameBase = Target.DisplayName.Unicode(true).Value;
                 }
                 return friendlyNameBase;
             }

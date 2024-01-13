@@ -253,7 +253,7 @@ namespace PKISharp.WACS.Services
         private static bool Match(ICertificateInfo info, Target target)
         {
             var identifiers = target.GetIdentifiers(false);
-            return info.CommonName == target.CommonName.Unicode(false) &&
+            return info.CommonName == target.CommonName?.Unicode(false) &&
                 info.SanNames.Count() == identifiers.Count &&
                 info.SanNames.All(h => identifiers.Contains(h.Unicode(false)));
         }
@@ -282,7 +282,7 @@ namespace PKISharp.WACS.Services
             var cacheKeyBuilder = new StringBuilder();
             cacheKeyBuilder.Append(order.CacheKeyPart);
             _ = version > 1 ?
-                cacheKeyBuilder.Append(order.Target.CommonName.Value) :
+                cacheKeyBuilder.Append(order.Target.CommonName?.Value) :
                 cacheKeyBuilder.Append(order.Target.CommonName);
             cacheKeyBuilder.Append(string.Join(',', order.Target.GetIdentifiers(true).OrderBy(x => x).Select(x => x.Value.ToLower())));
             _ = order.Target.UserCsrBytes != null ?

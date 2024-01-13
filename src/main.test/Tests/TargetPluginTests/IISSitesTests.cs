@@ -74,7 +74,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                     var target = Target(options);
                     Assert.IsNotNull(target);
                     Assert.AreEqual(target.IsValid(log), true);
-                    Assert.AreEqual(target.CommonName.Value, siteA.Bindings.First().Host); // First binding
+                    Assert.AreEqual(target.CommonName?.Value, siteA.Bindings.First().Host); // First binding
                     Assert.AreEqual(target.IIS, true);
                     Assert.AreEqual(target.Parts.Count, 2);
                     Assert.AreEqual(target.Parts.First().SiteId, siteIdA);
@@ -102,7 +102,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                 var target = Target(options);
                 Assert.IsNotNull(target);
                 Assert.AreEqual(target.IsValid(log), true);
-                Assert.AreEqual(target.CommonName.Value, commonName);
+                Assert.AreEqual(target.CommonName?.Value, commonName);
             }
         }
 
@@ -120,7 +120,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                 var target = Target(options);
                 Assert.IsNotNull(target);
                 Assert.AreEqual(target.IsValid(log), true);
-                Assert.AreEqual(target.CommonName.Value, uniHost);
+                Assert.AreEqual(target.CommonName?.Value, uniHost);
             }
         }
 
@@ -138,7 +138,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                 var target = Target(options);
                 Assert.IsNotNull(target);
                 Assert.AreEqual(target.IsValid(log), true);
-                Assert.AreEqual(target.CommonName.Value, siteA.Bindings.ElementAt(1).Host); // 2nd binding, first is excluded
+                Assert.AreEqual(target.CommonName?.Value, siteA.Bindings.ElementAt(1).Host); // 2nd binding, first is excluded
             }
         }
 
@@ -171,7 +171,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             var target = Target(options);
             Assert.IsNotNull(target);
             Assert.AreEqual(true, target.IsValid(log));
-            Assert.AreEqual(site.Bindings.First().Host, target.CommonName.Value);
+            Assert.AreEqual(site.Bindings.First().Host, target.CommonName?.Value);
         }
 
         [TestMethod]

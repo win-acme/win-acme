@@ -52,8 +52,8 @@ namespace PKISharp.WACS.Plugins.OrderPlugins
                                 SiteType = p.SiteType 
                             }).ToList();
                         var newTarget = new Target(
-                            target.FriendlyName ?? "",
-                            host,
+                            target.FriendlyName,
+                            host.Value.Length <= Constants.MaxCommonName ? host : null,
                             filteredParts);
                         var newOrder = new Order(
                             renewal, 

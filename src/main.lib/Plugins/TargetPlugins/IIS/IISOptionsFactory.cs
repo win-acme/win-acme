@@ -49,7 +49,9 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             Validate(x => Task.FromResult(x.ParseCsv()?.All(x => x == IISHelper.WebTypeFilter || x == IISHelper.FtpTypeFilter) ?? false), "unsupported value");
 
         private ArgumentResult<string?> ExcludeBindings => _arguments.GetString<IISArguments>(x => x.ExcludeBindings);
-        private ArgumentResult<string?> CommonName => _arguments.GetString<IISArguments>(x => x.CommonName);
+        private ArgumentResult<string?> CommonName => _arguments.
+            GetString<IISArguments>(x => x.CommonName).
+            Validate(x => Task.FromResult(x?.Length <= Constants.MaxCommonName), $"Common name too long (max {Constants.MaxCommonName} characters)");
 
         /// <summary>
         /// Get settings in interactive mode

@@ -122,7 +122,12 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
 
             // Return result
-            var commonName = cnValid ? cn : filteredBindings.First().HostUnicode;
+            var commonName = cnValid ? 
+                cn : 
+                filteredBindings.
+                    Where(x => x.HostUnicode.Length <= Constants.MaxCommonName).
+                    FirstOrDefault()?.
+                    HostUnicode;
             var parts = filteredBindings.
                 GroupBy(x => x.SiteId).
                 Select(group => new TargetPart(group.Select(x => new DnsIdentifier(x.HostUnicode)))

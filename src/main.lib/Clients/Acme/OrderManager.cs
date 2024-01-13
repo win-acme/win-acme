@@ -207,12 +207,6 @@ namespace PKISharp.WACS.Clients.Acme
             {
                 // Determine final shape of the certificate
                 var identifiers = target.GetIdentifiers(false);
-                var commonName = target.CommonName;
-                if (!identifiers.Contains(commonName.Unicode(false)))
-                {
-                    _log.Warning($"Common name {commonName.Value} provided is invalid.");
-                    commonName = identifiers.First();
-                }
 
                 // Determine notAfter value (unsupported by Let's
                 // Encrypt at this time, but should work at Sectigo

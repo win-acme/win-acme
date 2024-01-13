@@ -20,12 +20,12 @@ namespace PKISharp.WACS.Plugins.OrderPlugins
             foreach (var part in target.Parts)
             {
                 var commonName = target.CommonName;
-                if (!part.Identifiers.Contains(commonName))
+                if (commonName != null && !part.Identifiers.Contains(commonName))
                 {
-                    commonName = part.Identifiers.First();
+                    commonName = part.Identifiers.Where(x => x.Value.Length <= Constants.MaxCommonName).FirstOrDefault();
                 }
                 var newTarget = new Target(
-                    target.FriendlyName ?? "",
+                    target.FriendlyName,
                     commonName,
                     new List<TargetPart> { part });
                 var newOrder = new Order(

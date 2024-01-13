@@ -20,10 +20,18 @@ namespace PKISharp.WACS.Extensions
                 log.Error("No valid identifiers provided.");
                 return false;
             }
-            if (!ret.Contains(target.CommonName))
+            if (target.CommonName != null)
             {
-                log.Error("Common name not contained in SAN list.");
-                return false;
+                if (!ret.Contains(target.CommonName))
+                {
+                    log.Error("Common name not contained in SAN list.");
+                    return false;
+                }
+                if (target.CommonName.Value.Length > Constants.MaxCommonName)
+                {
+                    log.Error("Common name too long (max {max} chars).", Constants.MaxCommonName);
+                    return false;
+                }
             }
             return true;
         }

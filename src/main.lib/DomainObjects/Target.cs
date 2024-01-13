@@ -1,5 +1,4 @@
 ﻿using Org.BouncyCastle.Crypto;
-using PKISharp.WACS.Plugins.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -11,8 +10,8 @@ namespace PKISharp.WACS.DomainObjects
     [DebuggerDisplay("Target: {CommonName.Value}")]
     public class Target
     {
-        public Target(string friendlyName, string commonName, IList<TargetPart> parts) : 
-            this(friendlyName, new DnsIdentifier(commonName), parts) { }
+        public Target(string? friendlyName, string? commonName, IList<TargetPart> parts) : 
+            this(friendlyName, string.IsNullOrWhiteSpace(commonName) ? null : new DnsIdentifier(commonName), parts) { }
 
         public Target(Identifier identifier) : 
             this(new List<Identifier> { identifier }) { }
@@ -23,12 +22,12 @@ namespace PKISharp.WACS.DomainObjects
             {
                 throw new ArgumentException("Should not be an empty collection", nameof(identifiers));
             }
-            FriendlyName = identifiers.First().Value;
-            CommonName = identifiers.First();
+            CommonName = identifiers.Where(x => x.Value.Length <= Constants.MaxCommonName).FirstOrDefault();
+            FriendlyName = (CommonName ?? identifiers.First()).Value;
             Parts = new[] { new TargetPart(identifiers) };
         }
 
-        public Target(string friendlyName, Identifier commonName, IList<TargetPart> parts)
+        public Target(string? friendlyName, Identifier? commonName, IList<TargetPart> parts)
         {
             FriendlyName = friendlyName;
             CommonName = commonName;
@@ -44,7 +43,15 @@ namespace PKISharp.WACS.DomainObjects
         /// <summary>
         /// CommonName for the certificate
         /// </summary>
-        public Identifier CommonName { get; private set; }
+        public Identifier? CommonName { get; private set; }
+
+        /// <summary>
+        /// Primary identifier (common name in most cases,
+        /// but can be the first identifier of the first 
+        /// part for cases where there is no common name,
+        /// e.g. because it exceeds the max length).
+        /// </summary>
+        public Identifier DisplayName => CommonName ?? Parts.First().Identifiers.First();
 
         /// <summary>
         /// Different parts that make up this target
@@ -78,7 +85,7 @@ namespace PKISharp.WACS.DomainObjects
         public override string ToString()
         {
             var x = new StringBuilder();
-            x.Append(CommonName.Value);
+            x.Append(DisplayName.Value);
             var alternativeNames = Parts.SelectMany(p => p.Identifiers).Distinct();
             if (alternativeNames.Count() > 1)
             {

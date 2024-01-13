@@ -23,8 +23,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         public async Task<Target?> Generate()
         {
             return new Target(
-                $"[{nameof(Manual)}] {_options.CommonName}",
-                _options.CommonName ?? "",
+                $"[{nameof(Manual)}] {_options.CommonName ?? _options.AlternativeNames.First()}",
+                _options.CommonName,
                 new List<TargetPart> {
                     new TargetPart(_options.AlternativeNames.Select(ParseIdentifier))
                 });
