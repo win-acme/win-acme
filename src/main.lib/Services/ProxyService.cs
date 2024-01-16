@@ -119,7 +119,14 @@ namespace PKISharp.WACS.Services
             /// <returns></returns>
             private async Task PostSend(HttpResponseMessage response, CancellationToken cancellationToken)
             {
-                _log.Verbose("[HTTP] Request completed with status {s}", response.StatusCode);
+                if (response.IsSuccessStatusCode)
+                {
+                    _log.Verbose("[HTTP] Request completed with status {s}", response.StatusCode);
+                } 
+                else
+                {
+                    _log.Warning("[HTTP] Request completed with status {s}", response.StatusCode);
+                }
                 if (response.Content != null && response.Content.Headers.ContentLength > 0)
                 {
                     var printableTypes = new[] {
