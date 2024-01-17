@@ -87,7 +87,16 @@ if ($CertInStore)
     try 
 	{
         Set-Item -Path RDS:\GatewayServer\SSLCertificate\Thumbprint -Value $CertInStore.Thumbprint -ErrorAction Stop
-        Restart-Service TSGateway -Force -ErrorAction Stop
+        Stop-Service TSGateway -Force -ErrorAction Stop
+        $Retry = 1
+        do {
+            Start-Sleep -Seconds $Retry
+            Start-Service TSGateway -ErrorAction SilentlyContinue
+            $TSGatewayService = Get-Service TSGateway
+            $Retry++
+        }
+        while ($TSGatewayService.Status -ne 'Running' -and $Retry -lt 5)
+        Start-Service TSGateway -ErrorAction Stop
         "Cert thumbprint set to RD Gateway listener and service restarted"
     } 
 	catch 
@@ -125,7 +134,7 @@ if ($CertInStore)
     try 
 	{
         # Configure RDPublishing Certificate for RDS
-        set-RDCertificate -Role RDPublishing `
+        Set-RDCertificate -Role RDPublishing `
            -ImportPath $tempPfxPath `
            -Password $tempPasswordPfx `
            -ConnectionBroker $RDCB -Force
@@ -140,7 +149,7 @@ if ($CertInStore)
     try 
 	{
         # Configure RDWebAccess Certificate for RDS
-        set-RDCertificate -Role RDWebAccess `
+        Set-RDCertificate -Role RDWebAccess `
            -ImportPath $tempPfxPath `
            -Password $tempPasswordPfx `
            -ConnectionBroker $RDCB -Force
@@ -155,7 +164,7 @@ if ($CertInStore)
     try 
 	{
         # Configure RDRedirector Certificate for RDS
-        set-RDCertificate -Role RDRedirector `
+        Set-RDCertificate -Role RDRedirector `
            -ImportPath $tempPfxPath `
            -Password $tempPasswordPfx `
            -ConnectionBroker $RDCB -force
@@ -164,21 +173,6 @@ if ($CertInStore)
 	catch 
 	{
         "RDRedirector Certificate for RDS was not set"
-        "Error: $($Error[0])"
-		return
-    }
-    try 
-	{
-        # Configure RDGateway Certificate for RDS
-        set-RDCertificate -Role RDGateway `
-           -ImportPath $tempPfxPath `
-           -Password $tempPasswordPfx `
-           -ConnectionBroker $RDCB -force
-        "RDGateway Certificate for RDS was set"
-    } 
-	catch 
-	{
-        "RDGateway Certificate for RDS was not set"
         "Error: $($Error[0])"
 		return
     }
@@ -202,6 +196,31 @@ if ($CertInStore)
         "RDWebClient Certificate for RDS was not set"
         "Error: $($Error[0])"
         return
+    }
+    try 
+	{
+        # Configure RDGateway Certificate for RDS
+        Set-RDCertificate -Role RDGateway `
+           -ImportPath $tempPfxPath `
+           -Password $tempPasswordPfx `
+           -ConnectionBroker $RDCB -force
+	Stop-Service TSGateway -Force -ErrorAction Stop
+        $Retry = 1
+        do {
+            Start-Sleep -Seconds $Retry
+            Start-Service TSGateway -ErrorAction SilentlyContinue
+            $TSGatewayService = Get-Service TSGateway
+            $Retry++
+        }
+        while ($TSGatewayService.Status -ne 'Running' -and $Retry -lt 5)
+        Start-Service TSGateway -ErrorAction Stop
+        "RDGateway Certificate for RDS was set"
+    } 
+	catch 
+	{
+        "RDGateway Certificate for RDS was not set"
+        "Error: $($Error[0])"
+		return
     }
     finally
 	{
