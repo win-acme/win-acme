@@ -204,7 +204,6 @@ if ($CertInStore)
            -ImportPath $tempPfxPath `
            -Password $tempPasswordPfx `
            -ConnectionBroker $RDCB -force
-	Stop-Service TSGateway -Force -ErrorAction Stop
         $Retry = 1
         do {
             Start-Sleep -Seconds $Retry
