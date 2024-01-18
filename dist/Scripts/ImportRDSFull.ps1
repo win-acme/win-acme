@@ -88,7 +88,7 @@ if ($CertInStore)
 	{
         Set-Item -Path RDS:\GatewayServer\SSLCertificate\Thumbprint -Value $CertInStore.Thumbprint -ErrorAction Stop
         Stop-Service TSGateway -Force -ErrorAction Stop
-        $Retry = 1
+        $Retry = 0
         do {
             Start-Sleep -Seconds $Retry
             Start-Service TSGateway -ErrorAction SilentlyContinue
@@ -204,7 +204,7 @@ if ($CertInStore)
            -ImportPath $tempPfxPath `
            -Password $tempPasswordPfx `
            -ConnectionBroker $RDCB -force
-        $Retry = 1
+        $Retry = 0
         do {
             Start-Sleep -Seconds $Retry
             Start-Service TSGateway -ErrorAction SilentlyContinue
