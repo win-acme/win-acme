@@ -36,25 +36,25 @@
 		<PackageReference Include="Autofac" Version="7.1.0" />
 		<PackageReference Include="BouncyCastle.Cryptography" Version="2.2.1" />
 		<PackageReference Include="DnsClient" Version="1.7.0" />
-		<PackageReference Include="FluentFTP" Version="47.1.0" />
-		<PackageReference Include="FluentFTP.GnuTLS" Version="1.0.22" />
-		<PackageReference Include="MailKit" Version="4.2.0" />
-		<PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="7.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
+		<PackageReference Include="FluentFTP" Version="49.0.1" />
+		<PackageReference Include="FluentFTP.GnuTLS" Version="1.0.29" />
+		<PackageReference Include="MailKit" Version="4.3.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Web.Administration" Version="11.1.0" />
 		<PackageReference Include="MorseCode.ITask" Version="2.0.3" />
 		<PackageReference Include="Nager.PublicSuffix" Version="2.4.0" />
-		<PackageReference Include="Serilog" Version="3.0.1" />
+		<PackageReference Include="Serilog" Version="3.1.1" />
 		<PackageReference Include="Serilog.Settings.AppSettings" Version="2.2.2" />
-		<PackageReference Include="Serilog.Settings.Configuration" Version="7.0.1" />
-		<PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
+		<PackageReference Include="Serilog.Settings.Configuration" Version="8.0.0" />
+		<PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
 		<PackageReference Include="Serilog.Sinks.EventLog" Version="3.1.0" />
 		<PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
-		<PackageReference Include="SSH.NET" Version="2023.0.0" />
-		<PackageReference Include="System.Configuration.ConfigurationManager" Version="7.0.0" />
-		<PackageReference Include="System.Net.Http.WinHttpHandler" Version="7.0.0" />
-		<PackageReference Include="System.Security.Cryptography.ProtectedData" Version="7.0.1" />
+		<PackageReference Include="SSH.NET" Version="2023.0.1" />
+		<PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
+		<PackageReference Include="System.Net.Http.WinHttpHandler" Version="8.0.0" />
+		<PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
 		<PackageReference Include="TaskScheduler" Version="2.10.1" />
 		<PackageReference Include="WebDav.Client" Version="2.8.0" />
 	</ItemGroup>

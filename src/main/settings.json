@@ -72,6 +72,7 @@
     "DefaultValidation": null,
     "DefaultValidationMode": null,
     "DisableMultiThreading": true,
+    "ParellelBatchSize": 20,
     "CleanupFolders": true,
     "PreValidateDns": true,
     "PreValidateDnsRetryCount": 10,

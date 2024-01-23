@@ -72,7 +72,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                     var target = Target(options);
                     Assert.IsNotNull(target);
                     Assert.AreEqual(target.IsValid(log), true);
-                    Assert.AreEqual(target.CommonName.Value, site.Bindings.First().Host); // First binding
+                    Assert.AreEqual(target.CommonName?.Value, site.Bindings.First().Host); // First binding
                     Assert.AreEqual(target.IIS, true);
                     Assert.AreEqual(target.Parts.Count, 1);
                     Assert.AreEqual(target.Parts.First().SiteId, siteId);
@@ -98,7 +98,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                 var target = Target(options);
                 Assert.IsNotNull(target);
                 Assert.AreEqual(target.IsValid(log), true);
-                Assert.AreEqual(target.CommonName.Value, commonName); // First binding
+                Assert.AreEqual(target.CommonName?.Value, commonName); // First binding
             }
         }
 
@@ -119,7 +119,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                 var target = Target(options);
                 Assert.IsNotNull(target);
                 Assert.AreEqual(target.IsValid(log), true);
-                Assert.AreEqual(target.CommonName.Value, uniHost); // First binding
+                Assert.AreEqual(target.CommonName?.Value, uniHost); // First binding
             }
         }
 
@@ -140,7 +140,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                 Assert.AreEqual(target.IsValid(log), true);
                 Assert.IsFalse(target.Parts.First().Identifiers.Any(x => x.Value == "test.example.com"));
                 Assert.IsFalse(target.Parts.First().Identifiers.Any(x => x.Value == "four.example.com"));
-                Assert.AreEqual(target.CommonName.Value, "alt.example.com"); // 2nd binding, first is excluded
+                Assert.AreEqual(target.CommonName?.Value, "alt.example.com"); // 2nd binding, first is excluded
             }
         }
 
@@ -179,7 +179,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             var target = Target(options);
             Assert.IsNotNull(target);
             Assert.AreEqual(target.IsValid(log), true);
-            Assert.AreEqual(target.CommonName.Value, site.Bindings.First().Host);
+            Assert.AreEqual(target.CommonName?.Value, site.Bindings.First().Host);
         }
 
         [TestMethod]

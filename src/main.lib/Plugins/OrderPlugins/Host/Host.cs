@@ -28,8 +28,8 @@ namespace PKISharp.WACS.Plugins.OrderPlugins
                     {
                         var parts = target.Parts.Where(p => p.GetIdentifiers(true).Contains(host));
                         var newTarget = new Target(
-                            target.FriendlyName ?? "",
-                            host,
+                            target.FriendlyName,
+                            host.Value.Length <= Constants.MaxCommonName ? host : null,
                             parts.Select(p => 
                                 new TargetPart(new List<Identifier> { host }) { 
                                     SiteId = p.SiteId,

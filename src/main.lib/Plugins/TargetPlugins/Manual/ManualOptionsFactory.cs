@@ -20,7 +20,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             Required();
 
         private ArgumentResult<string?> Common => _arguments.
-            GetString<ManualArguments>(x => x.CommonName);
+            GetString<ManualArguments>(x => x.CommonName).
+            Validate(x => Task.FromResult(x?.Length <= Constants.MaxCommonName), $"Common name too long (max {Constants.MaxCommonName} characters)");
 
         public override async Task<ManualOptions?> Aquire(IInputService inputService, RunLevel runLevel) => 
             Create(await Host.Interactive(inputService).GetValue());
@@ -46,10 +47,16 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         private static ManualOptions? Create(string? input)
         {
-            var sanList = input.ParseCsv()?.Select(x => x.ConvertPunycode()).Select(x => Manual.ParseIdentifier(x));
+            var sanList = input.
+                ParseCsv()?.
+                Select(x => x.ConvertPunycode()).
+                Select(Manual.ParseIdentifier);
             if (sanList != null)
             {
-                var commonName = sanList.OfType<DnsIdentifier>().FirstOrDefault();
+                var commonName = sanList.
+                    OfType<DnsIdentifier>().
+                    Where(x => x.Value.Length <= Constants.MaxCommonName).
+                    FirstOrDefault();
                 return new ManualOptions()
                 {
                     CommonName = commonName?.Value,

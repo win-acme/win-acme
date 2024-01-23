@@ -83,7 +83,7 @@ namespace PKISharp.WACS
             }
             _log.Information("Plugin {targetPluginName} generated source {common} with {n} identifiers",
                 targetPlugin.Meta.Name, 
-                target.CommonName.Value,
+                target.DisplayName.Value,
                 target.Parts.SelectMany(p => p.Identifiers).Distinct().Count());
 
             // Create one or more orders from the target
@@ -199,8 +199,24 @@ namespace PKISharp.WACS
             // Check individual orders
             foreach (var o in orderContexts)
             {
-                o.ShouldRun = o.ShouldRun || runLevel.HasFlag(RunLevel.Force) || _dueDateRuntime.ShouldRun(o);
-                _log.Verbose("Order {name} should run: {run}", o.OrderFriendlyName, o.ShouldRun);
+                if (o.ShouldRun)
+                {
+                    _log.Verbose("Order {name} should run (new/changed source)", o.OrderFriendlyName);
+                }
+                else if (runLevel.HasFlag(RunLevel.Force))
+                {
+                    o.ShouldRun = true;
+                    _log.Verbose("Order {name} should run (forced)", o.OrderFriendlyName);
+                }
+                else if (_dueDateRuntime.ShouldRun(o))
+                {
+                    o.ShouldRun = true;
+                    _log.Verbose("Order {name} should run (due for renewal)", o.OrderFriendlyName);
+                }
+                else
+                {
+                    _log.Verbose("Order {name} should not run this time", o.OrderFriendlyName);
+                }
             }
 
             // Check missing orders

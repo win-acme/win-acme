@@ -108,7 +108,10 @@ namespace TransIp.Library
                 Payload = original.Payload;
                 RateLimitRemaining = original.RateLimitRemaining;
                 RateLimitReset = original.RateLimitReset;
-                PayloadTyped = JsonConvert.DeserializeObject<T>(original.Payload ?? "");
+                if (!string.IsNullOrWhiteSpace(original.Payload))
+                {
+                    PayloadTyped = JsonConvert.DeserializeObject<T>(original.Payload);
+                }
             }
 
             public T? PayloadTyped { get; set; }

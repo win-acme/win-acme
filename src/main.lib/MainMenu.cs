@@ -136,8 +136,8 @@ namespace PKISharp.WACS.Host
                     "(Re)create scheduled task", "T",
                     state: !_userRoleService.AllowTaskScheduler ? State.DisabledState("Run as an administrator to allow access to the task scheduler.") : State.EnabledState()),
                 Choice.Create<Func<Task>>(
-                    () => _container.Resolve<EmailClient>().Test(), 
-                    "Test email notification", "E"),
+                    () => _container.Resolve<NotificationService>().NotifyTest(), 
+                    "Test notification", "E"),
                 Choice.Create<Func<Task>>(
                     () => UpdateAccount(RunLevel.Interactive),
                     _accountManager.ListAccounts().Any() ? "ACME account details" : "Create ACME account", "A"),

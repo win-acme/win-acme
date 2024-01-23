@@ -72,7 +72,10 @@ namespace PKISharp.WACS.Services
                 new(typeof(Plugins.InstallationPlugins.Null)),
 
                 // Secret plugins
-                new(typeof(Plugins.SecretPlugins.JsonSecretService))
+                new(typeof(Plugins.SecretPlugins.JsonSecretService)),
+
+                // Notification targets
+                new(typeof(Plugins.NotificationPlugins.NotificationTargetEmail))
             };
         }
 

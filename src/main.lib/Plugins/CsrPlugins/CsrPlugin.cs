@@ -55,9 +55,8 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
                 LoadFromCache(keyPath);
             }
 
-            var dn = CommonName(commonName, identifiers);
+            var dn = CommonName(commonName);
             var keys = await GetKeys();
-
             ProcessMustStaple(extensions);
             CsrPlugin<TOptions>.ProcessSan(identifiers, extensions);
 
@@ -211,21 +210,11 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         /// <param name="commonName"></param>
         /// <param name="identifiers"></param>
         /// <returns></returns>
-        private X509Name CommonName(Identifier? commonName, List<Identifier> identifiers)
+        private static X509Name CommonName(Identifier? commonName)
         {
-            if (commonName != null)
-            {
-                commonName = commonName.Unicode(false);
-                if (!identifiers.Contains(commonName))
-                {
-                    _log.Warning($"Common name {commonName} provided is invalid.");
-                    commonName = null;
-                }
-            }
-            var finalCommonName = commonName ?? identifiers.FirstOrDefault();
             var attrs = new Dictionary<DerObjectIdentifier, string?>
             {
-                [X509Name.CN] = finalCommonName?.Value
+                [X509Name.CN] = commonName?.Value ?? ""
             };
             var ord = new List<DerObjectIdentifier>
             {

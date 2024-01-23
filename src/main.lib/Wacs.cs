@@ -70,6 +70,7 @@ namespace PKISharp.WACS.Host
                     var encoding = System.Text.Encoding.GetEncoding(_settings.UI.TextEncoding);
                     Console.OutputEncoding = encoding;
                     Console.InputEncoding = encoding;
+                    Console.Title = $"win-acme {VersionService.SoftwareVersion}";
                 }
                 catch
                 {

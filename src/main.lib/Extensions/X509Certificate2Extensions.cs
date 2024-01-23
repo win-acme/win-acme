@@ -101,7 +101,7 @@ namespace PKISharp.WACS.Extensions
         /// <param name="uri"></param>
         /// <returns></returns>
         public static string? SubjectClean(this X509Certificate2 cert)
-            => Split(cert.Subject) ?? "??";
+            => Split(cert.Subject);
 
         /// <summary>
         /// First part of the issuer

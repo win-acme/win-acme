@@ -155,7 +155,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                 var tar = Target(options);
                 Assert.IsNotNull(tar);
                 Assert.AreEqual(tar.IsValid(log), true);
-                Assert.IsTrue(tar.CommonName.Value == "abc.com");
+                Assert.IsTrue(tar.CommonName?.Value == "abc.com");
             }
         }
 

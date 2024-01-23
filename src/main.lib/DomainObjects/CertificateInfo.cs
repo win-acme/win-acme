@@ -95,14 +95,14 @@ namespace PKISharp.WACS.DomainObjects
 
         public IEnumerable<X509Certificate2> Chain { get; private set; }
 
-        public Identifier CommonName
+        public Identifier? CommonName
         {
             get
             {
                 var str = Certificate.SubjectClean();
                 if (string.IsNullOrWhiteSpace(str))
                 {
-                    return SanNames.First();
+                    return null;
                 }
                 return new DnsIdentifier(str);
             }

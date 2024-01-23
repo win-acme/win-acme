@@ -257,35 +257,56 @@ namespace PKISharp.WACS
         }
 
         /// <summary>
-        /// Handle multiple validations in parallel 
+        /// Handle multiple validations in parallel, up to 20
+        /// as to not run into weird limitations (e.g. max size
+        /// of DNS response).
         /// </summary>
         /// <returns></returns>
         private async Task ParallelValidation(ParallelOperations level, ILifetimeScope validationScope, List<ValidationContextParameters> parameters, RunLevel runLevel)
         {
             var contexts = parameters.Select(parameter => new ValidationContext(validationScope, parameter)).ToList();
-            var plugin = contexts.First().ValidationPlugin;
+            var batchSize = _settings.Validation.ParellelBatchSize ?? 100;
+            var batches = Math.DivRem(contexts.Count, batchSize, out var remainder);
+            batches += remainder > 0 ? 1 : 0;
+            for (var i = 0; i < remainder; i += 1)
+            {
+                var batch = contexts.Skip(i * batchSize).Take(batchSize).ToList();
+                if (batch.Any())
+                {
+                    if (batches > 1)
+                    {
+                        _log.Debug("Validating batch {i}/{j}...", i, batches);
+                    }
+                    var plugin = batch.First().ValidationPlugin;
+                    await RunBatch(level, batch, plugin, runLevel);
+                }
+            }
+        }
+
+        private async Task RunBatch(ParallelOperations level, List<ValidationContext> batch, IValidationPlugin plugin, RunLevel runLevel)
+        {
             try
             {
                 // Prepare for challenge answer
                 if (level.HasFlag(ParallelOperations.Prepare))
                 {
                     // Parallel
-                    _log.Verbose("Handle {n} preparation(s)", contexts.Count);
-                    var prepareTasks = contexts.Select(vc => Prepare(vc, runLevel));
+                    _log.Verbose("Handle {n} preparation(s)", batch.Count);
+                    var prepareTasks = batch.Select(vc => Prepare(vc, runLevel));
                     await Task.WhenAll(prepareTasks);
                 }
                 else
                 {
                     // Serial
-                    foreach (var ctx in contexts)
+                    foreach (var ctx in batch)
                     {
                         await Prepare(ctx, runLevel);
                     }
                 }
 
                 // Filter out failed contexts
-                contexts = contexts.Where(x => x.OrderResult.Success != false).ToList();
-                if (!contexts.Any())
+                batch = batch.Where(x => x.OrderResult.Success != false).ToList();
+                if (!batch.Any())
                 {
                     return;
                 }
@@ -294,7 +315,7 @@ namespace PKISharp.WACS
                 var commited = await Commit(plugin);
                 if (!commited)
                 {
-                    foreach (var x in contexts)
+                    foreach (var x in batch)
                     {
                         x.OrderResult.AddErrorMessage("Validation plugin commit stage failed");
                     }
@@ -302,7 +323,7 @@ namespace PKISharp.WACS
                 }
 
                 // Submit challenge answer
-                var contextsWithChallenges = contexts.Where(x => x.Challenge != null).ToList();
+                var contextsWithChallenges = batch.Where(x => x.Challenge != null).ToList();
                 if (contextsWithChallenges.Any())
                 {
                     if (level.HasFlag(ParallelOperations.Answer))
