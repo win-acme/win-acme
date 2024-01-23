@@ -408,7 +408,7 @@ namespace PKISharp.WACS.Configuration.Settings
         /// <summary>
         /// Max number of validations to run in parallel
         /// </summary>
-        public int? ParellelBatchSize { get; set; }
+        public int? ParallelBatchSize { get; set; }
 
         /// <summary>
         /// If set to True, it will cleanup the folder structure
