@@ -265,7 +265,7 @@ namespace PKISharp.WACS
         private async Task ParallelValidation(ParallelOperations level, ILifetimeScope validationScope, List<ValidationContextParameters> parameters, RunLevel runLevel)
         {
             var contexts = parameters.Select(parameter => new ValidationContext(validationScope, parameter)).ToList();
-            var batchSize = _settings.Validation.ParellelBatchSize ?? 100;
+            var batchSize = _settings.Validation.ParallelBatchSize ?? 100;
             var batches = Math.DivRem(contexts.Count, batchSize, out var remainder);
             batches += remainder > 0 ? 1 : 0;
             for (var i = 0; i < remainder; i += 1)
