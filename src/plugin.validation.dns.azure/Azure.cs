@@ -32,6 +32,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         private ArmClient? _armClient;
         private ResourceGroupResource? _resourceGroupResource;
+        private SubscriptionResource? _subscriptionResource;
 
         private readonly AzureOptions _options;
         private readonly AzureHelpers _helpers;
@@ -184,25 +185,20 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         }
 
         /// <summary>
-        /// Get the resource group
+        /// Get the subscription
         /// </summary>
         /// <returns></returns>
-        private async Task<ResourceGroupResource> ResourceGroup()
+        private async Task<SubscriptionResource> Subscription()
         {
-            if (_resourceGroupResource != null)
+            if (_subscriptionResource == null)
             {
-                return _resourceGroupResource;
+                _subscriptionResource = await Client.GetDefaultSubscriptionAsync();
             }
-            var subscription = _options.SubscriptionId == null
-                ? await Client.GetDefaultSubscriptionAsync()
-                : await Client.GetSubscriptions().GetAsync(_options.SubscriptionId);
-            if (subscription == null)
+            if (_subscriptionResource == null)
             {
-                throw new Exception($"Unable to find subscription {_options.SubscriptionId}");
+                throw new Exception($"Unable to find subscription {_options.SubscriptionId ?? "default"}");
             }
-            var resourceGroup = await subscription.GetResourceGroupAsync(_options.ResourceGroupName);
-            _resourceGroupResource = resourceGroup.Value;
-            return _resourceGroupResource;
+            return _subscriptionResource;
         }
 
         /// <summary>
@@ -212,25 +208,29 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         /// <returns></returns>
         private async Task<DnsZoneResource?> GetHostedZone(string recordName)
         {
-            var resourceGroup = await ResourceGroup();
+            var subscription = await Subscription();
+          
+            if (_hostedZones == null)
+            {
+                // Cache so we don't have to repeat this more than once for each renewal
+                var cachedZones = new List<DnsZoneResource>();
+                var zones = subscription.GetDnsZonesAsync();
+                await foreach (var zone in zones)
+                {
+                    cachedZones.Add(zone);
+                }
+                _hostedZones = cachedZones;
+            }
 
             // Option to bypass the best match finder
             if (!string.IsNullOrEmpty(_options.HostedZone))
             {
-                return await resourceGroup.GetDnsZoneAsync(_options.HostedZone);
-            }
-
-            // Cache so we don't have to repeat this more than once for each renewal
-            if (_hostedZones == null)
-            {
-                var zones = new List<DnsZoneResource>();
-                var response = resourceGroup.GetDnsZones().GetAllAsync();
-                await foreach (var zone in response)
+                var match = _hostedZones.FirstOrDefault(h => string.Equals(h.Data.Name, _options.HostedZone, StringComparison.OrdinalIgnoreCase));
+                if (match == null)
                 {
-                    zones.Add(zone);
+                    _log.Error("Unable to find hosted zone {name}", _options.HostedZone);
                 }
-                _log.Debug("Found {count} hosted zones in Azure Resource Group {rg}", zones.Count, _options.ResourceGroupName);
-                _hostedZones = zones;
+                return match;
             }
 
             var hostedZone = FindBestMatch(_hostedZones.ToDictionary(x => x.Data.Name), recordName);
@@ -239,9 +239,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 return hostedZone;
             }
             _log.Error(
-                "Can't find hosted zone for {recordName} in resource group {ResourceGroupName}",
+                "Can't find hosted zone for {recordName} in subscription {subscription}",
                 recordName,
-                _options.ResourceGroupName);
+                _options.SubscriptionId);
             return null;
         }
 
