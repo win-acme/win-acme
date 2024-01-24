@@ -59,7 +59,7 @@ namespace PKISharp.WACS.Services
             {
                 size = text.Length;
             }
-            Write($"{Black}{text.PadRight(size)}{Reset}\n", color);
+            Write($"{text.PadRight(size)}\n", color);
         }
 
         private static void Write(string? text = "", ConsoleColor? color = null)
@@ -69,7 +69,11 @@ namespace PKISharp.WACS.Services
             {
                 Console.ForegroundColor = color.Value;
             }
-            Console.Write($"{Black}{text}{Reset}");
+            if (Environment.OSVersion.Version.Major >= 10)
+            {
+                text = $"{Black}{text}{Reset}";
+            }
+            Console.Write(text);
             Console.ResetColor();
         }
 
