@@ -1,4 +1,4 @@
-using Newtonsoft.Json.Linq;
+ï»¿using Newtonsoft.Json.Linq;
 using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
@@ -54,7 +54,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 var identifier = record.Context.Identifier;
                 var domain = record.Authority.Domain;
                 var value = record.Value;
-                //Ôö¼Ó½âÎö¼ÇÂ¼
+                //å¢åŠ è§£æè®°å½•
                 return AddRecord(identifier, domain, value);
             }
             catch { }
@@ -68,27 +68,27 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             {
                 var identifier = record.Context.Identifier;
                 var domain = record.Authority.Domain;
-                //É¾³ı½âÎö¼ÇÂ¼
+                //åˆ é™¤è§£æè®°å½•
                 DelRecord(identifier, domain);
             }
             catch { }
         }
 
-        #region Ë½ÓĞÂß¼­
+        #region ç§æœ‰é€»è¾‘
 
         /// <summary>
-        /// Ôö¼Ó½âÎö¼ÇÂ¼
+        /// å¢åŠ è§£æè®°å½•
         /// </summary>
-        /// <param name="domain">ÓòÃû</param>
-        /// <param name="subDomain">Ö÷¼ÇÂ¼</param>
-        /// <param name="value">½âÎö¼ÇÂ¼</param>
+        /// <param name="domain">åŸŸå</param>
+        /// <param name="subDomain">ä¸»è®°å½•</param>
+        /// <param name="value">è§£æè®°å½•</param>
         /// <returns></returns>
         private bool AddRecord(string domain, string subDomain, string value)
         {
             subDomain = subDomain.Replace($".{domain}", "");
-            //É¾³ı
+            //åˆ é™¤
             DelRecord(domain, subDomain);
-            //Ôö¼Ó
+            //å¢åŠ 
             var mod = "dnspod";
             var ver = "2021-03-23";
             var act = "CreateRecord";
@@ -106,7 +106,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 Domain = domain,
                 SubDomain = subDomain,
                 RecordType = "TXT",
-                RecordLine = "Ä¬ÈÏ",
+                RecordLine = "é»˜è®¤",
                 Value = value,
             };
             var req = new CommonRequest(param);
@@ -116,18 +116,18 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         }
 
         /// <summary>
-        /// É¾³ı½âÎö¼ÇÂ¼
+        /// åˆ é™¤è§£æè®°å½•
         /// </summary>
-        /// <param name="domain">ÓòÃû</param>
-        /// <param name="subDomain">Ö÷¼ÇÂ¼</param>
+        /// <param name="domain">åŸŸå</param>
+        /// <param name="subDomain">ä¸»è®°å½•</param>
         /// <returns></returns>
         private bool DelRecord(string domain, string subDomain)
         {
             subDomain = subDomain.Replace($".{domain}", "");
-            //¼ì²é
+            //æ£€æŸ¥
             var recordId = GetRecordID(domain, subDomain);
             if (recordId == default) return false;
-            //É¾³ı
+            //åˆ é™¤
             var mod = "dnspod";
             var ver = "2021-03-23";
             var act = "DeleteRecord";
@@ -148,10 +148,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         }
 
         /// <summary>
-        /// »ñÈ¡½âÎöID
+        /// è·å–è§£æID
         /// </summary>
-        /// <param name="domain">ÓòÃû</param>
-        /// <param name="subDomain">Ö÷¼ÇÂ¼</param>
+        /// <param name="domain">åŸŸå</param>
+        /// <param name="subDomain">ä¸»è®°å½•</param>
         /// <returns></returns>
         private long GetRecordID(string domain, string subDomain)
         {
@@ -171,7 +171,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var req = new CommonRequest(param);
             var resp = client.Call(req, act);
             //Console.WriteLine(resp);
-            //ÄäÃûÈ¡Öµ
+            //åŒ¿åå–å€¼
             var json = JObject.Parse(resp);
             var jsonData = json["Response"]!["RecordList"];
             var jsonDataLinq = jsonData!.Where(w => w["Name"]!.ToString() == subDomain && w["Type"]!.ToString() == "TXT");
@@ -179,7 +179,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return default;
         }
 
-        #endregion Ë½ÓĞÂß¼­
+        #endregion ç§æœ‰é€»è¾‘
 
         public void Dispose() => _hc.Dispose();
     }
