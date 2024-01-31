@@ -31,7 +31,7 @@
   },
   "Cache": {
     "ReuseDays": 1,
-    "DeleteStaleFiles": true,
+    "DeleteStaleFiles": false,
     "DeleteStaleFilesDays": 120,
     "Path": null
   },
