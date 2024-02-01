@@ -54,10 +54,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 var identifier = record.Context.Identifier;
                 var domain = record.Authority.Domain;
                 var value = record.Value;
-                //增加解析记录
+                //Add Record
                 return AddRecord(identifier, domain, value);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                //Out Error
+                _log.Error($"Unable to add TencentDNS record: {ex.Message}");
+            }
             return false;
         }
 
@@ -68,39 +73,34 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             {
                 var identifier = record.Context.Identifier;
                 var domain = record.Authority.Domain;
-                //删除解析记录
+                //Delete Record
                 DelRecord(identifier, domain);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                //Out Error
+                _log.Error($"Unable to delete TencentDNS record: {ex.Message}");
+            }
         }
 
-        #region 私有逻辑
+        #region PrivateLogic
 
         /// <summary>
-        /// 增加解析记录
+        /// Add Record
         /// </summary>
-        /// <param name="domain">域名</param>
-        /// <param name="subDomain">主记录</param>
-        /// <param name="value">解析记录</param>
+        /// <param name="domain">Domain</param>
+        /// <param name="subDomain">SubDomain</param>
+        /// <param name="value">Value</param>
         /// <returns></returns>
         private bool AddRecord(string domain, string subDomain, string value)
         {
             subDomain = subDomain.Replace($".{domain}", "");
-            //删除
+            //Delete Record
             DelRecord(domain, subDomain);
-            //增加
-            var mod = "dnspod";
-            var ver = "2021-03-23";
+            //Add Record
             var act = "CreateRecord";
-            var region = "";
-            var endpoint = "dnspod.tencentcloudapi.com";
-            var hpf = new HttpProfile
-            {
-                ReqMethod = "POST",
-                Endpoint = endpoint,
-            };
-            var cpf = new ClientProfile(ClientProfile.SIGN_TC3SHA256, hpf);
-            var client = new CommonClient(mod, ver, _cred, region, cpf);
+            var client = GetCommonClient("DescribeRecordList");
             var param = new
             {
                 Domain = domain,
@@ -116,30 +116,20 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         }
 
         /// <summary>
-        /// 删除解析记录
+        /// Delete Record
         /// </summary>
-        /// <param name="domain">域名</param>
-        /// <param name="subDomain">主记录</param>
+        /// <param name="domain">Domain</param>
+        /// <param name="subDomain">SubDomain</param>
         /// <returns></returns>
         private bool DelRecord(string domain, string subDomain)
         {
             subDomain = subDomain.Replace($".{domain}", "");
-            //检查
+            //Get RecordID
             var recordId = GetRecordID(domain, subDomain);
             if (recordId == default) return false;
-            //删除
-            var mod = "dnspod";
-            var ver = "2021-03-23";
+            //Delete Record
             var act = "DeleteRecord";
-            var region = "";
-            var endpoint = "dnspod.tencentcloudapi.com";
-            var hpf = new HttpProfile
-            {
-                ReqMethod = "POST",
-                Endpoint = endpoint,
-            };
-            var cpf = new ClientProfile(ClientProfile.SIGN_TC3SHA256, hpf);
-            var client = new CommonClient(mod, ver, _cred, region, cpf);
+            var client = GetCommonClient("DescribeRecordList");
             var param = new { Domain = domain, RecordId = recordId };
             var req = new CommonRequest(param);
             var resp = client.Call(req, act);
@@ -148,30 +138,20 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         }
 
         /// <summary>
-        /// 获取解析ID
+        /// Get RecordID
         /// </summary>
-        /// <param name="domain">域名</param>
-        /// <param name="subDomain">主记录</param>
+        /// <param name="domain">Domain</param>
+        /// <param name="subDomain">SubDomain</param>
         /// <returns></returns>
         private long GetRecordID(string domain, string subDomain)
         {
-            var mod = "dnspod";
-            var ver = "2021-03-23";
             var act = "DescribeRecordList";
-            var region = "";
-            var endpoint = "dnspod.tencentcloudapi.com";
-            var hpf = new HttpProfile
-            {
-                ReqMethod = "POST",
-                Endpoint = endpoint,
-            };
-            var cpf = new ClientProfile(ClientProfile.SIGN_TC3SHA256, hpf);
-            var client = new CommonClient(mod, ver, _cred, region, cpf);
+            var client = GetCommonClient("DescribeRecordList");
             var param = new { Domain = domain };
             var req = new CommonRequest(param);
             var resp = client.Call(req, act);
             //Console.WriteLine(resp);
-            //匿名取值
+            //Anonymous Value
             var json = JObject.Parse(resp);
             var jsonData = json["Response"]!["RecordList"];
             var jsonDataLinq = jsonData!.Where(w => w["Name"]!.ToString() == subDomain && w["Type"]!.ToString() == "TXT");
@@ -179,7 +159,35 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return default;
         }
 
-        #endregion 私有逻辑
+        /// <summary>
+        /// DnsPod Server
+        /// </summary>
+        private const string DnsPodServer = "dnspod.tencentcloudapi.com";
+
+        /// <summary>
+        /// Get CommonClient
+        /// </summary>
+        /// <param name="modTemp">Mod</param>
+        /// <param name="verTemp">Ver</param>
+        /// <param name="regionTemp">Region</param>
+        /// <param name="endpointTemp">DnsPodServer</param>
+        /// <returns></returns>
+        private CommonClient GetCommonClient(string? modTemp = default, string? verTemp = default, string? regionTemp = default, string? endpointTemp = default)
+        {
+            var mod = modTemp ?? "dnspod";
+            var ver = verTemp ?? "2021-03-23";
+            var region = regionTemp ?? "";
+            var hpf = new HttpProfile
+            {
+                ReqMethod = "POST",
+                Endpoint = endpointTemp ?? DnsPodServer,
+            };
+            var cpf = new ClientProfile(ClientProfile.SIGN_TC3SHA256, hpf);
+            var client = new CommonClient(mod, ver, _cred, region, cpf);
+            return client;
+        }
+
+        #endregion PrivateLogic
 
         public void Dispose() => _hc.Dispose();
     }
