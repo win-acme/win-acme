@@ -8,7 +8,10 @@
   "UI": {
     "DateFormat": "yyyy/M/d",
     "PageSize": 50,
-    "TextEncoding": "utf-8"
+    "TextEncoding": "utf-8",
+    "Color": {
+      "Background": null
+    }
   },
   "Acme": {
     "DefaultBaseUri": "https://acme-v02.api.letsencrypt.org/",

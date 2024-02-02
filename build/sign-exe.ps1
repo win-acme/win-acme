@@ -4,7 +4,8 @@ New-SelfSignedCertificate `
     -CertStoreLocation cert:\currentuser\my `
     -Subject "CN=WACS" `
     -KeyUsage DigitalSignature `
-    -Type CodeSigning
+    -Type CodeSigning `
+	-NotAfter (Get-Date).AddMonths(24) 
 #>
 
 param (

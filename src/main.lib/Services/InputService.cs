@@ -41,7 +41,7 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        private static void WriteLine(string? text = "", ConsoleColor? color = null)
+        private void WriteLine(string? text = "", ConsoleColor? color = null)
         {
             text ??= "";
             var size = -1;
@@ -66,14 +66,15 @@ namespace PKISharp.WACS.Services
 
         private const string Black = "\u001b[40m";
         private const string Reset = "\u001b[0m";
-        private static void Write(string? text = "", ConsoleColor? color = null)
+        private void Write(string? text = "", ConsoleColor? color = null)
         {
             text ??= "";
             if (color != null)
             {
                 Console.ForegroundColor = color.Value;
             }
-            if (Environment.OSVersion.Version.Major >= 10)
+            if (Environment.OSVersion.Version.Major >= 10 && 
+                _settings.UI?.Color?.Background == "black")
             {
                 text = $"{Black}{text}{Reset}";
             }
@@ -159,7 +160,7 @@ namespace PKISharp.WACS.Services
             _dirty = true;
         }
 
-        private static void WriteMultiline(int startPos, string value)
+        private void WriteMultiline(int startPos, string value)
         {
             var step = 79 - startPos;
             var sentences = value.Split('\n');

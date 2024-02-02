@@ -66,6 +66,18 @@ namespace PKISharp.WACS.Configuration.Settings
         /// How console tekst should be encoded
         /// </summary>
         public string? TextEncoding { get; set; }
+        /// <summary>
+        /// Which colors should be applied
+        /// </summary>
+        public ColorSettings? Color { get; set; }
+    }
+
+    /// <summary>
+    /// Colors
+    /// </summary>
+    public class ColorSettings
+    {
+        public string? Background { get; set; }
     }
 
     public class AcmeSettings
