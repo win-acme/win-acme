@@ -41,19 +41,21 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        private const string Black = "\u001b[40m";
-        private const string Reset = "\u001b[0m";
         private static void WriteLine(string? text = "", ConsoleColor? color = null)
         {
             text ??= "";
-            var size = Console.WindowWidth - 1;
-            if (size != Console.CursorLeft + 1)
+            var size = -1;
+            if (!Console.IsOutputRedirected)
             {
-                size -= Console.CursorLeft;
-            }
-            if (size < text.Length)
-            {
-                size = Console.WindowWidth + size;
+                size = Console.WindowWidth - 1;
+                if (size != Console.CursorLeft + 1)
+                {
+                    size -= Console.CursorLeft;
+                }
+                if (size < text.Length)
+                {
+                    size = Console.WindowWidth + size;
+                }
             }
             if (size < 0)
             {
@@ -62,6 +64,8 @@ namespace PKISharp.WACS.Services
             Write($"{text.PadRight(size)}\n", color);
         }
 
+        private const string Black = "\u001b[40m";
+        private const string Reset = "\u001b[0m";
         private static void Write(string? text = "", ConsoleColor? color = null)
         {
             text ??= "";
