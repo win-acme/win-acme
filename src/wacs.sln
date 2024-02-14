@@ -69,6 +69,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.dns.infoman
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.dns.rfc2136", "plugin.validation.dns.rfc2136\wacs.validation.dns.rfc2136.csproj", "{C22EFB37-8CC1-42C2-8F82-6670969DBB0C}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.dns.dnspod", "plugin.validation.dns.tencent\wacs.validation.dns.tencent.csproj", "{40C9AE2F-F3AC-41A1-B211-BF1C71880F3D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -245,6 +247,14 @@ Global
 		{C22EFB37-8CC1-42C2-8F82-6670969DBB0C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C22EFB37-8CC1-42C2-8F82-6670969DBB0C}.ReleaseTrimmed|Any CPU.ActiveCfg = Release|Any CPU
 		{C22EFB37-8CC1-42C2-8F82-6670969DBB0C}.ReleaseTrimmed|Any CPU.Build.0 = Release|Any CPU
+		{40C9AE2F-F3AC-41A1-B211-BF1C71880F3D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40C9AE2F-F3AC-41A1-B211-BF1C71880F3D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40C9AE2F-F3AC-41A1-B211-BF1C71880F3D}.DebugTrimmed|Any CPU.ActiveCfg = Debug|Any CPU
+		{40C9AE2F-F3AC-41A1-B211-BF1C71880F3D}.DebugTrimmed|Any CPU.Build.0 = Debug|Any CPU
+		{40C9AE2F-F3AC-41A1-B211-BF1C71880F3D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40C9AE2F-F3AC-41A1-B211-BF1C71880F3D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{40C9AE2F-F3AC-41A1-B211-BF1C71880F3D}.ReleaseTrimmed|Any CPU.ActiveCfg = Release|Any CPU
+		{40C9AE2F-F3AC-41A1-B211-BF1C71880F3D}.ReleaseTrimmed|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
