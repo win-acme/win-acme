@@ -214,7 +214,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         {
             var attrs = new Dictionary<DerObjectIdentifier, string?>
             {
-                [X509Name.CN] = commonName?.Value ?? ""
+                [X509Name.CN] = commonName?.Unicode(false).Value ?? ""
             };
             var ord = new List<DerObjectIdentifier>
             {
