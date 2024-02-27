@@ -143,6 +143,19 @@ PluginRelease plugin.store.keyvault @(
 PluginRelease plugin.store.userstore @(
 	"PKISharp.WACS.Plugins.StorePlugins.UserStore.dll"
 )
+PluginRelease plugin.validation.dns.aliyun @(
+	"AlibabaCloud.EndpointUtil.dll",
+	"AlibabaCloud.GatewaySpi.dll",
+	"AlibabaCloud.OpenApiClient.dll",
+	"AlibabaCloud.OpenApiUtil.dll",
+	"AlibabaCloud.SDK.Alidns20150109.dll",
+	"AlibabaCloud.TeaUtil.dll",
+	"AlibabaCloud.TeaXML.dll",
+	"Aliyun.Credentials.dll",
+	"Newtonsoft.Json.dll",
+	"Tea.dll",
+	"PKISharp.WACS.Plugins.ValidationPlugins.ALiYun.dll"
+)
 PluginRelease plugin.validation.dns.azure @(
 	"Azure.Core.dll",
 	"Azure.Identity.dll",
@@ -215,6 +228,11 @@ PluginRelease plugin.validation.dns.route53 @(
 )
 PluginRelease plugin.validation.dns.simply @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.Simply.dll"
+)
+PluginRelease plugin.validation.dns.tencent @(
+	"Newtonsoft.Json.dll",
+	"TencentCloudCommon.dll",
+	"PKISharp.WACS.Plugins.ValidationPlugins.Tencent.dll"
 )
 PluginRelease plugin.validation.dns.transip @(
 	"Newtonsoft.Json.dll",

@@ -29,6 +29,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private readonly ILogService _log;
         private readonly string _storeName;
         private readonly IIISClient _iisClient;
+        private readonly ISettingsService _settings;
         private readonly CertificateStoreOptions _options;
         private readonly FindPrivateKey _keyFinder;
         private readonly CertificateStoreClient _storeClient;
@@ -42,6 +43,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             _log = log;
             _iisClient = iisClient;
             _options = options;
+            _settings = settings;
             _keyFinder = keyFinder;
             _storeName = options.StoreName ?? DefaultStore(settings, iisClient);
             if (string.Equals(_storeName, "Personal", StringComparison.InvariantCultureIgnoreCase) ||
@@ -102,6 +104,20 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 store = _storeClient.FindByThumbprint(input.Certificate.Thumbprint);
             }
 
+            var exportable =
+                _settings.Store.CertificateStore.PrivateKeyExportable == true ||
+#pragma warning disable CS0618 // Type or member is obsolete
+                (_settings.Store.CertificateStore.PrivateKeyExportable == null && _settings.Security.PrivateKeyExportable == true);
+#pragma warning restore CS0618 // Type or member is obsolete
+            if (exportable)
+            {
+                _options.AclRead = _options.AclRead ?? new List<string>();
+                if (!_options.AclRead.Contains("administrators")) {
+                    _log.Information("Add local administators to Private Key ACL to allow export");
+                    _options.AclRead.Add("administrators");
+                }
+            }
+
             if (_options.AclFullControl != null)
             {
                 SetAcl(store, _options.AclFullControl, FileSystemRights.FullControl);
@@ -135,13 +151,22 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     {
                         try
                         {
-                            var principal = new NTAccount(account);
-                            fs.AddAccessRule(new FileSystemAccessRule(principal, rights, AccessControlType.Allow));
-                            _log.Information("Add full control rights for {account}", account);
+                            IdentityReference? identity = null;
+                            identity = account.ToLower() switch
+                            {
+                                // For for international installs of Windows
+                                // reference: https://learn.microsoft.com/en-US/windows-server/identity/ad-ds/manage/understand-security-identifiers
+                                "administrators" => new SecurityIdentifier("S-1-5-32-544"),             
+                                "network service" => new SecurityIdentifier("S-1-5-20"),
+                                var s when s.StartsWith("s-1-5-") => new SecurityIdentifier(s),
+                                _ => new NTAccount(account).Translate(typeof(SecurityIdentifier)),
+                            };
+                            fs.AddAccessRule(new FileSystemAccessRule(identity, rights, AccessControlType.Allow));
+                            _log.Information("Add {rights} rights for {account}", rights, identity.Translate(typeof(NTAccount)).Value);
                         }
                         catch (Exception ex)
                         {
-                            _log.Warning("Unable to set full control rights for {account}: {ex}", account, ex.Message);
+                            _log.Warning("Unable to set {rights} rights for {account}: {ex}", rights, account, ex.Message);
                             _log.Verbose("{ex}", ex.StackTrace);
                         }
                     }

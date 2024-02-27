@@ -2,7 +2,9 @@
 using ACMESharp.Authorizations;
 using ACMESharp.Protocol;
 using ACMESharp.Protocol.Resources;
+using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.Nist;
+using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Ocsp;
 using Org.BouncyCastle.X509;
 using PKISharp.WACS.DomainObjects;
@@ -293,7 +295,8 @@ namespace PKISharp.WACS.Clients.Acme
         {
             var bouncyCert = new X509CertificateParser().ReadCertificate(certificate.Certificate.GetRawCertData());
             var bouncyIssuer = new X509CertificateParser().ReadCertificate(certificate.Chain.First().GetRawCertData());
-            var certificateId = new CertificateID(NistObjectIdentifiers.IdSha256.Id, bouncyIssuer, bouncyCert.SerialNumber);
+            var alg = new AlgorithmIdentifier(new DerObjectIdentifier(NistObjectIdentifiers.IdSha256.Id), DerNull.Instance);
+            var certificateId = new CertificateID(alg, bouncyIssuer, bouncyCert.SerialNumber);
             return certificateId.ToAsn1Object().GetDerEncoded();
         }
 
