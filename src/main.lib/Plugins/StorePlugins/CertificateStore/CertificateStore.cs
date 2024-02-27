@@ -151,9 +151,18 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     {
                         try
                         {
-                            var principal = new NTAccount(account);
-                            fs.AddAccessRule(new FileSystemAccessRule(principal, rights, AccessControlType.Allow));
-                            _log.Information("Add {rights} rights for {account}", rights, account);
+                            IdentityReference? identity = null;
+                            identity = account.ToLower() switch
+                            {
+                                // For for international installs of Windows
+                                // reference: https://learn.microsoft.com/en-US/windows-server/identity/ad-ds/manage/understand-security-identifiers
+                                "administrators" => new SecurityIdentifier("S-1-5-32-544"),             
+                                "network service" => new SecurityIdentifier("S-1-5-20"),
+                                var s when s.StartsWith("s-1-5-") => new SecurityIdentifier(s),
+                                _ => new NTAccount(account).Translate(typeof(SecurityIdentifier)),
+                            };
+                            fs.AddAccessRule(new FileSystemAccessRule(identity, rights, AccessControlType.Allow));
+                            _log.Information("Add {rights} rights for {account}", rights, identity.Translate(typeof(NTAccount)).Value);
                         }
                         catch (Exception ex)
                         {
