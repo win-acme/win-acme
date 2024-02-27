@@ -186,7 +186,6 @@ PluginRelease plugin.validation.dns.godaddy @(
 PluginRelease plugin.validation.dns.googledns @(
 	"Google.Apis.dll",
 	"Google.Apis.Auth.dll",
-	"Google.Apis.Auth.PlatformServices.dll",
 	"Google.Apis.Core.dll",
 	"Google.Apis.Dns.v1.dll",
 	"PKISharp.WACS.Plugins.ValidationPlugins.GoogleDns.dll"

@@ -86,7 +86,8 @@ namespace PKISharp.WACS.Services
             "wacs.dll",
             "wacs.lib.dll",
             "mscordbi.dll",
-            "mscordaccore.dll"
+            "mscordaccore.dll",
+            "Microsoft.Testing.Platform.MSBuild.dll"
         };
 
         protected List<TypeDescriptor> LoadFromDisk()
@@ -155,7 +156,7 @@ namespace PKISharp.WACS.Services
                     types = rex.Types.OfType<Type>();
                     foreach (var lex in rex.LoaderExceptions.OfType<Exception>())
                     {
-                        _log.Error(lex, "Error loading type from {assembly}", assembly.FullName);
+                        _log.Error(lex, "Error loading type from {assembly} ({disk})", assembly.FullName, assembly.Location);
                     }
                 }
                 catch (Exception ex)
