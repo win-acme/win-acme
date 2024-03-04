@@ -54,6 +54,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 var identifier = record.Context.Identifier;
                 var domain = record.Authority.Domain;
                 var value = record.Value;
+                //Get My Domain
+                identifier = GetDomain(identifier);
+                if (identifier == null) throw new($"The domain name cannot be found: {identifier}");
                 //Add Record
                 return AddRecord(identifier, domain, value);
             }
@@ -73,6 +76,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             {
                 var identifier = record.Context.Identifier;
                 var domain = record.Authority.Domain;
+                //Get My Domain
+                identifier = GetDomain(identifier);
+                if (identifier == null) throw new($"The domain name cannot be found: {identifier}");
                 //Delete Record
                 DelRecord(identifier, domain);
             }
@@ -99,8 +105,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             //Delete Record
             DelRecord(domain, subDomain);
             //Add Record
-            var act = "CreateRecord";
-            var client = GetCommonClient("DescribeRecordList");
+            var client = GetCommonClient();
             var param = new
             {
                 Domain = domain,
@@ -110,6 +115,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 Value = value,
             };
             var req = new CommonRequest(param);
+            var act = "CreateRecord";
             var resp = client.Call(req, act);
             //Console.WriteLine(resp);
             return true;
@@ -128,10 +134,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var recordId = GetRecordID(domain, subDomain);
             if (recordId == default) return false;
             //Delete Record
-            var act = "DeleteRecord";
-            var client = GetCommonClient("DescribeRecordList");
+            var client = GetCommonClient();
             var param = new { Domain = domain, RecordId = recordId };
             var req = new CommonRequest(param);
+            var act = "DeleteRecord";
             var resp = client.Call(req, act);
             //Console.WriteLine(resp);
             return true;
@@ -145,10 +151,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         /// <returns></returns>
         private long GetRecordID(string domain, string subDomain)
         {
-            var act = "DescribeRecordList";
-            var client = GetCommonClient("DescribeRecordList");
+            var client = GetCommonClient();
             var param = new { Domain = domain };
             var req = new CommonRequest(param);
+            var act = "DescribeRecordList";
             var resp = client.Call(req, act);
             //Console.WriteLine(resp);
             //Anonymous Value
@@ -156,6 +162,27 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var jsonData = json["Response"]!["RecordList"];
             var jsonDataLinq = jsonData!.Where(w => w["Name"]!.ToString() == subDomain && w["Type"]!.ToString() == "TXT");
             if (jsonDataLinq.Any()) return (long)jsonDataLinq.First()["RecordId"]!;
+            return default;
+        }
+
+        /// <summary>
+        /// Get Domain
+        /// </summary>
+        /// <param name="domain">Domain</param>
+        /// <returns></returns>
+        private string? GetDomain(string domain)
+        {
+            var client = GetCommonClient();
+            var param = new { };
+            var req = new CommonRequest(param);
+            var act = "DescribeDomainList";
+            var resp = client.Call(req, act);
+            //Console.WriteLine(resp);
+            //Anonymous Value
+            var json = JObject.Parse(resp);
+            var jsonData = json["Response"]!["DomainList"];
+            var jsonDataLinq = jsonData!.Where(w => domain.Contains(w["Name"]!.ToString()));
+            if (jsonDataLinq.Any()) return jsonDataLinq.First()["Name"]!.ToString();
             return default;
         }
 
