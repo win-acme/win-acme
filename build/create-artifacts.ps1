@@ -167,7 +167,8 @@ PluginRelease plugin.validation.dns.azure @(
 	"Microsoft.IdentityModel.Abstractions.dll"
 	"PKISharp.WACS.Plugins.Azure.Common.dll",
 	"PKISharp.WACS.Plugins.ValidationPlugins.Azure.dll",
-	"System.Memory.Data.dll"
+	"System.Memory.Data.dll",
+	"System.ClientModel.dll"
 )
 PluginRelease plugin.validation.dns.cloudflare @(
 	"FluentCloudflare.dll", 
