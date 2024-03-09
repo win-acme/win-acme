@@ -51,12 +51,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             await Task.Delay(0);
             try
             {
-                var identifier = record.Context.Identifier;
+                var identifier = GetDomain(record) ?? throw new($"The domain name cannot be found: {record.Context.Identifier}");
                 var domain = record.Authority.Domain;
                 var value = record.Value;
-                //Get My Domain
-                identifier = GetDomain(identifier);
-                if (identifier == null) throw new($"The domain name cannot be found: {identifier}");
                 //Add Record
                 return AddRecord(identifier, domain, value);
             }
@@ -74,13 +71,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             await Task.Delay(0);
             try
             {
-                var identifier = record.Context.Identifier;
+                var identifier = GetDomain(record) ?? throw new($"The domain name cannot be found: {record.Context.Identifier}");
                 var domain = record.Authority.Domain;
-                //Get My Domain
-                identifier = GetDomain(identifier);
-                if (identifier == null) throw new($"The domain name cannot be found: {identifier}");
                 //Delete Record
-                DelRecord(identifier, domain);
+                _ = DelRecord(identifier, domain);
             }
             catch (Exception ex)
             {
@@ -103,7 +97,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             subDomain = subDomain.Replace($".{domain}", "");
             //Delete Record
-            DelRecord(domain, subDomain);
+            _ = DelRecord(domain, subDomain);
             //Add Record
             var client = GetCommonClient();
             var param = new
@@ -157,7 +151,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var act = "DescribeRecordList";
             var resp = client.Call(req, act);
             //Console.WriteLine(resp);
-            //Anonymous Value
             var json = JObject.Parse(resp);
             var jsonData = json["Response"]!["RecordList"];
             var jsonDataLinq = jsonData!.Where(w => w["Name"]!.ToString() == subDomain && w["Type"]!.ToString() == "TXT");
@@ -168,9 +161,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         /// <summary>
         /// Get Domain
         /// </summary>
-        /// <param name="domain">Domain</param>
+        /// <param name="record">DnsValidationRecord</param>
         /// <returns></returns>
-        private string? GetDomain(string domain)
+        private string? GetDomain(DnsValidationRecord record)
         {
             var client = GetCommonClient();
             var param = new { };
@@ -178,11 +171,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var act = "DescribeDomainList";
             var resp = client.Call(req, act);
             //Console.WriteLine(resp);
-            //Anonymous Value
             var json = JObject.Parse(resp);
-            var jsonData = json["Response"]!["DomainList"];
-            var jsonDataLinq = jsonData!.Where(w => domain.Contains(w["Name"]!.ToString()));
-            if (jsonDataLinq.Any()) return jsonDataLinq.First()["Name"]!.ToString();
+            var myDomains = json["Response"]!["DomainList"]!.Select(t => t["Name"]!.ToString());
+            var zone = FindBestMatch(myDomains.ToDictionary(x => x), record.Authority.Domain);
+            if (zone != null) return zone;
             return default;
         }
 

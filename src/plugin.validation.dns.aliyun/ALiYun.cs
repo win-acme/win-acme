@@ -1,6 +1,7 @@
 ﻿using AlibabaCloud.OpenApiClient.Models;
 using AlibabaCloud.SDK.Alidns20150109.Models;
 using AlibabaCloud.TeaUtil.Models;
+using Newtonsoft.Json.Linq;
 using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
@@ -53,12 +54,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             await Task.Delay(0);
             try
             {
-                var identifier = record.Context.Identifier;
+                var identifier = GetDomain(record) ?? throw new($"The domain name cannot be found: {record.Context.Identifier}");
                 var domain = record.Authority.Domain;
                 var value = record.Value;
-                //Get My Domain
-                identifier = GetDomain(identifier);
-                if (identifier == null) throw new($"The domain name cannot be found: {identifier}");
                 //Add Record
                 return AddRecord(identifier, domain, value);
             }
@@ -76,13 +74,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             await Task.Delay(0);
             try
             {
-                var identifier = record.Context.Identifier;
+                var identifier = GetDomain(record) ?? throw new($"The domain name cannot be found: {record.Context.Identifier}");
                 var domain = record.Authority.Domain;
-                //Get My Domain
-                identifier = GetDomain(identifier);
-                if (identifier == null) throw new($"The domain name cannot be found: {identifier}");
                 //Delete Record
-                DelRecord(identifier, domain);
+                _ = DelRecord(identifier, domain);
             }
             catch (Exception ex)
             {
@@ -105,7 +100,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             subDomain = subDomain.Replace($".{domain}", "");
             //Delete Record
-            DelRecord(domain, subDomain);
+            _ = DelRecord(domain, subDomain);
             //Add Record
             var addRecords = new AddDomainRecordRequest
             {
@@ -166,16 +161,17 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         /// <summary>
         /// Get Domain
         /// </summary>
-        /// <param name="domain">Domain</param>
+        /// <param name="record">DnsValidationRecord</param>
         /// <returns></returns>
-        private string? GetDomain(string domain)
+        private string? GetDomain(DnsValidationRecord record)
         {
             var detDomains = new DescribeDomainsRequest();
             var runtime = new RuntimeOptions();
             var data = _client.DescribeDomainsWithOptions(detDomains, runtime);
             //Console.WriteLine(data);
-            var jsonDataLinq = data.Body.Domains.Domain.Where(w => domain.Contains(w.DomainName));
-            if (jsonDataLinq.Any()) return jsonDataLinq.First().DomainName;
+            var myDomains = data.Body.Domains.Domain.Select(t => t.DomainName);
+            var zone = FindBestMatch(myDomains.ToDictionary(x => x), record.Authority.Domain);
+            if (zone != null) return zone;
             return default;
         }
 
