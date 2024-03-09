@@ -181,6 +181,10 @@ PluginRelease plugin.validation.dns.digitalocean @(
 	"Newtonsoft.Json.dll",
 	"PKISharp.WACS.Plugins.ValidationPlugins.DigitalOcean.dll"
 )
+PluginRelease plugin.validation.dns.dnsexit @(
+	"Newtonsoft.Json.dll",
+	"PKISharp.WACS.Plugins.ValidationPlugins.Dnsexit.dll"
+)
 PluginRelease plugin.validation.dns.dnsmadeeasy @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.DnsMadeEasy.dll",
 	"Newtonsoft.Json.dll"
