@@ -23,8 +23,6 @@ internal sealed class HetznerClient : IDisposable
     {
         _log = logService;
 
-        logService.Information(apiToken);
-
         _httpClient = proxyService.GetHttpClient();
         _httpClient.BaseAddress = BASE_ADDRESS;
         _httpClient.DefaultRequestHeaders.Add("Auth-API-Token", apiToken);
