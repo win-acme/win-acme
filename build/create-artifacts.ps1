@@ -2,11 +2,11 @@
 	[Parameter(Mandatory=$true)]
 	[string]
 	$Root,
-	
+
 	[Parameter(Mandatory=$true)]
 	[string]
 	$Version,
-	
+
 	[Parameter()]
 	[string]
 	$Password
@@ -15,13 +15,13 @@
 Add-Type -Assembly "system.io.compression.filesystem"
 $Temp = "$Root\build\temp\"
 $Out = "$Root\build\artifacts\"
-if (Test-Path $Temp) 
+if (Test-Path $Temp)
 {
     Remove-Item $Temp -Recurse
 }
 New-Item $Temp -Type Directory
 
-if (Test-Path $Out) 
+if (Test-Path $Out)
 {
     Remove-Item $Out -Recurse
 }
@@ -40,11 +40,11 @@ function PlatformRelease
 	$MainZip = "win-acme.v$Version.$PlatformShort.$Postfix.zip"
 	$MainZipPath = "$Out\$MainZip"
 	$MainBin = "$Root\src\main\bin\$ReleaseType\net7.0\$Platform"
-	if (!(Test-Path $MainBin)) 
+	if (!(Test-Path $MainBin))
 	{
 		$MainBin = "$Root\src\main\bin\Any CPU\$ReleaseType\net7.0\$Platform"
 	}
-	if (Test-Path $MainBin) 
+	if (Test-Path $MainBin)
 	{
 		./sign-exe.ps1 "$MainBin\publish\wacs.exe" "$Root\build\codesigning.pfx" $Password
 		Copy-Item "$MainBin\publish\wacs.exe" $Temp
@@ -66,18 +66,18 @@ function PlatformRelease
 		$GnuTlsZip = "gnutls.v$Version.$PlatformShort.zip"
 		$GnuTlsZipPath = "$Out\$GnuTlsZip"
 		$GnuTlsSrc = "$MainBin\Libs\Win64"
-		if (!(Test-Path $GnuTlsSrc)) 
+		if (!(Test-Path $GnuTlsSrc))
 		{
 			$GnuTlsSrc = "$MainBin\publish"
 		}
 
 		if (!(Test-Path $GnuTlsZipPath)) {
 			CreateArtifact $GnuTlsSrc @(
-				"libgcc_s_seh-1.dll", 
-				"libgmp-10.dll", 
-				"libgnutls-30.dll", 
-				"libhogweed-6.dll", 
-				"libnettle-8.dll", 
+				"libgcc_s_seh-1.dll",
+				"libgmp-10.dll",
+				"libgnutls-30.dll",
+				"libhogweed-6.dll",
+				"libnettle-8.dll",
 				"libwinpthread-1.dll") $GnuTlsZipPath
 		}
 	}
@@ -102,17 +102,17 @@ function PluginRelease
 	$PlugZip = "$Dir.v$Version.zip"
 	$PlugZipPath = "$Out\$PlugZip"
 	$PlugBin = "$Root\src\$Dir\bin\Release\net7.0\publish"
-	if (!(Test-Path $PlugBin)) 
+	if (!(Test-Path $PlugBin))
 	{
 		$PlugBin = "$Root\src\$Dir\bin\Any CPU\Release\net7.0\publish"
 	}
 	CreateArtifact $PlugBin $Files $PlugZipPath
 }
 
-function NugetRelease 
+function NugetRelease
 {
 	$PackageFolder = "$Root\src\main\nupkg"
-	if (Test-Path $PackageFolder) 
+	if (Test-Path $PackageFolder)
 	{
 		Copy-Item "$PackageFolder\*" $Out -Recurse
 	}
@@ -160,7 +160,7 @@ PluginRelease plugin.validation.dns.azure @(
 	"Azure.Core.dll",
 	"Azure.Identity.dll",
 	"Azure.ResourceManager.dll",
-	"Azure.ResourceManager.Dns.dll"	
+	"Azure.ResourceManager.Dns.dll"
 	"Microsoft.Bcl.AsyncInterfaces.dll",
 	"Microsoft.Identity.Client.dll",
 	"Microsoft.Identity.Client.Extensions.Msal.dll"
@@ -171,13 +171,13 @@ PluginRelease plugin.validation.dns.azure @(
 	"System.ClientModel.dll"
 )
 PluginRelease plugin.validation.dns.cloudflare @(
-	"FluentCloudflare.dll", 
+	"FluentCloudflare.dll",
 	"Newtonsoft.Json.dll",
 	"PKISharp.WACS.Plugins.ValidationPlugins.Cloudflare.dll"
 )
 PluginRelease plugin.validation.dns.digitalocean @(
-	"DigitalOcean.API.dll", 
-	"RestSharp.dll", 
+	"DigitalOcean.API.dll",
+	"RestSharp.dll",
 	"Newtonsoft.Json.dll",
 	"PKISharp.WACS.Plugins.ValidationPlugins.DigitalOcean.dll"
 )
@@ -186,7 +186,7 @@ PluginRelease plugin.validation.dns.dnsmadeeasy @(
 	"Newtonsoft.Json.dll"
 )
 PluginRelease plugin.validation.dns.domeneshop @(
-	"Abstractions.Integrations.Domeneshop.Models.dll", 
+	"Abstractions.Integrations.Domeneshop.Models.dll",
 	"Abstractions.Integrations.Domeneshop.dll",
 	"PKISharp.WACS.Plugins.ValidationPlugins.Domeneshop.dll"
 )
@@ -203,6 +203,9 @@ PluginRelease plugin.validation.dns.googledns @(
 	"Google.Apis.Core.dll",
 	"Google.Apis.Dns.v1.dll",
 	"PKISharp.WACS.Plugins.ValidationPlugins.GoogleDns.dll"
+)
+PluginRelease plugin.validation.dns.hetzner @(
+	"PKISharp.WACS.Plugins.ValidationPlugins.Hetzner.dll"
 )
 PluginRelease plugin.validation.dns.infomaniak @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.InfoManiak.dll",
@@ -223,7 +226,7 @@ PluginRelease plugin.validation.dns.rfc2136 @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.Rfc2136.dll"
 )
 PluginRelease plugin.validation.dns.route53 @(
-	"AWSSDK.Core.dll", 
+	"AWSSDK.Core.dll",
 	"AWSSDK.Route53.dll",
 	"PKISharp.WACS.Plugins.ValidationPlugins.Route53.dll"
 )
