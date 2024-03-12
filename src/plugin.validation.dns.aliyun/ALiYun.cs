@@ -1,5 +1,7 @@
 ﻿using AlibabaCloud.OpenApiClient.Models;
 using AlibabaCloud.SDK.Alidns20150109.Models;
+using AlibabaCloud.TeaUtil.Models;
+using Newtonsoft.Json.Linq;
 using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
@@ -52,7 +54,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             await Task.Delay(0);
             try
             {
-                var identifier = record.Context.Identifier;
+                var identifier = GetDomain(record) ?? throw new($"The domain name cannot be found: {record.Context.Identifier}");
                 var domain = record.Authority.Domain;
                 var value = record.Value;
                 //Add Record
@@ -72,10 +74,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             await Task.Delay(0);
             try
             {
-                var identifier = record.Context.Identifier;
+                var identifier = GetDomain(record) ?? throw new($"The domain name cannot be found: {record.Context.Identifier}");
                 var domain = record.Authority.Domain;
                 //Delete Record
-                DelRecord(identifier, domain);
+                _ = DelRecord(identifier, domain);
             }
             catch (Exception ex)
             {
@@ -98,7 +100,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             subDomain = subDomain.Replace($".{domain}", "");
             //Delete Record
-            DelRecord(domain, subDomain);
+            _ = DelRecord(domain, subDomain);
             //Add Record
             var addRecords = new AddDomainRecordRequest
             {
@@ -107,7 +109,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 Type = "TXT",
                 Value = value
             };
-            var runtime = new AlibabaCloud.TeaUtil.Models.RuntimeOptions();
+            var runtime = new RuntimeOptions();
             var data = _client.AddDomainRecordWithOptions(addRecords, runtime);
             //Console.WriteLine(data);
             return true;
@@ -130,7 +132,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             {
                 RecordId = recordId.ToString(),
             };
-            var runtime = new AlibabaCloud.TeaUtil.Models.RuntimeOptions();
+            var runtime = new RuntimeOptions();
             var data = _client.DeleteDomainRecordWithOptions(delRecords, runtime);
             //Console.WriteLine(data);
             return true;
@@ -148,11 +150,28 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             {
                 DomainName = domain,
             };
-            var runtime = new AlibabaCloud.TeaUtil.Models.RuntimeOptions();
+            var runtime = new RuntimeOptions();
             var data = _client.DescribeDomainRecordsWithOptions(getRecords, runtime);
             //Console.WriteLine(data);
             var jsonDataLinq = data.Body.DomainRecords.Record.Where(w => w.RR == subDomain && w.Type == "TXT");
             if (jsonDataLinq.Any()) return jsonDataLinq.First().RecordId;
+            return default;
+        }
+
+        /// <summary>
+        /// Get Domain
+        /// </summary>
+        /// <param name="record">DnsValidationRecord</param>
+        /// <returns></returns>
+        private string? GetDomain(DnsValidationRecord record)
+        {
+            var detDomains = new DescribeDomainsRequest();
+            var runtime = new RuntimeOptions();
+            var data = _client.DescribeDomainsWithOptions(detDomains, runtime);
+            //Console.WriteLine(data);
+            var myDomains = data.Body.Domains.Domain.Select(t => t.DomainName);
+            var zone = FindBestMatch(myDomains.ToDictionary(x => x), record.Authority.Domain);
+            if (zone != null) return zone;
             return default;
         }
 

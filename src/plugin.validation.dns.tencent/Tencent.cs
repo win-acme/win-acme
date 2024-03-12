@@ -51,7 +51,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             await Task.Delay(0);
             try
             {
-                var identifier = record.Context.Identifier;
+                var identifier = GetDomain(record) ?? throw new($"The domain name cannot be found: {record.Context.Identifier}");
                 var domain = record.Authority.Domain;
                 var value = record.Value;
                 //Add Record
@@ -71,10 +71,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             await Task.Delay(0);
             try
             {
-                var identifier = record.Context.Identifier;
+                var identifier = GetDomain(record) ?? throw new($"The domain name cannot be found: {record.Context.Identifier}");
                 var domain = record.Authority.Domain;
                 //Delete Record
-                DelRecord(identifier, domain);
+                _ = DelRecord(identifier, domain);
             }
             catch (Exception ex)
             {
@@ -97,10 +97,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             subDomain = subDomain.Replace($".{domain}", "");
             //Delete Record
-            DelRecord(domain, subDomain);
+            _ = DelRecord(domain, subDomain);
             //Add Record
-            var act = "CreateRecord";
-            var client = GetCommonClient("DescribeRecordList");
+            var client = GetCommonClient();
             var param = new
             {
                 Domain = domain,
@@ -110,6 +109,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 Value = value,
             };
             var req = new CommonRequest(param);
+            var act = "CreateRecord";
             var resp = client.Call(req, act);
             //Console.WriteLine(resp);
             return true;
@@ -128,10 +128,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var recordId = GetRecordID(domain, subDomain);
             if (recordId == default) return false;
             //Delete Record
-            var act = "DeleteRecord";
-            var client = GetCommonClient("DescribeRecordList");
+            var client = GetCommonClient();
             var param = new { Domain = domain, RecordId = recordId };
             var req = new CommonRequest(param);
+            var act = "DeleteRecord";
             var resp = client.Call(req, act);
             //Console.WriteLine(resp);
             return true;
@@ -145,17 +145,36 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         /// <returns></returns>
         private long GetRecordID(string domain, string subDomain)
         {
-            var act = "DescribeRecordList";
-            var client = GetCommonClient("DescribeRecordList");
+            var client = GetCommonClient();
             var param = new { Domain = domain };
             var req = new CommonRequest(param);
+            var act = "DescribeRecordList";
             var resp = client.Call(req, act);
             //Console.WriteLine(resp);
-            //Anonymous Value
             var json = JObject.Parse(resp);
             var jsonData = json["Response"]!["RecordList"];
             var jsonDataLinq = jsonData!.Where(w => w["Name"]!.ToString() == subDomain && w["Type"]!.ToString() == "TXT");
             if (jsonDataLinq.Any()) return (long)jsonDataLinq.First()["RecordId"]!;
+            return default;
+        }
+
+        /// <summary>
+        /// Get Domain
+        /// </summary>
+        /// <param name="record">DnsValidationRecord</param>
+        /// <returns></returns>
+        private string? GetDomain(DnsValidationRecord record)
+        {
+            var client = GetCommonClient();
+            var param = new { };
+            var req = new CommonRequest(param);
+            var act = "DescribeDomainList";
+            var resp = client.Call(req, act);
+            //Console.WriteLine(resp);
+            var json = JObject.Parse(resp);
+            var myDomains = json["Response"]!["DomainList"]!.Select(t => t["Name"]!.ToString());
+            var zone = FindBestMatch(myDomains.ToDictionary(x => x), record.Authority.Domain);
+            if (zone != null) return zone;
             return default;
         }
 
