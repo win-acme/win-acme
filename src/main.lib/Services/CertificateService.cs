@@ -1,5 +1,7 @@
 ﻿using ACMESharp;
 using ACMESharp.Protocol;
+using Org.BouncyCastle.Asn1.Nist;
+using Org.BouncyCastle.Asn1.Pkcs;
 using Org.BouncyCastle.Crypto;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.DomainObjects;
@@ -8,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
@@ -147,7 +150,7 @@ namespace PKISharp.WACS.Services
             }
             var alternatives = new List<CertificateOption>
             {
-                new CertificateOption(
+                new(
                     withPrivateKey: ParseCertificate(certInfo.Certificate, friendlyName, pk),
                     withoutPrivateKey: ParseCertificate(certInfo.Certificate, friendlyName)
                 )
@@ -181,12 +184,28 @@ namespace PKISharp.WACS.Services
         /// <param name="friendlyName"></param>
         /// <param name="pk"></param>
         /// <returns></returns>
-        private CertificateInfo ParseCertificate(byte[] bytes, string friendlyName, AsymmetricKeyParameter? pk = null)
+        private CertificateInfo ParseCertificate(byte[] bytes, string friendlyName, AsymmetricKeyParameter? pk = null, int attempt = 0)
         {
             // Build pfx archive including any intermediates provided
-            _log.Verbose("Parsing certificate from {bytes} bytes received", bytes.Length);
+            if (attempt == 0)
+            {
+                _log.Verbose("Parsing certificate from {bytes} bytes received", bytes.Length);
+            } 
+            else
+            {
+                _log.Verbose("Parsing certificate from {bytes} bytes received (attempt {n})", bytes.Length, attempt+1);
+            }
             var text = Encoding.UTF8.GetString(bytes);
             var pfxBuilder = new Bc.Pkcs.Pkcs12StoreBuilder();
+            if (attempt == 1)
+            {
+                // On second try, use different algorithms, because that 
+                // might be the reason for "Bad Data" exception
+                // As found in https://github.com/bcgit/bc-csharp/discussions/372
+                pfxBuilder.SetKeyAlgorithm(
+                    NistObjectIdentifiers.IdAes256Cbc, 
+                    PkcsObjectIdentifiers.IdHmacWithSha256);
+            }
             pfxBuilder.SetUseDerEncoding(true);
             var pfx = pfxBuilder.Build();
             var startIndex = 0;
@@ -244,13 +263,13 @@ namespace PKISharp.WACS.Services
 
             try
             {
+                var tempPfx = new X509Certificate2Collection();
                 var tempPassword = PasswordGenerator.Generate();
                 var pfxStream = new MemoryStream();
                 pfx.Save(pfxStream, tempPassword.ToCharArray(), new Bc.Security.SecureRandom());
                 pfxStream.Position = 0;
                 using var pfxStreamReader = new BinaryReader(pfxStream);
-
-                var tempPfx = new X509Certificate2Collection();
+                tempPfx = new X509Certificate2Collection();
                 tempPfx.Import(
                     pfxStreamReader.ReadBytes((int)pfxStream.Length),
                     tempPassword,
@@ -258,6 +277,20 @@ namespace PKISharp.WACS.Services
                     X509KeyStorageFlags.Exportable);
                 return new CertificateInfo(tempPfx);
             } 
+            catch (CryptographicException cex)
+            {
+                if (attempt < 1)
+                {
+                    // Something wrong with the BC PFX? Try again...
+                    _log.Warning("Internal error, retrying with different parameters...");
+                    return ParseCertificate(bytes, friendlyName, pk, attempt + 1);
+                }
+                else
+                {
+                    _log.Error(cex, "Internal error parsing certificate");
+                    throw;
+                }
+            }
             catch (Exception ex)
             {
                 _log.Error(ex, "Internal error parsing certificate");
