@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public override string Group => "Validation";
         public override string Condition => "--validation dnsexit";
 
-        [CommandLine(Description = "DnsExit API key.")]
+        [CommandLine(Description = "DnsExit API key.", Secret = true)]
         public string? ApiKey { get; set; }
     }
 }
