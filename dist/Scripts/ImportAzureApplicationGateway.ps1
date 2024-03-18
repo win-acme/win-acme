@@ -76,52 +76,52 @@ param(
 )
 
 if ($CertPass -ne "") {
-    $CertPassSecure = ConvertTo-SecureString -String $CertPass
+    $CertPassSecure = ConvertTo-SecureString -String $CertPass -Force -AsPlainText
 } else {
     $CertPassSecure = New-Object System.Security.SecureString
 }
 
-if (!(Get-Command "Get-AzureRmApplicationGateway" -errorAction SilentlyContinue)) {
-    "Missing Azure RM PowerShell extension. Install with 'Install-Module -Name AzureRM -AllowClobber'"
+if (!(Get-Command "Get-AzApplicationGateway" -errorAction SilentlyContinue)) {
+    "Missing Azure PowerShell extension. Install with 'Install-Module -Name Az -AllowClobber'"
     exit
 }
 
 try {
-    Get-AzureRmContext
+    Get-AzContext
 } catch {
-    "Missing Azure RM Context. Use Connect-AzureRmAccount and Enable-AzureRmContextAutosave to login to your Azure tenant and save the context between sessions."
+    "Missing Azure Context. Use Connect-AzAccount and Enable-AzContextAutosave to login to your Azure tenant and save the context between sessions."
     exit
 }
 
 "Deploying certificate to the Application Gateway $AppGatewayName in resource group $ResourceGroupName"
-$appGateway = Get-AzureRmApplicationGateway -ResourceGroupName $ResourceGroupName -Name $AppGatewayName
+$appGateway = Get-AzApplicationGateway -ResourceGroupName $ResourceGroupName -Name $AppGatewayName
 
 try {
     # Check if listener already exists and needs updating or create everything (catch clause)
-    Get-AzureRmApplicationGatewaySslCertificate -ApplicationGateway $appGateway -Name $CertName -ErrorAction Stop | Out-Null
+    Get-AzApplicationGatewaySslCertificate -ApplicationGateway $appGateway -Name $CertName -ErrorAction Stop | Out-Null
     
     "Certificate already installed... updating"
-    Set-AzureRmApplicationGatewaySslCertificate -ApplicationGateway $appGateway -Name $CertName -CertificateFile $PfxPath -Password $CertPassSecure | Out-Null
+    Set-AzApplicationGatewaySslCertificate -ApplicationGateway $appGateway -Name $CertName -CertificateFile $PfxPath -Password $CertPassSecure | Out-Null
 
 } catch [System.InvalidOperationException] {
     "Adding Frontend Port for SSL on TCP $AppGatewayFrontendPortPort"
-    Add-AzureRmApplicationGatewayFrontendPort -ApplicationGateway $appGateway -Name $AppGatewayFrontendPortName -Port $AppGatewayFrontendPortPort | Out-Null
+    Add-AzApplicationGatewayFrontendPort -ApplicationGateway $appGateway -Name $AppGatewayFrontendPortName -Port $AppGatewayFrontendPortPort | Out-Null
 
     "Adding SSL certificate from $PfxPath"
-    Add-AzureRmApplicationGatewaySslCertificate -ApplicationGateway $appGateway -Name $CertName -CertificateFile $PfxPath -Password $CertPassSecure | Out-Null
+    Add-AzApplicationGatewaySslCertificate -ApplicationGateway $appGateway -Name $CertName -CertificateFile $PfxPath -Password $CertPassSecure | Out-Null
 
     "Adding HTTPS Listener..."
-    $frontendIpConfig = Get-AzureRmApplicationGatewayFrontendIPConfig -ApplicationGateway $appGateway
-    $frontendPort = Get-AzureRmApplicationGatewayFrontendPort -ApplicationGateway $appGateway -name $AppGatewayFrontendPortName
-    $cert = Get-AzureRmApplicationGatewaySslCertificate -ApplicationGateway $appGateway -Name $CertName
-    Add-AzureRmApplicationGatewayHttpListener -ApplicationGateway $appGateway -Name $AppGatewayHttpsListenerName -Protocol Https -FrontendIPConfiguration $frontendIpConfig -FrontendPort $frontendPort -SslCertificate $cert | Out-Null
+    $frontendIpConfig = Get-AzApplicationGatewayFrontendIPConfig -ApplicationGateway $appGateway
+    $frontendPort = Get-AzApplicationGatewayFrontendPort -ApplicationGateway $appGateway -name $AppGatewayFrontendPortName
+    $cert = Get-AzApplicationGatewaySslCertificate -ApplicationGateway $appGateway -Name $CertName
+    Add-AzApplicationGatewayHttpListener -ApplicationGateway $appGateway -Name $AppGatewayHttpsListenerName -Protocol Https -FrontendIPConfiguration $frontendIpConfig -FrontendPort $frontendPort -SslCertificate $cert | Out-Null
 
     "Adding Routing Rule for new HTTPS Listener..."
-    $poolSetting = Get-AzureRmApplicationGatewayBackendHttpSettings -ApplicationGateway $appGateway -name $AppGatewayBackendHttpSettingsName
-    $listener = Get-AzureRmApplicationGatewayHttpListener -ApplicationGateway $appGateway -Name $AppGatewayHttpsListenerName
-    $backendPool = Get-AzureRmApplicationGatewayBackendAddressPool -ApplicationGateway $appGateway
-    Add-AzureRmApplicationGatewayRequestRoutingRule -ApplicationGateway $appGateway -Name $AppGatewayHttpsRuleName -RuleType Basic -BackendHttpSettings $poolSetting -HttpListener $listener -BackendAddressPool $backendPool | Out-Null
+    $poolSetting = Get-AzApplicationGatewayBackendHttpSettings -ApplicationGateway $appGateway -name $AppGatewayBackendHttpSettingsName
+    $listener = Get-AzApplicationGatewayHttpListener -ApplicationGateway $appGateway -Name $AppGatewayHttpsListenerName
+    $backendPool = Get-AzApplicationGatewayBackendAddressPool -ApplicationGateway $appGateway
+    Add-AzApplicationGatewayRequestRoutingRule -ApplicationGateway $appGateway -Name $AppGatewayHttpsRuleName -RuleType Basic -BackendHttpSettings $poolSetting -HttpListener $listener -BackendAddressPool $backendPool | Out-Null
 }
 
 "Saving changes..."
-Set-AzureRmApplicationGateway -ApplicationGateway $appGateway | Out-Null
+Set-AzApplicationGateway -ApplicationGateway $appGateway | Out-Null
