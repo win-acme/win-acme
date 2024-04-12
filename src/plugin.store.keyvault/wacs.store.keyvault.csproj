@@ -14,7 +14,7 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="Azure.Identity" Version="1.10.4" />
+    <PackageReference Include="Azure.Identity" Version="1.11.0" />
     <PackageReference Include="Azure.ResourceManager.KeyVault" Version="1.2.0" />
     <PackageReference Include="Azure.Security.KeyVault.Certificates" Version="4.6.0" />
   </ItemGroup>
