@@ -44,7 +44,8 @@ namespace PKISharp.WACS.Services
                 var realArguments = main.Resolve<MainArguments>();
    
                 builder.Register(c => new MainArguments { 
-                        BaseUri = fromUri.ToString()
+                        BaseUri = fromUri.ToString(),
+                        NoTaskScheduler = realArguments.NoTaskScheduler
                     }).
                     As<MainArguments>().
                     SingleInstance();

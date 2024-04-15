@@ -1,5 +1,6 @@
 ﻿using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.CsrPlugins;
@@ -26,11 +27,12 @@ namespace PKISharp.WACS.Services.Legacy
         private readonly TaskSchedulerService _currentTaskScheduler;
         private readonly LegacyTaskSchedulerService _legacyTaskScheduler;
         private readonly AcmeClientManager _clientManager;
+        private readonly MainArguments _mainArguments;
 
         public Importer(
             ILogService log, ILegacyRenewalService legacyRenewal,
             ISettingsService settings, IRenewalStore currentRenewal,
-            IInputService input,
+            IInputService input, MainArguments arguments, 
             LegacyTaskSchedulerService legacyTaskScheduler,
             TaskSchedulerService currentTaskScheduler,
             AcmeClientManager clientManager)
@@ -40,6 +42,7 @@ namespace PKISharp.WACS.Services.Legacy
             _log = log;
             _settings = settings;
             _input = input;
+            _mainArguments = arguments;
             _currentTaskScheduler = currentTaskScheduler;
             _legacyTaskScheduler = legacyTaskScheduler;
             _clientManager = clientManager;
@@ -60,9 +63,12 @@ namespace PKISharp.WACS.Services.Legacy
                 var converted = Convert(legacyRenewal);
                 _currentRenewal.Import(converted);
             }
-            _log.Information("Step {x}/3: create new scheduled task", 2);
-            await _currentTaskScheduler.EnsureTaskScheduler(runLevel | RunLevel.Import);
-            _legacyTaskScheduler.StopTaskScheduler();
+            if (!_mainArguments.NoTaskScheduler)
+            {
+                _log.Information("Step {x}/3: create new scheduled task", 2);
+                await _currentTaskScheduler.EnsureTaskScheduler(runLevel | RunLevel.Import);
+                _legacyTaskScheduler.StopTaskScheduler();
+            }
 
             _log.Information("Step {x}/3: ensure ACMEv2 account", 3);
             await _clientManager.GetClient();
