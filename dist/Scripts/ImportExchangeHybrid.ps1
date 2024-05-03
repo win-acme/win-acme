@@ -167,7 +167,7 @@ try
 		Write-Host "Old Exchange certificates being cleaned up"
 		try 
 		{
-			Get-ExchangeCertificate -DomainName $Certificate.Subject.split("=")[1] `
+			Get-ExchangeCertificate -DomainName $Certificate.Subject.split(",")[0].split("=")[1] `
 				| Where-Object -FilterScript {
 					$_.Thumbprint -ne $NewCertThumbprint
 				} `
