@@ -229,7 +229,19 @@ namespace PKISharp.WACS.Host
             }
 
             _log.Information("Connecting to {ACME}...", _settings.BaseUri);
-            await _networkCheck.CheckNetwork().ConfigureAwait(false);
+            var networkCheck = _networkCheck.CheckNetwork();
+            await networkCheck.WaitAsync(TimeSpan.FromSeconds(30));
+            if (!networkCheck.IsCompletedSuccessfully)
+            {
+                _log.Warning("Network check failed or timed out, retry without proxy detection...");
+                _settings.Proxy.Url = null;
+                networkCheck = _networkCheck.CheckNetwork();
+                await networkCheck.WaitAsync(TimeSpan.FromSeconds(30));
+            }
+            if (!networkCheck.IsCompletedSuccessfully)
+            {
+                _log.Warning("Network check failed or timed out. Functionality may be limited.");
+            }
 
             if (_adminService.IsAdmin)
             {
