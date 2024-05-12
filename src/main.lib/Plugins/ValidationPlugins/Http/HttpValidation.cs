@@ -201,7 +201,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 }
                 catch (Exception ex)
                 {
-                    _log.Warning("Unable to write web.config: {ex}", ex.Message); ;
+                    _log.Warning("Unable to write web.config: {ex}", ex.Message);
                 }
             }
         }
