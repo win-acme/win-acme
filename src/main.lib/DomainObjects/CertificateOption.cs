@@ -5,10 +5,10 @@
     /// </summary>
     internal class CertificateOption
     {
-        public CertificateInfo WithPrivateKey { get; set; }
-        public CertificateInfo WithoutPrivateKey { get; set; }
+        public ICertificateInfo WithPrivateKey { get; set; }
+        public ICertificateInfo WithoutPrivateKey { get; set; }
 
-        public CertificateOption(CertificateInfo withPrivateKey, CertificateInfo withoutPrivateKey)
+        public CertificateOption(ICertificateInfo withPrivateKey, ICertificateInfo withoutPrivateKey)
         {
             WithPrivateKey = withPrivateKey;
             WithoutPrivateKey = withoutPrivateKey;

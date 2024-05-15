@@ -1,8 +1,11 @@
 ﻿using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Pkcs;
+using PKISharp.WACS.Services;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using Bc = Org.BouncyCastle;
 
 namespace PKISharp.WACS.DomainObjects
 {
@@ -10,7 +13,7 @@ namespace PKISharp.WACS.DomainObjects
     /// Special implementation of CertificateInfo which contains reference
     /// to a file in the cache
     /// </summary>
-    public class CertificateInfoCache : ICertificateInfo
+    public class CertificateInfoBc : ICertificateInfo
     {
         private readonly CertificateInfo _inner;
 
@@ -21,42 +24,40 @@ namespace PKISharp.WACS.DomainObjects
         /// </summary>
         /// <param name="file"></param>
         /// <param name="password"></param>
-        public CertificateInfoCache(FileInfo file, string? password)  
+        public CertificateInfoBc(Pkcs12Store store)
         {
-            CacheFile = file;
-            CacheFilePassword = password;
             try
             {
-                _inner = GenerateInner(X509KeyStorageFlags.EphemeralKeySet);
-            } 
+                _inner = GenerateInner(store, X509KeyStorageFlags.EphemeralKeySet);
+            }
             catch (CryptographicException)
             {
-                _inner = GenerateInner(X509KeyStorageFlags.MachineKeySet);
+                _inner = GenerateInner(store, X509KeyStorageFlags.MachineKeySet);
             }
-        }  
-
-        /// <summary>
-        /// Load inner file from disk
-        /// </summary>
-        /// <param name="flags"></param>
-        /// <returns></returns>
-        private CertificateInfo GenerateInner(X509KeyStorageFlags flags)
-        {
-            var ret = new X509Certificate2Collection();
-            var finalFlags = X509KeyStorageFlags.Exportable | flags;
-            ret.Import(CacheFile.FullName, CacheFilePassword, finalFlags);
-            return new CertificateInfo(ret);
         }
 
         /// <summary>
-        /// Location on disk
+        /// Convert BouncyCastle Pkcs12Store to .NET X509Certificate2Collection
         /// </summary>
-        public FileInfo CacheFile { get; private set; }
+        /// <param name="flags"></param>
+        /// <returns></returns>
+        private CertificateInfo GenerateInner(Pkcs12Store store, X509KeyStorageFlags flags)
+        {
+            var tempPassword = PasswordGenerator.Generate();
+            var pfxStream = new MemoryStream();
+            store.Save(pfxStream, tempPassword.ToCharArray(), new Bc.Security.SecureRandom());
+            pfxStream.Position = 0;
 
-        /// <summary>
-        /// Password used to protect the file on disk
-        /// </summary>
-        public string? CacheFilePassword { get; private set; }
+            var finalFlags = flags |= X509KeyStorageFlags.Exportable;
+
+            using var pfxStreamReader = new BinaryReader(pfxStream);
+            var tempPfx = new X509Certificate2Collection();
+            tempPfx.Import(
+                pfxStreamReader.ReadBytes((int)pfxStream.Length),
+                tempPassword,
+                finalFlags);
+            return new CertificateInfo(tempPfx);
+        }
 
         public X509Certificate2 Certificate => _inner.Certificate;
         public IEnumerable<X509Certificate2> Chain => _inner.Chain;

@@ -3,16 +3,13 @@ using ACMESharp.Protocol;
 using Org.BouncyCastle.Asn1.Nist;
 using Org.BouncyCastle.Asn1.Pkcs;
 using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Pkcs;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using Bc = Org.BouncyCastle;
@@ -151,10 +148,7 @@ namespace PKISharp.WACS.Services
             }
             var alternatives = new List<CertificateOption>
             {
-                new(
-                    withPrivateKey: ParseCertificate(certInfo.Certificate, friendlyName, pk),
-                    withoutPrivateKey: ParseCertificate(certInfo.Certificate, friendlyName)
-                )
+                CreateAlternative(certInfo.Certificate, friendlyName, pk)
             };
             if (certInfo.Links != null)
             {
@@ -163,11 +157,7 @@ namespace PKISharp.WACS.Services
                     try
                     {
                         var altCertRaw = await _client.GetCertificate(alt);
-                        var altCert = new CertificateOption(
-                            withPrivateKey: ParseCertificate(altCertRaw, friendlyName, pk),
-                            withoutPrivateKey: ParseCertificate(altCertRaw, friendlyName)
-                        );
-                        alternatives.Add(altCert);
+                        alternatives.Add(CreateAlternative(altCertRaw, friendlyName, pk));
                     }
                     catch (Exception ex)
                     {
@@ -177,36 +167,36 @@ namespace PKISharp.WACS.Services
             }
             return _picker.Select(alternatives);
         }
-
+  
         /// <summary>
-        /// Parse bytes to a usable certificate
+        /// Creates selectable option
         /// </summary>
         /// <param name="bytes"></param>
         /// <param name="friendlyName"></param>
         /// <param name="pk"></param>
         /// <returns></returns>
-        private CertificateInfo ParseCertificate(byte[] bytes, string friendlyName, AsymmetricKeyParameter? pk = null, int attempt = 0)
+        private CertificateOption CreateAlternative(byte[] bytes, string friendlyName, AsymmetricKeyParameter? pk)
         {
-            // Build pfx archive including any intermediates provided
-            if (attempt == 0)
-            {
-                _log.Verbose("Parsing certificate from {bytes} bytes received", bytes.Length);
-            }
-            else
-            {
-                _log.Verbose("Parsing certificate (attempt {n})", bytes.Length, attempt + 1);
-            }
+            return new(
+                withPrivateKey: new CertificateInfoBc(ParseData(bytes, friendlyName, pk)),
+                withoutPrivateKey: new CertificateInfoBc(ParseData(bytes, friendlyName))
+            );
+        }
+
+        /// <summary> 
+        /// Parse raw bytes returned from the server
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <param name="friendlyName"></param>
+        /// <param name="pk"></param>
+        /// <returns></returns>
+        private Pkcs12Store ParseData(byte[] bytes, string friendlyName, AsymmetricKeyParameter? pk = null)
+        {
             var text = Encoding.UTF8.GetString(bytes);
-            var pfxBuilder = new Bc.Pkcs.Pkcs12StoreBuilder();
-            if (attempt == 1)
-            {
-                // On second try, use different algorithms, because that 
-                // might be the reason for "Bad Data" exception
-                // As found in https://github.com/bcgit/bc-csharp/discussions/372
-                pfxBuilder.SetKeyAlgorithm(
-                    NistObjectIdentifiers.IdAes256Cbc,
-                    PkcsObjectIdentifiers.IdHmacWithSha256);
-            }
+            var pfxBuilder = new Pkcs12StoreBuilder();
+            pfxBuilder.SetKeyAlgorithm(
+                NistObjectIdentifiers.IdAes256Cbc,
+                PkcsObjectIdentifiers.IdHmacWithSha256);
             pfxBuilder.SetUseDerEncoding(true);
             var pfx = pfxBuilder.Build();
             var startIndex = 0;
@@ -230,7 +220,7 @@ namespace PKISharp.WACS.Services
                 var bcCertificate = _pemService.ParsePem<Bc.X509.X509Certificate>(pem);
                 if (bcCertificate != null)
                 {
-                    var bcCertificateEntry = new Bc.Pkcs.X509CertificateEntry(bcCertificate);
+                    var bcCertificateEntry = new X509CertificateEntry(bcCertificate);
                     _log.Verbose("Certificate {name} parsed", bcCertificateEntry.Certificate.SubjectDN);
                     var bcCertificateAlias = startIndex == 0 ?
                         friendlyName :
@@ -243,7 +233,7 @@ namespace PKISharp.WACS.Services
                     if (pfx.Count == 1 && pk != null)
                     {
                         _log.Verbose($"Associating private key");
-                        var bcPrivateKeyEntry = new Bc.Pkcs.AsymmetricKeyEntry(pk);
+                        var bcPrivateKeyEntry = new AsymmetricKeyEntry(pk);
                         pfx.SetKeyEntry(bcCertificateAlias, bcPrivateKeyEntry, new[] { bcCertificateEntry });
                     }
                 }
@@ -261,142 +251,8 @@ namespace PKISharp.WACS.Services
                 }
                 startIndex = endIndex;
             }
-
-            try
-            {
-                var tempPfx = new X509Certificate2Collection();
-                var tempPassword = PasswordGenerator.Generate();
-                var pfxStream = new MemoryStream();
-                pfx.Save(pfxStream, tempPassword.ToCharArray(), new Bc.Security.SecureRandom());
-                pfxStream.Position = 0;
-                using var pfxStreamReader = new BinaryReader(pfxStream);
-                tempPfx = new X509Certificate2Collection();
-                tempPfx.Import(
-                    pfxStreamReader.ReadBytes((int)pfxStream.Length),
-                    tempPassword,
-                    X509KeyStorageFlags.EphemeralKeySet |
-                    X509KeyStorageFlags.Exportable);
-                return new CertificateInfo(tempPfx);
-            }
-            catch (CryptographicException cex)
-            {
-                if (attempt < 1)
-                {
-                    // Something wrong with the BC PFX? Try again...
-                    _log.Warning("Internal error, retrying with different parameters...");
-                    return ParseCertificate(bytes, friendlyName, pk, attempt + 1);
-                }
-                else
-                {
-                    _log.Error(cex, "Internal error parsing certificate");
-                    return ParseCertificateAlt(bytes, friendlyName, pk);
-                }
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Internal error parsing certificate");
-                throw;
-            }
-
+            return pfx;
         }
 
-        /// <summary>
-        /// Parse bytes to a usable certificate
-        /// </summary>
-        /// <param name="bytes"></param>
-        /// <param name="friendlyName"></param>
-        /// <param name="pk"></param>
-        /// <returns></returns>
-        private CertificateInfo ParseCertificateAlt(byte[] bytes, string friendlyName, AsymmetricKeyParameter? pk = null)
-        {
-            // Build pfx archive including any intermediates provided
-            _log.Verbose("Parsing certificate (alternative method)", bytes.Length);
-            var text = Encoding.UTF8.GetString(bytes);
-            var tempPfx = new X509Certificate2Collection();
-            var startIndex = 0;
-            const string startString = "-----BEGIN CERTIFICATE-----";
-            const string endString = "-----END CERTIFICATE-----";
-            while (true)
-            {
-                startIndex = text.IndexOf(startString, startIndex, StringComparison.Ordinal);
-                if (startIndex < 0)
-                {
-                    break;
-                }
-                var endIndex = text.IndexOf(endString, startIndex, StringComparison.Ordinal);
-                if (endIndex < 0)
-                {
-                    break;
-                }
-                endIndex += endString.Length;
-                var pem = text[startIndex..endIndex];
-                _log.Verbose("Parsing PEM data at range {startIndex}..{endIndex}", startIndex, endIndex);
-                var bcCertificate = _pemService.ParsePem<Bc.X509.X509Certificate>(pem);
-                if (bcCertificate != null)
-                {
-
-                    _log.Verbose("Certificate {name} parsed", bcCertificate.SubjectDN);
-                    var dotnet = new X509Certificate2(bcCertificate.GetEncoded())
-                    {
-                        FriendlyName = startIndex == 0 ? friendlyName : bcCertificate.SubjectDN.ToString()
-                    };
-
-                    // Assume that the first certificate in the reponse is the main one
-                    // so we associate the private key with that one. Other certificates
-                    // are intermediates
-                    if (tempPfx.Count == 0 && pk != null)
-                    {
-                        _log.Verbose($"Associating private key");
-                        if (pk is RsaPrivateCrtKeyParameters crtParams)
-                        {
-                            var rsaParams = new RSAParameters
-                            {
-                                Modulus = crtParams.Modulus.ToByteArrayUnsigned(),
-                                Exponent = crtParams.PublicExponent.ToByteArrayUnsigned(),
-                                P = crtParams.P.ToByteArrayUnsigned(),
-                                Q = crtParams.Q.ToByteArrayUnsigned(),
-                                DP = crtParams.DP.ToByteArrayUnsigned(),
-                                DQ = crtParams.DQ.ToByteArrayUnsigned(),
-                                InverseQ = crtParams.QInv.ToByteArrayUnsigned(),
-                                D = crtParams.Exponent.ToByteArrayUnsigned()
-                            };
-                            var rsa = RSA.Create(rsaParams);
-                            dotnet = dotnet.CopyWithPrivateKey(rsa);
-                        }
-                        else if (pk is ECPrivateKeyParameters keyParams)
-                        {
-                            var normalizedECPoint = keyParams.Parameters.G.Multiply(keyParams.D).Normalize();
-                            var ecdsa = ECDsa.Create(
-                                new ECParameters()
-                                {
-                                    Curve = ECCurve.CreateFromValue(keyParams.PublicKeyParamSet.Id),
-                                    D = keyParams.D.ToByteArrayUnsigned(),
-                                    Q =
-                                        {
-                                            X = normalizedECPoint.XCoord.GetEncoded(),
-                                            Y = normalizedECPoint.YCoord.GetEncoded()
-                                        }
-                                });
-                            dotnet = dotnet.CopyWithPrivateKey(ecdsa);
-                        }
-                    }
-                    tempPfx.Add(dotnet);
-                }
-                else
-                {
-                    _log.Warning("PEM data could not be parsed as X509Certificate", startIndex, endIndex);
-                }
-
-                // This should never happen, but is a sanity check
-                // not to get stuck in an infinite loop
-                if (endIndex <= startIndex)
-                {
-                    _log.Error("Infinite loop detected, aborting");
-                    break;
-                }
-                startIndex = endIndex;
-            }
-            return new CertificateInfo(tempPfx);
-        }
     }
 }
