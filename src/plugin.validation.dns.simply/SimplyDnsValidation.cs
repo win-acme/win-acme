@@ -47,9 +47,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 }
                 await _client.CreateRecordAsync(product.Object, recordName, record.Value);
                 return true;
-            } 
-            catch
-            {  
+            }
+            catch (Exception ex)
+            {
+                _log.Warning($"Unable to create record at Simply: {ex.Message}");
             }
             return false;
         }

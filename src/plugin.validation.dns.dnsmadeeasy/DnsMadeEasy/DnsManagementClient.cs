@@ -43,7 +43,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.DnsMadeEasy
                 if (request == null || request.id == null)
                     throw new ArgumentNullException($"Unexpected null response for {domain}");
 
-                if (string.Compare(request.name, domain, true) != 0)
+                if (!string.Equals(request.name, domain, StringComparison.InvariantCultureIgnoreCase))
                     throw new InvalidDataException($"Domain returned an unexpected result requested: {domain} != {request.name}");
 
                 return request.id;
@@ -81,8 +81,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.DnsMadeEasy
                 List<string> recordId = new();
                 foreach (var result in request.data)
                 {
-                    if (string.Compare(result.name, recordName, true) == 0 &&
-                        string.Compare(result.type, recordType, true) == 0 &&
+                    if (string.Equals(result.name, recordName, StringComparison.InvariantCultureIgnoreCase) &&
+                        string.Equals(result.type, recordType, StringComparison.InvariantCultureIgnoreCase) &&
                         result.id != null)
                     {
                         recordId.Add(result.id);

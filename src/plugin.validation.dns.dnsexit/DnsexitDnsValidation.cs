@@ -4,9 +4,7 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.ValidationPlugins.Dns;
 using PKISharp.WACS.Plugins.ValidationPlugins.Dnsexit;
 using PKISharp.WACS.Services;
-using System;
 using System.Runtime.Versioning;
-using System.Threading.Tasks;
 
 [assembly: SupportedOSPlatform("windows")]
 
@@ -47,8 +45,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 await _client.CreateRecord(domain, recordName, RecordType.TXT, record.Value);
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                _log.Warning($"Unable to create record at DnsExit: {ex.Message}");
                 return false;
             }
         }

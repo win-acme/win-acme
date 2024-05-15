@@ -138,7 +138,7 @@ namespace PKISharp.WACS
                 displayAll = false;
 
                 var noneState = none ? State.DisabledState("No renewals selected.") : State.EnabledState();
-                var sortFilterState = selectedRenewals.Count() < 2 ? State.DisabledState("Not enough renewals to sort/filter.") : State.EnabledState(); ;
+                var sortFilterState = selectedRenewals.Count() < 2 ? State.DisabledState("Not enough renewals to sort/filter.") : State.EnabledState();
                 var editState =
                     selectedRenewals.Count() != 1 
                         ? none 

@@ -36,9 +36,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             {
                 await _client.CreateRecord(record.Authority.Domain, RecordType.TXT, record.Value);
                 return true;
-            } 
-            catch
+            }
+            catch (Exception ex)
             {
+                _log.Warning($"Unable to create record at Dreamhost: {ex.Message}");
                 return false;
             }
         }
