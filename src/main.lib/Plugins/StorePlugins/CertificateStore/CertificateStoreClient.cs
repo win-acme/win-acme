@@ -153,8 +153,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         {
             // If no RSA key is present, we only export and re-fallback to
             // set the correct flags on the certificate.
-            var cert = original.Export(X509ContentType.Pkcs12, string.Empty);
-            return new X509Certificate2(cert, string.Empty, flags)
+            var password = PasswordGenerator.Generate();
+            var cert = original.Export(X509ContentType.Pkcs12, password);
+            return new X509Certificate2(cert, password, flags)
             {
                 FriendlyName = original.FriendlyName
             };
@@ -230,7 +231,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
                 // Export private key parameters
                 // https://github.com/dotnet/runtime/issues/36899
-                var pwd = Guid.NewGuid().ToString();
+                var pwd = PasswordGenerator.Generate();
                 using var tempRsa = RSA.Create();
                 var pbeParameters = new PbeParameters(PbeEncryptionAlgorithm.Aes256Cbc, HashAlgorithmName.SHA256, 10);
                 tempRsa.ImportEncryptedPkcs8PrivateKey(pwd, rsaPrivateKey.ExportEncryptedPkcs8PrivateKey(pwd, pbeParameters), out var read);
@@ -255,7 +256,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 var parameters = tempRsa.ExportParameters(true);
                 rsaProvider.ImportParameters(parameters);
 
-                var tempPfx = new X509Certificate2(original.Export(X509ContentType.Cert), "", flags);
+                var password = PasswordGenerator.Generate();
+                var tempPfx = new X509Certificate2(original.Export(X509ContentType.Cert, password), password, flags);
                 tempPfx = tempPfx.CopyWithPrivateKey(rsaProvider);
                 tempPfx.FriendlyName = original.FriendlyName;
                 return tempPfx;
