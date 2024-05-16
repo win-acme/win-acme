@@ -34,17 +34,17 @@
 
 	<ItemGroup>
 		<PackageReference Include="Autofac" Version="8.0.0" />
-		<PackageReference Include="BouncyCastle.Cryptography" Version="2.3.0" />
+		<PackageReference Include="BouncyCastle.Cryptography" Version="2.3.1" />
 		<PackageReference Include="DnsClient" Version="1.7.0" />
-		<PackageReference Include="FluentFTP" Version="49.0.2" />
-		<PackageReference Include="FluentFTP.GnuTLS" Version="1.0.29" />
-		<PackageReference Include="MailKit" Version="4.3.0" />
+		<PackageReference Include="FluentFTP" Version="50.0.1" />
+		<PackageReference Include="FluentFTP.GnuTLS" Version="1.0.31" />
+		<PackageReference Include="MailKit" Version="4.5.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Web.Administration" Version="11.1.0" />
 		<PackageReference Include="MorseCode.ITask" Version="2.0.3" />
-		<PackageReference Include="Nager.PublicSuffix" Version="3.0.1" />
+		<PackageReference Include="Nager.PublicSuffix" Version="3.3.0" />
 		<PackageReference Include="Serilog" Version="3.1.1" />
 		<PackageReference Include="Serilog.Settings.AppSettings" Version="2.2.2" />
 		<PackageReference Include="Serilog.Settings.Configuration" Version="8.0.0" />
@@ -55,7 +55,7 @@
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
 		<PackageReference Include="System.Net.Http.WinHttpHandler" Version="8.0.0" />
 		<PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
-		<PackageReference Include="TaskScheduler" Version="2.10.1" />
+		<PackageReference Include="TaskScheduler" Version="2.11.0" />
 		<PackageReference Include="WebDav.Client" Version="2.8.0" />
 	</ItemGroup>
 

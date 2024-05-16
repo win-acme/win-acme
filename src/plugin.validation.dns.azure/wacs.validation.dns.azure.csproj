@@ -14,8 +14,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.Identity" Version="1.11.0" />
-    <PackageReference Include="Azure.ResourceManager.Dns" Version="1.1.0" />
+    <PackageReference Include="Azure.Identity" Version="1.11.3" />
+    <PackageReference Include="Azure.ResourceManager.Dns" Version="1.1.1" />
   </ItemGroup>
 
   <ItemGroup>

@@ -31,7 +31,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     internal class Azure : DnsValidation<Azure>
     {
         private ArmClient? _armClient;
-        private ResourceGroupResource? _resourceGroupResource;
         private SubscriptionResource? _subscriptionResource;
 
         private readonly AzureOptions _options;
