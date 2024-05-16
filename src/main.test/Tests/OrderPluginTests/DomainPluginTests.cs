@@ -40,7 +40,7 @@ namespace PKISharp.WACS.UnitTests.Tests.OrderPluginTests
             };
             var target = new Target("x.com", www_y_com, parts);
             var renewal = new Renewal();
-            var container = new MockContainer().TestScope().BeginLifetimeScope(x => x.RegisterType<Domain>()); ;
+            var container = new MockContainer().TestScope().BeginLifetimeScope(x => x.RegisterType<Domain>());
             var domain = container.Resolve<Domain>();
             var split = domain.Split(renewal, target);
             Assert.IsNotNull(split);

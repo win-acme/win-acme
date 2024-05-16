@@ -596,7 +596,7 @@ namespace PKISharp.WACS
             {
                 _log.Verbose("Starting post-validation cleanup");
                 await validationPlugin.CleanUp();
-                _log.Verbose("Post-validation cleanup was succesful");
+                _log.Verbose("Post-validation cleanup was successful");
             }
             catch (Exception ex)
             {

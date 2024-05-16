@@ -41,12 +41,12 @@ namespace PKISharp.WACS.UnitTests.Mock
             _ = builder.RegisterInstance(input).As<Real.IInputService>();
             _ = builder.RegisterInstance(argumentsParser.GetArguments<MainArguments>()!).SingleInstance();
             _ = builder.RegisterInstance(argumentsParser.GetArguments<AccountArguments>()!).SingleInstance();
-            _ = builder.RegisterType<Real.ValidationOptionsService>().As<Real.IValidationOptionsService>().SingleInstance().WithAttributeFiltering(); ;
+            _ = builder.RegisterType<Real.ValidationOptionsService>().As<Real.IValidationOptionsService>().SingleInstance().WithAttributeFiltering();
             _ = builder.RegisterType<Real.RenewalStore>().As<Real.IRenewalStore>().SingleInstance();
             _ = builder.RegisterType<Services.MockRenewalStore>().As<Real.IRenewalStoreBackend>().SingleInstance();
             _ = builder.RegisterType<Real.DueDateStaticService>().SingleInstance();
             _ = builder.RegisterType<Real.DueDateRuntimeService>().SingleInstance();
-            _ = builder.RegisterType<Services.MockSettingsService>().As<Real.ISettingsService>().SingleInstance(); ;
+            _ = builder.RegisterType<Services.MockSettingsService>().As<Real.ISettingsService>().SingleInstance();
             _ = builder.RegisterType<Services.UserRoleService>().As<Real.IUserRoleService>().SingleInstance();
             _ = builder.RegisterType<Services.ProxyService>().As<Real.IProxyService>().SingleInstance();
             _ = builder.RegisterType<Real.PasswordGenerator>().SingleInstance();

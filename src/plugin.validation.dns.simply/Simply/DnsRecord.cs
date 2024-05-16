@@ -18,7 +18,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Simply
         public string? Data { get; set; }
 
         [JsonPropertyName("priority")]
-        public int Priority { get; set; }
+        public int? Priority { get; set; }
 
         [JsonPropertyName("ttl")]
         public int Ttl { get; set; }

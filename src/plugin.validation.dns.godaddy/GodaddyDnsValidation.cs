@@ -48,8 +48,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 await _client.CreateRecord(domain, recordName, RecordType.TXT, record.Value);
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                _log.Warning($"Unable to create record at Godaddy: {ex.Message}");
                 return false;
             }
         }

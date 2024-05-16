@@ -213,7 +213,7 @@ namespace PKISharp.WACS
                         _log.Verbose("Global validation option not found for {identifier}", identifier.Value);
                     }
                 }
-                var withGlobalOptions = mapping.Where(x => x.Value != null).Select(x => x.Key).ToList(); ;
+                var withGlobalOptions = mapping.Where(x => x.Value != null).Select(x => x.Key).ToList();
                 var withoutGlobalOptions = allIdentifiers.Except(withGlobalOptions).ToList();
                 var validationResolver = resolver;
 

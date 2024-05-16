@@ -80,7 +80,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Godaddy
                 var typeTxt = type.ToString();
                 var buildApiUrl = $"v1/domains/{domain}/records/{typeTxt}/{identifier}";
 
-                _log.Information("Godaddy API with: {0}", buildApiUrl); ;
+                _log.Information("Godaddy API with: {0}", buildApiUrl);
 
                 var response = await client.DeleteAsync(buildApiUrl);
                 if (response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NoContent)
@@ -95,8 +95,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Godaddy
                     var content = await response.Content.ReadAsStringAsync();
                     throw new Exception(content);
                 }
-
-
             };
         }
     }

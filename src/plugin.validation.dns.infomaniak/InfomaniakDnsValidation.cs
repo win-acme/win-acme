@@ -70,8 +70,9 @@ internal class InfomaniakDnsValidation : DnsValidation<InfomaniakDnsValidation>
                 (b, s) => s.Append(recordId).ToList());
             return true;
         }
-        catch
+        catch (Exception ex)
         {
+            _log.Warning($"Unable to create record at Infomaniak: {ex.Message}");
             return false;
         }
     }
