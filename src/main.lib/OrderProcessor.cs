@@ -284,16 +284,6 @@ namespace PKISharp.WACS
                 {
                     // Delete the previous certificate from the store(s)
                     await HandleStoreRemove(context, context.PreviousCertificate, storeContexts);
-
-                    // Tell the server that we stopped caring about the previous certificate
-                    try
-                    {
-                        await _client.UpdateRenewalInfo(context.PreviousCertificate);
-                    } 
-                    catch (Exception ex)
-                    {
-                        _log.Warning("Error updating renewal info: {ex}", ex.Message);
-                    }
                 }
             }
             catch (Exception ex)
@@ -357,7 +347,7 @@ namespace PKISharp.WACS
             var orderManager = context.OrderScope.Resolve<OrderManager>();
             context.Order.KeyPath = context.Order.Renewal.CsrPluginOptions?.ReusePrivateKey == true
                 ? _cacheService.Key(context.Order).FullName : null;
-            context.Order.Details = await orderManager.GetOrCreate(context.Order, _client, context.RunLevel);
+            context.Order.Details = await orderManager.GetOrCreate(context.Order, _client, context.PreviousCertificate, context.RunLevel);
 
             // Sanity checks
             if (context.Order.Details == null)
@@ -549,22 +539,10 @@ namespace PKISharp.WACS
         /// </summary>
         /// <param name="missingOrders"></param>
         /// <returns></returns>
-        internal async Task HandleMissing(Renewal renewal, IEnumerable<string> missingOrders)
+        internal void HandleMissing(Renewal renewal, IEnumerable<string> missingOrders)
         {
             foreach (var missing in missingOrders)
             {
-                var lastCert = _cacheService.PreviousInfo(renewal, missing);
-                if (lastCert != null)
-                {
-                    try
-                    {
-                        await _client.UpdateRenewalInfo(lastCert);
-                    }
-                    catch (Exception ex)
-                    {
-                        _log.Warning("Error updating renewalInfo for {missing}: {ex}", missing, ex.Message);
-                    }
-                }
                 _cacheService.Delete(renewal, missing);
             }
         }

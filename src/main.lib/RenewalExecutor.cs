@@ -289,8 +289,8 @@ namespace PKISharp.WACS
                 await scriptClient.RunScript(postScript, $"{renewal.Id}");
             }
 
-            // Handle missing order (update ARI and clear cache)
-            await orderProcessor.HandleMissing(renewal, missingOrders.Select(m => m.Key));
+            // Handle missing order (clear cache)
+            orderProcessor.HandleMissing(renewal, missingOrders.Select(m => m.Key));
 
             // Return final result
             result.Success = runnableContexts.All(o => o.OrderResult.Success == true);

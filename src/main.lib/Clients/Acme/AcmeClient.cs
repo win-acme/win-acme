@@ -1,17 +1,14 @@
 ﻿using ACMESharp;
 using ACMESharp.Authorizations;
+using ACMESharp.Crypto;
 using ACMESharp.Protocol;
 using ACMESharp.Protocol.Resources;
-using Org.BouncyCastle.Asn1;
-using Org.BouncyCastle.Asn1.Nist;
-using Org.BouncyCastle.Asn1.X509;
-using Org.BouncyCastle.Ocsp;
-using Org.BouncyCastle.X509;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Clients.Acme
@@ -72,8 +69,12 @@ namespace PKISharp.WACS.Clients.Acme
         /// <param name="identifiers"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        internal async Task<AcmeOrderDetails> CreateOrder(IEnumerable<Identifier> identifiers, DateTime? notAfter)
+        internal async Task<AcmeOrderDetails> CreateOrder(IEnumerable<Identifier> identifiers, ICertificateInfo? previous, DateTime? notAfter)
         {
+            _log.Verbose("Creating order for identifiers: {identifiers} (notAfter: {notAfter}, previous: {previous})",
+                identifiers.Select(x => x.Value),
+                notAfter,
+                previous?.Certificate.Thumbprint ?? "[none]");
             var acmeIdentifiers = identifiers.Select(i => new AcmeIdentifier()
             {
                 Type = i.Type switch
@@ -84,7 +85,12 @@ namespace PKISharp.WACS.Clients.Acme
                 },
                 Value = i.Value
             });
-            return await _client.Retry(() => _client.CreateOrderAsync(acmeIdentifiers, notAfter: notAfter), _log);
+            var replaces = default(string?);
+            if (previous != null)
+            {
+                replaces = CertificateId(previous);
+            }
+            return await _client.Retry(() => _client.CreateOrderAsync(acmeIdentifiers, replaces, notAfter), _log);
         }
 
         /// <summary>
@@ -275,29 +281,17 @@ namespace PKISharp.WACS.Clients.Acme
         }
 
         /// <summary>
-        /// Tell the server that we stopped caring about a certificate
+        /// Certificate identifier for ARI requests
         /// </summary>
-        /// <param name="crt"></param>
+        /// <param name="certificate"></param>
         /// <returns></returns>
-        internal async Task UpdateRenewalInfo(ICertificateInfo certificate)
+        private static string CertificateId(ICertificateInfo certificate)
         {
-            if (string.IsNullOrWhiteSpace(_client.Directory.RenewalInfo))
-            {
-                return;
-            }
-            _ = await _client.Retry<object?>(async () => {
-                await _client.UpdateRenewalInfo(CertificateId(certificate));
-                return null; // we need to return something to make Retry<T>() happy
-            }, _log);
-        }
-
-        private static byte[] CertificateId(ICertificateInfo certificate)
-        {
-            var bouncyCert = new X509CertificateParser().ReadCertificate(certificate.Certificate.GetRawCertData());
-            var bouncyIssuer = new X509CertificateParser().ReadCertificate(certificate.Chain.First().GetRawCertData());
-            var alg = new AlgorithmIdentifier(new DerObjectIdentifier(NistObjectIdentifiers.IdSha256.Id), DerNull.Instance);
-            var certificateId = new CertificateID(alg, bouncyIssuer, bouncyCert.SerialNumber);
-            return certificateId.ToAsn1Object().GetDerEncoded();
+            var serialBytes = certificate.Certificate.SerialNumberBytes.ToArray();
+            var keyAuthBytes = (certificate.Certificate.Extensions.OfType<X509AuthorityKeyIdentifierExtension>().FirstOrDefault()?.KeyIdentifier) ?? throw new InvalidOperationException();
+            var serial = Base64Tool.UrlEncode(serialBytes.ToArray());
+            var keyauth = Base64Tool.UrlEncode(keyAuthBytes.ToArray());
+            return $"{keyauth}.{serial}";
         }
 
         /// <summary>

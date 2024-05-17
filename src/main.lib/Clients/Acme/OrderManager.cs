@@ -1,4 +1,5 @@
 ﻿using ACMESharp.Protocol;
+using ACMESharp.Protocol.Resources;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
@@ -67,7 +68,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// <param name="renewal"></param>
         /// <param name="target"></param>
         /// <returns></returns>
-        public async Task<AcmeOrderDetails?> GetOrCreate(Order order, AcmeClient client, RunLevel runLevel)
+        public async Task<AcmeOrderDetails?> GetOrCreate(Order order, AcmeClient client, ICertificateInfo? replaces, RunLevel runLevel)
         {
             var cacheKey = CacheKey(order, client.Account.Details.Kid);
             if (_settings.Cache.ReuseDays > 0)
@@ -98,7 +99,7 @@ namespace PKISharp.WACS.Clients.Acme
                     }
                 }
             }
-            return await CreateOrder(cacheKey, client, order.Target);
+            return await CreateOrder(cacheKey, client, replaces, order.Target);
         }
 
         /// <summary>
@@ -201,7 +202,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// <param name="privateKeyFile"></param>
         /// <param name="target"></param>
         /// <returns></returns>
-        private async Task<AcmeOrderDetails?> CreateOrder(string cacheKey, AcmeClient client, Target target)
+        private async Task<AcmeOrderDetails?> CreateOrder(string cacheKey, AcmeClient client, ICertificateInfo? previous, Target target)
         {
             try
             {
@@ -221,8 +222,24 @@ namespace PKISharp.WACS.Clients.Acme
                     (DateTime?)null;
 
                 // Create the order
-                _log.Verbose("Creating order for identifiers: {identifiers} (notAfter: {notAfter})", identifiers.Select(x => x.Value), notAfter);
-                var order = await client.CreateOrder(identifiers, notAfter);
+                var order = default(AcmeOrderDetails?);
+                try
+                {
+                    order = await client.CreateOrder(identifiers, previous, notAfter);
+                }
+                catch (AcmeProtocolException ex)
+                {
+                    if (previous != null && ex.ProblemType == ProblemType.Conflict)
+                    {
+                        _log.Warning("This order has already been replaced, possibly due to multiple renewals generating the same certificate. You may use the Renewal Manager to scan for duplicates.");
+                        order = await client.CreateOrder(identifiers, null, notAfter);
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+
                 if (order.Payload.Error != default)
                 {
                     _log.Error("Failed to create order {url}: {detail}", order.OrderUrl, order.Payload.Error.Detail);

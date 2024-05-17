@@ -110,27 +110,6 @@ namespace PKISharp.WACS
             foreach (var renewal in renewals)
             {
                 _log.Warning($"Cancelling renewal {renewal.LastFriendlyName}");
-                var client = await _clientManager.GetClient(renewal.Account);
-                var orders = _dueDate.CurrentOrders(renewal);
-                foreach (var order in orders)
-                {
-                    var cache = _cacheService.PreviousInfo(renewal, order.Key);
-                    if (cache != null)
-                    {
-                        try
-                        {
-                            await client.UpdateRenewalInfo(cache);
-                        }
-                        catch (Exception ex)
-                        {
-                            _log.Warning($"Error updating renewalInfo for {order}: {ex}", ex.Message);
-                        }
-                    }
-                    else
-                    {
-                        _log.Debug($"No certificate found for {order}");
-                    }
-                }
                 try
                 {
                     _renewalStore.Cancel(renewal);
