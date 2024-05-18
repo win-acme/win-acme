@@ -145,17 +145,20 @@ namespace PKISharp.WACS.Services
             if (certInfo == default || certInfo.Certificate == null)
             {
                 throw new Exception($"Unable to get certificate");
-            }
+            }          
             var alternatives = new List<CertificateOption>
             {
                 CreateAlternative(certInfo.Certificate, friendlyName, pk)
             };
+         
             if (certInfo.Links != null)
             {
-                foreach (var alt in certInfo.Links["alternate"])
+                var alts = certInfo.Links["alternate"].ToList();
+                foreach (var alt in alts)
                 {
                     try
                     {
+                        _log.Verbose("Process alternative certificate {n}", alts.IndexOf(alt) + 1);
                         var altCertRaw = await _client.GetCertificate(alt);
                         alternatives.Add(CreateAlternative(altCertRaw, friendlyName, pk));
                     }
@@ -177,10 +180,24 @@ namespace PKISharp.WACS.Services
         /// <returns></returns>
         private CertificateOption CreateAlternative(byte[] bytes, string friendlyName, AsymmetricKeyParameter? pk)
         {
-            return new(
-                withPrivateKey: new CertificateInfoBc(ParseData(bytes, friendlyName, pk)),
-                withoutPrivateKey: new CertificateInfoBc(ParseData(bytes, friendlyName))
-            );
+            var storeWithoutKey = ParseData(bytes, friendlyName);
+            var infoWithoutKey = new CertificateInfoBc(storeWithoutKey, _log);
+            if (pk != null)
+            {
+                var storeWithKey = ParseData(bytes, friendlyName, pk);
+                var infoWithKey = new CertificateInfoBc(storeWithKey, _log);
+                return new(
+                    withPrivateKey: infoWithKey,
+                    withoutPrivateKey: infoWithoutKey
+                );
+            } 
+            else
+            {
+                return new(
+                    withPrivateKey: infoWithoutKey,
+                    withoutPrivateKey: infoWithoutKey
+                );
+            }
         }
 
         /// <summary> 

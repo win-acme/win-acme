@@ -24,15 +24,24 @@ namespace PKISharp.WACS.DomainObjects
         /// </summary>
         /// <param name="file"></param>
         /// <param name="password"></param>
-        public CertificateInfoBc(Pkcs12Store store)
+        public CertificateInfoBc(Pkcs12Store store, ILogService log)
         {
             try
             {
                 _inner = GenerateInner(store, X509KeyStorageFlags.EphemeralKeySet);
             }
-            catch (CryptographicException)
+            catch (CryptographicException ex1)
             {
-                _inner = GenerateInner(store, X509KeyStorageFlags.MachineKeySet);
+                try
+                {
+                    log.Verbose("CryptographicException {ex}: fallback to MachineKeySet...", ex1.Message);
+                    _inner = GenerateInner(store, X509KeyStorageFlags.MachineKeySet);
+                } 
+                catch (CryptographicException ex2)
+                {
+                    log.Verbose("CryptographicException {ex}: fallback to passwordless...", ex2.Message);
+                    _inner = GenerateInner(store, X509KeyStorageFlags.MachineKeySet, false);
+                }
             }
         }
 
@@ -41,11 +50,11 @@ namespace PKISharp.WACS.DomainObjects
         /// </summary>
         /// <param name="flags"></param>
         /// <returns></returns>
-        private CertificateInfo GenerateInner(Pkcs12Store store, X509KeyStorageFlags flags)
+        private CertificateInfo GenerateInner(Pkcs12Store store, X509KeyStorageFlags flags, bool password = true)
         {
-            var tempPassword = PasswordGenerator.Generate();
+            var tempPassword = password ? PasswordGenerator.Generate() : null;
             var pfxStream = new MemoryStream();
-            store.Save(pfxStream, tempPassword.ToCharArray(), new Bc.Security.SecureRandom());
+            store.Save(pfxStream, (tempPassword ?? "").ToCharArray(), new Bc.Security.SecureRandom());
             pfxStream.Position = 0;
 
             var finalFlags = flags |= X509KeyStorageFlags.Exportable;
