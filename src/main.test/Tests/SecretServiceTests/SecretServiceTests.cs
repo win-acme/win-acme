@@ -53,21 +53,20 @@ namespace PKISharp.WACS.UnitTests.Tests.SecretServiceTests
             var secretServiceManager = _container!.Resolve<SecretServiceManager>();
             var scriptClient = _container!.Resolve<ScriptClient>();
             var scriptInstaller = new Script(new DomainObjects.Renewal(), new ScriptOptions(), scriptClient, secretServiceManager);
-            var builder = new Pkcs12StoreBuilder();
-            var pfx = builder.Build();
+            var info = CertificateInfoTests.CertificateInfoTests.CloudFlare();
             var placeholder = $"{{{SecretServiceManager.VaultPrefix}{secretService.Prefix}/{theKey}}}";
             var output = scriptInstaller.ReplaceParameters(
                 placeholder, 
-                null, 
-                new DomainObjects.CertificateInfo(pfx), 
+                null,
+                info, 
                 null, 
                 false);
             Assert.AreEqual(theSecret, output);
 
             var outputCensor = scriptInstaller.ReplaceParameters(
                 placeholder,
-            null,
-                new DomainObjects.CertificateInfo(pfx),
+                null,
+                info,
                 null,
                 true);
             Assert.AreEqual(placeholder, outputCensor);

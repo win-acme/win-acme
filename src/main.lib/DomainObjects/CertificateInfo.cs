@@ -16,7 +16,7 @@ namespace PKISharp.WACS.DomainObjects
     /// Provides information about a certificate, which may or may not already
     /// be stored on the disk somewhere in a .pfx file
     /// </summary>
-    public partial class CertificateInfo : ICertificateInfo
+    public class CertificateInfo : ICertificateInfo
     {
 
         private readonly byte[] _hash;
@@ -61,7 +61,7 @@ namespace PKISharp.WACS.DomainObjects
             Thumbprint = Convert.ToHexString(_hash);
 
             // Identify identifiers
-            var str = Split(Certificate.SubjectDN?.ToString());
+            var str = Certificate.SubjectDN.GetValueList(X509Name.CN).FirstOrDefault();
             if (!string.IsNullOrWhiteSpace(str))
             {
                 CommonName = new DnsIdentifier(str);
@@ -86,7 +86,18 @@ namespace PKISharp.WACS.DomainObjects
                             }
                         case GeneralName.IPAddress:
                             {
-                                return new IpIdentifier(IPAddress.Parse(value.Replace("#", "0x")));
+                                if (value.Length < 10)
+                                { 
+                                    // Assume IPv4
+                                    value = value.Replace("#", "0x");
+                                }
+                                else
+                                {
+                                    // Assume IPv6
+                                    value = value.Replace("#", "");
+                                    value = Regex.Replace(value, ".{4}", "$0:").Trim(':');
+                                }
+                                return new IpIdentifier(IPAddress.Parse(value));
                             }
                         default:
                             {
@@ -139,34 +150,5 @@ namespace PKISharp.WACS.DomainObjects
         public byte[] GetHash() => _hash;
 
         public string Thumbprint { get; private set; }
-
-        /// <summary>
-        /// Parse first part of distinguished name
-        /// Format examples
-        /// DNS Name=www.example.com
-        /// DNS-имя=www.example.com
-        /// CN=example.com, OU=Dept, O=Org 
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
-        private static string? Split(string? input)
-        {
-            if (input == null)
-            {
-                return null;
-            }
-            var match = SplitRegex().Match(input);
-            if (match.Success)
-            {
-                return match.Groups[1].Value.Trim();
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        [GeneratedRegex("=([^,]+)")]
-        private static partial Regex SplitRegex();
     }
 }
