@@ -1,12 +1,10 @@
 ﻿using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.Runtime.Versioning;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
-using static System.Formats.Asn1.AsnWriter;
 
 [assembly: SupportedOSPlatform("windows")]
 
@@ -32,16 +30,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         public Task<StoreInfo?> Save(ICertificateInfo input)
         {
-            var existing = _storeClient.FindByThumbprint(input.Certificate.Thumbprint);
-            if (existing != null)
-            {
-                _log.Warning("Certificate with thumbprint {thumbprint} is already in the store", input.Certificate.Thumbprint);
-            }
-            else
-            {
-                _log.Information("Installing certificate in the certificate store");
-                _storeClient.InstallCertificate(input.Certificate);
-            }
+            _log.Information("Installing certificate in the certificate store");
+            _storeClient.InstallCertificate(input, X509KeyStorageFlags.UserKeySet);
             return Task.FromResult<StoreInfo?>(new StoreInfo() {
                 Name = Name,
                 Path = DefaultStoreName
@@ -50,7 +40,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         public Task Delete(ICertificateInfo input)
         {
-            _storeClient.UninstallCertificate(input.Certificate);
+            _storeClient.UninstallCertificate(input.Thumbprint);
             return Task.CompletedTask;
         }
 

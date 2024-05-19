@@ -3,12 +3,12 @@ using ACMESharp.Authorizations;
 using ACMESharp.Crypto;
 using ACMESharp.Protocol;
 using ACMESharp.Protocol.Resources;
+using Org.BouncyCastle.Asn1.X509;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Clients.Acme
@@ -74,7 +74,7 @@ namespace PKISharp.WACS.Clients.Acme
             _log.Verbose("Creating order for identifiers: {identifiers} (notAfter: {notAfter}, previous: {previous})",
                 identifiers.Select(x => x.Value),
                 notAfter,
-                previous?.Certificate.Thumbprint ?? "[none]");
+                previous?.Thumbprint ?? "[none]");
             var acmeIdentifiers = identifiers.Select(i => new AcmeIdentifier()
             {
                 Type = i.Type switch
@@ -287,8 +287,9 @@ namespace PKISharp.WACS.Clients.Acme
         /// <returns></returns>
         private static string CertificateId(ICertificateInfo certificate)
         {
-            var serialBytes = certificate.Certificate.SerialNumberBytes.ToArray();
-            var keyAuthBytes = (certificate.Certificate.Extensions.OfType<X509AuthorityKeyIdentifierExtension>().FirstOrDefault()?.KeyIdentifier) ?? throw new InvalidOperationException();
+            var serialBytes = certificate.Certificate.SerialNumber.ToByteArray();
+            var keyAuth = AuthorityKeyIdentifier.GetInstance(certificate.Certificate.GetExtensionValue(X509Extensions.AuthorityKeyIdentifier).GetOctets());
+            var keyAuthBytes = keyAuth.GetKeyIdentifier();
             var serial = Base64Tool.UrlEncode(serialBytes.ToArray());
             var keyauth = Base64Tool.UrlEncode(keyAuthBytes.ToArray());
             return $"{keyauth}.{serial}";

@@ -7,7 +7,6 @@ using PKISharp.WACS.Services.Serialization;
 using System;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
@@ -67,7 +66,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 name = name.Replace("*", "_");
 
                 // Base certificate
-                var certificateExport = input.Certificate.Export(X509ContentType.Cert);
+                var certificateExport = input.Certificate.GetEncoded();
                 var certString = _pemService.GetPem("CERTIFICATE", certificateExport);
                 var chainString = "";
                 await File.WriteAllTextAsync(Path.Combine(_path, $"{name}-crt.pem"), certString);
@@ -77,9 +76,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 {
                     // Do not include self-signed certificates, root certificates
                     // are supposed to be known already by the client.
-                    if (chainCertificate.Subject != chainCertificate.Issuer)
+                    if (chainCertificate.SubjectDN != chainCertificate.IssuerDN)
                     {
-                        var chainCertificateExport = chainCertificate.Export(X509ContentType.Cert);
+                        var chainCertificateExport = chainCertificate.GetEncoded();
                         chainString += _pemService.GetPem("CERTIFICATE", chainCertificateExport);
                     }
                 }

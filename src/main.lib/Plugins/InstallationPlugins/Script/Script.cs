@@ -62,14 +62,14 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                     "{1}" or "{CachePassword}" => (censor ? _renewal.PfxPassword?.DisplayValue : _renewal.PfxPassword?.Value) ?? "",
                     "{2}" or "{CacheFile}" => cachedCertificate?.CacheFile.FullName ?? "",
                     "{3}" or "{StorePath}" => defaultStoreInfo?.Path ?? "",
-                    "{4}" or "{CertFriendlyName}" => newCertificate.Certificate.FriendlyName,
-                    "{5}" or "{CertThumbprint}" => newCertificate.Certificate.Thumbprint,
+                    "{4}" or "{CertFriendlyName}" => newCertificate.FriendlyName,
+                    "{5}" or "{CertThumbprint}" => newCertificate.Thumbprint,
                     "{6}" or "{CacheFolder}" => cachedCertificate?.CacheFile.Directory?.FullName ?? "",
                     "{7}" or "{RenewalId}" => _renewal.Id,
                     "{StoreType}" => defaultStoreInfo?.Name ?? "",
                     "{OldCertCommonName}" => oldCertificate?.CommonName?.Value ?? "",
-                    "{OldCertFriendlyName}" => oldCertificate?.Certificate.FriendlyName ?? "",
-                    "{OldCertThumbprint}" => oldCertificate?.Certificate.Thumbprint ?? "",
+                    "{OldCertFriendlyName}" => oldCertificate?.FriendlyName ?? "",
+                    "{OldCertThumbprint}" => oldCertificate?.Thumbprint ?? "",
                     var s when s.StartsWith($"{{{SecretServiceManager.VaultPrefix}") => 
                         censor ? s : _ssm.EvaluateSecret(s.Trim('{', '}')) ?? s,
                     _ => m.Value

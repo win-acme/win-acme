@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.DomainObjects;
+﻿using Org.BouncyCastle.Pkcs;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
@@ -13,10 +14,9 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         public Task<ICertificateInfo> RequestCertificate(ICsrPlugin? csrPlugin, Order order)
         {
             // Create self-signed certificate
-            var ecdsa = ECDsa.Create(); // generate asymmetric key pair
-            var req = new CertificateRequest($"CN={order.Target.CommonName}", ecdsa, HashAlgorithmName.SHA256);
-            var cert = req.CreateSelfSigned(DateTimeOffset.Now, DateTimeOffset.Now.AddYears(5));
-            return Task.FromResult<ICertificateInfo>(new CertificateInfo(cert));
+            var builder = new Pkcs12StoreBuilder();
+            var pfx = builder.Build();
+            return Task.FromResult<ICertificateInfo>(new CertificateInfo(pfx));
         }
     }
 }

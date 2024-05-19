@@ -85,48 +85,29 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         public Task<StoreInfo?> Save(ICertificateInfo input)
         {
-            var existing = _storeClient.FindByThumbprint(input.Certificate.Thumbprint);
-            var store = input.Certificate;
-
-            if (existing != null)
+            _log.Information("Installing certificate in the certificate store");
+            var exportable = _storeClient.InstallCertificate(input, X509KeyStorageFlags.MachineKeySet);
+            var existing = _storeClient.FindByThumbprint(input.Thumbprint);
+            if (!_runLevel.HasFlag(RunLevel.Test))
             {
-                _log.Warning("Certificate with thumbprint {thumbprint} is already in the store", input.Certificate.Thumbprint);
-                store = existing;
+                _storeClient.InstallCertificateChain(input);
             }
-            else
-            {
-                _log.Information("Installing certificate in the certificate store");
-                _storeClient.InstallCertificate(store);
-                if (!_runLevel.HasFlag(RunLevel.Test))
-                {
-                    _storeClient.InstallCertificateChain(input.Chain);
-                }
-                store = _storeClient.FindByThumbprint(input.Certificate.Thumbprint);
-            }
-
-            var exportable =
-                _settings.Store.CertificateStore.PrivateKeyExportable == true ||
-#pragma warning disable CS0618 // Type or member is obsolete
-                (_settings.Store.CertificateStore.PrivateKeyExportable == null && _settings.Security.PrivateKeyExportable == true);
-#pragma warning restore CS0618 // Type or member is obsolete
             if (exportable)
             {
-                _options.AclRead = _options.AclRead ?? new List<string>();
+                _options.AclRead ??= new List<string>();
                 if (!_options.AclRead.Contains("administrators")) {
                     _log.Information("Add local administators to Private Key ACL to allow export");
                     _options.AclRead.Add("administrators");
                 }
             }
-
             if (_options.AclFullControl != null)
             {
-                SetAcl(store, _options.AclFullControl, FileSystemRights.FullControl);
+                SetAcl(existing, _options.AclFullControl, FileSystemRights.FullControl);
             }
             if (_options.AclRead != null)
             {
-                SetAcl(store, _options.AclRead, FileSystemRights.Read);
+                SetAcl(existing, _options.AclRead, FileSystemRights.Read);
             }
-
             return Task.FromResult<StoreInfo?>(new StoreInfo() {
                 Name = Name,
                 Path = _storeName
@@ -188,7 +169,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             // Test if the user manually added the certificate to IIS
             if (_iisClient.HasWebSites)
             {
-                var hash = input.Certificate.GetCertHash();
+                var hash = input.GetHash();
                 if (_iisClient.Sites.Any(site =>
                     site.Bindings.Any(binding =>
                     StructuralComparisons.StructuralEqualityComparer.Equals(binding.CertificateHash, hash) &&
@@ -198,7 +179,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     return Task.CompletedTask;
                 }
             }
-            _storeClient.UninstallCertificate(input.Certificate);
+            _storeClient.UninstallCertificate(input.Thumbprint);
             return Task.CompletedTask;
         }
 

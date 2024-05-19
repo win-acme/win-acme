@@ -64,50 +64,22 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         private string PathForIdentifier(string identifier) => Path.Combine(_path, $"{identifier.Replace("*", "_")}.pfx");
 
-        public Task<StoreInfo?> Save(ICertificateInfo input)
+        public async Task<StoreInfo?> Save(ICertificateInfo input)
         {
-            var dest = PathForIdentifier(_name ?? input.CommonName?.Value ?? input.SanNames.First().Value);
-            _log.Information("Copying certificate to the pfx folder {dest}", dest);
             try
             {
-                var collection = new X509Certificate2Collection
-                {
-                    input.Certificate
-                };
-                collection.AddRange(input.Chain.ToArray());
-                var ms = new MemoryStream(collection.Export(X509ContentType.Pfx)!);
-                var bcPfxBuilder = new Bc.Pkcs.Pkcs12StoreBuilder();
-                var bcPfxIn = bcPfxBuilder.Build();
-                bcPfxIn.Load(ms, Array.Empty<char>());
-                var bcPfxOut = bcPfxBuilder.Build();
-
-                var aliases = bcPfxIn.Aliases.OfType<string>().ToList();
-                var keyAlias = aliases.FirstOrDefault(a => bcPfxIn.IsKeyEntry(a));
-                if (keyAlias != null)
-                {
-                    bcPfxOut.SetKeyEntry(
-                        input.CommonName?.Value ?? input.SanNames.First().Value,
-                        bcPfxIn.GetKey(keyAlias), 
-                        bcPfxIn.GetCertificateChain(keyAlias));
-                }
-                else
-                {
-                    foreach (var alias in aliases)
-                    {
-                        bcPfxOut.SetCertificateEntry(alias, bcPfxIn.GetCertificate(alias));
-                    }
-                }
-                using var fs = new FileInfo(dest).Open(FileMode.Create);
-                bcPfxOut.Save(fs, _password?.ToCharArray(), new Bc.Security.SecureRandom());
+                var dest = PathForIdentifier(_name ?? input.CommonName?.Value ?? input.SanNames.First().Value);
+                _log.Information("Copying certificate to the pfx folder {dest}", dest);
+                await input.PfxSave(dest, _password);
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "Error copying certificate to pfx path");
             }
-            return Task.FromResult<StoreInfo?>(new StoreInfo() {
+            return new StoreInfo() {
                 Name = Name,
                 Path = _path
-            });
+            };
         }
 
         public Task Delete(ICertificateInfo input) => Task.CompletedTask;

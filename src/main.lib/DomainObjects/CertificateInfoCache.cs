@@ -1,8 +1,10 @@
-﻿using Org.BouncyCastle.Crypto;
+﻿using Org.BouncyCastle.Asn1.Nist;
+using Org.BouncyCastle.Asn1.Pkcs;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Pkcs;
+using Org.BouncyCastle.X509;
 using System.Collections.Generic;
 using System.IO;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 
 namespace PKISharp.WACS.DomainObjects
 {
@@ -12,40 +14,23 @@ namespace PKISharp.WACS.DomainObjects
     /// </summary>
     public class CertificateInfoCache : ICertificateInfo
     {
-        private readonly CertificateInfo _inner;
+        private readonly ICertificateInfo _inner;
 
-        /// <summary>
-        /// Contruction with two attempts: as EphemeralKeySet first 
-        /// and fallback to MachineKeySet second for missing/corrupt
-        /// profiles
-        /// </summary>
         /// <param name="file"></param>
         /// <param name="password"></param>
         public CertificateInfoCache(FileInfo file, string? password)  
         {
             CacheFile = file;
-            CacheFilePassword = password;
-            try
-            {
-                _inner = GenerateInner(X509KeyStorageFlags.EphemeralKeySet);
-            } 
-            catch (CryptographicException)
-            {
-                _inner = GenerateInner(X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet);
-            }
-        }  
 
-        /// <summary>
-        /// Load inner file from disk
-        /// </summary>
-        /// <param name="flags"></param>
-        /// <returns></returns>
-        private CertificateInfo GenerateInner(X509KeyStorageFlags flags)
-        {
-            var ret = new X509Certificate2Collection();
-            var finalFlags = X509KeyStorageFlags.Exportable | flags;
-            ret.Import(CacheFile.FullName, CacheFilePassword, finalFlags);
-            return new CertificateInfo(ret);
+            using var stream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read);
+            var pfxBuilder = new Pkcs12StoreBuilder();
+            pfxBuilder.SetKeyAlgorithm(
+                NistObjectIdentifiers.IdAes256Cbc,
+                PkcsObjectIdentifiers.IdHmacWithSha256);
+            pfxBuilder.SetUseDerEncoding(true);
+            var pfx = pfxBuilder.Build();
+            pfx.Load(stream, password?.ToCharArray());
+            _inner = new CertificateInfo(pfx);
         }
 
         /// <summary>
@@ -53,16 +38,14 @@ namespace PKISharp.WACS.DomainObjects
         /// </summary>
         public FileInfo CacheFile { get; private set; }
 
-        /// <summary>
-        /// Password used to protect the file on disk
-        /// </summary>
-        public string? CacheFilePassword { get; private set; }
-
-        public X509Certificate2 Certificate => _inner.Certificate;
-        public IEnumerable<X509Certificate2> Chain => _inner.Chain;
-        public X509Certificate2Collection Collection => _inner.Collection;
+        public X509Certificate Certificate => _inner.Certificate;
+        public IEnumerable<X509Certificate> Chain => _inner.Chain;
+        public Pkcs12Store Collection => _inner.Collection;
         public Identifier? CommonName => _inner.CommonName;
         public AsymmetricKeyParameter? PrivateKey => _inner.PrivateKey;
         public IEnumerable<Identifier> SanNames => _inner.SanNames;
+        public string FriendlyName => _inner.FriendlyName;
+        public string Thumbprint => _inner.Thumbprint;
+        public byte[] GetHash() => _inner.GetHash();
     }
 }

@@ -1,30 +1,21 @@
 ﻿using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Pkcs;
+using Org.BouncyCastle.X509;
 using System.Collections.Generic;
-using System.Security.Cryptography.X509Certificates;
 
 namespace PKISharp.WACS.DomainObjects
 {
     public interface ICertificateInfo
     {
         /// <summary>
-        /// The main certificate
-        /// </summary>
-        X509Certificate2 Certificate { get; }
-
-        /// <summary>
-        /// The certificate chain, in the correct order
-        /// </summary>
-        IEnumerable<X509Certificate2> Chain { get; }
-
-        /// <summary>
         /// Entire collection, equivalent to the full PFX archive
         /// </summary>
-        X509Certificate2Collection Collection { get; }
+        Pkcs12Store Collection { get; }
 
         /// <summary>
-        /// The common name / subject name
+        /// The main certificate
         /// </summary>
-        Identifier? CommonName { get; }
+        X509Certificate Certificate { get; }
 
         /// <summary>
         /// Private key in Bouncy Castle format
@@ -32,10 +23,35 @@ namespace PKISharp.WACS.DomainObjects
         AsymmetricKeyParameter? PrivateKey { get; }
 
         /// <summary>
+        /// The certificate chain, in the correct order
+        /// </summary>
+        IEnumerable<X509Certificate> Chain { get; }
+
+        /// <summary>
+        /// The common name / subject name
+        /// </summary>
+        Identifier? CommonName { get; }
+
+        /// <summary>
         /// The Subject Alternative Names (up to 100 for Let's Encrypt)
         /// that are also validate identifiers to be used with this
         /// certificate.
         /// </summary>
         IEnumerable<Identifier> SanNames { get; }
+
+        /// <summary>
+        /// FriendlyName
+        /// </summary>
+        string FriendlyName { get; }
+
+        /// <summary>
+        /// Main certificate hash
+        /// </summary>
+        byte[] GetHash();
+
+        /// <summary>
+        /// Main certificate thumbprint
+        /// </summary>
+        string Thumbprint { get; }
     }
 }

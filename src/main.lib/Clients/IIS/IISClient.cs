@@ -234,8 +234,8 @@ namespace PKISharp.WACS.Clients.IIS
         public void UpdateFtpSite(long? id, string? newStore, ICertificateInfo newCertificate, ICertificateInfo? oldCertificate)
         {
             var ftpSites = Sites.Where(x => x.Type == IISSiteType.Ftp).ToList();
-            var oldThumbprint = oldCertificate?.Certificate?.Thumbprint;
-            var newThumbprint = newCertificate?.Certificate?.Thumbprint;
+            var oldThumbprint = oldCertificate?.Thumbprint;
+            var newThumbprint = newCertificate?.Thumbprint;
             var updated = 0;
 
             if (ServerManager == null)

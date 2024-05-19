@@ -62,7 +62,7 @@ namespace PKISharp.WACS
                         {
                             try
                             {
-                                var certificateDer = cache.Certificate.Export(X509ContentType.Cert);
+                                var certificateDer = cache.Certificate.GetEncoded();
                                 await client.RevokeCertificate(certificateDer);
                                 result.OrderResults.Add(new OrderResult(order.Key) { Revoked = true });
                             }

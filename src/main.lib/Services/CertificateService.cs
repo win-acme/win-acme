@@ -181,11 +181,11 @@ namespace PKISharp.WACS.Services
         private CertificateOption CreateAlternative(byte[] bytes, string friendlyName, AsymmetricKeyParameter? pk)
         {
             var storeWithoutKey = ParseData(bytes, friendlyName);
-            var infoWithoutKey = new CertificateInfoBc(storeWithoutKey, _log);
+            var infoWithoutKey = new CertificateInfo(storeWithoutKey);
             if (pk != null)
             {
                 var storeWithKey = ParseData(bytes, friendlyName, pk);
-                var infoWithKey = new CertificateInfoBc(storeWithKey, _log);
+                var infoWithKey = new CertificateInfo(storeWithKey);
                 return new(
                     withPrivateKey: infoWithKey,
                     withoutPrivateKey: infoWithoutKey
