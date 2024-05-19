@@ -148,6 +148,22 @@ namespace PKISharp.WACS.Clients.Acme
                 // to ensure that it won't be used
                 _log.Warning("Cached order available but not used with --{switch} option.",
                     nameof(MainArguments.NoCache).ToLower());
+                if (existingOrder.Payload.Authorizations != null)
+                {
+                    foreach (var auth in existingOrder.Payload.Authorizations)
+                    {
+                        try
+                        {
+                            _log.Debug("Deactivating pre-existing authorization");
+                            await client.DeactivateAuthorization(auth);
+                        }
+                        catch (Exception ex)
+                        {
+                            _log.Warning("Error deactivating pre-existing authorization: {ex}", ex.Message); ;
+                        }
+                    }
+                }
+
                 DeleteFromCache(cacheKey);
                 return null;
             }
