@@ -1,9 +1,9 @@
 ﻿using ACMESharp.Protocol.Resources;
+using Org.BouncyCastle.X509;
 using PKISharp.WACS.Context;
 using PKISharp.WACS.DomainObjects;
 using System;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 
 namespace PKISharp.WACS.Services
 {
@@ -31,11 +31,12 @@ namespace PKISharp.WACS.Services
         /// <exception cref="InvalidOperationException"></exception>
         public bool ShouldRun(OrderContext order)
         {
-            var previous = order.CachedCertificate?.Certificate;
-            if (previous != null)
+            var previous = order.CachedCertificate;
+            var previousCert = order.CachedCertificate?.Certificate;
+            if (previous != null && previousCert != null)
             {
                 _log.Verbose("{name}: previous thumbprint {thumbprint}", order.OrderFriendlyName, previous.Thumbprint);
-                _log.Verbose("{name}: previous expires {thumbprint}", order.OrderFriendlyName, _input.FormatDate(previous.NotAfter));
+                _log.Verbose("{name}: previous expires {thumbprint}", order.OrderFriendlyName, _input.FormatDate(previousCert.NotAfter));
 
                 // Check if the certificate was actually installed
                 // succesfully before we decided to use it as a 
@@ -51,17 +52,17 @@ namespace PKISharp.WACS.Services
                     // this certificate was succesfully stored and installed
                     // at least once.
                     _log.Verbose("{name}: no historic success found", order.OrderFriendlyName);
-                    previous = null;
+                    previousCert = null;
                 }
             }
 
             // Always run if the cached certificate is unusable
-            if (previous == null)
+            if (previousCert == null)
             {
                 return true;
             }
           
-            var range = ComputeDueDate(previous, order.RenewalInfo);
+            var range = ComputeDueDate(previousCert, order.RenewalInfo);
             if (range.Source?.Contains("ri") ?? false)
             {
                 _log.Verbose("Using server side renewal schedule");
@@ -83,7 +84,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="certificate"></param>
         /// <returns></returns>
-        public DueDate ComputeDueDate(X509Certificate2 certificate, AcmeRenewalInfo? renewalInfo) => 
+        public DueDate ComputeDueDate(X509Certificate certificate, AcmeRenewalInfo? renewalInfo) => 
             ComputeDueDate(certificate.NotBefore, certificate.NotAfter, renewalInfo);
 
         /// <summary>

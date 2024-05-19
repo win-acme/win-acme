@@ -1,4 +1,6 @@
-﻿using PKISharp.WACS.Services;
+﻿using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +12,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
     public class CertificateStoreClient : IDisposable
     {
         private readonly X509Store _store;
-        private X509Store? _imStore;
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
         private readonly StoreLocation _location;
@@ -20,95 +21,133 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         {
             _log = log;
             _location = storeLocation;
-            _log.Debug("Certificate store name: {_storeName}", storeName);
             _store = new X509Store(storeName, storeLocation);
             _settings = settings;
         }
 
         public X509Certificate2? FindByThumbprint(string thumbprint) => GetCertificate(x => string.Equals(x.Thumbprint, thumbprint));
 
-        public void InstallCertificate(X509Certificate2 certificate)
+        /// <summary>
+        /// Install the main certs with potential private key
+        /// </summary>
+        /// <param name="certificate"></param>
+        /// <param name="flags"></param>
+        /// <returns></returns>
+        public bool InstallCertificate(ICertificateInfo certificate, X509KeyStorageFlags flags)
         {
-            try
+            // Determine storage flags
+            var exportable =
+                _settings.Store.CertificateStore.PrivateKeyExportable == true ||
+                #pragma warning disable CS0618 // Type or member is obsolete
+                (_settings.Store.CertificateStore.PrivateKeyExportable == null && _settings.Security.PrivateKeyExportable == true);
+                #pragma warning restore CS0618 // Type or member is obsolete
+            if (exportable)
             {
-                _store.Open(OpenFlags.ReadWrite);
-                _log.Debug("Opened certificate store {Name}", _store.Name);
+                flags |= X509KeyStorageFlags.Exportable;
             }
-            catch
-            {
-                _log.Error("Error encountered while opening certificate store {name}", _store.Name);
-                throw;
-            }
+            flags |= X509KeyStorageFlags.PersistKeySet;
 
-            try
+            var dotnet = default(X509Certificate2); 
+            var password = PasswordGenerator.Generate();
+            if (_settings.Store.CertificateStore.UseNextGenerationCryptoApi != true)
             {
-                _log.Information(LogType.All, "Adding certificate {FriendlyName} to store {name}", certificate.FriendlyName, _store.Name);
-                _log.Verbose("{sub} - {iss} ({thumb})", certificate.Subject, certificate.Issuer, certificate.Thumbprint);
-                var flags = X509KeyStorageFlags.PersistKeySet;
-                if (_location == StoreLocation.CurrentUser)
+                // We should always be exportable before we can try 
+                // conversion to the legacy Crypto API. Look for the
+                // certificate with the private key attached.
+                dotnet = certificate.AsCollection(flags | X509KeyStorageFlags.Exportable, password).OfType<X509Certificate2>().FirstOrDefault(x => x.HasPrivateKey);
+                if (dotnet != null)
                 {
-                    flags |= X509KeyStorageFlags.UserKeySet;
+                    dotnet = ConvertCertificate(dotnet, flags, password);
                 }
-                else
-                {
-                    flags |= X509KeyStorageFlags.MachineKeySet;
-                }
-                certificate = ProcessCertificate(certificate, flags);
-                _store.Add(certificate);
             }
-            catch
+            if (dotnet == null)
             {
-                _log.Error("Error saving certificate");
-                throw;
+                // If conversion failed or was not attempted, use original set of flags
+                // but here we should consider the scenario that the private key is not 
+                // present at all.
+                var collection = certificate.AsCollection(flags, password).OfType<X509Certificate2>().ToList();
+                dotnet = collection.FirstOrDefault(x => !collection.Any(y => x.Subject == y.Issuer));
             }
-            _log.Debug("Closing certificate store");
-            _store.Close();
+            if (dotnet != null)
+            {
+                SaveToStore(_store, dotnet);
+            }
+            return exportable;
         }
 
-        public void InstallCertificateChain(IEnumerable<X509Certificate2> chain)
+        /// <summary>
+        /// Actual save to store
+        /// </summary>
+        /// <param name="store"></param>
+        /// <param name="dotnet"></param>
+        private void SaveToStore(X509Store store, X509Certificate2 dotnet)
         {
-            X509Store? imStore;
+            var close = false;
+            if (!store.IsOpen)
+            {
+                _log.Debug("Open store {name}", store.Name);
+                store.Open(OpenFlags.ReadWrite);
+                close = true;
+            }
+            if (store.Certificates.Find(X509FindType.FindByThumbprint, dotnet.Thumbprint, false).Count == 0)
+            {
+                try
+                {
+                    _log.Information(LogType.All, "Adding certificate {FriendlyName} to store {name}", dotnet.FriendlyName ?? dotnet.Subject, store.Name);
+                    _log.Verbose("{sub} - {iss} ({thumb})", dotnet.Subject, dotnet.Issuer, dotnet.Thumbprint);
+                    store.Add(dotnet);
+                }
+                catch
+                {
+                    _log.Error("Error saving certificate");
+                    throw;
+                }
+            } 
+            else
+            {
+                _log.Verbose("{sub} - {iss} ({thumb}) already exists in {store}", dotnet.Subject, dotnet.Issuer, dotnet.Thumbprint, store.Name);
+            }
+            if (close)
+            {
+                _log.Debug("Close store {name}", store.Name);
+                store.Close();
+            }
+        }
+
+        /// <summary>
+        /// Install the chain certs
+        /// </summary>
+        /// <param name="certificate"></param>
+        public void InstallCertificateChain(ICertificateInfo certificate)
+        {
+            using var imStore = new X509Store(StoreName.CertificateAuthority, _location);
+            var store = imStore;
             try
             {
-                _imStore = new X509Store(StoreName.CertificateAuthority, _location);
-                _imStore.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
-                if (!_imStore.IsOpen)
+                imStore.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
+                if (!imStore.IsOpen)
                 {
-                    throw new Exception("not opened");
+                    throw new Exception("Store failed to open");
                 }
-                imStore = _imStore;
             }
             catch (Exception ex)
             {
                 _log.Warning($"Error opening intermediate certificate store: {ex.Message}");
-                return;
+                store = _store;
             }
-            imStore ??= _store;
-            foreach (var cert in chain)
+            foreach (var bcCert in certificate.Chain)
             {
-                if (imStore.Certificates.Find(X509FindType.FindByThumbprint, cert.Thumbprint, false).Count == 0)
-                {
-                    try
-                    {
-                        _log.Verbose("{sub} - {iss} ({thumb}) to store {store}", cert.Subject, cert.Issuer, cert.Thumbprint, imStore.Name);
-                        imStore.Add(cert);
-                    }
-                    catch (Exception ex)
-                    {
-                        _log.Warning("Error saving certificate to store {store}: {message}", imStore.Name, ex.Message);
-                    }
-                }
-                else
-                {
-                    _log.Verbose("{sub} - {iss} ({thumb}) already exists in {store}", cert.Subject, cert.Issuer, cert.Thumbprint, imStore.Name);
-                }
+                var cert = new X509Certificate2(bcCert.GetEncoded());
+                SaveToStore(store, cert);
             }
-
-            _log.Debug("Closing store {store}", imStore.Name);
-            imStore.Close();
+            store.Close();
         }
 
-        public void UninstallCertificate(X509Certificate2 certificate)
+        /// <summary>
+        /// Remove superfluous certificate from the store
+        /// </summary>
+        /// <param name="thumbprint"></param>
+        public void UninstallCertificate(string thumbprint)
         {
             _log.Information("Uninstalling certificate from the certificate store");
             try
@@ -124,7 +163,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             try
             {
                 var col = _store.Certificates;
-                var thumbprint = certificate.Thumbprint;
                 foreach (var cert in col)
                 {
                     if (string.Equals(cert.Thumbprint, thumbprint, StringComparison.InvariantCultureIgnoreCase))
@@ -144,65 +182,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         }
 
         /// <summary>
-        /// Re-open certificate with specific X509KeyStorageFlags applied
-        /// </summary>
-        /// <param name="original"></param>
-        /// <param name="flags"></param>
-        /// <returns></returns>
-        private static X509Certificate2 ApplyFlags(X509Certificate2 original, X509KeyStorageFlags flags)
-        {
-            // If no RSA key is present, we only export and re-fallback to
-            // set the correct flags on the certificate.
-            var password = PasswordGenerator.Generate();
-            var cert = original.Export(X509ContentType.Pkcs12, password);
-            return new X509Certificate2(cert, password, flags)
-            {
-                FriendlyName = original.FriendlyName
-            };
-        }
-
-        /// <summary>
-        /// Apply certificate flags and convert private key provider if asked
-        /// </summary>
-        /// <param name="input"></param>
-        /// <param name="baseFlags"></param>
-        /// <returns></returns>
-        private X509Certificate2 ProcessCertificate(X509Certificate2 input, X509KeyStorageFlags baseFlags)
-        {
-            var exportable =
-                _settings.Store.CertificateStore.PrivateKeyExportable == true ||
-                #pragma warning disable CS0618 // Type or member is obsolete
-                (_settings.Store.CertificateStore.PrivateKeyExportable == null && _settings.Security.PrivateKeyExportable == true);
-                #pragma warning restore CS0618 // Type or member is obsolete
-            var finalFlags = baseFlags;
-            if (exportable)
-            {
-                finalFlags |= X509KeyStorageFlags.Exportable;
-            }
-            _log.Debug("Storing certificate with flags {flags}", finalFlags);
-
-            X509Certificate2? store;
-            if (_settings.Store.CertificateStore.UseNextGenerationCryptoApi != true)
-            {
-                // Should always be exportable before we attempt to convert,
-                // because otherwise we won't be able to get to the private key
-                store = ApplyFlags(input, baseFlags | X509KeyStorageFlags.Exportable);
-
-                // If the ConvertCertificate fails it returns null, and when that
-                // happend we apply the final flags to the original input instead
-                store = ConvertCertificate(store, finalFlags);
-                store ??= ApplyFlags(input, finalFlags);
-            }
-            else
-            {
-                // Do not attempt conversion, just apply the final flags
-                store = ApplyFlags(input, finalFlags);
-            }
-            return store;
-        }
-
-
-        /// <summary>
         /// Set the right flags on the certificate and
         /// convert the private key to the right cryptographic
         /// provider
@@ -210,7 +189,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// <param name="original"></param>
         /// <param name="flags"></param>
         /// <returns></returns>
-        private X509Certificate2? ConvertCertificate(X509Certificate2 original, X509KeyStorageFlags flags)
+        private X509Certificate2? ConvertCertificate(X509Certificate2 original, X509KeyStorageFlags flags, string password)
         {
             try
             {
@@ -231,10 +210,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
                 // Export private key parameters
                 // https://github.com/dotnet/runtime/issues/36899
-                var pwd = PasswordGenerator.Generate();
                 using var tempRsa = RSA.Create();
                 var pbeParameters = new PbeParameters(PbeEncryptionAlgorithm.Aes256Cbc, HashAlgorithmName.SHA256, 10);
-                tempRsa.ImportEncryptedPkcs8PrivateKey(pwd, rsaPrivateKey.ExportEncryptedPkcs8PrivateKey(pwd, pbeParameters), out var read);
+                tempRsa.ImportEncryptedPkcs8PrivateKey(password, rsaPrivateKey.ExportEncryptedPkcs8PrivateKey(password, pbeParameters), out var read);
 
                 var cspFlags = CspProviderFlags.NoPrompt;
                 if (flags.HasFlag(X509KeyStorageFlags.MachineKeySet))
@@ -256,7 +234,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 var parameters = tempRsa.ExportParameters(true);
                 rsaProvider.ImportParameters(parameters);
 
-                var password = PasswordGenerator.Generate();
                 var tempPfx = new X509Certificate2(original.Export(X509ContentType.Cert, password), password, flags);
                 tempPfx = tempPfx.CopyWithPrivateKey(rsaProvider);
                 tempPfx.FriendlyName = original.FriendlyName;
@@ -266,8 +243,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             {
                 // If we couldn't convert the private key that 
                 // means we're left with a pfx generated with the
-                // 'wrong' Crypto provider therefor delete it to 
-                // make sure it's retried on the next run.
+                // 'wrong' Crypto provider
                 _log.Warning("Error converting key to legacy CryptoAPI, using CNG instead.");
                 _log.Verbose("{ex}", ex);
                 return null;
@@ -318,7 +294,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 if (disposing)
                 {
                     _store.Dispose();
-                    _imStore?.Dispose();
                 }
                 disposedValue = true;
             }

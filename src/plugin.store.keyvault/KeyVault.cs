@@ -1,12 +1,12 @@
 ﻿using Azure.Security.KeyVault.Certificates;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Azure.Common;
 using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.Runtime.Versioning;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 
 [assembly: SupportedOSPlatform("windows")]
@@ -46,7 +46,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 });
             var importOptions = new ImportCertificateOptions(
                 _options.CertificateName,
-                certificateInfo.Collection.Export(X509ContentType.Pfx));
+                certificateInfo.PfxBytes());
             try
             {
                 _ = await client.ImportCertificateAsync(importOptions);

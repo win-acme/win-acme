@@ -65,7 +65,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 _log.Information("Saving certificate to CentralSsl location {dest}", dest);
                 try
                 {
-                    await File.WriteAllBytesAsync(dest, input.Collection.Export(X509ContentType.Pfx, _password)!);
+                    await input.PfxSave(dest, _password);
                 }
                 catch (Exception ex)
                 {
@@ -88,7 +88,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 var cert = LoadCertificate(fi);
                 if (cert != null)
                 {
-                    if (string.Equals(cert.Thumbprint, input.Certificate.Thumbprint, StringComparison.InvariantCultureIgnoreCase))
+                    if (string.Equals(cert.Thumbprint, input.Thumbprint, StringComparison.InvariantCultureIgnoreCase))
                     {
                         _log.Warning("Delete {fi} with thumb {thumb}", fi.FullName, cert.Thumbprint);
                         fi.Delete();

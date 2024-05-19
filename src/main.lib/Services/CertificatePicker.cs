@@ -14,8 +14,6 @@ namespace PKISharp.WACS.Services
 
         public CertificatePicker(
             ILogService log,
-            AcmeClientManager client,
-            PemService pemService,
             ISettingsService settingsService)
         {
             _log = log;
@@ -28,8 +26,8 @@ namespace PKISharp.WACS.Services
         /// <param name="option"></param>
         /// <returns></returns>
         private static string? Root(CertificateOption option) => 
-            option.WithoutPrivateKey.Chain.LastOrDefault()?.IssuerClean() ?? 
-            option.WithoutPrivateKey.Certificate.IssuerClean();
+            option.WithoutPrivateKey.Chain.LastOrDefault()?.IssuerDN.ToString() ?? 
+            option.WithoutPrivateKey.Certificate.IssuerDN.ToString();
 
         /// <summary>
         /// Choose between different versions of the certificate
@@ -47,7 +45,7 @@ namespace PKISharp.WACS.Services
                     _log.Debug("Option {n} issued by {issuer} (thumb: {thumb})", 
                         options.IndexOf(option) + 1, 
                         Root(option), 
-                        option.WithPrivateKey.Certificate.Thumbprint);
+                        option.WithPrivateKey.Thumbprint);
                 }
                 if (!string.IsNullOrEmpty(_settings.Acme.PreferredIssuer))
                 {

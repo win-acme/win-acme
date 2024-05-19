@@ -388,13 +388,11 @@ namespace PKISharp.WACS.Services
             {
                 save = option.WithoutPrivateKey;
             }
-            var pfxPath = new FileInfo(GetPath(order.Renewal, $"-{CacheKey(order)}{PfxPostFix}"));
-            var export = save.Collection.Export(X509ContentType.Pfx, order.Renewal.PfxPassword?.Value);
-            if (export == null)
-            {
-                return option.WithPrivateKey;
-            }
-            await File.WriteAllBytesAsync(pfxPath.FullName, export);
+
+            var cache = await save.PfxSave(
+                GetPath(order.Renewal, $"-{CacheKey(order)}{PfxPostFix}"), 
+                order.Renewal.PfxPassword?.Value);
+        
             if (_settings.Cache.ReuseDays <= 0)
             {
                 return option.WithPrivateKey;
@@ -404,14 +402,13 @@ namespace PKISharp.WACS.Services
             // but now will also be an instance of CertificateInfoCache instead
             // of another implementation of ICertificateInfo. This helps it gain
             // some properties that can be used by the script installation plugin
-            pfxPath.Refresh();
             _log.Debug("Certificate written to cache file {path} in certificate cache folder {folder}. It will be " +
                 "reused when renewing within {x} day(s) as long as the --source and --csr parameters remain the same and " +
                 "the --force switch is not used.",
-                pfxPath.Name,
-                pfxPath.Directory?.FullName,
+                cache.Name,
+                cache.Directory?.FullName,
                 _settings.Cache.ReuseDays);
-            return FromCache(pfxPath, order.Renewal.PfxPassword?.Value);
+            return FromCache(cache, order.Renewal.PfxPassword?.Value);
         }
 
         /// <summary>

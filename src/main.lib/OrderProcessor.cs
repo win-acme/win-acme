@@ -199,7 +199,7 @@ namespace PKISharp.WACS
                     orderResult.AddErrorMessage("No certificate generated");
                     continue;
                 }
-                orderResult.Thumbprint = order.NewCertificate.Certificate.Thumbprint;
+                orderResult.Thumbprint = order.NewCertificate.Thumbprint;
                 orderResult.ExpireDate = order.NewCertificate.Certificate.NotAfter;
 
                 // Handle installation and store
@@ -280,7 +280,7 @@ namespace PKISharp.WACS
                 context.OrderResult.Success = true;
 
                 if (context.PreviousCertificate != null &&
-                    context.NewCertificate.Certificate.Thumbprint != context.PreviousCertificate.Certificate.Thumbprint)
+                    context.NewCertificate.Thumbprint != context.PreviousCertificate.Thumbprint)
                 {
                     // Delete the previous certificate from the store(s)
                     await HandleStoreRemove(context, context.PreviousCertificate, storeContexts);
@@ -312,7 +312,7 @@ namespace PKISharp.WACS
             {
                 return null;
             }
-            if (!cachedCertificate.Certificate.HasPrivateKey)
+            if (cachedCertificate.PrivateKey == null)
             {
                 // Cached certificates without private keys cannot be used for 
                 // new execution runs, they need to be re-ordered then

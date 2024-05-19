@@ -1,6 +1,5 @@
 ﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
@@ -105,7 +104,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                     ? bindingOptions.
                         WithFlags(SSLFlags.CentralSsl)
                     : bindingOptions.
-                        WithThumbprint(newCertificate.Certificate.GetCertHash()).
+                        WithThumbprint(newCertificate.GetHash()).
                         WithStore(certificateStoreName);
 
                 switch (part.SiteType)
@@ -124,7 +123,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                                 WithPort(_options.NewBindingPort.Value);
                         }
                         bindingOptions = bindingOptions.WithSiteId(part.SiteId!.Value);
-                        _iisClient.UpdateHttpSite(httpIdentifiers, bindingOptions, oldCertificate?.Certificate.GetCertHash(), newCertificate.SanNames);
+                        _iisClient.UpdateHttpSite(httpIdentifiers, bindingOptions, oldCertificate?.GetHash(), newCertificate.SanNames);
                         if (certificateStore) 
                         {
                             _iisClient.UpdateFtpSite(0, certificateStoreName, newCertificate, oldCertificate);
@@ -133,7 +132,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                     case IISSiteType.Ftp:
                         // Update FTP site
                         _iisClient.UpdateFtpSite(part.SiteId!.Value, certificateStoreName, newCertificate, oldCertificate);
-                        _iisClient.UpdateHttpSite(httpIdentifiers, bindingOptions, oldCertificate?.Certificate.GetCertHash(), newCertificate.SanNames);
+                        _iisClient.UpdateHttpSite(httpIdentifiers, bindingOptions, oldCertificate?.GetHash(), newCertificate.SanNames);
                         break;
                     default:
                         _log.Error("Unknown site type");
