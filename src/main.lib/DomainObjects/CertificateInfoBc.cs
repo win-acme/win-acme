@@ -32,16 +32,8 @@ namespace PKISharp.WACS.DomainObjects
             }
             catch (CryptographicException ex1)
             {
-                try
-                {
-                    log.Verbose("CryptographicException {ex}: fallback to MachineKeySet...", ex1.Message);
-                    _inner = GenerateInner(store, X509KeyStorageFlags.MachineKeySet);
-                } 
-                catch (CryptographicException ex2)
-                {
-                    log.Verbose("CryptographicException {ex}: fallback to passwordless...", ex2.Message);
-                    _inner = GenerateInner(store, X509KeyStorageFlags.MachineKeySet, false);
-                }
+                log.Verbose("CryptographicException {ex}: fallback to MachineKeySet...", ex1.Message);
+                _inner = GenerateInner(store, X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet);
             }
         }
 

@@ -31,7 +31,7 @@ namespace PKISharp.WACS.DomainObjects
             } 
             catch (CryptographicException)
             {
-                _inner = GenerateInner(X509KeyStorageFlags.MachineKeySet);
+                _inner = GenerateInner(X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet);
             }
         }  
 
