@@ -48,16 +48,19 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             flags |= X509KeyStorageFlags.PersistKeySet;
 
             var dotnet = default(X509Certificate2); 
-            var password = PasswordGenerator.Generate();
             if (_settings.Store.CertificateStore.UseNextGenerationCryptoApi != true)
             {
                 // We should always be exportable before we can try 
                 // conversion to the legacy Crypto API. Look for the
                 // certificate with the private key attached.
-                dotnet = certificate.AsCollection(flags | X509KeyStorageFlags.Exportable, password).OfType<X509Certificate2>().FirstOrDefault(x => x.HasPrivateKey);
+
+                // Adding password protection to these temporary certificates 
+                // might cause difficult to reproduce bugs during later
+                // stages of the process, so we've removed them for now.
+                dotnet = certificate.AsCollection(flags | X509KeyStorageFlags.Exportable).OfType<X509Certificate2>().FirstOrDefault(x => x.HasPrivateKey);
                 if (dotnet != null)
                 {
-                    dotnet = ConvertCertificate(dotnet, flags, password);
+                    dotnet = ConvertCertificate(dotnet, flags);
                 }
             }
             if (dotnet == null)
@@ -65,7 +68,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 // If conversion failed or was not attempted, use original set of flags
                 // but here we should consider the scenario that the private key is not 
                 // present at all.
-                var collection = certificate.AsCollection(flags, password).OfType<X509Certificate2>().ToList();
+                var collection = certificate.AsCollection(flags).OfType<X509Certificate2>().ToList();
                 dotnet = collection.FirstOrDefault(x => !collection.Any(y => x.Subject == y.Issuer));
             }
             if (dotnet != null)
@@ -189,7 +192,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// <param name="original"></param>
         /// <param name="flags"></param>
         /// <returns></returns>
-        private X509Certificate2? ConvertCertificate(X509Certificate2 original, X509KeyStorageFlags flags, string password)
+        private X509Certificate2? ConvertCertificate(X509Certificate2 original, X509KeyStorageFlags flags, string? password = null)
         {
             try
             {
