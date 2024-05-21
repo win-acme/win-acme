@@ -76,12 +76,6 @@ namespace PKISharp.WACS.DomainObjects
                     {
                         case GeneralName.DnsName:
                             {
-                                // IDN handling
-                                var idnIndex = value.IndexOf('(');
-                                if (idnIndex > -1)
-                                {
-                                    value = value[..idnIndex].Trim();
-                                }
                                 return new DnsIdentifier(value);
                             }
                         case GeneralName.IPAddress:

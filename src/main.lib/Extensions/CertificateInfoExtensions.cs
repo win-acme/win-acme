@@ -44,6 +44,7 @@ namespace PKISharp.WACS.Extensions
             using var fs = fi.Open(FileMode.Create);
             using var stream = PfxStream(ci, password);
             await stream.CopyToAsync(fs);
+            await fs.FlushAsync();
             fi.Refresh();
             return fi;
         }

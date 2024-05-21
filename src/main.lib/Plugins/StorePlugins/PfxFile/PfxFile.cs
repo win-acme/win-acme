@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.DomainObjects;
+﻿using Org.BouncyCastle.Pkcs;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
@@ -7,9 +8,7 @@ using PKISharp.WACS.Services.Serialization;
 using System;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
-using Bc = Org.BouncyCastle;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
@@ -68,9 +67,30 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         {
             try
             {
+                // Change PK alias to something more predictable
+                var outputBuilder = new Pkcs12StoreBuilder();
+                var output = outputBuilder.Build();
+                var aliases = input.Collection.Aliases.ToList();
+                var keyAlias = aliases.FirstOrDefault(a => input.Collection.IsKeyEntry(a));
+                if (keyAlias != null)
+                {
+                    output.SetKeyEntry(
+                        input.CommonName?.Value ?? input.SanNames.First().Value,
+                        input.Collection.GetKey(keyAlias),
+                        input.Collection.GetCertificateChain(keyAlias));
+                }
+                else
+                {
+                    foreach (var alias in aliases)
+                    {
+                        output.SetCertificateEntry(alias, input.Collection.GetCertificate(alias));
+                    }
+                }
+
                 var dest = PathForIdentifier(_name ?? input.CommonName?.Value ?? input.SanNames.First().Value);
+                var outInfo = new CertificateInfo(output);
                 _log.Information("Copying certificate to the pfx folder {dest}", dest);
-                await input.PfxSave(dest, _password);
+                await outInfo.PfxSave(dest, _password);
             }
             catch (Exception ex)
             {

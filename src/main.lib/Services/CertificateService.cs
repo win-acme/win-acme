@@ -2,6 +2,7 @@
 using ACMESharp.Protocol;
 using Org.BouncyCastle.Asn1.Nist;
 using Org.BouncyCastle.Asn1.Pkcs;
+using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Pkcs;
 using PKISharp.WACS.Clients.Acme;
@@ -211,10 +212,11 @@ namespace PKISharp.WACS.Services
         {
             var text = Encoding.UTF8.GetString(bytes);
             var pfxBuilder = new Pkcs12StoreBuilder();
-            pfxBuilder.SetKeyAlgorithm(
-                NistObjectIdentifiers.IdAes256Cbc,
-                PkcsObjectIdentifiers.IdHmacWithSha256);
-            pfxBuilder.SetUseDerEncoding(true);
+            // Might not work for Windows 2016?
+            //pfxBuilder.SetKeyAlgorithm(
+            //    NistObjectIdentifiers.IdAes256Cbc,
+            //    PkcsObjectIdentifiers.IdHmacWithSha256);
+            //pfxBuilder.SetUseDerEncoding(true);
             var pfx = pfxBuilder.Build();
             var startIndex = 0;
             const string startString = "-----BEGIN CERTIFICATE-----";
@@ -238,7 +240,10 @@ namespace PKISharp.WACS.Services
                 if (bcCertificate != null)
                 {
                     var bcCertificateEntry = new X509CertificateEntry(bcCertificate);
-                    _log.Verbose("Certificate {name} parsed", bcCertificateEntry.Certificate.SubjectDN);
+                    _log.Verbose("Certificate {name} parsed", 
+                        bcCertificateEntry.Certificate.SubjectDN.GetValueList(X509Name.CN).FirstOrDefault() ?? 
+                        bcCertificateEntry.Certificate.SubjectDN.ToString());
+
                     var bcCertificateAlias = startIndex == 0 ?
                         friendlyName :
                         bcCertificate.SubjectDN.ToString();
