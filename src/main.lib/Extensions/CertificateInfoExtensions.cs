@@ -56,7 +56,7 @@ namespace PKISharp.WACS.Extensions
         /// <returns></returns>
         public static X509Certificate2Collection AsCollection(this ICertificateInfo ci, X509KeyStorageFlags flags, string? password = null)
         {
-            var pfxStream = ci.PfxStream(password);
+            using var pfxStream = ci.PfxStream(password);
             using var pfxStreamReader = new BinaryReader(pfxStream);
             var tempPfx = new X509Certificate2Collection();
             tempPfx.Import(

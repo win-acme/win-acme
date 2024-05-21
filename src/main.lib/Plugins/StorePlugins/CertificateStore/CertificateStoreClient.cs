@@ -46,36 +46,75 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 flags |= X509KeyStorageFlags.Exportable;
             }
             flags |= X509KeyStorageFlags.PersistKeySet;
-
-            var dotnet = default(X509Certificate2); 
             if (_settings.Store.CertificateStore.UseNextGenerationCryptoApi != true)
             {
-                // We should always be exportable before we can try 
-                // conversion to the legacy Crypto API. Look for the
-                // certificate with the private key attached.
-
-                // Adding password protection to these temporary certificates 
-                // might cause difficult to reproduce bugs during later
-                // stages of the process, so we've removed them for now.
-                dotnet = certificate.AsCollection(X509KeyStorageFlags.EphemeralKeySet | X509KeyStorageFlags.Exportable).OfType<X509Certificate2>().FirstOrDefault(x => x.HasPrivateKey);
-                if (dotnet != null)
-                {
-                    dotnet = ConvertCertificate(dotnet, flags);
-                }
+                ConvertAndSave(certificate, flags);
             }
-            if (dotnet == null)
+            else
             {
-                // If conversion failed or was not attempted, use original set of flags
-                // but here we should consider the scenario that the private key is not 
-                // present at all.
-                var collection = certificate.AsCollection(flags).OfType<X509Certificate2>().ToList();
-                dotnet = collection.FirstOrDefault(x => !collection.Any(y => x.Subject == y.Issuer));
-            }
-            if (dotnet != null)
-            {
-                SaveToStore(_store, dotnet, true);
+                RegularSave(certificate, flags);
             }
             return exportable;
+        }
+
+        /// <summary>
+        /// Try to convert the certificate before storing it
+        /// </summary>
+        /// <param name="certificate"></param>
+        /// <param name="flags"></param>
+        /// <returns></returns>
+        public void ConvertAndSave(ICertificateInfo certificate, X509KeyStorageFlags flags)
+        {
+            var dotnet = default(X509Certificate2);
+            // We should always be exportable before we can try 
+            // conversion to the legacy Crypto API. Look for the
+            // certificate with the private key attached.
+            var tempFlags = X509KeyStorageFlags.EphemeralKeySet | X509KeyStorageFlags.Exportable;
+
+            // Adding password protection to these temporary certificates 
+            // might cause difficult to reproduce bugs during later
+            // stages of the process, so we've removed them for now.
+            dotnet = certificate.AsCollection(tempFlags).OfType<X509Certificate2>().FirstOrDefault(x => x.HasPrivateKey);
+            if (dotnet == null)
+            {
+                // No certificate with private key found
+                // so we can save it the old fashioned 
+                // way without conversion.
+                RegularSave(certificate, flags);
+                return;
+            }
+            dotnet = ConvertCertificate(dotnet, flags);
+            if (dotnet == null)
+            {
+                return;
+            }
+            try
+            {
+                SaveToStore(_store, dotnet, true);
+            } 
+            catch
+            {
+                _log.Debug("Store of converted certificate failed, retry with regular one");
+                RegularSave(certificate, flags);
+            }
+        }
+
+        /// <summary>
+        /// Save for CNG scenario (modern crypto). Fallback for failing converstion or
+        /// for users that've requested only using this through settings.json
+        /// </summary>
+        /// <param name="certificate"></param>
+        /// <param name="flags"></param>
+        public void RegularSave(ICertificateInfo certificate, X509KeyStorageFlags flags)
+        {
+            // If conversion failed or was not attempted, use original set of flags
+            // but here we should consider the scenario that the private key is not 
+            // present at all.
+            var collection = certificate.AsCollection(flags).OfType<X509Certificate2>().ToList();
+            var dotnet = collection.FirstOrDefault(x => !collection.Any(y => x.Subject == y.Issuer));
+            if (dotnet != null) {
+                SaveToStore(_store, dotnet, true);
+            }
         }
 
         /// <summary>
@@ -193,7 +232,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// <param name="original"></param>
         /// <param name="flags"></param>
         /// <returns></returns>
-        private X509Certificate2? ConvertCertificate(X509Certificate2 original, X509KeyStorageFlags flags, string? password = null)
+        private X509Certificate2? ConvertCertificate(X509Certificate2 original, X509KeyStorageFlags flags)
         {
             try
             {
@@ -215,8 +254,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 // Export private key parameters
                 // https://github.com/dotnet/runtime/issues/36899
                 using var tempRsa = RSA.Create();
+                var pwd = PasswordGenerator.Generate();
                 var pbeParameters = new PbeParameters(PbeEncryptionAlgorithm.Aes256Cbc, HashAlgorithmName.SHA256, 10);
-                tempRsa.ImportEncryptedPkcs8PrivateKey(password, rsaPrivateKey.ExportEncryptedPkcs8PrivateKey(password, pbeParameters), out var read);
+                tempRsa.ImportEncryptedPkcs8PrivateKey(pwd, rsaPrivateKey.ExportEncryptedPkcs8PrivateKey(pwd, pbeParameters), out var read);
 
                 var cspFlags = CspProviderFlags.NoPrompt;
                 if (flags.HasFlag(X509KeyStorageFlags.MachineKeySet))
@@ -238,7 +278,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 var parameters = tempRsa.ExportParameters(true);
                 rsaProvider.ImportParameters(parameters);
 
-                var tempPfx = new X509Certificate2(original.Export(X509ContentType.Cert, password), password, flags);
+                var tempPfx = new X509Certificate2(original.Export(X509ContentType.Cert), "", flags);
                 tempPfx = tempPfx.CopyWithPrivateKey(rsaProvider);
                 tempPfx.FriendlyName = original.FriendlyName;
                 return tempPfx;
