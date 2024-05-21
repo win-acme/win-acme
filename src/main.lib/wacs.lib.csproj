@@ -34,7 +34,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="Autofac" Version="8.0.0" />
-		<PackageReference Include="BouncyCastle.Cryptography" Version="2.3.1" />
+		<PackageReference Include="BouncyCastle.Cryptography" Version="2.3.0" />
 		<PackageReference Include="DnsClient" Version="1.7.0" />
 		<PackageReference Include="FluentFTP" Version="50.0.1" />
 		<PackageReference Include="FluentFTP.GnuTLS" Version="1.0.31" />
