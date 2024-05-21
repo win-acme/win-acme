@@ -238,8 +238,8 @@ namespace PKISharp.WACS.Services
                 var bcCertificate = _pemService.ParsePem<Bc.X509.X509Certificate>(pem);
                 if (bcCertificate != null)
                 {
-                    var bcCertAlias = bcCertificateEntry.Certificate.SubjectDN.CommonName(true);
                     var bcCertificateEntry = new X509CertificateEntry(bcCertificate);
+                    var bcCertAlias = bcCertificateEntry.Certificate.SubjectDN.CommonName(true);
                     _log.Verbose("Certificate {name} parsed", bcCertAlias);
 
                     var bcCertificateAlias = startIndex == 0 ?
