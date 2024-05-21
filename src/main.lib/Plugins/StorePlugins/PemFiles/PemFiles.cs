@@ -76,7 +76,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 {
                     // Do not include self-signed certificates, root certificates
                     // are supposed to be known already by the client.
-                    if (chainCertificate.SubjectDN != chainCertificate.IssuerDN)
+                    if (chainCertificate.SubjectDN.ToString() != chainCertificate.IssuerDN.ToString())
                     {
                         var chainCertificateExport = chainCertificate.GetEncoded();
                         chainString += _pemService.GetPem("CERTIFICATE", chainCertificateExport);

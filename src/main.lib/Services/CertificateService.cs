@@ -2,11 +2,11 @@
 using ACMESharp.Protocol;
 using Org.BouncyCastle.Asn1.Nist;
 using Org.BouncyCastle.Asn1.Pkcs;
-using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Pkcs;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -212,11 +212,10 @@ namespace PKISharp.WACS.Services
         {
             var text = Encoding.UTF8.GetString(bytes);
             var pfxBuilder = new Pkcs12StoreBuilder();
-            // Might not work for Windows 2016?
-            //pfxBuilder.SetKeyAlgorithm(
-            //    NistObjectIdentifiers.IdAes256Cbc,
-            //    PkcsObjectIdentifiers.IdHmacWithSha256);
-            //pfxBuilder.SetUseDerEncoding(true);
+            pfxBuilder.SetKeyAlgorithm(
+                NistObjectIdentifiers.IdAes256Cbc,
+                PkcsObjectIdentifiers.IdHmacWithSha256);
+            pfxBuilder.SetUseDerEncoding(true);
             var pfx = pfxBuilder.Build();
             var startIndex = 0;
             const string startString = "-----BEGIN CERTIFICATE-----";
@@ -239,14 +238,13 @@ namespace PKISharp.WACS.Services
                 var bcCertificate = _pemService.ParsePem<Bc.X509.X509Certificate>(pem);
                 if (bcCertificate != null)
                 {
+                    var bcCertAlias = bcCertificateEntry.Certificate.SubjectDN.CommonName(true);
                     var bcCertificateEntry = new X509CertificateEntry(bcCertificate);
-                    _log.Verbose("Certificate {name} parsed", 
-                        bcCertificateEntry.Certificate.SubjectDN.GetValueList(X509Name.CN).FirstOrDefault() ?? 
-                        bcCertificateEntry.Certificate.SubjectDN.ToString());
+                    _log.Verbose("Certificate {name} parsed", bcCertAlias);
 
                     var bcCertificateAlias = startIndex == 0 ?
                         friendlyName :
-                        bcCertificate.SubjectDN.ToString();
+                        bcCertAlias;
                     pfx.SetCertificateEntry(bcCertificateAlias, bcCertificateEntry);
 
                     // Assume that the first certificate in the reponse is the main one

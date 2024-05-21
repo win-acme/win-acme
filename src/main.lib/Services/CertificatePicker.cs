@@ -26,8 +26,8 @@ namespace PKISharp.WACS.Services
         /// <param name="option"></param>
         /// <returns></returns>
         private static string? Root(CertificateOption option) => 
-            option.WithoutPrivateKey.Chain.LastOrDefault()?.IssuerDN.ToString() ?? 
-            option.WithoutPrivateKey.Certificate.IssuerDN.ToString();
+            option.WithoutPrivateKey.Chain.LastOrDefault()?.IssuerDN.CommonName(true) ?? 
+            option.WithoutPrivateKey.Certificate.IssuerDN.CommonName(true);
 
         /// <summary>
         /// Choose between different versions of the certificate

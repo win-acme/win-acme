@@ -57,7 +57,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 // Adding password protection to these temporary certificates 
                 // might cause difficult to reproduce bugs during later
                 // stages of the process, so we've removed them for now.
-                dotnet = certificate.AsCollection(flags | X509KeyStorageFlags.Exportable).OfType<X509Certificate2>().FirstOrDefault(x => x.HasPrivateKey);
+                dotnet = certificate.AsCollection(X509KeyStorageFlags.EphemeralKeySet | X509KeyStorageFlags.Exportable).OfType<X509Certificate2>().FirstOrDefault(x => x.HasPrivateKey);
                 if (dotnet != null)
                 {
                     dotnet = ConvertCertificate(dotnet, flags);
@@ -73,7 +73,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
             if (dotnet != null)
             {
-                SaveToStore(_store, dotnet);
+                SaveToStore(_store, dotnet, true);
             }
             return exportable;
         }
@@ -83,7 +83,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// </summary>
         /// <param name="store"></param>
         /// <param name="dotnet"></param>
-        private void SaveToStore(X509Store store, X509Certificate2 dotnet)
+        private void SaveToStore(X509Store store, X509Certificate2 dotnet, bool overwrite)
         {
             var close = false;
             if (!store.IsOpen)
@@ -92,12 +92,13 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 store.Open(OpenFlags.ReadWrite);
                 close = true;
             }
-            if (store.Certificates.Find(X509FindType.FindByThumbprint, dotnet.Thumbprint, false).Count == 0)
+            var found = store.Certificates.Find(X509FindType.FindByThumbprint, dotnet.Thumbprint, false).Count > 1;
+            if (!found || overwrite)
             {
                 try
                 {
-                    _log.Information(LogType.All, "Adding certificate {FriendlyName} to store {name}", dotnet.FriendlyName ?? dotnet.Subject, store.Name);
-                    _log.Verbose("{sub} - {iss} ({thumb})", dotnet.Subject, dotnet.Issuer, dotnet.Thumbprint);
+                    _log.Information(LogType.All, "{verb} certificate {FriendlyName} in store {name}", found ? "Replacing" : "Adding", dotnet.FriendlyName ?? dotnet.Subject, store.Name);
+                    _log.Verbose("{sub}/{iss} ({thumb})", dotnet.Subject, dotnet.Issuer, dotnet.Thumbprint);
                     store.Add(dotnet);
                 }
                 catch
@@ -141,7 +142,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             foreach (var bcCert in certificate.Chain)
             {
                 var cert = new X509Certificate2(bcCert.GetEncoded());
-                SaveToStore(store, cert);
+                SaveToStore(store, cert, false);
             }
             store.Close();
         }
@@ -208,7 +209,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 }
                 else
                 {
-                    _log.Debug("Converting private key...", flags);
+                    _log.Debug("Converting private key...");
                 }
 
                 // Export private key parameters

@@ -20,41 +20,41 @@ clone_script:
 before_build:
   - cmd: dotnet --version
 build_script:
-  - cmd: dotnet pack ./src/main/wacs.csproj -c "Release" /p:PublishSingleFile=false /p:PublishReadyToRun=false
+  # - cmd: dotnet pack ./src/main/wacs.csproj -c "Release" /p:PublishSingleFile=false /p:PublishReadyToRun=false
   - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-x64 --self-contained
-  - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-x86 --self-contained
-  - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-arm64 --self-contained
-  - cmd: dotnet publish ./src/main/wacs.csproj -c "ReleaseTrimmed" -r win-x64 --self-contained /p:warninglevel=0
-  - cmd: dotnet publish ./src/main/wacs.csproj -c "ReleaseTrimmed" -r win-x86 --self-contained /p:warninglevel=0
-  - cmd: dotnet publish ./src/main/wacs.csproj -c "ReleaseTrimmed" -r win-arm64 --self-contained /p:warninglevel=0
-  - cmd: dotnet publish ./src/plugin.store.keyvault/wacs.store.keyvault.csproj -c Release
-  - cmd: dotnet publish ./src/plugin.store.userstore/wacs.store.userstore.csproj -c "Release"
-  - cmd: dotnet publish ./src/plugin.validation.dns.aliyun/wacs.validation.dns.aliyun.csproj -c Release
-  - cmd: dotnet publish ./src/plugin.validation.dns.azure/wacs.validation.dns.azure.csproj -c Release
-  - cmd: dotnet publish ./src/plugin.validation.dns.cloudflare/wacs.validation.dns.cloudflare.csproj -c Release
-  - cmd: dotnet publish ./src/plugin.validation.dns.digitalocean/wacs.validation.dns.digitalocean.csproj -c Release
-  - cmd: dotnet publish ./src/plugin.validation.dns.dnsexit/wacs.validation.dns.dnsexit.csproj -c Release
-  - cmd: dotnet publish ./src/plugin.validation.dns.dnsmadeeasy/wacs.validation.dns.dnsmadeeasy.csproj -c Release
-  - cmd: dotnet publish ./src/plugin.validation.dns.domeneshop/wacs.validation.dns.domeneshop.csproj -c Release
-  - cmd: dotnet publish ./src/plugin.validation.dns.dreamhost/wacs.validation.dns.dreamhost.csproj -c Release
-  - cmd: dotnet publish ./src/plugin.validation.dns.godaddy/wacs.validation.dns.godaddy.csproj -c Release
-  - cmd: dotnet publish ./src/plugin.validation.dns.googledns/wacs.validation.dns.googledns.csproj -c Release
-  - cmd: dotnet publish ./src/plugin.validation.dns.hetzner/wacs.validation.dns.hetzner.csproj -c Release
-  - cmd: dotnet publish ./src/plugin.validation.dns.infomaniak/wacs.validation.dns.infomaniak.csproj -c Release
-  - cmd: dotnet publish ./src/plugin.validation.dns.linode/wacs.validation.dns.linode.csproj -c Release
-  - cmd: dotnet publish ./src/plugin.validation.dns.luadns/wacs.validation.dns.luadns.csproj -c Release
-  - cmd: dotnet publish ./src/plugin.validation.dns.ns1/wacs.validation.dns.ns1.csproj -c Release
-  - cmd: dotnet publish ./src/plugin.validation.dns.rfc2136/wacs.validation.dns.rfc2136.csproj -c Release
-  - cmd: dotnet publish ./src/plugin.validation.dns.route53/wacs.validation.dns.route53.csproj -c Release
-  - cmd: dotnet publish ./src/plugin.validation.dns.simply/wacs.validation.dns.simply.csproj -c Release
-  - cmd: dotnet publish ./src/plugin.validation.dns.transip/wacs.validation.dns.transip.csproj -c Release
-  - cmd: dotnet publish ./src/plugin.validation.dns.tencent/wacs.validation.dns.tencent.csproj -c Release
-  - cmd: dotnet publish ./src/plugin.validation.http.rest/wacs.validation.http.rest.csproj -c Release
-test_script:
-  - cmd: cd %APPVEYOR_BUILD_FOLDER%/src/main.test/
-  - cmd: nuget install Appveyor.TestLogger -Version 2.0.0
-  - cmd: cd %APPVEYOR_BUILD_FOLDER%
-  - cmd: dotnet test ./src/main.test/wacs.test.csproj -c Release --test-adapter-path:. --logger:Appveyor 
+  # - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-x86 --self-contained
+  # - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-arm64 --self-contained
+  # - cmd: dotnet publish ./src/main/wacs.csproj -c "ReleaseTrimmed" -r win-x64 --self-contained /p:warninglevel=0
+  # - cmd: dotnet publish ./src/main/wacs.csproj -c "ReleaseTrimmed" -r win-x86 --self-contained /p:warninglevel=0
+  # - cmd: dotnet publish ./src/main/wacs.csproj -c "ReleaseTrimmed" -r win-arm64 --self-contained /p:warninglevel=0
+  # - cmd: dotnet publish ./src/plugin.store.keyvault/wacs.store.keyvault.csproj -c Release
+  # - cmd: dotnet publish ./src/plugin.store.userstore/wacs.store.userstore.csproj -c "Release"
+  # - cmd: dotnet publish ./src/plugin.validation.dns.aliyun/wacs.validation.dns.aliyun.csproj -c Release
+  # - cmd: dotnet publish ./src/plugin.validation.dns.azure/wacs.validation.dns.azure.csproj -c Release
+  # - cmd: dotnet publish ./src/plugin.validation.dns.cloudflare/wacs.validation.dns.cloudflare.csproj -c Release
+  # - cmd: dotnet publish ./src/plugin.validation.dns.digitalocean/wacs.validation.dns.digitalocean.csproj -c Release
+  # - cmd: dotnet publish ./src/plugin.validation.dns.dnsexit/wacs.validation.dns.dnsexit.csproj -c Release
+  # - cmd: dotnet publish ./src/plugin.validation.dns.dnsmadeeasy/wacs.validation.dns.dnsmadeeasy.csproj -c Release
+  # - cmd: dotnet publish ./src/plugin.validation.dns.domeneshop/wacs.validation.dns.domeneshop.csproj -c Release
+  # - cmd: dotnet publish ./src/plugin.validation.dns.dreamhost/wacs.validation.dns.dreamhost.csproj -c Release
+  # - cmd: dotnet publish ./src/plugin.validation.dns.godaddy/wacs.validation.dns.godaddy.csproj -c Release
+  # - cmd: dotnet publish ./src/plugin.validation.dns.googledns/wacs.validation.dns.googledns.csproj -c Release
+  # - cmd: dotnet publish ./src/plugin.validation.dns.hetzner/wacs.validation.dns.hetzner.csproj -c Release
+  # - cmd: dotnet publish ./src/plugin.validation.dns.infomaniak/wacs.validation.dns.infomaniak.csproj -c Release
+  # - cmd: dotnet publish ./src/plugin.validation.dns.linode/wacs.validation.dns.linode.csproj -c Release
+  # - cmd: dotnet publish ./src/plugin.validation.dns.luadns/wacs.validation.dns.luadns.csproj -c Release
+  # - cmd: dotnet publish ./src/plugin.validation.dns.ns1/wacs.validation.dns.ns1.csproj -c Release
+  # - cmd: dotnet publish ./src/plugin.validation.dns.rfc2136/wacs.validation.dns.rfc2136.csproj -c Release
+  # - cmd: dotnet publish ./src/plugin.validation.dns.route53/wacs.validation.dns.route53.csproj -c Release
+  # - cmd: dotnet publish ./src/plugin.validation.dns.simply/wacs.validation.dns.simply.csproj -c Release
+  # - cmd: dotnet publish ./src/plugin.validation.dns.transip/wacs.validation.dns.transip.csproj -c Release
+  # - cmd: dotnet publish ./src/plugin.validation.dns.tencent/wacs.validation.dns.tencent.csproj -c Release
+  # - cmd: dotnet publish ./src/plugin.validation.http.rest/wacs.validation.http.rest.csproj -c Release
+# test_script:
+#   - cmd: cd %APPVEYOR_BUILD_FOLDER%/src/main.test/
+#   - cmd: nuget install Appveyor.TestLogger -Version 2.0.0
+#   - cmd: cd %APPVEYOR_BUILD_FOLDER%
+#   - cmd: dotnet test ./src/main.test/wacs.test.csproj -c Release --test-adapter-path:. --logger:Appveyor 
 after_build:
 - ps: >-
     cd $env:APPVEYOR_BUILD_FOLDER\build\

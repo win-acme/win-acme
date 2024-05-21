@@ -3,6 +3,7 @@ using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Pkcs;
 using Org.BouncyCastle.X509;
+using PKISharp.WACS.Extensions;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -16,7 +17,7 @@ namespace PKISharp.WACS.DomainObjects
     /// Provides information about a certificate, which may or may not already
     /// be stored on the disk somewhere in a .pfx file
     /// </summary>
-    public class CertificateInfo : ICertificateInfo
+    public partial class CertificateInfo : ICertificateInfo
     {
 
         private readonly byte[] _hash;
@@ -61,7 +62,7 @@ namespace PKISharp.WACS.DomainObjects
             Thumbprint = Convert.ToHexString(_hash);
 
             // Identify identifiers
-            var str = Certificate.SubjectDN.GetValueList(X509Name.CN).FirstOrDefault();
+            var str = Certificate.SubjectDN.CommonName();
             if (!string.IsNullOrWhiteSpace(str))
             {
                 CommonName = new DnsIdentifier(str);
@@ -89,7 +90,7 @@ namespace PKISharp.WACS.DomainObjects
                                 {
                                     // Assume IPv6
                                     value = value.Replace("#", "");
-                                    value = Regex.Replace(value, ".{4}", "$0:").Trim(':');
+                                    value = IP6Regex().Replace(value, "$0:").Trim(':');
                                 }
                                 return new IpIdentifier(IPAddress.Parse(value));
                             }
@@ -144,5 +145,8 @@ namespace PKISharp.WACS.DomainObjects
         public byte[] GetHash() => _hash;
 
         public string Thumbprint { get; private set; }
+
+        [GeneratedRegex(".{4}")]
+        private static partial Regex IP6Regex();
     }
 }
