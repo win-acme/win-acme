@@ -66,6 +66,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public void ConvertAndSave(ICertificateInfo certificate, X509KeyStorageFlags flags)
         {
             var dotnet = default(X509Certificate2);
+
             // We should always be exportable before we can try 
             // conversion to the legacy Crypto API. Look for the
             // certificate with the private key attached.
@@ -74,7 +75,15 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             // Adding password protection to these temporary certificates 
             // might cause difficult to reproduce bugs during later
             // stages of the process, so we've removed them for now.
-            dotnet = certificate.AsCollection(tempFlags).OfType<X509Certificate2>().FirstOrDefault(x => x.HasPrivateKey);
+            try
+            {
+                var collection = certificate.AsCollection(tempFlags);
+                dotnet = certificate.AsCollection(tempFlags).OfType<X509Certificate2>().FirstOrDefault(x => x.HasPrivateKey);
+            }
+            catch (Exception ex)
+            {
+                _log.Debug("Unable to convert Pkcs12Store to X509Certificate2Collection: {ex}", ex.Message);
+            }
             if (dotnet == null)
             {
                 // No certificate with private key found

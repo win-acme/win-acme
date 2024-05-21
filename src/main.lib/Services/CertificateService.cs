@@ -212,10 +212,10 @@ namespace PKISharp.WACS.Services
         {
             var text = Encoding.UTF8.GetString(bytes);
             var pfxBuilder = new Pkcs12StoreBuilder();
-            pfxBuilder.SetKeyAlgorithm(
-                NistObjectIdentifiers.IdAes256Cbc,
-                PkcsObjectIdentifiers.IdHmacWithSha256);
-            pfxBuilder.SetUseDerEncoding(true);
+            //pfxBuilder.SetKeyAlgorithm(
+            //    NistObjectIdentifiers.IdAes256Cbc,
+            //    PkcsObjectIdentifiers.IdHmacWithSha256);
+            //pfxBuilder.SetUseDerEncoding(true);
             var pfx = pfxBuilder.Build();
             var startIndex = 0;
             const string startString = "-----BEGIN CERTIFICATE-----";
