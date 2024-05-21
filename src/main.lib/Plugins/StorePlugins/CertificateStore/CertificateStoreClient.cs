@@ -46,13 +46,14 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 flags |= X509KeyStorageFlags.Exportable;
             }
             flags |= X509KeyStorageFlags.PersistKeySet;
+            var password = PasswordGenerator.Generate();
             if (_settings.Store.CertificateStore.UseNextGenerationCryptoApi != true)
             {
-                ConvertAndSave(certificate, flags);
+                ConvertAndSave(certificate, flags, password);
             }
             else
             {
-                RegularSave(certificate, flags);
+                RegularSave(certificate, flags, password);
             }
             return exportable;
         }
@@ -63,7 +64,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// <param name="certificate"></param>
         /// <param name="flags"></param>
         /// <returns></returns>
-        public void ConvertAndSave(ICertificateInfo certificate, X509KeyStorageFlags flags)
+        public void ConvertAndSave(ICertificateInfo certificate, X509KeyStorageFlags flags, string? password = null)
         {
             var dotnet = default(X509Certificate2);
 
@@ -77,8 +78,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             // stages of the process, so we've removed them for now.
             try
             {
-                var collection = certificate.AsCollection(tempFlags);
-                dotnet = certificate.AsCollection(tempFlags).OfType<X509Certificate2>().FirstOrDefault(x => x.HasPrivateKey);
+                var collection = certificate.AsCollection(tempFlags, password);
+                dotnet = collection.OfType<X509Certificate2>().FirstOrDefault(x => x.HasPrivateKey);
             }
             catch (Exception ex)
             {
@@ -89,10 +90,10 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 // No certificate with private key found
                 // so we can save it the old fashioned 
                 // way without conversion.
-                RegularSave(certificate, flags);
+                RegularSave(certificate, flags, password);
                 return;
             }
-            dotnet = ConvertCertificate(dotnet, flags);
+            dotnet = ConvertCertificate(dotnet, flags, password);
             if (dotnet == null)
             {
                 return;
@@ -104,7 +105,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             catch
             {
                 _log.Debug("Store of converted certificate failed, retry with regular one");
-                RegularSave(certificate, flags);
+                RegularSave(certificate, flags, password);
             }
         }
 
@@ -114,7 +115,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// </summary>
         /// <param name="certificate"></param>
         /// <param name="flags"></param>
-        public void RegularSave(ICertificateInfo certificate, X509KeyStorageFlags flags)
+        public void RegularSave(ICertificateInfo certificate, X509KeyStorageFlags flags, string? password = null)
         {
             // If conversion failed or was not attempted, use original set of flags
             // but here we should consider the scenario that the private key is not 
@@ -241,7 +242,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// <param name="original"></param>
         /// <param name="flags"></param>
         /// <returns></returns>
-        private X509Certificate2? ConvertCertificate(X509Certificate2 original, X509KeyStorageFlags flags)
+        private X509Certificate2? ConvertCertificate(X509Certificate2 original, X509KeyStorageFlags flags, string? password = null)
         {
             try
             {
@@ -263,9 +264,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 // Export private key parameters
                 // https://github.com/dotnet/runtime/issues/36899
                 using var tempRsa = RSA.Create();
-                var pwd = PasswordGenerator.Generate();
                 var pbeParameters = new PbeParameters(PbeEncryptionAlgorithm.Aes256Cbc, HashAlgorithmName.SHA256, 10);
-                tempRsa.ImportEncryptedPkcs8PrivateKey(pwd, rsaPrivateKey.ExportEncryptedPkcs8PrivateKey(pwd, pbeParameters), out var read);
+                tempRsa.ImportEncryptedPkcs8PrivateKey(password, rsaPrivateKey.ExportEncryptedPkcs8PrivateKey(password, pbeParameters), out var read);
 
                 var cspFlags = CspProviderFlags.NoPrompt;
                 if (flags.HasFlag(X509KeyStorageFlags.MachineKeySet))
@@ -287,7 +287,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 var parameters = tempRsa.ExportParameters(true);
                 rsaProvider.ImportParameters(parameters);
 
-                var tempPfx = new X509Certificate2(original.Export(X509ContentType.Cert), "", flags);
+                var tempPfx = new X509Certificate2(original.Export(X509ContentType.Cert, password), password, flags);
                 tempPfx = tempPfx.CopyWithPrivateKey(rsaProvider);
                 tempPfx.FriendlyName = original.FriendlyName;
                 return tempPfx;
