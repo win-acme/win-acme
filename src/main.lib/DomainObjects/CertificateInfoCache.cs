@@ -24,10 +24,6 @@ namespace PKISharp.WACS.DomainObjects
 
             using var stream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read);
             var pfxBuilder = new Pkcs12StoreBuilder();
-            pfxBuilder.SetKeyAlgorithm(
-                NistObjectIdentifiers.IdAes256Cbc,
-                PkcsObjectIdentifiers.IdHmacWithSha256);
-            pfxBuilder.SetUseDerEncoding(true);
             var pfx = pfxBuilder.Build();
             pfx.Load(stream, password?.ToCharArray());
             _inner = new CertificateInfo(pfx);
