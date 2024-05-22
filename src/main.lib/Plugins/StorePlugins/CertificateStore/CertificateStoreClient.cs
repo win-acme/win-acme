@@ -38,20 +38,26 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             // Determine storage flags
             var exportable =
                 _settings.Store.CertificateStore.PrivateKeyExportable == true ||
-                #pragma warning disable CS0618 // Type or member is obsolete
+#pragma warning disable CS0618 // Type or member is obsolete
                 (_settings.Store.CertificateStore.PrivateKeyExportable == null && _settings.Security.PrivateKeyExportable == true);
-                #pragma warning restore CS0618 // Type or member is obsolete
+#pragma warning restore CS0618 // Type or member is obsolete
             if (exportable)
             {
                 flags |= X509KeyStorageFlags.Exportable;
             }
             flags |= X509KeyStorageFlags.PersistKeySet;
             var password = PasswordGenerator.Generate();
-            if (_settings.Store.CertificateStore.UseNextGenerationCryptoApi != true)
+            var legacySuccess = false;
+            var legacyTry = _settings.Store.CertificateStore.UseNextGenerationCryptoApi != true;
+            if (legacyTry)
             {
-                ConvertAndSave(certificate, flags, password);
+                legacySuccess = ConvertAndSave(certificate, flags, password);
+                if (!legacySuccess)
+                {
+                    _log.Warning("Unable to save using CryptoAPI, retrying with CNG...");
+                }
             }
-            else
+            if (!legacySuccess)
             {
                 RegularSave(certificate, flags, password);
             }
@@ -64,7 +70,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// <param name="certificate"></param>
         /// <param name="flags"></param>
         /// <returns></returns>
-        public void ConvertAndSave(ICertificateInfo certificate, X509KeyStorageFlags flags, string? password = null)
+        public bool ConvertAndSave(ICertificateInfo certificate, X509KeyStorageFlags flags, string? password = null)
         {
             var dotnet = default(X509Certificate2);
 
@@ -83,30 +89,42 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
             catch (Exception ex)
             {
-                _log.Debug("Unable to convert Pkcs12Store to X509Certificate2Collection: {ex}", ex.Message);
+                _log.Verbose("{ex}", ex);
+                return false;
             }
             if (dotnet == null)
             {
                 // No certificate with private key found
                 // so we can save it the old fashioned 
                 // way without conversion.
-                RegularSave(certificate, flags, password);
-                return;
+                return false;
             }
-            dotnet = ConvertCertificate(dotnet, flags, password);
+            try
+            {
+                dotnet = ConvertCertificate(dotnet, flags, password);
+            }
+            catch (Exception ex)
+            {
+                _log.Verbose("{ex}", ex);
+                return false;
+            }
             if (dotnet == null)
             {
-                return;
+                // Certificate is not RSA 
+                return false;
             }
             try
             {
                 SaveToStore(_store, dotnet, true);
-            } 
-            catch
-            {
-                _log.Debug("Store of converted certificate failed, retry with regular one");
-                RegularSave(certificate, flags, password);
             }
+            catch (Exception ex)
+            {
+                _log.Verbose("{ex}", ex);
+                return false;
+            }
+
+            // Success
+            return true;
         }
 
         /// <summary>
@@ -117,13 +135,36 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// <param name="flags"></param>
         public void RegularSave(ICertificateInfo certificate, X509KeyStorageFlags flags, string? password = null)
         {
-            // If conversion failed or was not attempted, use original set of flags
-            // but here we should consider the scenario that the private key is not 
-            // present at all.
-            var collection = certificate.AsCollection(flags).OfType<X509Certificate2>().ToList();
-            var dotnet = collection.FirstOrDefault(x => !collection.Any(y => x.Subject == y.Issuer));
-            if (dotnet != null) {
+            var collection = certificate.AsCollection(flags, password).OfType<X509Certificate2>().ToList();
+            var dotnet = collection.FirstOrDefault(x => x.HasPrivateKey);
+            if (dotnet == null)
+            {
+                // If conversion failed or was not attempted, use original set of flags
+                // but here we should consider the scenario that the private key is not 
+                // present at all.
+                dotnet ??= collection.FirstOrDefault(x => string.Equals(x.Thumbprint, certificate.Thumbprint, StringComparison.InvariantCultureIgnoreCase));
+            }
+            if (dotnet == null)
+            {
+                // When no match by thumbprint, try matching up issuers
+                dotnet ??= collection.FirstOrDefault(x => !collection.Any(y => x.Subject == y.Issuer));
+            }
+            if (dotnet == null)
+            {
+                _log.Verbose("Found {n} certificates: [{subjects}]/[{issuers}]", 
+                    collection.Count, 
+                    string.Join("|", collection.Select(x => x.Subject)),
+                    string.Join("|", collection.Select(x => x.Issuer)));
+                throw new Exception("Unable to select leaf certificate");
+            }
+            try
+            {
                 SaveToStore(_store, dotnet, true);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error saving main certificate");
+                throw;
             }
         }
 
@@ -141,21 +182,18 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 store.Open(OpenFlags.ReadWrite);
                 close = true;
             }
-            var found = store.Certificates.Find(X509FindType.FindByThumbprint, dotnet.Thumbprint, false).Count > 1;
+            var found = store.Certificates.Find(X509FindType.FindByThumbprint, dotnet.Thumbprint, false).Count > 0;
             if (!found || overwrite)
             {
-                try
+                var label = dotnet.FriendlyName;
+                if (string.IsNullOrWhiteSpace(label))
                 {
-                    _log.Information(LogType.All, "{verb} certificate {FriendlyName} in store {name}", found ? "Replacing" : "Adding", dotnet.FriendlyName ?? dotnet.Subject, store.Name);
-                    _log.Verbose("{sub}/{iss} ({thumb})", dotnet.Subject, dotnet.Issuer, dotnet.Thumbprint);
-                    store.Add(dotnet);
+                    label = dotnet.Subject;
                 }
-                catch
-                {
-                    _log.Error("Error saving certificate");
-                    throw;
-                }
-            } 
+                _log.Information(LogType.All, "{verb} certificate {FriendlyName} in store {name}", found ? "Replacing" : "Adding", label, store.Name);
+                _log.Verbose("{sub}/{iss} ({thumb})", dotnet.Subject, dotnet.Issuer, dotnet.Thumbprint);
+                store.Add(dotnet);
+            }
             else
             {
                 _log.Verbose("{sub} - {iss} ({thumb}) already exists in {store}", dotnet.Subject, dotnet.Issuer, dotnet.Thumbprint, store.Name);
@@ -191,7 +229,14 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             foreach (var bcCert in certificate.Chain)
             {
                 var cert = new X509Certificate2(bcCert.GetEncoded());
-                SaveToStore(store, cert, false);
+                try
+                {
+                    SaveToStore(store, cert, false);
+                }
+                catch
+                {
+                    _log.Warning("Error saving intermediate certificate");
+                }
             }
             store.Close();
         }
@@ -244,63 +289,52 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// <returns></returns>
         private X509Certificate2? ConvertCertificate(X509Certificate2 original, X509KeyStorageFlags flags, string? password = null)
         {
-            try
+            // If there is an RSA key, we change it to be stored in the
+            // Microsoft RSA SChannel Cryptographic Provider so that its 
+            // usable for older versions of Microsoft Exchange and exportable
+            // from IIS. This also is required to allow the SetAcl logic to 
+            // work.
+            using var rsaPrivateKey = original.GetRSAPrivateKey();
+            if (rsaPrivateKey == null)
             {
-                // If there is an RSA key, we change it to be stored in the
-                // Microsoft RSA SChannel Cryptographic Provider so that its 
-                // usable for older versions of Microsoft Exchange and exportable
-                // from IIS. This also is required to allow the SetAcl logic to 
-                // work.
-                using var rsaPrivateKey = original.GetRSAPrivateKey();
-                if (rsaPrivateKey == null)
-                {
-                    return null;
-                }
-                else
-                {
-                    _log.Debug("Converting private key...");
-                }
-
-                // Export private key parameters
-                // https://github.com/dotnet/runtime/issues/36899
-                using var tempRsa = RSA.Create();
-                var pbeParameters = new PbeParameters(PbeEncryptionAlgorithm.Aes256Cbc, HashAlgorithmName.SHA256, 10);
-                tempRsa.ImportEncryptedPkcs8PrivateKey(password, rsaPrivateKey.ExportEncryptedPkcs8PrivateKey(password, pbeParameters), out var read);
-
-                var cspFlags = CspProviderFlags.NoPrompt;
-                if (flags.HasFlag(X509KeyStorageFlags.MachineKeySet))
-                {
-                    cspFlags |= CspProviderFlags.UseMachineKeyStore;
-                }
-                if (!flags.HasFlag(X509KeyStorageFlags.Exportable))
-                {
-                    cspFlags |= CspProviderFlags.UseNonExportableKey;
-                }
-                var cspParameters = new CspParameters
-                {
-                    KeyContainerName = Guid.NewGuid().ToString(),
-                    KeyNumber = 1,
-                    Flags = cspFlags,
-                    ProviderType = 12 // Microsoft RSA SChannel Cryptographic Provider
-                };
-                var rsaProvider = new RSACryptoServiceProvider(cspParameters);
-                var parameters = tempRsa.ExportParameters(true);
-                rsaProvider.ImportParameters(parameters);
-
-                var tempPfx = new X509Certificate2(original.Export(X509ContentType.Cert, password), password, flags);
-                tempPfx = tempPfx.CopyWithPrivateKey(rsaProvider);
-                tempPfx.FriendlyName = original.FriendlyName;
-                return tempPfx;
-            }
-            catch (Exception ex)
-            {
-                // If we couldn't convert the private key that 
-                // means we're left with a pfx generated with the
-                // 'wrong' Crypto provider
-                _log.Warning("Error converting key to legacy CryptoAPI, using CNG instead.");
-                _log.Verbose("{ex}", ex);
+                _log.Verbose("No RSA private key detected");
                 return null;
             }
+            else
+            {
+                _log.Debug("Converting private key...");
+            }
+
+            // Export private key parameters
+            // https://github.com/dotnet/runtime/issues/36899
+            using var tempRsa = RSA.Create();
+            var pbeParameters = new PbeParameters(PbeEncryptionAlgorithm.Aes256Cbc, HashAlgorithmName.SHA256, 10);
+            tempRsa.ImportEncryptedPkcs8PrivateKey(password, rsaPrivateKey.ExportEncryptedPkcs8PrivateKey(password, pbeParameters), out var read);
+
+            var cspFlags = CspProviderFlags.NoPrompt;
+            if (flags.HasFlag(X509KeyStorageFlags.MachineKeySet))
+            {
+                cspFlags |= CspProviderFlags.UseMachineKeyStore;
+            }
+            if (!flags.HasFlag(X509KeyStorageFlags.Exportable))
+            {
+                cspFlags |= CspProviderFlags.UseNonExportableKey;
+            }
+            var cspParameters = new CspParameters
+            {
+                KeyContainerName = Guid.NewGuid().ToString(),
+                KeyNumber = 1,
+                Flags = cspFlags,
+                ProviderType = 12 // Microsoft RSA SChannel Cryptographic Provider
+            };
+            var rsaProvider = new RSACryptoServiceProvider(cspParameters);
+            var parameters = tempRsa.ExportParameters(true);
+            rsaProvider.ImportParameters(parameters);
+
+            var tempPfx = new X509Certificate2(original.Export(X509ContentType.Cert, password), password, flags);
+            tempPfx = tempPfx.CopyWithPrivateKey(rsaProvider);
+            tempPfx.FriendlyName = original.FriendlyName;
+            return tempPfx;
         }
 
         /// <summary>
