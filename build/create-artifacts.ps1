@@ -244,6 +244,12 @@ PluginRelease plugin.validation.dns.transip @(
 PluginRelease plugin.validation.http.ftp @(
 	"FluentFTP.dll",
 	"FluentFTP.GnuTLS.dll",
+	"libgcc_s_seh-1.dll",
+	"libgmp-10.dll",
+	"libgnutls-30.dll",
+	"libhogweed-6.dll",
+	"libnettle-8.dll",
+	"libwinpthread-1.dll",
 	"PKISharp.WACS.Plugins.ValidationPlugins.Ftp.dll"
 )
 PluginRelease plugin.validation.http.rest @(

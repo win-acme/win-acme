@@ -9,6 +9,7 @@ using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Plugins.NotificationPlugins;
 using PKISharp.WACS.Plugins.Resolvers;
+using PKISharp.WACS.Plugins.ValidationPlugins.Http;
 using PKISharp.WACS.Services.Interfaces;
 using PKISharp.WACS.Services.Serialization;
 using PKISharp.WACS.UnitTests.Mock.Services;
