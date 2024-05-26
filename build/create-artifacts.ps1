@@ -60,28 +60,6 @@ function PlatformRelease
 	if (!(Test-Path $DbiZipPath)) {
 		CreateArtifact $MainBin @("mscordbi.dll") $DbiZipPath
 	}
-
-	# GnuTLS DLL for FluentFTP
-	if ($Platform -eq "win-x64") {
-		$GnuTlsZip = "gnutls.v$Version.$PlatformShort.zip"
-		$GnuTlsZipPath = "$Out\$GnuTlsZip"
-		$GnuTlsSrc = "$MainBin\Libs\Win64"
-		if (!(Test-Path $GnuTlsSrc))
-		{
-			$GnuTlsSrc = "$MainBin\publish"
-		}
-
-		if (!(Test-Path $GnuTlsZipPath)) {
-			CreateArtifact $GnuTlsSrc @(
-				"libgcc_s_seh-1.dll",
-				"libgmp-10.dll",
-				"libgnutls-30.dll",
-				"libhogweed-6.dll",
-				"libnettle-8.dll",
-				"libwinpthread-1.dll") $GnuTlsZipPath
-		}
-	}
-
 }
 
 function CreateArtifact {
@@ -107,6 +85,22 @@ function PluginRelease
 		$PlugBin = "$Root\src\$Dir\bin\Any CPU\Release\net7.0\publish"
 	}
 	CreateArtifact $PlugBin $Files $PlugZipPath
+
+	# Special for the plugin
+	if ($Dir -eq "plugin.validation.http.ftp") {
+		$GnuTlsZip = "gnutls.v$Version.x64.zip"
+		$GnuTlsZipPath = "$Out\$GnuTlsZip"
+		$GnuTlsSrc = $PlugBin
+		if (!(Test-Path $GnuTlsZipPath)) {
+			CreateArtifact $GnuTlsSrc @(
+				"libgcc_s_seh-1.dll",
+				"libgmp-10.dll",
+				"libgnutls-30.dll",
+				"libhogweed-6.dll",
+				"libnettle-8.dll",
+				"libwinpthread-1.dll") $GnuTlsZipPath
+		}
+	}
 }
 
 function NugetRelease
@@ -138,6 +132,7 @@ PluginRelease plugin.store.keyvault @(
 	"Microsoft.IdentityModel.Abstractions.dll",
 	"PKISharp.WACS.Plugins.Azure.Common.dll",
 	"PKISharp.WACS.Plugins.StorePlugins.KeyVault.dll",
+	"System.ClientModel.dll",
 	"System.Memory.Data.dll"
 )
 PluginRelease plugin.store.userstore @(
@@ -167,8 +162,8 @@ PluginRelease plugin.validation.dns.azure @(
 	"Microsoft.IdentityModel.Abstractions.dll"
 	"PKISharp.WACS.Plugins.Azure.Common.dll",
 	"PKISharp.WACS.Plugins.ValidationPlugins.Azure.dll",
-	"System.Memory.Data.dll",
-	"System.ClientModel.dll"
+	"System.ClientModel.dll",
+	"System.Memory.Data.dll"
 )
 PluginRelease plugin.validation.dns.cloudflare @(
 	"FluentCloudflare.dll",
@@ -245,6 +240,11 @@ PluginRelease plugin.validation.dns.tencent @(
 PluginRelease plugin.validation.dns.transip @(
 	"Newtonsoft.Json.dll",
 	"PKISharp.WACS.Plugins.ValidationPlugins.TransIp.dll"
+)
+PluginRelease plugin.validation.http.ftp @(
+	"FluentFTP.dll",
+	"FluentFTP.GnuTLS.dll",
+	"PKISharp.WACS.Plugins.ValidationPlugins.Ftp.dll"
 )
 PluginRelease plugin.validation.http.rest @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.Rest.dll"

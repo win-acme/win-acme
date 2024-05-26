@@ -37,6 +37,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\main.lib\wacs.lib.csproj" />
+    <ProjectReference Include="..\plugin.validation.http.ftp\wacs.validation.http.ftp.csproj" />
   </ItemGroup>
 
   <ItemGroup>
