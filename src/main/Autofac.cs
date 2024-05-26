@@ -25,7 +25,7 @@ namespace PKISharp.WACS.Host
         {
             var builder = new ContainerBuilder();
             _ = builder.RegisterType<LogService>().WithParameter(new TypedParameter(typeof(bool), verbose)).SingleInstance().As<ILogService>();
-            _ = builder.RegisterType<AssemblyService>().SingleInstance();
+            _ = builder.RegisterType<ExtendedAssemblyService>().As<AssemblyService>().SingleInstance();
             _ = builder.RegisterType<PluginService>().SingleInstance().As<IPluginService>();
             _ = builder.RegisterType<ArgumentsParser>().WithParameter(new TypedParameter(typeof(string[]), args)).SingleInstance();
             _ = builder.RegisterType<SettingsService>().As<ISettingsService>().SingleInstance();

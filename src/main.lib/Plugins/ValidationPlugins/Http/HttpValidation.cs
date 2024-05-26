@@ -16,7 +16,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     /// <summary>
     /// Base implementation for HTTP-01 validation plugins
     /// </summary>
-    internal abstract class HttpValidation<TOptions> :
+    public abstract class HttpValidation<TOptions> :
         Validation<Http01ChallengeValidationDetails>
         where TOptions : HttpValidationOptions
     {

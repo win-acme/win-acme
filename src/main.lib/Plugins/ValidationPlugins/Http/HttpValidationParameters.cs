@@ -3,7 +3,7 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    internal class HttpValidationParameters
+    public class HttpValidationParameters
     {
         public ISettingsService Settings { get; private set; }
         public Renewal Renewal { get; private set; }

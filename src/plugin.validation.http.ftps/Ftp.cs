@@ -2,28 +2,30 @@
 using PKISharp.WACS.Plugins.Base.Capabilities;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
-using PKISharp.WACS.Services.Serialization;
 using System.Linq;
+using System.Runtime.Versioning;
 using System.Threading.Tasks;
+
+[assembly: SupportedOSPlatform("windows")]
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
     [IPlugin.Plugin<
-        FtpOptions, FtpOptionsFactory, 
-        HttpValidationCapability, WacsJsonPlugins>
+        FtpOptions, FtpOptionsFactory,
+        HttpValidationCapability, FtpJson>
         ("bc27d719-dcf2-41ff-bf08-54db7ea49c48",
         "FTP", "Upload verification files via FTP(S)")]
-    internal class Ftp : HttpValidation<FtpOptions>
+    public class Ftp : HttpValidation<FtpOptions>
     {
         private readonly FtpClient _ftpClient;
 
         public Ftp(
-            FtpOptions options, 
+            FtpOptions options,
             HttpValidationParameters pars,
             ISettingsService settings,
-            RunLevel runLevel, 
-            SecretServiceManager secretService) : 
-            base(options, runLevel, pars) => 
+            RunLevel runLevel,
+            SecretServiceManager secretService) :
+            base(options, runLevel, pars) =>
             _ftpClient = new FtpClient(_options.Credential, settings, pars.LogService, secretService);
 
         protected override char PathSeparator => '/';

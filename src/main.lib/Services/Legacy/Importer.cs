@@ -215,7 +215,7 @@ namespace PKISharp.WACS.Services.Legacy
                     };
                     break;
                 case "http-01.ftp":
-                    ret.ValidationPluginOptions = new Http.FtpOptions()
+                    ret.ValidationPluginOptions = new CompatibleFtpOptions()
                     {
                         CopyWebConfig = legacy.Binding.IIS == true,
                         Path = legacy.Binding.WebRootPath,

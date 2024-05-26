@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    internal abstract class HttpValidationOptionsFactory<TOptions> : 
+    public abstract class HttpValidationOptionsFactory<TOptions> : 
         PluginOptionsFactory<TOptions>
         where TOptions : HttpValidationOptions, new()
     {

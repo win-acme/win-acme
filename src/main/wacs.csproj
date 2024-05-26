@@ -70,6 +70,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\main.lib\wacs.lib.csproj" />
+		<ProjectReference Include="..\plugin.validation.http.ftps\wacs.validation.http.ftp.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

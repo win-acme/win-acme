@@ -11,7 +11,7 @@ namespace PKISharp.WACS.Services
 {
     public partial class AssemblyService
     {
-        private readonly List<TypeDescriptor> _allTypes;
+        protected readonly List<TypeDescriptor> _allTypes;
         internal readonly ILogService _log;
 
         public AssemblyService(ILogService logger)
@@ -42,7 +42,6 @@ namespace PKISharp.WACS.Services
                 new(typeof(Plugins.ValidationPlugins.Dns.Manual)),
                 new(typeof(Plugins.ValidationPlugins.Dns.Script)), new(typeof(Plugins.ValidationPlugins.Dns.ScriptArguments)),
                 new(typeof(Plugins.ValidationPlugins.Http.FileSystem)), new(typeof(Plugins.ValidationPlugins.Http.FileSystemArguments)),
-                new(typeof(Plugins.ValidationPlugins.Http.Ftp)),
                 new(typeof(Plugins.ValidationPlugins.Http.SelfHosting)), new(typeof(Plugins.ValidationPlugins.Http.SelfHostingArguments)),
                 new(typeof(Plugins.ValidationPlugins.Http.Sftp)),
                 new(typeof(Plugins.ValidationPlugins.Http.WebDav)),
@@ -217,6 +216,7 @@ namespace PKISharp.WACS.Services
             return _allTypes.
                 AsEnumerable().
                 Where(type => typeof(T) != type.Type && typeof(T).IsAssignableFrom(type.Type)).
+                Distinct().
                 ToList();
         }
 
