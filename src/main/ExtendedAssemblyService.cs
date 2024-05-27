@@ -6,7 +6,8 @@
         {
             _allTypes.AddRange(new[] { 
                 new TypeDescriptor(typeof(Plugins.ValidationPlugins.Http.Ftp)), 
-                new TypeDescriptor(typeof(Plugins.ValidationPlugins.Http.Sftp)) 
+                new TypeDescriptor(typeof(Plugins.ValidationPlugins.Http.Sftp)),
+                new TypeDescriptor(typeof(Plugins.ValidationPlugins.Http.WebDav))
             });
         }
     }

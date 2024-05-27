@@ -82,6 +82,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.http.ftp", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.http.sftp", "plugin.validation.http.sftp\wacs.validation.http.sftp.csproj", "{E4ACC01A-E30E-4037-B282-7DB5B94366D6}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.http.webdav", "plugin.validation.http.webdav\wacs.validation.http.webdav.csproj", "{51261EC0-A004-4598-A927-FC31E927684F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -306,6 +308,14 @@ Global
 		{E4ACC01A-E30E-4037-B282-7DB5B94366D6}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E4ACC01A-E30E-4037-B282-7DB5B94366D6}.ReleaseTrimmed|Any CPU.ActiveCfg = Release|Any CPU
 		{E4ACC01A-E30E-4037-B282-7DB5B94366D6}.ReleaseTrimmed|Any CPU.Build.0 = Release|Any CPU
+		{51261EC0-A004-4598-A927-FC31E927684F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{51261EC0-A004-4598-A927-FC31E927684F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{51261EC0-A004-4598-A927-FC31E927684F}.DebugTrimmed|Any CPU.ActiveCfg = Debug|Any CPU
+		{51261EC0-A004-4598-A927-FC31E927684F}.DebugTrimmed|Any CPU.Build.0 = Debug|Any CPU
+		{51261EC0-A004-4598-A927-FC31E927684F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{51261EC0-A004-4598-A927-FC31E927684F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{51261EC0-A004-4598-A927-FC31E927684F}.ReleaseTrimmed|Any CPU.ActiveCfg = Release|Any CPU
+		{51261EC0-A004-4598-A927-FC31E927684F}.ReleaseTrimmed|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

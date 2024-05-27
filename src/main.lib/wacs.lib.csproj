@@ -53,7 +53,6 @@
 		<PackageReference Include="System.Net.Http.WinHttpHandler" Version="8.0.0" />
 		<PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
 		<PackageReference Include="TaskScheduler" Version="2.11.0" />
-		<PackageReference Include="WebDav.Client" Version="2.8.0" />
 	</ItemGroup>
 
 	<ItemGroup>

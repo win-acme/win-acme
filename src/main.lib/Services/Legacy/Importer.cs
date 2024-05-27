@@ -231,7 +231,7 @@ namespace PKISharp.WACS.Services.Legacy
                     };
                     break;
                 case "http-01.webdav":
-                    var options = new Http.WebDavOptions()
+                    var options = new CompatibleHttpOptions("7e191d0e-30d1-47b3-ae2e-442499d33e16")
                     {
                         CopyWebConfig = legacy.Binding.IIS == true,
                         Path = legacy.Binding.WebRootPath

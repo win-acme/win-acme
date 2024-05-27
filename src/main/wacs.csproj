@@ -72,6 +72,7 @@
 		<ProjectReference Include="..\main.lib\wacs.lib.csproj" />
 		<ProjectReference Include="..\plugin.validation.http.ftp\wacs.validation.http.ftp.csproj" />
 		<ProjectReference Include="..\plugin.validation.http.sftp\wacs.validation.http.sftp.csproj" />
+		<ProjectReference Include="..\plugin.validation.http.webdav\wacs.validation.http.webdav.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
