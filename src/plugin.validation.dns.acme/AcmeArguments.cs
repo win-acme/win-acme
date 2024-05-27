@@ -3,7 +3,7 @@ using PKISharp.WACS.Configuration.Arguments;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    internal class AcmeArguments : BaseArguments
+    public class AcmeArguments : BaseArguments
     {
         public override string Name => "AcmeDns";
         public override string Group => "Validation";
