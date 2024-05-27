@@ -36,7 +36,7 @@ foreach ($release in @("Release", "ReleaseTrimmed")) {
 # Build plugins
 & dotnet publish $RepoRoot\src\plugin.store.keyvault\wacs.store.keyvault.csproj -c "Release"
 & dotnet publish $RepoRoot\src\plugin.store.userstore\wacs.store.userstore.csproj -c "Release"
-& dotnet publish $RepoRoot\src\plugin.validation.dns.aliyun\wacs.validation.dns.acme.csproj -c "Release"
+& dotnet publish $RepoRoot\src\plugin.validation.dns.acme\wacs.validation.dns.acme.csproj -c "Release"
 & dotnet publish $RepoRoot\src\plugin.validation.dns.aliyun\wacs.validation.dns.aliyun.csproj -c "Release"
 & dotnet publish $RepoRoot\src\plugin.validation.dns.azure\wacs.validation.dns.azure.csproj -c "Release"
 & dotnet publish $RepoRoot\src\plugin.validation.dns.cloudflare\wacs.validation.dns.cloudflare.csproj -c "Release"
