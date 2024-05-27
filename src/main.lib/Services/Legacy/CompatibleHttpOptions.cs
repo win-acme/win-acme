@@ -6,9 +6,9 @@ namespace PKISharp.WACS.Services.Legacy
     /// Forwards compatible classes to support importing renewals for the external library
     /// Should match up with AzureOptions in the other project
     /// </summary>
-    internal class CompatibleFtpOptions : HttpValidationOptions
+    internal class CompatibleHttpOptions : HttpValidationOptions
     {
-        public CompatibleFtpOptions() => Plugin = "bc27d719-dcf2-41ff-bf08-54db7ea49c48";
+        public CompatibleHttpOptions(string plugin) => Plugin = plugin;
 
         /// <summary>
         /// Credentials to use for WebDav connection

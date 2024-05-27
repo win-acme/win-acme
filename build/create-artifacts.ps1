@@ -255,6 +255,9 @@ PluginRelease plugin.validation.http.ftp @(
 PluginRelease plugin.validation.http.rest @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.Rest.dll"
 )
-
+PluginRelease plugin.validation.http.sftp @(
+	"PKISharp.WACS.Plugins.ValidationPlugins.Sftp.dll",
+	"Renci.SshNet.dll"
+)
 "Created artifacts:"
 dir $Out

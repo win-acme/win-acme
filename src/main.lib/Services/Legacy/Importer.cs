@@ -215,7 +215,7 @@ namespace PKISharp.WACS.Services.Legacy
                     };
                     break;
                 case "http-01.ftp":
-                    ret.ValidationPluginOptions = new CompatibleFtpOptions()
+                    ret.ValidationPluginOptions = new CompatibleHttpOptions("bc27d719-dcf2-41ff-bf08-54db7ea49c48")
                     {
                         CopyWebConfig = legacy.Binding.IIS == true,
                         Path = legacy.Binding.WebRootPath,
@@ -223,7 +223,7 @@ namespace PKISharp.WACS.Services.Legacy
                     };
                     break;
                 case "http-01.sftp":
-                    ret.ValidationPluginOptions = new Http.SftpOptions()
+                    ret.ValidationPluginOptions = new CompatibleHttpOptions("048aa2e7-2bce-4d3e-b731-6e0ed8b8170d")
                     {
                         CopyWebConfig = legacy.Binding.IIS == true,
                         Path = legacy.Binding.WebRootPath,

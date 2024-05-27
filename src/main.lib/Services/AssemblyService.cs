@@ -1,6 +1,7 @@
 ﻿using Autofac;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -43,7 +44,6 @@ namespace PKISharp.WACS.Services
                 new(typeof(Plugins.ValidationPlugins.Dns.Script)), new(typeof(Plugins.ValidationPlugins.Dns.ScriptArguments)),
                 new(typeof(Plugins.ValidationPlugins.Http.FileSystem)), new(typeof(Plugins.ValidationPlugins.Http.FileSystemArguments)),
                 new(typeof(Plugins.ValidationPlugins.Http.SelfHosting)), new(typeof(Plugins.ValidationPlugins.Http.SelfHostingArguments)),
-                new(typeof(Plugins.ValidationPlugins.Http.Sftp)),
                 new(typeof(Plugins.ValidationPlugins.Http.WebDav)),
                 new(typeof(Plugins.ValidationPlugins.Tls.SelfHosting)), new(typeof(Plugins.ValidationPlugins.Tls.SelfHostingArguments)),
 
@@ -224,6 +224,7 @@ namespace PKISharp.WACS.Services
         /// Wrapper around type to convince and instruct the trimmer that the
         /// properties are preserved during the build.
         /// </summary>
+        [DebuggerDisplay("{Type.Name}")]
         public readonly struct TypeDescriptor
         {
             public TypeDescriptor([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] Type type) => Type = type;

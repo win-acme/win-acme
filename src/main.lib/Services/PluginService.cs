@@ -202,7 +202,7 @@ namespace PKISharp.WACS.Services
                 All(x =>
                 {
                     _log.Verbose("Loaded {type} plugin {name} from {location}", type, x.Name, x.Assembly.Location);
-                    return false;
+                    return true;
                 });
         }
 

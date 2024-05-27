@@ -22,7 +22,6 @@ namespace PKISharp.WACS.Services.Serialization
     [JsonSerializable(typeof(Validation.Dns.ScriptOptions))]
     [JsonSerializable(typeof(Validation.Http.FileSystemOptions))]
     [JsonSerializable(typeof(Validation.Http.SelfHostingOptions))]
-    [JsonSerializable(typeof(Validation.Http.SftpOptions))]
     [JsonSerializable(typeof(Validation.Http.WebDavOptions))]
     [JsonSerializable(typeof(Validation.Tls.SelfHostingOptions), TypeInfoPropertyName = "TlsSelfHostingOptions")]
     [JsonSerializable(typeof(Order.DomainOptions))]
