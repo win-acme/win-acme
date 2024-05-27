@@ -138,6 +138,9 @@ PluginRelease plugin.store.keyvault @(
 PluginRelease plugin.store.userstore @(
 	"PKISharp.WACS.Plugins.StorePlugins.UserStore.dll"
 )
+PluginRelease plugin.validation.dns.acme @(
+	"PKISharp.WACS.Plugins.ValidationPlugins.Acme.dll"
+)
 PluginRelease plugin.validation.dns.aliyun @(
 	"AlibabaCloud.EndpointUtil.dll",
 	"AlibabaCloud.GatewaySpi.dll",
@@ -258,6 +261,10 @@ PluginRelease plugin.validation.http.rest @(
 PluginRelease plugin.validation.http.sftp @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.Sftp.dll",
 	"Renci.SshNet.dll"
+)
+PluginRelease plugin.validation.http.webdav @(
+	"PKISharp.WACS.Plugins.ValidationPlugins.WebDav.dll",
+	"WebDav.Client.dll"
 )
 "Created artifacts:"
 dir $Out
