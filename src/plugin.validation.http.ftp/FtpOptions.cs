@@ -1,12 +1,20 @@
 ﻿using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
+using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    internal class WebDavOptions : HttpValidationOptions
+    [JsonSerializable(typeof(FtpOptions))]
+    public partial class FtpJson : JsonSerializerContext
     {
-        public WebDavOptions() : base() { }
-        public WebDavOptions(HttpValidationOptions? source) : base(source) { }
+        public FtpJson(WacsJsonPluginsOptionsFactory optionsFactory) : base(optionsFactory.Options) { }
+    }
+
+    public class FtpOptions : HttpValidationOptions
+    {
+        public FtpOptions() : base() { }
+        public FtpOptions(HttpValidationOptions? source) : base(source) { }
 
         /// <summary>
         /// Credentials to use for WebDav connection

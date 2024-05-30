@@ -3,7 +3,7 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    internal abstract class HttpValidationOptions : ValidationPluginOptions
+    public abstract class HttpValidationOptions : ValidationPluginOptions
     {
         public string? Path { get; set; }
         public bool? CopyWebConfig { get; set; }

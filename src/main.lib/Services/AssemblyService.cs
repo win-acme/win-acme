@@ -1,6 +1,7 @@
 ﻿using Autofac;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -11,7 +12,7 @@ namespace PKISharp.WACS.Services
 {
     public partial class AssemblyService
     {
-        private readonly List<TypeDescriptor> _allTypes;
+        protected readonly List<TypeDescriptor> _allTypes;
         internal readonly ILogService _log;
 
         public AssemblyService(ILogService logger)
@@ -38,14 +39,10 @@ namespace PKISharp.WACS.Services
 
                 // Validation plugins
                 new(typeof(Plugins.ValidationPlugins.HttpValidationArguments)),
-                new(typeof(Plugins.ValidationPlugins.Dns.Acme)), new(typeof(Plugins.ValidationPlugins.Dns.AcmeArguments)),
                 new(typeof(Plugins.ValidationPlugins.Dns.Manual)),
                 new(typeof(Plugins.ValidationPlugins.Dns.Script)), new(typeof(Plugins.ValidationPlugins.Dns.ScriptArguments)),
                 new(typeof(Plugins.ValidationPlugins.Http.FileSystem)), new(typeof(Plugins.ValidationPlugins.Http.FileSystemArguments)),
-                new(typeof(Plugins.ValidationPlugins.Http.Ftp)),
                 new(typeof(Plugins.ValidationPlugins.Http.SelfHosting)), new(typeof(Plugins.ValidationPlugins.Http.SelfHostingArguments)),
-                new(typeof(Plugins.ValidationPlugins.Http.Sftp)),
-                new(typeof(Plugins.ValidationPlugins.Http.WebDav)),
                 new(typeof(Plugins.ValidationPlugins.Tls.SelfHosting)), new(typeof(Plugins.ValidationPlugins.Tls.SelfHostingArguments)),
 
                 // AcmeOrder plugins
@@ -217,6 +214,7 @@ namespace PKISharp.WACS.Services
             return _allTypes.
                 AsEnumerable().
                 Where(type => typeof(T) != type.Type && typeof(T).IsAssignableFrom(type.Type)).
+                Distinct().
                 ToList();
         }
 
@@ -224,6 +222,7 @@ namespace PKISharp.WACS.Services
         /// Wrapper around type to convince and instruct the trimmer that the
         /// properties are preserved during the build.
         /// </summary>
+        [DebuggerDisplay("{Type.Name}")]
         public readonly struct TypeDescriptor
         {
             public TypeDescriptor([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.PublicProperties)] Type type) => Type = type;

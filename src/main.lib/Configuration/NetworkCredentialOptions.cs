@@ -2,7 +2,6 @@
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
-using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Text.Json.Serialization;
@@ -52,7 +51,7 @@ namespace PKISharp.WACS.Configuration
             );
         }
 
-        internal IEnumerable<(CommandLineAttribute, object?)> Describe(ArgumentsInputService arguments)
+        public IEnumerable<(CommandLineAttribute, object?)> Describe(ArgumentsInputService arguments)
         {
             yield return (arguments.GetString<NetworkCredentialArguments>(x => x.UserName).Meta, UserName);
             yield return (arguments.GetString<NetworkCredentialArguments>(x => x.Password).Meta, Password);

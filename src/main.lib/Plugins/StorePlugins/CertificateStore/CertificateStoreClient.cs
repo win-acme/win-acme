@@ -79,9 +79,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             // certificate with the private key attached.
             var tempFlags = X509KeyStorageFlags.EphemeralKeySet | X509KeyStorageFlags.Exportable;
 
-            // Adding password protection to these temporary certificates 
-            // might cause difficult to reproduce bugs during later
-            // stages of the process, so we've removed them for now.
             try
             {
                 var collection = certificate.AsCollection(tempFlags, password);
@@ -151,10 +148,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
             if (dotnet == null)
             {
-                _log.Verbose("Found {n} certificates: [{subjects}]/[{issuers}]", 
-                    collection.Count, 
-                    string.Join("|", collection.Select(x => x.Subject)),
-                    string.Join("|", collection.Select(x => x.Issuer)));
                 throw new Exception("Unable to select leaf certificate");
             }
             try

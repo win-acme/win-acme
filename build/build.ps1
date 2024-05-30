@@ -36,6 +36,7 @@ foreach ($release in @("Release", "ReleaseTrimmed")) {
 # Build plugins
 & dotnet publish $RepoRoot\src\plugin.store.keyvault\wacs.store.keyvault.csproj -c "Release"
 & dotnet publish $RepoRoot\src\plugin.store.userstore\wacs.store.userstore.csproj -c "Release"
+& dotnet publish $RepoRoot\src\plugin.validation.dns.acme\wacs.validation.dns.acme.csproj -c "Release"
 & dotnet publish $RepoRoot\src\plugin.validation.dns.aliyun\wacs.validation.dns.aliyun.csproj -c "Release"
 & dotnet publish $RepoRoot\src\plugin.validation.dns.azure\wacs.validation.dns.azure.csproj -c "Release"
 & dotnet publish $RepoRoot\src\plugin.validation.dns.cloudflare\wacs.validation.dns.cloudflare.csproj -c "Release"
@@ -56,7 +57,9 @@ foreach ($release in @("Release", "ReleaseTrimmed")) {
 & dotnet publish $RepoRoot\src\plugin.validation.dns.simply\wacs.validation.dns.simply.csproj -c "Release"
 & dotnet publish $RepoRoot\src\plugin.validation.dns.transip\wacs.validation.dns.transip.csproj -c "Release"
 & dotnet publish $RepoRoot\src\plugin.validation.dns.tencent\wacs.validation.dns.tencent.csproj -c "Release"
+& dotnet publish $RepoRoot\src\plugin.validation.http.ftp\wacs.validation.http.ftp.csproj -c "Release"
 & dotnet publish $RepoRoot\src\plugin.validation.http.rest\wacs.validation.http.rest.csproj -c "Release"
+& dotnet publish $RepoRoot\src\plugin.validation.http.sftp\wacs.validation.http.sftp.csproj -c "Release"
 
 if (-not $?)
 {

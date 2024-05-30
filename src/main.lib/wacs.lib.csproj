@@ -34,11 +34,9 @@
 
 	<ItemGroup>
 		<PackageReference Include="Autofac" Version="8.0.0" />
-		<PackageReference Include="BouncyCastle.Cryptography" Version="2.3.1" />
+		<PackageReference Include="BouncyCastle.Cryptography" Version="2.4.0" />
 		<PackageReference Include="DnsClient" Version="1.7.0" />
-		<PackageReference Include="FluentFTP" Version="50.0.1" />
-		<PackageReference Include="FluentFTP.GnuTLS" Version="1.0.31" />
-		<PackageReference Include="MailKit" Version="4.5.0" />
+		<PackageReference Include="MailKit" Version="4.6.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
@@ -51,12 +49,10 @@
 		<PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
 		<PackageReference Include="Serilog.Sinks.EventLog" Version="3.1.0" />
 		<PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
-		<PackageReference Include="SSH.NET" Version="2024.0.0" />
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
 		<PackageReference Include="System.Net.Http.WinHttpHandler" Version="8.0.0" />
 		<PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
 		<PackageReference Include="TaskScheduler" Version="2.11.0" />
-		<PackageReference Include="WebDav.Client" Version="2.8.0" />
 	</ItemGroup>
 
 	<ItemGroup>
