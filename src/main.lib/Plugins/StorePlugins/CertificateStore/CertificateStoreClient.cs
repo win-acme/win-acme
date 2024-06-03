@@ -161,7 +161,15 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// <param name="flags"></param>
         public void RegularSave(ICertificateInfo certificate, X509KeyStorageFlags flags, string? password = null)
         {
-            var collection = certificate.AsCollection(flags, password).OfType<X509Certificate2>().ToList();
+            // Tripwire code: this will fail when the certificate is 
+            // using a key protection mechasims that is not supported
+            // by the operating system, causing the caller to retry
+            // using a different protection
+            var collection = certificate.AsCollection(X509KeyStorageFlags.EphemeralKeySet | X509KeyStorageFlags.Exportable, password).OfType<X509Certificate2>().ToList();
+            
+            // If we don't trip on the above, repeat the same 
+            // with the actual flags that we want to use.
+            collection = certificate.AsCollection(flags, password).OfType<X509Certificate2>().ToList();
             var dotnet = collection.FirstOrDefault(x => x.HasPrivateKey);
             if (dotnet == null)
             {
