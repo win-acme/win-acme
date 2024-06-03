@@ -71,7 +71,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 var outputBuilder = new Pkcs12StoreBuilder();
                 var output = outputBuilder.Build();
                 var aliases = input.Collection.Aliases.ToList();
-                var keyAlias = aliases.FirstOrDefault(a => input.Collection.IsKeyEntry(a));
+                var keyAlias = aliases.FirstOrDefault(input.Collection.IsKeyEntry);
                 if (keyAlias != null)
                 {
                     output.SetKeyEntry(
