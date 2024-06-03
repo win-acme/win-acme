@@ -240,44 +240,49 @@ namespace PKISharp.WACS.Services
             if (!created)
             {
                 _log.Warning("All users currently have access to {path}.", di.FullName);
-                _log.Warning("That access will now be limited to improve security.", label, di.FullName);
-                _log.Warning("You may manually add specific trusted accounts to the ACL.", label, di.FullName);
+                _log.Warning("We will now try to limit access to improve security...", label, di.FullName);
             }
-
-            var acl = di.GetAccessControl();
-            if (inherited)
+            try
             {
-                // Disable access rule inheritance
-                acl.SetAccessRuleProtection(true, true);
-                di.SetAccessControl(acl);
-                acl = di.GetAccessControl();
-            }
-
-            var sid = new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null);
-            var rules = acl.GetAccessRules(true, true, typeof(SecurityIdentifier));
-            foreach (FileSystemAccessRule rule in rules)
-            {
-                if (rule.IdentityReference == sid && 
-                    rule.AccessControlType == AccessControlType.Allow)
+                var acl = di.GetAccessControl();
+                if (inherited)
                 {
-                    acl.RemoveAccessRule(rule);
+                    // Disable access rule inheritance
+                    acl.SetAccessRuleProtection(true, true);
+                    di.SetAccessControl(acl);
+                    acl = di.GetAccessControl();
                 }
-            }
-            var user = WindowsIdentity.GetCurrent().User;
-            if (user != null)
-            {
-                // Allow user access from non-privilegdes perspective 
-                // as well.
-                acl.AddAccessRule(
-                    new FileSystemAccessRule(
-                        user,
-                        FileSystemRights.Read | FileSystemRights.Delete | FileSystemRights.Modify,
-                        InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
-                        PropagationFlags.None,
-                        AccessControlType.Allow));
-            }
 
-            di.SetAccessControl(acl);
+                var sid = new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null);
+                var rules = acl.GetAccessRules(true, true, typeof(SecurityIdentifier));
+                foreach (FileSystemAccessRule rule in rules)
+                {
+                    if (rule.IdentityReference == sid &&
+                        rule.AccessControlType == AccessControlType.Allow)
+                    {
+                        acl.RemoveAccessRule(rule);
+                    }
+                }
+                var user = WindowsIdentity.GetCurrent().User;
+                if (user != null)
+                {
+                    // Allow user access from non-privilegdes perspective 
+                    // as well.
+                    acl.AddAccessRule(
+                        new FileSystemAccessRule(
+                            user,
+                            FileSystemRights.Read | FileSystemRights.Delete | FileSystemRights.Modify,
+                            InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
+                            PropagationFlags.None,
+                            AccessControlType.Allow));
+                }
+                di.SetAccessControl(acl);
+                _log.Warning($"...done. You may manually add specific trusted accounts to the ACL.");
+            } 
+            catch (Exception ex)
+            {
+                _log.Error(ex, $"...failed, please take this step manually.");
+            }
         }
 
         /// <summary>
