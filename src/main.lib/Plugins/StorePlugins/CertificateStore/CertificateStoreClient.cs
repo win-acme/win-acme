@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.DomainObjects;
+﻿using Org.BouncyCastle.Tls;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
 using System;
@@ -47,21 +48,49 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
             flags |= X509KeyStorageFlags.PersistKeySet;
             var password = PasswordGenerator.Generate();
-            var legacySuccess = false;
-            var legacyTry = _settings.Store.CertificateStore.UseNextGenerationCryptoApi != true;
-            if (legacyTry)
+            var success = false;
+            var attemptConvert = _settings.Store.CertificateStore.UseNextGenerationCryptoApi != true;
+            if (attemptConvert)
             {
-                legacySuccess = ConvertAndSave(certificate, flags, password);
-                if (!legacySuccess)
+                success = SaveWithRetry(certificate, (input) => ConvertAndSave(input, flags, password));
+                if (!success)
                 {
                     _log.Warning("Unable to save using CryptoAPI, retrying with CNG...");
                 }
             }
-            if (!legacySuccess)
+            if (!success)
             {
-                RegularSave(certificate, flags, password);
+                SaveWithRetry(certificate, (input) => { RegularSave(input, flags, password); return true; });
             }
             return exportable;
+        }
+
+        /// <summary>
+        /// Retry with fallback to legacy protection mode
+        /// </summary>
+        /// <param name="original"></param>
+        /// <param name="execute"></param>
+        /// <returns></returns>
+        public bool SaveWithRetry(ICertificateInfo original, Func<ICertificateInfo, bool> execute)
+        {
+            try
+            {
+                return execute(original);
+            }
+            catch (CryptographicException)
+            {
+                if (original.Collection.ProtectionMode != PfxProtectionMode.Legacy)
+                {
+                    // Retry with legacy PFX protection instead of modern one
+                    _log.Warning("Unable to save using PfxProtectionMode {chosen}, retrying with {legacy}...", original.Collection.ProtectionMode, PfxProtectionMode.Legacy);
+                    var legacy = new CertificateInfo(original, PfxProtectionMode.Legacy);
+                    return execute(legacy);
+                }
+                else
+                {
+                    throw;
+                }
+            }
         }
 
         /// <summary>
@@ -150,15 +179,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             {
                 throw new Exception("Unable to select leaf certificate");
             }
-            try
-            {
-                SaveToStore(_store, dotnet, true);
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Error saving main certificate");
-                throw;
-            }
+            SaveToStore(_store, dotnet, true);
         }
 
         /// <summary>

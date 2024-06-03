@@ -23,7 +23,6 @@ namespace PKISharp.WACS.Services
         private readonly ILogService _log;
         private readonly ICacheService _cacheService;
         private readonly AcmeClient _client;
-        private readonly PemService _pemService;
         private readonly CertificatePicker _picker;
         private readonly ISettingsService _settings;
 
@@ -31,7 +30,6 @@ namespace PKISharp.WACS.Services
             ILogService log,
             ISettingsService settings,
             AcmeClient client,
-            PemService pemService,
             IInputService inputService,
             ICacheService cacheService,
             CertificatePicker picker)
@@ -39,7 +37,6 @@ namespace PKISharp.WACS.Services
             _log = log;
             _client = client;
             _settings = settings;
-            _pemService = pemService;
             _cacheService = cacheService;
             _inputService = inputService;
             _picker = picker;
@@ -89,7 +86,7 @@ namespace PKISharp.WACS.Services
             {
                 throw new InvalidOperationException("No CsrBytes found");
             }
-            await _cacheService.StoreCsr(order, _pemService.GetPem("CERTIFICATE REQUEST", order.Target.CsrBytes.ToArray()));
+            await _cacheService.StoreCsr(order, PemService.GetPem("CERTIFICATE REQUEST", order.Target.CsrBytes.ToArray()));
 
             // Check order status
             if (order.Details.Payload.Status != AcmeClient.OrderValid)
@@ -208,15 +205,11 @@ namespace PKISharp.WACS.Services
         /// <param name="friendlyName"></param>
         /// <param name="pk"></param>
         /// <returns></returns>
-        private Pkcs12Store ParseData(byte[] bytes, string friendlyName, AsymmetricKeyParameter? pk = null)
+        private PfxWrapper ParseData(byte[] bytes, string friendlyName, AsymmetricKeyParameter? pk = null)
         {
             var text = Encoding.UTF8.GetString(bytes);
-            var pfxBuilder = new Pkcs12StoreBuilder();
-            pfxBuilder.SetKeyAlgorithm(
-                NistObjectIdentifiers.IdAes256Cbc,
-                PkcsObjectIdentifiers.IdHmacWithSha256);
-
-            var pfx = pfxBuilder.Build();
+            var pfxWrapper = PfxService.GetPfx(PfxProtectionMode.Aes256);
+            var pfx = pfxWrapper.Store;
             var startIndex = 0;
             const string startString = "-----BEGIN CERTIFICATE-----";
             const string endString = "-----END CERTIFICATE-----";
@@ -235,7 +228,7 @@ namespace PKISharp.WACS.Services
                 endIndex += endString.Length;
                 var pem = text[startIndex..endIndex];
                 _log.Verbose("Parsing PEM data at range {startIndex}..{endIndex}", startIndex, endIndex);
-                var bcCertificate = _pemService.ParsePem<Bc.X509.X509Certificate>(pem);
+                var bcCertificate = PemService.ParsePem<Bc.X509.X509Certificate>(pem);
                 if (bcCertificate != null)
                 {
                     var bcCertificateEntry = new X509CertificateEntry(bcCertificate);
@@ -271,7 +264,7 @@ namespace PKISharp.WACS.Services
                 }
                 startIndex = endIndex;
             }
-            return pfx;
+            return pfxWrapper;
         }
 
     }

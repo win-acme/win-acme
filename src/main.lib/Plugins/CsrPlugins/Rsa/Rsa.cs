@@ -20,8 +20,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         public Rsa(
             ILogService log,
             ISettingsService settings,
-            PemService pemService,
-            RsaOptions options) : base(log, settings, options, pemService) { }
+            RsaOptions options) : base(log, settings, options) { }
 
         /// <summary>
         /// Generate new RSA key pair

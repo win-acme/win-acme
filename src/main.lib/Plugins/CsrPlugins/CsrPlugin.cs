@@ -11,7 +11,6 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -31,17 +30,15 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         protected readonly ILogService _log;
         protected readonly ISettingsService _settings;
         protected readonly TOptions _options;
-        private readonly PemService _pemService;
 
         protected string? _cacheData;
         private AsymmetricCipherKeyPair? _keyPair;
 
-        public CsrPlugin(ILogService log, ISettingsService settings, TOptions options, PemService pemService)
+        public CsrPlugin(ILogService log, ISettingsService settings, TOptions options)
         {
             _log = log;
             _options = options;
             _settings = settings;
-            _pemService = pemService;
         }
 
         async Task<Pkcs10CertificationRequest> ICsrPlugin.GenerateCsr(Target target, string? keyPath)
@@ -132,13 +129,13 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
                 if (_cacheData == null)
                 {
                     _keyPair = GenerateNewKeyPair();
-                    _cacheData = _pemService.GetPem(_keyPair);
+                    _cacheData = PemService.GetPem(_keyPair);
                 }
                 else
                 {
                     try
                     {
-                        _keyPair = _pemService.ParsePem<AsymmetricCipherKeyPair>(_cacheData);
+                        _keyPair = PemService.ParsePem<AsymmetricCipherKeyPair>(_cacheData);
                         if (_keyPair == null)
                         {
                             throw new InvalidDataException("key");

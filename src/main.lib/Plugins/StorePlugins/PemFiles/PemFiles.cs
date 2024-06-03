@@ -21,18 +21,15 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         internal const string Name = "PemFiles";
 
         private readonly ILogService _log;
-        private readonly PemService _pemService;
         private readonly string _path;
         private readonly string? _name;
         private readonly string? _password;
 
         public PemFiles(
             ILogService log, ISettingsService settings,
-            PemService pemService, PemFilesOptions options,
-            SecretServiceManager secretServiceManager)
+            PemFilesOptions options, SecretServiceManager secretServiceManager)
         {
             _log = log;
-            _pemService = pemService;
 
             var passwordRaw = 
                 options.PemPassword?.Value ?? 
@@ -67,7 +64,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
                 // Base certificate
                 var certificateExport = input.Certificate.GetEncoded();
-                var certString = _pemService.GetPem("CERTIFICATE", certificateExport);
+                var certString = PemService.GetPem("CERTIFICATE", certificateExport);
                 var chainString = "";
                 await File.WriteAllTextAsync(Path.Combine(_path, $"{name}-crt.pem"), certString);
 
@@ -79,7 +76,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     if (chainCertificate.SubjectDN.ToString() != chainCertificate.IssuerDN.ToString())
                     {
                         var chainCertificateExport = chainCertificate.GetEncoded();
-                        chainString += _pemService.GetPem("CERTIFICATE", chainCertificateExport);
+                        chainString += PemService.GetPem("CERTIFICATE", chainCertificateExport);
                     }
                 }
 
@@ -90,7 +87,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 // Private key
                 if (input.PrivateKey != null)
                 {
-                    var pkPem = _pemService.GetPem(input.PrivateKey, _password);
+                    var pkPem = PemService.GetPem(input.PrivateKey, _password);
                     if (!string.IsNullOrEmpty(pkPem))
                     {
                         await File.WriteAllTextAsync(Path.Combine(_path, $"{name}-key.pem"), pkPem);

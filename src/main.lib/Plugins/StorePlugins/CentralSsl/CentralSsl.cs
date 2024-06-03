@@ -59,13 +59,15 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public async Task<StoreInfo?> Save(ICertificateInfo input)
         {
             _log.Information("Copying certificate to the CentralSsl store");
-            foreach (var identifier in input.SanNames.OfType<DnsIdentifier>())
+            var converted = new CertificateInfo(input, PfxProtectionMode.Legacy);
+
+            foreach (var identifier in converted.SanNames.OfType<DnsIdentifier>())
             {
                 var dest = PathForIdentifier(identifier);
                 _log.Information("Saving certificate to CentralSsl location {dest}", dest);
                 try
                 {
-                    await input.PfxSave(dest, _password);
+                    await converted.PfxSave(dest, _password);
                 }
                 catch (Exception ex)
                 {

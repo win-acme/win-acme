@@ -27,10 +27,9 @@ namespace PKISharp.WACS.UnitTests.Tests.CertificateInfoTests
                 Net.X509KeyStorageFlags.EphemeralKeySet |
                 Net.X509KeyStorageFlags.Exportable);
 
-            var pfxBuilder = new Pkcs12StoreBuilder();
-            var pfx = pfxBuilder.Build();
-            pfx.SetCertificateEntry("1", new X509CertificateEntry(new X509Certificate(tempPfx[0].GetRawCertData())));
-            var certinfo = new CertificateInfo(pfx);
+            var pfxWrapper = PfxService.GetPfx();
+            pfxWrapper.Store.SetCertificateEntry("1", new X509CertificateEntry(new X509Certificate(tempPfx[0].GetRawCertData())));
+            var certinfo = new CertificateInfo(pfxWrapper);
             return certinfo;
         }
 
@@ -152,17 +151,10 @@ btUK9CQkVXXUE5FDNjWBh/WxofE=
         /// <param name="friendlyName"></param>
         /// <param name="pk"></param>
         /// <returns></returns>
-        private Pkcs12Store ParseData(string text)
+        private PfxWrapper ParseData(string text)
         {
-            var pfxBuilder = new Pkcs12StoreBuilder();
-            var _pemService = new PemService();
-            // !! This breaks Windows 2016 !!
-            //pfxBuilder.SetKeyAlgorithm(
-            //    NistObjectIdentifiers.IdAes256Cbc,
-            //    PkcsObjectIdentifiers.IdHmacWithSha256);
-            //pfxBuilder.SetUseDerEncoding(true);
-
-            var pfx = pfxBuilder.Build();
+            var pfxBuilder = PfxService.GetPfx();
+            var pfx = pfxBuilder.Store;
             var startIndex = 0;
             const string startString = "-----BEGIN CERTIFICATE-----";
             const string endString = "-----END CERTIFICATE-----";
@@ -180,7 +172,7 @@ btUK9CQkVXXUE5FDNjWBh/WxofE=
                 }
                 endIndex += endString.Length;
                 var pem = text[startIndex..endIndex];
-                var bcCertificate = _pemService.ParsePem<X509Certificate>(pem);
+                var bcCertificate = PemService.ParsePem<X509Certificate>(pem);
                 if (bcCertificate != null)
                 {
                     var bcCertificateEntry = new X509CertificateEntry(bcCertificate);
@@ -196,7 +188,7 @@ btUK9CQkVXXUE5FDNjWBh/WxofE=
                 }
                 startIndex = endIndex;
             }
-            return pfx;
+            return pfxBuilder;
         }
     }
 }

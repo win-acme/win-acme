@@ -1,5 +1,7 @@
 ﻿using System.IO;
-using Bc = Org.BouncyCastle;
+using Org.BouncyCastle.Security;
+using Org.BouncyCastle.Utilities.IO.Pem;
+using openssl = Org.BouncyCastle.OpenSsl;
 
 namespace PKISharp.WACS.Services
 {
@@ -10,26 +12,33 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>
-        public string GetPem(object obj, string? password = null)
+        public static string GetPem(object obj, string? password = null)
         {
             string pem;
             using (var tw = new StringWriter())
             {
-                var pw = new Bc.OpenSsl.PemWriter(tw);
+                var pw = new openssl.PemWriter(tw);
                 if (string.IsNullOrEmpty(password))
                 {
                     pw.WriteObject(obj);
                 } 
                 else
                 {
-                    pw.WriteObject(obj, "AES-256-CBC", password.ToCharArray(), new Bc.Security.SecureRandom());
+                    pw.WriteObject(obj, "AES-256-CBC", password.ToCharArray(), new SecureRandom());
                 }
                 pem = tw.GetStringBuilder().ToString();
                 tw.GetStringBuilder().Clear();
             }
             return pem;
         }
-        public string GetPem(string name, byte[] content) => GetPem(new Bc.Utilities.IO.Pem.PemObject(name, content));
+
+        /// <summary>
+        /// Helper for content that's already byte encoded
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="content"></param>
+        /// <returns></returns>
+        public static string GetPem(string name, byte[] content) => GetPem(new PemObject(name, content));
 
         /// <summary>
         /// Helper function for reading PEM encoding
@@ -37,10 +46,10 @@ namespace PKISharp.WACS.Services
         /// <typeparam name="T"></typeparam>
         /// <param name="pem"></param>
         /// <returns></returns>
-        public T? ParsePem<T>(string pem) where T: class
+        public static T? ParsePem<T>(string pem) where T: class
         {
             using var tr = new StringReader(pem);
-            var pr = new Bc.OpenSsl.PemReader(tr);
+            var pr = new openssl.PemReader(tr);
             return pr.ReadObject() as T;
         }
     }

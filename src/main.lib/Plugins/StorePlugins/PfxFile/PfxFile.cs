@@ -68,22 +68,23 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             try
             {
                 // Change PK alias to something more predictable
-                var outputBuilder = new Pkcs12StoreBuilder();
-                var output = outputBuilder.Build();
-                var aliases = input.Collection.Aliases.ToList();
-                var keyAlias = aliases.FirstOrDefault(input.Collection.IsKeyEntry);
+                var output = PfxService.GetPfx(PfxProtectionMode.Legacy);
+                var outBc = output.Store;
+                var inBc = input.Collection.Store;
+                var aliases = inBc.Aliases.ToList();
+                var keyAlias = aliases.FirstOrDefault(inBc.IsKeyEntry);
                 if (keyAlias != null)
                 {
-                    output.SetKeyEntry(
+                    outBc.SetKeyEntry(
                         input.CommonName?.Value ?? input.SanNames.First().Value,
-                        input.Collection.GetKey(keyAlias),
-                        input.Collection.GetCertificateChain(keyAlias));
+                        inBc.GetKey(keyAlias),
+                        inBc.GetCertificateChain(keyAlias));
                 }
                 else
                 {
                     foreach (var alias in aliases)
                     {
-                        output.SetCertificateEntry(alias, input.Collection.GetCertificate(alias));
+                        outBc.SetCertificateEntry(alias, inBc.GetCertificate(alias));
                     }
                 }
 

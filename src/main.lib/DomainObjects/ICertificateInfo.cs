@@ -1,6 +1,6 @@
 ﻿using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.Pkcs;
 using Org.BouncyCastle.X509;
+using PKISharp.WACS.Services;
 using System.Collections.Generic;
 
 namespace PKISharp.WACS.DomainObjects
@@ -10,7 +10,7 @@ namespace PKISharp.WACS.DomainObjects
         /// <summary>
         /// Entire collection, equivalent to the full PFX archive
         /// </summary>
-        Pkcs12Store Collection { get; }
+        PfxWrapper Collection { get; }
 
         /// <summary>
         /// The main certificate

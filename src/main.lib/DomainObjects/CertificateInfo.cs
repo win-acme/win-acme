@@ -4,6 +4,7 @@ using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Pkcs;
 using Org.BouncyCastle.X509;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -24,21 +25,29 @@ namespace PKISharp.WACS.DomainObjects
         private readonly List<Identifier> _san;
 
         /// <summary>
+        /// Convert certificate to a different protection mode
+        /// </summary>
+        /// <param name="certificateInfo"></param>
+        /// <param name="protectionMode"></param>
+        public CertificateInfo(ICertificateInfo certificateInfo, PfxProtectionMode protectionMode) :
+            this(PfxService.ConvertPfx(certificateInfo.Collection, protectionMode)) { }
+        
         /// Default constructor
         /// </summary>
-        /// <param name="store"></param>
+        /// <param name="collection"></param>
         /// <exception cref="InvalidDataException"></exception>
-        public CertificateInfo(Pkcs12Store store)
+        public CertificateInfo(PfxWrapper collection)
         {
             // Store original collection
-            Collection = store;
+            Collection = collection;
 
             // Get first certificate that has not been used to issue 
             // another one in the collection. That is the outermost leaf
             // and thus will be our main certificate
-            var certificates = store.
+            var certificates = collection.
+                Store.
                 Aliases.
-                Select(alias => new { alias, store.GetCertificate(alias).Certificate }).
+                Select(alias => new { alias, collection.Store.GetCertificate(alias).Certificate }).
                 ToList();
             if (certificates.Count == 0)
             {
@@ -102,10 +111,11 @@ namespace PKISharp.WACS.DomainObjects
                 }).ToList();
 
             // Check if we have the private key
-            PrivateKey = store.
+            PrivateKey = collection.
+                Store.
                 Aliases.
-                Where(store.IsKeyEntry).
-                Select(a => store.GetKey(a).Key).
+                Where(collection.Store.IsKeyEntry).
+                Select(a => collection.Store.GetKey(a).Key).
                 FirstOrDefault();
 
             // Now order the remaining certificates in the correct order of who signed whom.
@@ -128,7 +138,7 @@ namespace PKISharp.WACS.DomainObjects
             Chain = orderedCollection;
         }
 
-        public Pkcs12Store Collection { get; private set; }
+        public PfxWrapper Collection { get; private set; }
 
         public X509Certificate Certificate { get; private set; }
 

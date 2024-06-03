@@ -23,8 +23,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         public Ec(
             ILogService log,
             ISettingsService settings,
-            PemService pemService,
-            EcOptions options) : base(log, settings, options, pemService) { }
+            EcOptions options) : base(log, settings, options) { }
 
         internal override AsymmetricCipherKeyPair GenerateNewKeyPair()
         {

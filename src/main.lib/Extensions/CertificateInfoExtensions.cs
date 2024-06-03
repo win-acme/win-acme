@@ -18,7 +18,7 @@ namespace PKISharp.WACS.Extensions
         public static MemoryStream PfxStream(this ICertificateInfo ci, string? password = null)
         {
             var stream = new MemoryStream();
-            ci.Collection.Save(stream, (password ?? "").ToCharArray(), new SecureRandom());
+            ci.Collection.Store.Save(stream, (password ?? "").ToCharArray(), new SecureRandom());
             stream.Seek(0, SeekOrigin.Begin);
             return stream;
         }

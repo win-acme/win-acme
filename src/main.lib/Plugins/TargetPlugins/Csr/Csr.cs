@@ -23,13 +23,11 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
     internal class Csr : ITargetPlugin
     {
         private readonly ILogService _log;
-        private readonly PemService _pem;
         private readonly CsrOptions _options;
 
-        public Csr(ILogService logService, PemService pemService, CsrOptions options)
+        public Csr(ILogService logService, CsrOptions options)
         {
             _log = logService;
-            _pem = pemService;
             _options = options;
         }
 
@@ -58,7 +56,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             byte[] csrBytes;
             try
             {
-                var pem = _pem.ParsePem<Pkcs10CertificationRequest>(csrString);
+                var pem = PemService.ParsePem<Pkcs10CertificationRequest>(csrString);
                 if (pem == null)
                 {
                     throw new Exception("Unable decode PEM bytes to Pkcs10CertificationRequest");
@@ -96,11 +94,11 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 // Parse PK
                 try
                 {
-                    var keyPair = _pem.ParsePem<AsymmetricCipherKeyPair>(pkString);
+                    var keyPair = PemService.ParsePem<AsymmetricCipherKeyPair>(pkString);
 
                     pkBytes = keyPair != null ? 
-                        keyPair.Private : 
-                        _pem.ParsePem<AsymmetricKeyParameter>(pkString);
+                        keyPair.Private :
+                        PemService.ParsePem<AsymmetricKeyParameter>(pkString);
 
                     if (pkBytes == null)
                     {
