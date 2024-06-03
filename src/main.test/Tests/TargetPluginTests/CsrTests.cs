@@ -44,8 +44,7 @@ ZkoLUgEWU5OcCkq5AIpmloeaCTC/vKrlS5M3BvjEmQ==
                 File.WriteAllText(tempFile, Csr);
                 var csrOptions = new CsrOptions() { CsrFile = tempFile };
                 var log = new Mock.Services.LogService(false);
-                var pem = new PemService();
-                var csrPlugin = new Csr(log, pem, csrOptions);
+                var csrPlugin = new Csr(log, csrOptions);
                 var target = csrPlugin.Generate().Result;
                 Assert.IsNotNull(target);
                 Assert.IsTrue(target.Parts.Count == 1);
