@@ -214,6 +214,10 @@ namespace PKISharp.WACS.Configuration.Settings
         /// renewals. However we do advise caution.
         /// </summary>
         public int? DeleteStaleFilesDays { get; set; }
+        /// <summary>
+        /// Legacy, SHA256 or Default
+        /// </summary>
+        public string? ProtectionMode { get; set; }
 
     }
 
@@ -641,6 +645,10 @@ namespace PKISharp.WACS.Configuration.Settings
         /// is also a good practice for maintainability.
         /// </summary>
         public string? DefaultPassword { get; set; }
+        /// <summary>
+        /// Legacy, SHA256 or Default
+        /// </summary>
+        public string? DefaultProtectionMode { get; set; }
     }
 
     public class PfxFileSettings
@@ -663,6 +671,10 @@ namespace PKISharp.WACS.Configuration.Settings
         /// is also a good practice for maintainability.
         /// </summary>
         public string? DefaultPassword { get; set; }
+        /// <summary>
+        /// Legacy, SHA256 or Default
+        /// </summary>
+        public string? DefaultProtectionMode { get; set; }
     }
 
     public class InstallationSettings

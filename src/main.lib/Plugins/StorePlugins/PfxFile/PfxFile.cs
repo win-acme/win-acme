@@ -25,6 +25,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private readonly string _path;
         private readonly string? _name;
         private readonly string? _password;
+        private readonly string? _protectionMode;
 
         public static string? DefaultPath(ISettingsService settings) => 
             settings.Store.PfxFile?.DefaultPath;
@@ -45,6 +46,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 settings.Store.PfxFile?.DefaultPassword;
             _password = secretServiceManager.EvaluateSecret(passwordRaw);
             _name = options.FileName;
+            _protectionMode = settings.Store.PfxFile?.DefaultProtectionMode;
 
             var path = !string.IsNullOrWhiteSpace(options.Path) ? 
                 options.Path :
@@ -63,12 +65,28 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         private string PathForIdentifier(string identifier) => Path.Combine(_path, $"{identifier.Replace("*", "_")}.pfx");
 
+        /// <summary>
+        /// We don't save the certificate immediately for two reasons:
+        /// 1. We want to change the PK alias tto something more predictable
+        ///    because the normal one changes with every renewal due to the
+        ///    date being part of the friendly name
+        /// 2. We want the user to be able to select the PfxProtectionMode
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
         public async Task<StoreInfo?> Save(ICertificateInfo input)
         {
             try
             {
-                // Change PK alias to something more predictable
-                var output = PfxService.GetPfx(PfxProtectionMode.Legacy);
+                // Create archive with the desired settings
+                if (!Enum.TryParse<PfxProtectionMode>(_protectionMode, true, out var protectionMode))
+                {
+                    // Nothing set (pre-existing installations): stick with legacy
+                    protectionMode = PfxProtectionMode.Legacy;
+                }
+                var output = PfxService.GetPfx(protectionMode);
+
+                // Copy all key and cert entries to the new archive
                 var outBc = output.Store;
                 var inBc = input.Collection.Store;
                 var aliases = inBc.Aliases.ToList();
@@ -88,6 +106,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     }
                 }
 
+                // Save to disk
                 var dest = PathForIdentifier(_name ?? input.CommonName?.Value ?? input.SanNames.First().Value);
                 var outInfo = new CertificateInfo(output);
                 _log.Information("Copying certificate to the pfx folder {dest}", dest);

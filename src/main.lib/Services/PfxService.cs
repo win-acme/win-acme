@@ -39,7 +39,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>
-        public static PfxWrapper GetPfx(PfxProtectionMode protectionMode = PfxProtectionMode.Default)
+        public static PfxWrapper GetPfx(PfxProtectionMode protectionMode)
         {
             var outputBuilder = new Pkcs12StoreBuilder();
             if (protectionMode == PfxProtectionMode.Default) 

@@ -25,6 +25,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private readonly ILogService _log;
         private readonly string _path;
         private readonly string? _password;
+        private readonly string? _protectionMode;
 
         public CentralSsl(
             ILogService log,
@@ -38,10 +39,11 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 options.PfxPassword?.Value ?? 
                 settings.Store.CentralSsl.DefaultPassword;
             _password = secretServiceManager.EvaluateSecret(passwordRaw);
+            _protectionMode = settings.Store.CentralSsl?.DefaultProtectionMode;
 
             var path = !string.IsNullOrWhiteSpace(options.Path) ?
                 options.Path :
-                settings.Store.CentralSsl.DefaultPath;
+                settings.Store.CentralSsl?.DefaultPath;
 
             if (path != null && path.ValidPath(log))
             {
@@ -59,7 +61,14 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public async Task<StoreInfo?> Save(ICertificateInfo input)
         {
             _log.Information("Copying certificate to the CentralSsl store");
-            var converted = new CertificateInfo(input, PfxProtectionMode.Legacy);
+
+            // Create archive with the desired settings
+            if (!Enum.TryParse<PfxProtectionMode>(_protectionMode, true, out var protectionMode))
+            {
+                // Nothing set (pre-existing installations): stick with legacy
+                protectionMode = PfxProtectionMode.Legacy;
+            }
+            var converted = new CertificateInfo(input, protectionMode);
 
             foreach (var identifier in converted.SanNames.OfType<DnsIdentifier>())
             {

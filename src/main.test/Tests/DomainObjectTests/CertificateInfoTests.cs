@@ -27,7 +27,7 @@ namespace PKISharp.WACS.UnitTests.Tests.CertificateInfoTests
                 Net.X509KeyStorageFlags.EphemeralKeySet |
                 Net.X509KeyStorageFlags.Exportable);
 
-            var pfxWrapper = PfxService.GetPfx();
+            var pfxWrapper = PfxService.GetPfx(PfxProtectionMode.Default);
             pfxWrapper.Store.SetCertificateEntry("1", new X509CertificateEntry(new X509Certificate(tempPfx[0].GetRawCertData())));
             var certinfo = new CertificateInfo(pfxWrapper);
             return certinfo;
@@ -153,7 +153,7 @@ btUK9CQkVXXUE5FDNjWBh/WxofE=
         /// <returns></returns>
         private PfxWrapper ParseData(string text)
         {
-            var pfxBuilder = PfxService.GetPfx();
+            var pfxBuilder = PfxService.GetPfx(PfxProtectionMode.Default);
             var pfx = pfxBuilder.Store;
             var startIndex = 0;
             const string startString = "-----BEGIN CERTIFICATE-----";

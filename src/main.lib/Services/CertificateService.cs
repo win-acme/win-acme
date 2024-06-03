@@ -208,7 +208,19 @@ namespace PKISharp.WACS.Services
         private PfxWrapper ParseData(byte[] bytes, string friendlyName, AsymmetricKeyParameter? pk = null)
         {
             var text = Encoding.UTF8.GetString(bytes);
-            var pfxWrapper = PfxService.GetPfx(PfxProtectionMode.Aes256);
+
+            // This selects the protection mode that will be used
+            // for the internal cache. Only meant to be read back 
+            // by win-acme itself, but we don't force AES256 because
+            // the cache file is exposed to users in installation
+            // scripts and therefore people might depend on the older
+            // legacy format.
+            if (!Enum.TryParse<PfxProtectionMode>(_settings.Cache.ProtectionMode, true, out var protectionMode))
+            {
+                protectionMode = PfxProtectionMode.Default;
+            }
+
+            var pfxWrapper = PfxService.GetPfx(protectionMode);
             var pfx = pfxWrapper.Store;
             var startIndex = 0;
             const string startString = "-----BEGIN CERTIFICATE-----";

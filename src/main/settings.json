@@ -36,7 +36,8 @@
     "ReuseDays": 1,
     "DeleteStaleFiles": false,
     "DeleteStaleFilesDays": 120,
-    "Path": null
+    "Path": null,
+    "ProtectionMode": "default"
   },
   "ScheduledTask": {
     "RenewalDays": 55,
@@ -110,7 +111,8 @@
     },
     "CentralSsl": {
       "DefaultPath": null,
-      "DefaultPassword": null
+      "DefaultPassword": null,
+      "DefaultProtectionMode": "default"
     },
     "PemFiles": {
       "DefaultPath": null,
@@ -118,7 +120,8 @@
     },
     "PfxFile": {
       "DefaultPath": null,
-      "DefaultPassword": null
+      "DefaultPassword": null,
+      "DefaultProtectionMode": "default"
     }
   },
   "Installation": {
