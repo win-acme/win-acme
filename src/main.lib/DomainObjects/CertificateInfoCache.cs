@@ -1,7 +1,4 @@
-﻿using Org.BouncyCastle.Asn1.Nist;
-using Org.BouncyCastle.Asn1.Pkcs;
-using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.Pkcs;
+﻿using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.X509;
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
@@ -24,7 +21,7 @@ namespace PKISharp.WACS.DomainObjects
             CacheFile = file;
 
             using var stream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read);
-            var wrapper = PfxService.GetPfx(PfxProtectionMode.Aes256);
+            var wrapper = PfxService.GetPfx(PfxProtectionMode.Default);
             wrapper.Store.Load(stream, password?.ToCharArray());
             _inner = new CertificateInfo(wrapper);
         }
