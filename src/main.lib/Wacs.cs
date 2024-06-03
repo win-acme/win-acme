@@ -219,16 +219,14 @@ namespace PKISharp.WACS.Host
         /// </summary>
         private async Task ShowBanner()
         {
-            Console.WriteLine();
+            // Version information
+            _input.CreateSpace();
             _log.Information(LogType.Screen, "A simple Windows ACMEv2 client (WACS)");
             _log.Information(LogType.Screen, "Software version {version} ({build}, {bitness})", VersionService.SoftwareVersion, VersionService.BuildType, VersionService.Bitness);
-            _log.Verbose("Running on Windows {version}", Environment.OSVersion.Version);
             _log.Information(LogType.Disk | LogType.Event, "Software version {version} ({build}, {bitness}) started", VersionService.SoftwareVersion, VersionService.BuildType, VersionService.Bitness);
-            if (_settings.Client.VersionCheck)
-            {
-                await _updateClient.CheckNewVersion();
-            }
-
+            _log.Debug("Running on Windows {version}", Environment.OSVersion.Version);
+ 
+            // Connection test
             _log.Information("Connecting to {ACME}...", _settings.BaseUri);
             var networkCheck = _networkCheck.CheckNetwork();
             await networkCheck.WaitAsync(TimeSpan.FromSeconds(30));
@@ -244,6 +242,14 @@ namespace PKISharp.WACS.Host
                 _log.Warning("Network check failed or timed out. Functionality may be limited.");
             }
 
+            // New version test
+            if (_settings.Client.VersionCheck)
+            {
+                _input.CreateSpace();
+                await _updateClient.CheckNewVersion();
+            }
+
+            // IIS version test
             if (_adminService.IsAdmin)
             {
                 _log.Debug("Running with administrator credentials");
@@ -261,8 +267,12 @@ namespace PKISharp.WACS.Host
             {
                 _log.Information("Running without administrator credentials, some options disabled");
             }
+
+            // Task scheduler health check
             _taskScheduler.ConfirmTaskScheduler();
-            _log.Information("Please report issues at {url}", "https://github.com/win-acme/win-acme");
+
+            // Further information and tests
+            _log.Information("Please report bugs at {url}", "https://github.com/win-acme/win-acme");
             _log.Verbose("Unicode display test: Chinese/{chinese} Russian/{russian} Arab/{arab}", "語言", "язык", "لغة");
         }
 
