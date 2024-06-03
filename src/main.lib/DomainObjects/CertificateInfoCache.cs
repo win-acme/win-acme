@@ -24,7 +24,7 @@ namespace PKISharp.WACS.DomainObjects
             CacheFile = file;
 
             using var stream = new FileStream(file.FullName, FileMode.Open, FileAccess.Read, FileShare.Read);
-            var wrapper = PfxService.GetPfx(PfxProtectionMode.Default);
+            var wrapper = PfxService.GetPfx(PfxProtectionMode.Aes256);
             wrapper.Store.Load(stream, password?.ToCharArray());
             _inner = new CertificateInfo(wrapper);
         }
