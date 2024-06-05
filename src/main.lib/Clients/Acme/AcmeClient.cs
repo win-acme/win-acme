@@ -85,8 +85,10 @@ namespace PKISharp.WACS.Clients.Acme
                 },
                 Value = i.Value
             });
+            // Only include the "replaces" field on the order
+            // when the server indicates that it supports ARI.
             var replaces = default(string?);
-            if (previous != null)
+            if (_client.Directory.RenewalInfo != null && previous != null)
             {
                 replaces = CertificateId(previous);
             }
