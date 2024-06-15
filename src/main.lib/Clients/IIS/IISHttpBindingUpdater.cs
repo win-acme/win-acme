@@ -445,7 +445,8 @@ namespace PKISharp.WACS.Clients.IIS
                     preserveFlags &= ~SSLFlags.NotWithCentralSsl;
                 }
                 options = options.WithFlags(options.Flags | preserveFlags);
-                _log.Information(LogType.All, "Updating existing https binding {host}:{port}{ip} (flags: {flags})",
+                _log.Information(LogType.All, "Updating existing https binding on site {site}: {host}:{port}{ip} (flags: {flags})",
+                    site.Id,
                     existingBinding.Host,
                     existingBinding.Port,
                     string.IsNullOrEmpty(existingBinding.IP) ? "" : $":{existingBinding.IP}",

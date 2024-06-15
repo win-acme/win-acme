@@ -159,12 +159,12 @@ namespace PKISharp.WACS.Clients.IIS
             var updated = updater.AddOrUpdateBindings(identifiers, bindingOptions, allIdentifiers, oldCertificate);
             if (updated > 0)
             {
-                _log.Information("Committing {count} {type} binding changes to IIS while updating site {site}", updated, "https", bindingOptions.SiteId);
+                _log.Information("Committing {count} {type} binding changes to IIS", updated, "https");
                 Commit();
             }
             else
             {
-                _log.Information("No bindings have been changed while updating site {site}", bindingOptions.SiteId);
+                _log.Debug("No bindings have been changed");
             }
         }
 

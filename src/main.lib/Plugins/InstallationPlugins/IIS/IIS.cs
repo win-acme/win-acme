@@ -57,16 +57,39 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 _log.Error(errorMessage);
                 throw new InvalidOperationException(errorMessage);
             }
- 
-            // Determine site types
+
+            // Determine installation site which is used
+            // to create new bindings if needed. This may
+            // be an FTP site or a web site
+            var installationSite = default(IIISSite);
             if (_options.SiteId != null)
             {
-                var siteType = _iisClient.GetSite(_options.SiteId.Value).Type; 
-                foreach (var part in _target.Parts)
+                try 
                 {
-                    part.SiteId = _options.SiteId;
-                    part.SiteType = siteType;
+                    installationSite = _iisClient.GetSite(_options.SiteId.Value);
                 }
+                catch
+                {
+                    // Site may have been stopped or removed
+                    // after initial renewal setup. This means
+                    // we don't know where to create new bindings
+                    // anymore, but that's not a fatal error.
+                    _log.Warning("Installation site {id} not found running in IIS, only existing bindings will be updated", _options.SiteId);
+                }
+            }
+            foreach (var part in _target.Parts)
+            {
+                // Use source plugin provided ID
+                // with override by installation site ID (for non-IIS source)
+                // for missing site the value might stay null, which means
+                // only pre-existing bindings will be updated an no new
+                // bindings can be created.
+                part.SiteId ??= installationSite?.Id;
+
+                // Use source plugin provided type
+                // with override by installation site type (for non-IIS source)
+                // with override by plugin variant (for missing installation sites)
+                part.SiteType ??= installationSite?.Type ?? (_options is IISFtpOptions ? IISSiteType.Ftp : IISSiteType.Web);
             }
 
             if (centralSsl)
@@ -122,7 +145,11 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                             bindingOptions = bindingOptions.
                                 WithPort(_options.NewBindingPort.Value);
                         }
-                        bindingOptions = bindingOptions.WithSiteId(part.SiteId!.Value);
+                        if (part.SiteId != null)
+                        {
+                            bindingOptions = bindingOptions.
+                                WithSiteId(part.SiteId.Value);
+                        }
                         _iisClient.UpdateHttpSite(httpIdentifiers, bindingOptions, oldCertificate?.GetHash(), newCertificate.SanNames);
                         if (certificateStore) 
                         {
