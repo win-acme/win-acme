@@ -101,7 +101,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                     }
                     catch
                     {
-                        _log.Error("Unable to activate listener, this may be because of insufficient rights or a non-Microsoft webserver using port {port}", port);
+                        _log.Error("Unable to activate listener, this may be because a non-Microsoft webserver is using port {port}", port);
                         throw;
                     }
                 }
