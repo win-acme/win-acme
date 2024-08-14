@@ -56,12 +56,12 @@ if ($CertInStore)
     try
 	{
         if ( ( Test-Path $destination ) -and $CertInStore ) {
-            Move-Item "HKLM:\SOFTWARE\Microsoft\SystemCertificates\MY\Certificates\$NewCertThumbprint" $destination
+            Copy-Item "HKLM:\SOFTWARE\Microsoft\SystemCertificates\MY\Certificates\$NewCertThumbprint" $destination
         }
     }
 	catch 
 	{
-        "Could not move certificate into NDTS store location."
+        "Could not copy certificate into NDTS store location."
         "Error: $($Error[0])"
 		return
     }
