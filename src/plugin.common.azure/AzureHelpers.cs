@@ -56,7 +56,19 @@ namespace PKISharp.WACS.Plugins.Azure.Common
                       : new ClientSecretCredential(
                           _options.TenantId,
                           _options.ClientId,
-                          _ssm.EvaluateSecret(_options.Secret?.Value));
+                          _ssm.EvaluateSecret(_options.Secret?.Value),
+                          new TokenCredentialOptions
+                          {
+                              AuthorityHost = _options.AzureEnvironment switch
+                              {
+                                  AzureEnvironments.AzureChinaCloud => AzureAuthorityHosts.AzureChina,
+                                  AzureEnvironments.AzureUSGovernment => AzureAuthorityHosts.AzureGovernment,
+                                  AzureEnvironments.AzureCloud => AzureAuthorityHosts.AzurePublicCloud,
+                                  null => AzureAuthorityHosts.AzurePublicCloud,
+                                  "" => AzureAuthorityHosts.AzurePublicCloud,
+                                  _ => AzureAuthorityHosts.AzurePublicCloud,
+                              }
+                          });
             }
         }
 
