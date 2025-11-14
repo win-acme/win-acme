@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Net.Mime;
+using System.Text.Json;
 using System.Threading.Tasks;
 using PKISharp.WACS.Plugins.ValidationPlugins.Dns.Models;
 using PKISharp.WACS.Services;
@@ -34,13 +35,13 @@ internal sealed class HetznerClient : IDisposable
         _httpClient.Dispose();
     }
 
-    public async Task<ICollection<Zone>> GetAllZonesAsync()
+    public async Task<ICollection<ZoneDetails>> GetAllZonesAsync()
     {
         var zonesResponse = await _httpClient.GetFromJsonAsync<ZonesResponse>("zones").ConfigureAwait(false);
         if (zonesResponse is null)
         {
             _log.Warning("No zones found in Hetzner DNS");
-            return Array.Empty<Zone>();
+            return Array.Empty<ZoneDetails>();
         }
 
         // Is only one page returned?
@@ -49,7 +50,7 @@ internal sealed class HetznerClient : IDisposable
             return zonesResponse.Zones;
         }
 
-        var allZones = new List<Zone>();
+        var allZones = new List<ZoneDetails>();
         allZones.AddRange(zonesResponse.Zones);
 
         // As long as we are not on the last page continue
@@ -70,16 +71,28 @@ internal sealed class HetznerClient : IDisposable
         return allZones;
     }
 
-    public async Task<Zone?> GetZoneAsync(string zoneId)
+    public async Task<ZoneDetails?> GetZoneAsync(string zoneId)
     {
-        var zoneResponse = await _httpClient.GetFromJsonAsync<Zone>($"zones/{zoneId}").ConfigureAwait(false);
-        if (zoneResponse is null)
-        {
-            _log.Warning($"Zone with zone id {zoneId} not found in Hetzner DNS");
-            return null;
-        }
+        var zoneResponse = await _httpClient.GetStringAsync($"zones/{zoneId}").ConfigureAwait(false);
+        
+        ZoneDetails? zone = null;
 
-        return zoneResponse;
+        try
+        {
+            zone = JsonSerializer.Deserialize<ZoneDetails>(zoneResponse);
+        }
+        catch (JsonException ex)
+        {
+            _log.Warning($"Error parsing Zone: {ex}");
+        }
+        
+        zone ??= JsonSerializer.Deserialize<ZoneResponse>(zoneResponse)?.Zone;
+
+        if (zone is not null) return zone;
+        
+        _log.Warning($"Zone with zone id {zoneId} not found in Hetzner DNS");
+        return null;
+
     }
 
     public async Task<bool> CreateRecordAsync(Record record)

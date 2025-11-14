@@ -2,7 +2,14 @@ using System.Text.Json.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns.Models;
 
-internal sealed class Zone
+
+internal sealed class ZoneResponse
+{
+    [JsonPropertyName("zone")]
+    public required ZoneDetails Zone { get; init; }
+}
+
+internal sealed class ZoneDetails
 {
     [JsonPropertyName("id")]
     public required string Id { get; init; }

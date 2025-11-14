@@ -34,7 +34,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _options = options;
         }
 
-        private async Task<Zone?> GetHostedZone(string recordName)
+        private async Task<ZoneDetails?> GetHostedZone(string recordName)
         {
             if (String.IsNullOrWhiteSpace(_options.ZoneId) is false)
             {
