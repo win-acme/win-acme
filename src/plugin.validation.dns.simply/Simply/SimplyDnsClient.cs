@@ -57,7 +57,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Simply
 
         private async Task<List<Product>> GetProductsAsync()
         {
-            using var response = await _httpClient.GetAsync(_baseUrl + "/my/products");
+            using var response = await _httpClient.GetAsync(_baseUrl + "/my/products/");
             await using var stream = await response.Content.ReadAsStreamAsync();
             var products = await JsonSerializer.DeserializeAsync<ProductList>(stream);
             if (products == null || products.Products == null)
@@ -70,21 +70,21 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Simply
         private async Task CreateRecordAsync(string objectId, DnsRecord record)
         {
             using var content = new StringContent(JsonSerializer.Serialize(record), Encoding.UTF8, "application/json");
-            using var response = await _httpClient.PostAsync(_baseUrl + $"/my/products/{WebUtility.UrlEncode(objectId)}/dns/records", content);
+            using var response = await _httpClient.PostAsync(_baseUrl + $"/my/products/{WebUtility.UrlEncode(objectId)}/dns/records/", content);
             var responseBody = await response.Content.ReadAsStringAsync();
             _ = response.EnsureSuccessStatusCode();
         }
 
         private async Task DeleteRecordAsync(string objectId, int recordId)
         {
-            using var response = await _httpClient.DeleteAsync(_baseUrl + $"/my/products/{WebUtility.UrlEncode(objectId)}/dns/records/{recordId}");
+            using var response = await _httpClient.DeleteAsync(_baseUrl + $"/my/products/{WebUtility.UrlEncode(objectId)}/dns/records/{recordId}/");
             var responseBody = await response.Content.ReadAsStringAsync();
             _ = response.EnsureSuccessStatusCode();
         }
 
         private async Task<List<DnsRecord>> GetRecordsAsync(string objectId)
         {
-            using var response = await _httpClient.GetAsync(_baseUrl + $"/my/products/{WebUtility.UrlEncode(objectId)}/dns/records");
+            using var response = await _httpClient.GetAsync(_baseUrl + $"/my/products/{WebUtility.UrlEncode(objectId)}/dns/records/");
             _ = response.EnsureSuccessStatusCode();
             await using var stream = await response.Content.ReadAsStreamAsync();
             var records = await JsonSerializer.DeserializeAsync<DnsRecordList>(stream);
