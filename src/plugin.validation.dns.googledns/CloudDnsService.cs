@@ -17,9 +17,20 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public async Task<IList<ManagedZone>> GetManagedZones(string projectId)
         {
-            var request = _client.ManagedZones.List(projectId);
-            var response = await request.ExecuteAsync();
-            return response.ManagedZones.ToList();
+            var allZones = new List<ManagedZone>();
+            string? pageToken = null;
+            do
+            {
+                var request = _client.ManagedZones.List(projectId);
+                request.PageToken = pageToken;
+                var response = await request.ExecuteAsync();
+                if (response.ManagedZones != null)
+                {
+                    allZones.AddRange(response.ManagedZones);
+                }
+                pageToken = response.NextPageToken;
+            } while (!string.IsNullOrEmpty(pageToken));
+            return allZones;
         }
 
         public async Task<ManagedZone?> FindZone(string projectId, string dnsName)
