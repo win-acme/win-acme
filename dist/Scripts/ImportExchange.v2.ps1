@@ -90,6 +90,10 @@ param(
 	[Parameter(Position=6,Mandatory=$false)]
 	[string]
 	$FriendlyName,
+
+	[Parameter(Position=7,Mandatory=$false)]
+	[bool]
+	$UpdateTLSCertificateName = $false,
 	
 	[switch]$DebugOn
 )
@@ -115,6 +119,7 @@ Write-Host "FriendlyName: $FriendlyName"
 # Load Exchange Management shell
 # https://github.com/win-acme/win-acme/issues/1372 
 $ServerFQDN = ([System.Net.Dns]::GetHostByName(($env:computerName))).Hostname
+$ExchangeName = $env:computerName
 $ConnectionUri = "http://$ServerFQDN/PowerShell/"
 $Session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $ConnectionUri
 Import-PSSession $Session
@@ -146,6 +151,16 @@ try
 		Write-Host "Updating Exchange services..."
 		Enable-ExchangeCertificate -Services $ExchangeServices -Thumbprint $Certificate.Thumbprint -Force -ErrorAction Stop
 		Write-Host "Certificate set for the following services: $ExchangeServices"
+
+		if($UpdateTLSCertificateName -eq $true)
+		{
+			Write-Host "Set certificate for TLS in receive connector..."
+			$tlscertificatename = "<i>$($Certificate.Issuer)<s>$($Certificate.Subject)"
+			Set-ReceiveConnector "$ExchangeName\Client Frontend $ExchangeName" -TlsCertificateName $tlscertificatename
+			Write-Host "Certificate for TLS in receive connector set."
+		}
+
+		
 	}
 	catch 
 	{
