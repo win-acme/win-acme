@@ -213,6 +213,9 @@ PluginRelease plugin.validation.dns.infomaniak @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.InfoManiak.dll",
 	"Newtonsoft.Json.dll"
 )
+PluginRelease plugin.validation.dns.level27 @(
+	"PKISharp.WACS.Plugins.ValidationPlugins.Level27.dll"
+)
 PluginRelease plugin.validation.dns.linode @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.Linode.dll",
 	"Newtonsoft.Json.dll"
