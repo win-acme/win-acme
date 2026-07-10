@@ -229,13 +229,13 @@ namespace PKISharp.WACS.Host
             // Connection test
             _log.Information("Connecting to {ACME}...", _settings.BaseUri);
             var networkCheck = _networkCheck.CheckNetwork();
-            await networkCheck.WaitAsync(TimeSpan.FromSeconds(30));
+            await networkCheck;
             if (!networkCheck.IsCompletedSuccessfully)
             {
                 _log.Warning("Network check failed or timed out, retry without proxy detection...");
                 _settings.Proxy.Url = null;
                 networkCheck = _networkCheck.CheckNetwork();
-                await networkCheck.WaitAsync(TimeSpan.FromSeconds(30));
+                await networkCheck;
             }
             if (!networkCheck.IsCompletedSuccessfully)
             {
