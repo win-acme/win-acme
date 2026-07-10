@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Services
         {
             using var httpClient = _proxyService.GetHttpClient();
             httpClient.BaseAddress = _settings.BaseUri;
-            httpClient.Timeout = new TimeSpan(0, 0, 10);
+            httpClient.Timeout = TimeSpan.FromSeconds(30);
             var success = await CheckNetworkUrl(httpClient, "directory");
             if (!success)
             {
