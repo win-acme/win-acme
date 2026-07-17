@@ -195,6 +195,10 @@ PluginRelease plugin.validation.dns.domeneshop @(
 PluginRelease plugin.validation.dns.dreamhost @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost.dll"
 )
+PluginRelease plugin.validation.dns.gandi @(
+	"Newtonsoft.Json.dll",
+	"PKISharp.WACS.Plugins.ValidationPlugins.Gandi.dll"
+)
 PluginRelease plugin.validation.dns.godaddy @(
 	"Newtonsoft.Json.dll",
 	"PKISharp.WACS.Plugins.ValidationPlugins.Godaddy.dll"
