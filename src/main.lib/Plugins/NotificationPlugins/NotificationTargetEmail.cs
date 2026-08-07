@@ -60,7 +60,7 @@ namespace PKISharp.WACS.Plugins.NotificationPlugins
             var withErrors = log.Any(l => l.Level == LogEventLevel.Error);
             await _email.Send(
                 $"Certificate renewal {renewal.LastFriendlyName} completed" + (withErrors ? " with errors" : ""),
-                @$"<p>Certificate <b>{HttpUtility.HtmlEncode(renewal.LastFriendlyName)}</b> {(withErrors ? "renewed with errors" : "succesfully renewed")}.</p> 
+                @$"<p>Certificate <b>{HttpUtility.HtmlEncode(renewal.LastFriendlyName)}</b> {(withErrors ? "renewed with errors" : "successfully renewed")}.</p> 
                 {NotificationInformation(renewal)}
                 {RenderLog(log)}",
                 withErrors ? MessagePriority.Urgent : MessagePriority.NonUrgent);
