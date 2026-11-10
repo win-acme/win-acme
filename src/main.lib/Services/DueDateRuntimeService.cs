@@ -102,6 +102,15 @@ namespace PKISharp.WACS.Services
         /// <returns></returns>
         public DueDate ComputeDueDate(DateTime validFrom, DateTime validUntil, AcmeRenewalInfo? renewalInfo = null)
         {
+            var serverWindow = _settings.ScheduledTask.RenewalDisableServerSchedule == true
+                ? null : renewalInfo?.SuggestedWindow;
+            if (serverWindow?.Start is not DateTime serverStart ||
+                serverWindow.End is not DateTime serverEnd ||
+                serverStart.ToUniversalTime() >= serverEnd.ToUniversalTime())
+            {
+                serverWindow = null;
+            }
+
             // Basic rule for End: NotBefore + RenewalDays
             var end = validFrom.AddDays(_settings.ScheduledTask.RenewalDays);
             var endSource = "rd";
@@ -116,12 +125,9 @@ namespace PKISharp.WACS.Services
 
             // Guard rail #2: server might feel the renewal should happen even earlier,
             // for example during a security incident.
-            if (_settings.ScheduledTask.RenewalDisableServerSchedule != true && 
-                renewalInfo != null && 
-                renewalInfo.SuggestedWindow.End != null &&
-                renewalInfo.SuggestedWindow.End.Value < end)
+            if (serverWindow?.End is DateTime earlierEnd && earlierEnd < end)
             {
-                end = renewalInfo.SuggestedWindow.End.Value;
+                end = earlierEnd;
                 endSource = "ri";
             }
 
@@ -131,12 +137,9 @@ namespace PKISharp.WACS.Services
 
             // Guard rail #3: server might feel the renewal should happen even earlier,
             // for example during a security incident.
-            if (_settings.ScheduledTask.RenewalDisableServerSchedule != true &&
-                renewalInfo != null &&
-                renewalInfo.SuggestedWindow.Start != null &&
-                renewalInfo.SuggestedWindow.Start.Value < start)
+            if (serverWindow?.Start is DateTime earlierStart && earlierStart < start)
             {
-                start = renewalInfo.SuggestedWindow.Start.Value;
+                start = earlierStart;
                 startSource = "ri";
             }
 
