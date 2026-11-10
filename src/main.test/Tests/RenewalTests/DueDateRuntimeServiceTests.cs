@@ -4,7 +4,7 @@ using System.Text.Json;
 using ACMESharp.Protocol.Resources;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PKISharp.WACS.Services;
-using Mock = PKISharp.WACS.UnitTests.Mock.Services;
+using MockServices = PKISharp.WACS.UnitTests.Mock.Services;
 
 namespace PKISharp.WACS.UnitTests.Tests.RenewalTests
 {
@@ -13,7 +13,7 @@ namespace PKISharp.WACS.UnitTests.Tests.RenewalTests
     {
         private static readonly DateTime ValidFrom = new(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         private static readonly DateTime ValidUntil = ValidFrom.AddDays(90);
-        private readonly DueDateRuntimeService _service = new(new Mock.MockSettingsService(), new Mock.LogService(), new Mock.InputService(new List<string>()));
+        private readonly DueDateRuntimeService _service = new(new MockServices.MockSettingsService(), new MockServices.LogService(), new MockServices.InputService(new List<string>()));
 
         [TestMethod]
         [DataRow("""{"suggestedWindow":{"start":"2026-01-02T00:00:00Z","end":"2026-01-02T00:00:00Z"}}""")]
